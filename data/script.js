@@ -26,9 +26,9 @@ let ultimoStatusEstabilizacao = true;
 let contadorFalhasEstabilizacao = 0;
 
 // --- NOVAS VARIÁVEIS PARA MELHORIAS (sem quebrar compatibilidade) ---
-let showDataLabels = true; // Labels ativados por padrão
-let showPeaks = true; // Picos ativados por padrão
-let showGrid = true; // Grid ativado por padrão
+let showDataLabels = false; // Começa desabilitado para não afetar performance
+let showPeaks = true;
+let showGrid = true;
 let isZoomed = false;
 let originalChartData = null;
 let peakThreshold = 0.15; // 15% da variação para detectar picos
@@ -54,6 +54,9 @@ window.onload = () => {
   
   // === NOVO: Inicializa contexto de áudio ===
   inicializarAudioContext();
+  
+  // === NOVO: Configura atalhos de teclado ===
+  setupKeyboardShortcuts();
 };
 
 // --- INICIALIZAÇÃO MELHORADA (mas compatível) ---
@@ -64,10 +67,7 @@ function initializeEnhancedChart() {
     axisX: { 
       showGrid: showGrid, 
       showLabel: true,
-      labelInterpolationFnc: (value, index) => {
-        // Mostra apenas 1 a cada 5 labels para evitar sobreposição
-        return index % 5 === 0 ? value + "s" : null;
-      }
+      labelInterpolationFnc: (value) => value + "s"
     },
     axisY: { 
       showGrid: showGrid, 
@@ -682,20 +682,6 @@ function drawFallbackChart(ctx, width, height) {
   // Borda do gráfico
   ctx.strokeStyle = '#dee2e6';
   ctx.lineWidth = 1;
-  ctx.strokeRect(graphX, graphY, graphWidth, graphHeight);
-  
-  // Calcula escalas
-  const maxValue = Math.max(...data);
-  const minValue = Math.min(...data);
-  const range = maxValue - minValue;
-  const padding = range * 0.1; // 10% padding
-  
-  const scaleY = graphHeight / (range + 2 * padding);
-  const scaleX = graphWidth / (data.length - 1);
-  
-  // Grid horizontal
-  ctx.strokeStyle = '#dee2e6';
-  ctx.lineWidth = 1;
   ctx.setLineDash([2, 2]);
   
   for (let i = 0; i <= 5; i++) {
@@ -1038,7 +1024,7 @@ function clearChart() {
   document.getElementById('forca-maxima').textContent = `--- ${displayUnit}`;
   document.getElementById('forca-minima').textContent = `--- ${displayUnit}`;
   chart.update(chartData);
-  showNotification("info", "Gráfico limpo.", 3000);
+  showNotification("info", "Gráfico limpo. (Atalho: L)", 3000);
 }
 
 // =======================================
@@ -1167,7 +1153,7 @@ function salvarDadosDaSessao(nome, tabela) {
         gravacoes.push(gravacao);
         localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
         showNotification('success', `Sessão "${nome}" salva com sucesso!`);
-        carregarGravacoes();
+        carregarGravacoesComImpulso();
     } catch (e) {
         showNotification('error', 'Erro ao salvar. O Local Storage pode estar cheio.');
         console.error("Erro ao salvar no LocalStorage:", e);
@@ -1248,16 +1234,17 @@ function sendCommandToWorker(command, value = null) {
   }
 }
 
+// FUNÇÕES TARA E CALIBRAR: Adiciona notificação de atalho
 function tare() {
   sendCommandToWorker("t");
-  showNotification('info', 'Comando de Tara enviado.');
+  showNotification('info', 'Comando de Tara enviado. (Atalho: Shift + T)');
 }
 
 function calibrar() {
   const massa = parseFloat(document.getElementById("massaCalibracao").value);
   if (!isNaN(massa) && massa > 0) {
     sendCommandToWorker("c", massa);
-    showNotification('info', `Comando de calibração com ${massa}g enviado.`);
+    showNotification('info', `Comando de calibração com ${massa}g enviado. (Atalho: Shift + C)`);
   } else {
     showNotification("error", "Informe uma massa de calibração válida.");
   }
@@ -1316,6 +1303,16 @@ function setChartMode(mode) {
   chartMode = mode;
   document.querySelectorAll('#btn-deslizante, #btn-acumulado, #btn-pausado').forEach(b => b.classList.remove('ativo'));
   document.getElementById(`btn-${mode}`).classList.add('ativo');
+}
+
+function toggleChartPause() {
+  if (chartMode === 'pausado') {
+    setChartMode('deslizante');
+    showNotification('info', 'Gráfico retomado (Deslizante). (Atalho: P)');
+  } else {
+    setChartMode('pausado');
+    showNotification('info', 'Gráfico pausado. (Atalho: P)');
+  }
 }
 
 function abrirAba(element, abaID) {
@@ -1395,7 +1392,7 @@ function carregarGravacoesComImpulso() {
   const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
   
   if (gravacoes.length === 0) {
-    container.innerHTML = '<p>Nenhuma gravação encontrada.</p>';
+    container.innerHTML = '<p style="color: var(--cor-texto-secundario);">Nenhuma gravação encontrada.</p>';
     return;
   }
   
@@ -1403,18 +1400,6 @@ function carregarGravacoesComImpulso() {
   
   gravacoes.forEach(gravacao => {
     const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
-    
-    // CALCULA IMPULSO PREVIEW
-    let impulsoPreview = '';
-    try {
-      const dadosRapidos = processarDadosSimples(gravacao.dadosTabela);
-      const impulso = dadosRapidos.impulso.impulsoTotal;
-      const classe = dadosRapidos.propulsao.classificacaoMotor.classe;
-      impulsoPreview = ` • ${impulso.toFixed(2)} N⋅s (${classe})`;
-    } catch (e) {
-      impulsoPreview = ' • Erro no cálculo';
-    }
-    
     const card = document.createElement('div');
     card.className = 'card-gravacao';
     card.style.cssText = `
@@ -1432,24 +1417,28 @@ function carregarGravacoesComImpulso() {
       <div>
         <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome}</p> 
         <p style="font-size: 0.875rem; color: #7f8c8d;">
-          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras${impulsoPreview}
+          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras
         </p>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button onclick="exportarPDFViaPrint(${gravacao.id})" 
+                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          📑 PDF
+        </button>
         <button onclick="exportarCSV(${gravacao.id})" 
                 style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
           📄 CSV
         </button>
         <button onclick="exportarImagemSessao(${gravacao.id})" 
                 style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🚀 Análise
+          🖼️ PNG
         </button>
         <button onclick="visualizarSessao(${gravacao.id})" 
                 style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
           👁️ Ver
         </button>
         <button onclick="deletarGravacao(${gravacao.id})" 
-                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
           🗑️ Del
         </button>
       </div>
@@ -1481,7 +1470,7 @@ function deletarGravacao(id) {
   const novasGravacoes = gravacoes.filter(g => g.id !== id);
   localStorage.setItem('balancaGravacoes', JSON.stringify(novasGravacoes));
   showNotification('info', 'Gravação deletada.');
-  carregarGravacoes();
+  carregarGravacoesComImpulso();
 }
 
 function tocarBip() {
@@ -1596,6 +1585,7 @@ function updateNoiseDisplay() {
   }
 }
 
+// Start Noise Analysis (Adicionar notificação de atalho e lógica)
 function startNoiseAnalysis() {
   if (isStabilityMode) {
     showNotification('info', 'Análise já em andamento');
@@ -1607,7 +1597,7 @@ function startNoiseAnalysis() {
   currentStdDev = 0;
   noiseMean = 0;
   
-  showNotification('info', 'Analisando ruído... Mantenha a balança VAZIA e ESTÁVEL por 10 segundos!', 3000);
+  showNotification('info', 'Analisando ruído... Mantenha a balança VAZIA e ESTÁVEL por 10 segundos! (Atalho: Shift+A)', 3000);
   
   setTimeout(() => {
     isStabilityMode = false;
@@ -1646,7 +1636,6 @@ function resetNoiseAnalysis() {
   updateNoiseDisplay();
   showNotification('info', 'Análise de ruído resetada');
 }
-
 function addNoiseControlsToUI() {
   const controlesTab = document.getElementById('abaControles');
   if (!controlesTab || document.getElementById('noise-controls-section')) return;
@@ -1709,14 +1698,13 @@ function addNoiseControlsToUI() {
     <div style="margin-top: 1rem; padding: 0.75rem; background: #e8f4fd; border-radius: 0.375rem; border-left: 4px solid #3498db;">
       <p style="margin: 0; font-size: 0.875rem;"><strong>💡 Como usar:</strong></p>
       <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #2c3e50;">
-        1. Deixe a balança VAZIA • 2. Clique "Analisar Ruído" • 3. Aguarde 10s sem tocar • 4. Ative Anti-Noising no gráfico
+        1. Deixe a balança VAZIA • 2. Clique "Analisar Ruído" (<kbd>Shift+A</kbd>) • 3. Aguarde 10s sem tocar • 4. Ative Anti-Noising no gráfico
       </p>
     </div>
   `;
   
   controlesTab.appendChild(noiseSection);
 }
-
 // ============================================
 // === NOVAS FUNÇÕES DE ÁUDIO E ALERTAS ===
 // ============================================
@@ -1968,27 +1956,39 @@ if (typeof exportarImagemSessao === 'undefined') {
 
 // === FIM DAS NOVAS FUNÇÕES ===
 
+// --- NOVO: FUNÇÃO DE ATALHOS DE TECLADO CORRIGIDA ---
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (event) => {
+    // Não ativar atalhos se o foco estiver em um campo de input ou textarea
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
 
-// 8. VALIDAÇÃO E TESTES:
-function testAntiNoising() {
-  console.log("=== TESTE DO SISTEMA ANTI-NOISING ===");
-  console.log("Ruído médio:", noiseMean, "N");
-  console.log("Desvio padrão:", currentStdDev, "N");
-  console.log("Threshold:", currentStdDev * antiNoisingMultiplier, "N");
-  console.log("Multiplicador:", antiNoisingMultiplier, "σ");
-  
-  function testAntiNoising() {
-  console.log("=== TESTE DO SISTEMA ANTI-NOISING ===");
-  console.log("Ruído médio:", noiseMean, "N");
-  console.log("Desvio padrão:", currentStdDev, "N");
-  console.log("Threshold:", currentStdDev * antiNoisingMultiplier, "N");
-  console.log("Multiplicador:", antiNoisingMultiplier, "σ");
-  
-  // Testa alguns valores
-  const testValues = [-0.001, 0, 0.001, 0.5, 1.0, 5.0];
-  testValues.forEach(val => {
-    const filtered = applyAntiNoising(val);
-    console.log(`Entrada: ${val}N → Saída: ${filtered}N`);
+    const key = event.key.toLowerCase();
+    
+    // ATALHOS COM SHIFT
+    if (event.shiftKey) {
+        if (key === 't') {
+            event.preventDefault(); 
+            tare(); // Shift + T para Tara
+        } else if (key === 'c') {
+            event.preventDefault();
+            calibrar(); // Shift + C para Calibração
+        } else if (key === 'a') {
+            event.preventDefault();
+            startNoiseAnalysis(); // Shift + A para Análise de Ruído
+        }
+    }
+    
+    // ATALHOS SEM MODIFICADOR (mantidos os existentes L e P)
+    else if (!event.ctrlKey && !event.metaKey) {
+        if (key === 'l') {
+            event.preventDefault();
+            clearChart(); // L para Limpar Gráfico
+        } else if (key === 'p') {
+            event.preventDefault();
+            toggleChartPause(); // P para Pausar/Retomar
+        }
+    }
   });
-} 
 }

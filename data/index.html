@@ -34,6 +34,7 @@
       color: var(--cor-texto);
       line-height: 1.5;
       transition: background-color 0.5s ease;
+      padding-bottom: 50px; /* Adiciona padding para o rodapé fixo */
     }
 
     /* NOVA: Indicação visual de desconexão */
@@ -50,7 +51,7 @@
     }
 
     .container {
-      max-width:100vw;
+      max-width: 100vw;
       margin: 0 auto;
       padding: 1rem;
       transition: opacity 0.3s ease;
@@ -91,8 +92,13 @@
     }
 
     @keyframes pulse-disconnect {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+      0%, 100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
     }
 
     #balanca-status-line {
@@ -184,10 +190,10 @@
       box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .05);
       transition: background-color .2s, opacity .2s;
     }
-    
+
     .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .btn-grupo {
@@ -436,10 +442,12 @@
     }
 
     /* CORRIGIDO: Labels do eixo X ficam dentro da área do gráfico */
-    .ct-label.ct-horizontal.ct-end {
-      display: flex;
-      justify-content: flex-start;
-      text-align: left;
+ .ct-label.ct-horizontal {
+      font-size: 0.65rem; /* Reduz ligeiramente a fonte */
+      transform: translateY(5px); /* Move a label ligeiramente para baixo para descolar da linha */
+      white-space: nowrap; /* Evita quebra de linha */
+      overflow: hidden; 
+      text-overflow: ellipsis; 
     }
 
     /* NOVO: Controle de avisos sonoros */
@@ -470,6 +478,36 @@
         height: 300px !important;
       }
     }
+    
+    /* NOVO: Estilos do Rodapé de Atalhos */
+    #footer-atalhos {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #2c3e50; /* Cor escura para contraste */
+      color: #ecf0f1; /* Texto claro */
+      padding: 8px 15px;
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+    }
+
+    #footer-atalhos kbd {
+        background-color: #34495e;
+        color: #fff;
+        padding: 2px 5px;
+        border-radius: 3px;
+        border: 1px solid #7f8c8d;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px #34495e inset;
+        font-family: monospace;
+        font-size: 0.8em;
+    }
   </style>
 </head>
 
@@ -482,15 +520,13 @@
       </div>
     </header>
 
-    <!-- NOVO: Banner de alerta de estabilização -->
     <div id="alerta-estabilizacao">
-      ⚠️ A balança não está estabilizando! A tolerância pode estar muito baixa. 
+      ⚠️ A balança não está estabilizando! A tolerância pode estar muito baixa.
       Vá em Parâmetros → Tolerância de Estabilidade e aumente o valor.
     </div>
 
     <div id="balanca-status-line">Status da Balança: <span id="balanca-status">...</span></div>
-    
-    <!-- NOVO: Controle de avisos sonoros -->
+
     <div class="controle-audio">
       <input type="checkbox" id="audio-avisos" onchange="toggleAvisosAudio()">
       <label for="audio-avisos">🔊 Ativar avisos sonoros</label>
@@ -536,130 +572,151 @@
       <div id="abaGrafico" class="tabcontent">
 
         <div class="flex-center" style="margin-bottom: 1rem; flex-direction: column; gap: 1rem;">
-          <!-- Controles de Sessão -->
-          <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
+          <div
+            style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
             <input type="text" id="nome-sessao" placeholder="Nome da Sessão...">
             <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso">▶ Iniciar</button>
-            <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
+            <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e
+              Salvar</button>
           </div>
-          <!-- Controles do Gráfico -->
           <div class="btn-grupo">
             <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
             <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
-            <button id="btn-pausado" class="btn" onclick="setChartMode('pausado')">Pausar Gráfico</button>
+            <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
             <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>
             <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
           </div>
         </div>
         
+        <!-- O bloco de atalhos embutido foi removido daqui -->
+        
         <div id="grafico" class="ct-chart"></div>
       </div>
-  </div>
-  <div id="abaTabela" class="tabcontent">
-    <div class="tabela-container">
-      <table id="tabela">
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Tempo ESP (s)</th>
-            <th>Newtons (N)</th>
-            <th>Grama-força (gf)</th>
-            <th>Quilo-força (kgf)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-  <div id="abaControles" class="tabcontent">
-    <section>
-      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Parâmetros da Balança</h2>
-      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Estes são os valores
-        atuais em uso.</p>
-      <div class="grid-container" style="gap: 1rem;">
-        <div><label for="param-conversao">Fator de Conversão</label><input id="param-conversao" type="number"
-            step="any"></div>
-        <div><label for="param-gravidade">Gravidade (m/s²)</label><input id="param-gravidade" type="number" step="any">
-        </div>
-        <div><label for="param-offset">Offset de Tara Salvo</label><input id="param-offset"
-            style="padding: 0.5rem 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.375rem;" readonly></input>
+      <div id="abaTabela" class="tabcontent">
+        <div class="tabela-container">
+          <table id="tabela">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Tempo ESP (s)</th>
+                <th>Newtons (N)</th>
+                <th>Grama-força (gf)</th>
+                <th>Quilo-força (kgf)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
-      <h3 style="font-size: 1.125rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem;">Parâmetros de
-        Estabilização</h3>
-      <div class="grid-container" style="gap: 1rem;">
-        <div><label for="param-leituras-estaveis">Leituras Estáveis</label><input id="param-leituras-estaveis"
-            type="number"></div>
-        <div>
-          <label for="param-tolerancia">Tolerância de Estabilidade</label>
-          <input id="param-tolerancia" type="number" step="any" oninput="atualizarToleranciaEmGramas()">  
-          <small id="tolerancia-em-gramas" style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 0.00 g</small>
-          <small style="color: var(--cor-aviso); display: block; margin-top: 0.25rem;">
-            ⚠️ Se a balança não estabiliza, aumente este valor!
-          </small>
+      <div id="abaControles" class="tabcontent">
+        <section>
+          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Parâmetros da Balança</h2>
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Estes são os valores
+            atuais em uso.</p>
+          <div class="grid-container" style="gap: 1rem;">
+            <div><label for="param-conversao">Fator de Conversão</label><input id="param-conversao" type="number"
+                step="any"></div>
+            <div><label for="param-gravidade">Gravidade (m/s²)</label><input id="param-gravidade" type="number"
+                step="any">
+            </div>
+            <div><label for="param-offset">Offset de Tara Salvo</label><input id="param-offset"
+                style="padding: 0.5rem 0.75rem; background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                readonly></input>
+            </div>
+          </div>
+          <h3 style="font-size: 1.125rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem;">Parâmetros de
+            Estabilização</h3>
+          <div class="grid-container" style="gap: 1rem;">
+            <div><label for="param-leituras-estaveis">Leituras Estáveis</label><input id="param-leituras-estaveis"
+                type="number"></div>
+            <div>
+              <label for="param-tolerancia">Tolerância de Estabilidade</label>
+              <input id="param-tolerancia" type="number" step="any" oninput="atualizarToleranciaEmGramas()">
+              <small id="tolerancia-em-gramas"
+                style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 0.00 g</small>
+              <small style="color: var(--cor-aviso); display: block; margin-top: 0.25rem;">
+                ⚠️ Se a balança não estabiliza, aumente este valor!
+              </small>
+            </div>
+            <div><label for="param-num-amostras">Nº Amostras para Média</label><input id="param-num-amostras"
+                type="number">
+            </div>
+            <div><label for="param-timeout">Timeout de Calibração (ms)</label><input id="param-timeout" type="number">
+            </div>
+          </div>
+          <button onclick="salvarParametros()" class="btn btn-sucesso" style="margin-top: 1.5rem;">Salvar Todos os
+            Parâmetros</button>
+        </section>
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--cor-borda);">
+          <div class="grid-container">
+            <div>
+              <h3>Comando de Tara (<kbd>Shift+T</kbd>)</h3>
+              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Zera a balança.
+                Use com o prato vazio.</p><button onclick="tare()" class="btn btn-primario">Zerar (Tara)</button>
+            </div>
+            <div>
+              <h3>Calibração (<kbd>Shift+C</kbd>)</h3>
+              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Coloque um peso
+                de
+                massa conhecida (em gramas) e digite o valor.</p>
+              <div style="display: flex; align-items: center; gap: 0.5rem;"><input id="massaCalibracao" type="number"
+                  step="any" placeholder="Massa em gramas" style="width: 12rem;"><button onclick="calibrar()"
+                  class="btn btn-aviso">Calibrar</button></div>
+            </div>
+          </div>
         </div>
-        <div><label for="param-num-amostras">Nº Amostras para Média</label><input id="param-num-amostras" type="number">
-        </div>
-        <div><label for="param-timeout">Timeout de Calibração (ms)</label><input id="param-timeout" type="number"></div>
       </div>
-      <button onclick="salvarParametros()" class="btn btn-sucesso" style="margin-top: 1.5rem;">Salvar Todos os
-        Parâmetros</button>
-    </section>
-    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--cor-borda);">
-      <div class="grid-container">
-        <div>
-          <h3>Comando de Tara</h3>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Zera a balança.
-            Use com o prato vazio.</p><button onclick="tare()" class="btn btn-primario">Zerar (Tara)</button>
-        </div>
-        <div>
-          <h3>Calibração</h3>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Coloque um peso de
-            massa conhecida (em gramas) e digite o valor.</p>
-          <div style="display: flex; align-items: center; gap: 0.5rem;"><input id="massaCalibracao" type="number"
-              step="any" placeholder="Massa em gramas" style="width: 12rem;"><button onclick="calibrar()"
-              class="btn btn-aviso">Calibrar</button></div>
-        </div>
+      <div id="abaGravacoes" class="tabcontent">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
+        <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas
+          apenas neste navegador.</p>
+        <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
       </div>
-    </div>
-  </div>
-  <div id="abaGravacoes" class="tabcontent">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
-    <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas
-      apenas neste navegador.</p>
-    <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-  </div>
-  <div id="abaConfig" class="tabcontent">
-    <section>
-      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>
-      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Configure a rede Wi-Fi
-        para conectar a balança.</p>
-      <div id="status-rede" style="margin-bottom: 1rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.375rem; background-color: #f9fafb;">
-        <p style="margin: 0; font-weight: 600;">Status da Rede:</p>
-        <p id="status-rede-texto" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          Conectando...</p>
-        <p id="status-rede-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          IP: <span id="ip-rede">---</span></p>
-        <p id="status-rede-ap" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          AP Ativo: <span id="ap-ativo">---</span></p>
-        <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          IP do AP: <span id="ap-ip">---</span></p>
-        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
-        </p>
+      <div id="abaConfig" class="tabcontent">
+        <section>
+          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Configure a rede Wi-Fi
+            para conectar a balança.</p>
+          <div id="status-rede"
+            style="margin-bottom: 1rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.375rem; background-color: #f9fafb;">
+            <p style="margin: 0; font-weight: 600;">Status da Rede:</p>
+            <p id="status-rede-texto" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              Conectando...</p>
+            <p id="status-rede-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              IP: <span id="ip-rede">---</span></p>
+            <p id="status-rede-ap" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              AP Ativo: <span id="ap-ativo">---</span></p>
+            <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              IP do AP: <span id="ap-ip">---</span></p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
+            </p>
+          </div>
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a
+            senha
+            da rede Wi-Fi que deseja conectar.</p>
+          <form onsubmit="salvarRede(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div><label for="ssid">Nome da Rede (SSID)</label><input id="ssid" required style="max-width: 320px;"></div>
+            <div><label for="senha">Senha</label><input id="senha" type="text" style="max-width: 320px;"></div>
+            <button type="submit" class="btn"
+              style="background-color: #8b5cf6; color: white; align-self: flex-start;">Salvar Rede e
+              Reiniciar</button>
+          </form>
+        </section>
       </div>
-      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a senha
-        da rede Wi-Fi que deseja conectar.</p>
-      <form onsubmit="salvarRede(event)" style="display: flex; flex-direction: column; gap: 1rem;">
-        <div><label for="ssid">Nome da Rede (SSID)</label><input id="ssid" required style="max-width: 320px;"></div>
-        <div><label for="senha">Senha</label><input id="senha" type="text" style="max-width: 320px;"></div>
-        <button type="submit" class="btn"
-          style="background-color: #8b5cf6; color: white; align-self: flex-start;">Salvar Rede e Reiniciar</button>
-      </form>
-    </section>
-  </div>
-  <div id="notification-area"></div>
-  </main>
+      <div id="notification-area"></div>
+    </main>
+    
+    <!-- NOVO: Rodapé fixo para Atalhos -->
+    <footer id="footer-atalhos">
+        <span style="font-weight: bold;">⚡ ATALHOS:</span>
+        <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
+        <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>
+        <span>Análise Ruído: <kbd>Shift</kbd>+<kbd>A</kbd></span>
+        <span style="margin-left: 10px; opacity: 0.8;">|</span>
+        <span>Pausar Gráfico: <kbd>P</kbd></span>
+        <span>Limpar Gráfico: <kbd>L</kbd></span>
+    </footer>
 
   </div>
 

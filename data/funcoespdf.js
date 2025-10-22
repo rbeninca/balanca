@@ -20,7 +20,9 @@ function exportarPDFViaPrint(sessionId) {
     
     // Processa dados
     const dados = processarDadosSimples(sessao.dadosTabela);
+    // Assumimos que calcularAreaSobCurva retorna o Impulso Total (área sob a curva)
     const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
+    // Assumimos que calcularMetricasPropulsao lida com a classificação NAR/TRA
     const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
     
     // Gera o gráfico em canvas e converte para imagem
@@ -328,6 +330,10 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
   const dataSessao = new Date(sessao.timestamp).toLocaleString('pt-BR');
   const classificacao = metricasPropulsao.classificacaoMotor;
   
+  // 1. Encontra a força máxima para normalização (usada no gradiente da tabela)
+  const newtonsValues = sessao.dadosTabela.map(dado => parseFloat(dado.newtons) || 0);
+  const maxNewtons = Math.max(...newtonsValues) || 1;
+  
   // Gera linhas da tabela com TODOS os dados
   let linhasTabela = '';
   sessao.dadosTabela.forEach((dado, index) => {
@@ -336,8 +342,22 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
     const gramaForca = parseFloat(dado.grama_forca) || 0;
     const quiloForca = parseFloat(dado.quilo_forca) || 0;
     
+    // 2. Normaliza o valor de Força N em relação ao máximo
+    const normalizedForce = Math.max(0, newtons) / maxNewtons; 
+    
+    // 3. Cria o estilo de fundo com opacidade crescente (laranja suave)
+    let rowStyle = '';
+    if (newtons > 0.05) { // Aplica destaque apenas para empuxo significativo
+        const maxOpacity = 0.5; 
+        // Opacidade mínima 0.1 para forçar o gradiente a ser visível, máxima 0.5 para não ofuscar o texto
+        const opacity = Math.min(maxOpacity, Math.max(0.1, normalizedForce * 0.5)); 
+        
+        // Cor de destaque (laranja muito suave - 255, 165, 0)
+        rowStyle = `background: rgba(255, 165, 0, ${opacity.toFixed(2)}) !important;`; 
+    }
+
     linhasTabela += `
-      <tr>
+      <tr style="${rowStyle}">
         <td>${index + 1}</td>
         <td>${tempo.toFixed(3)}</td>
         <td>${newtons.toFixed(4)}</td>
@@ -507,12 +527,14 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
       font-size: 10px;
     }
     
+    /* Regras de cor de fundo alternadas */
     tr:nth-child(even) {
       background: #f8f9fa;
     }
     
+    /* A cor inline do gradiente vai sobrescrever estas regras */
     tr:hover {
-      background: #e9ecef;
+      background: #e9ecef !important; /* Mantém o hover */
     }
     
     .footer {
@@ -650,16 +672,20 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
         <div class="valor">${impulsoData.tempoBurnout.toFixed(3)}</div>
         <div class="unidade">segundos</div>
       </div>
+      <!-- CORRIGIDO: Esta métrica foi removida/substituída pois não pode ser calculada sem dados de propelente -->
       <div class="metrica-card">
-        <h3>Eficiência da Queima</h3>
-        <div class="valor">${metricasPropulsao.eficienciaQueima.toFixed(1)}</div>
-        <div class="unidade">%</div>
+        <h3>Impulso Específico (Isp)</h3>
+        <div class="valor">N/A</div>
+        <div class="unidade">s*</div>
       </div>
       <div class="metrica-card">
         <h3>Impulso Líquido</h3>
         <div class="valor">${impulsoData.impulsoLiquido.toFixed(2)}</div>
         <div class="unidade">N⋅s</div>
       </div>
+    </div>
+    <div class="info-box">
+      <strong>* Impulso Específico e Eficiência da Queima:</strong> Para calcular essas métricas, é necessário inserir a massa do propelente queimado e o valor teórico do Impulso Específico Ideal (Isp Ideal) no sistema. Sem esses dados, a balança só pode calcular o Impulso Total (área sob a curva).
     </div>
   </div>
 
@@ -732,6 +758,50 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
       </tbody>
     </table>
   </div>
+  
+  <!-- EXPLICAÇÃO TÉCNICA (NOVA SEÇÃO) -->
+  <div class="page-break"></div>
+  <div class="secao">
+    <h2>📚 Explicação Técnica das Métricas</h2>
+    <table style="font-size: 11px;">
+      <tr>
+        <th style="width: 25%;">Métrica</th>
+        <th style="width: 40%;">Fórmula / Definição</th>
+        <th style="width: 35%;">Como é Obtida (Sistema GFIG)</th>
+      </tr>
+      <tr>
+        <td>Impulso Total</td>
+        <td>$$I = \int F(t) dt \quad (\text{N} \cdot \text{s})$$A área total sob a curva de força (empuxo) em relação ao tempo.</td>
+        <td>Calculado pela soma das áreas de trapézios formados entre pontos de leitura (Método da Integração Trapezoidal) da força em Newtons ao longo do tempo.</td>
+      </tr>
+      <tr>
+        <td>Força Máxima</td>
+        <td>$$F_{max} \quad (\text{N})$$O maior valor de empuxo registrado durante o teste.</td>
+        <td>Obtido diretamente ao encontrar o valor máximo na série de dados de Força (N) coletados.</td>
+      </tr>
+      <tr>
+        <td>Duração da Queima</td>
+        <td>$$\Delta t_{queima} = t_{burnout} - t_{ignição} \quad (\text{s})$$O intervalo de tempo entre o início e o fim da queima significativa.</td>
+        <td>Determinado automaticamente pela identificação do momento de Ignição (quando o empuxo ultrapassa um *threshold* de ruído) e o momento de Burnout (quando o empuxo cai abaixo desse *threshold*).</td>
+      </tr>
+      <tr>
+        <td>Força Média (Queima)</td>
+        <td>$$F_{média} = \frac{I}{\Delta t_{queima}} \quad (\text{N})$$A força constante que teria produzido o mesmo Impulso Total durante a Duração da Queima.</td>
+        <td>Calculada dividindo o Impulso Total medido pela Duração da Queima.</td>
+      </tr>
+      <tr>
+        <td>Impulso Líquido</td>
+        <td>$$I_{líquido} = I_{positivo} - |I_{negativo}| \quad (\text{N} \cdot \text{s})$$Impulso que realmente contribui para a propulsão.</td>
+        <td>Resultado da subtração do Impulso Negativo (área abaixo de zero, que representa o arrasto do motor ou erro de tara) do Impulso Positivo total.</td>
+      </tr>
+      <tr>
+        <td>Impulso Específico (Isp)</td>
+        <td>$$I_{sp} = \frac{I}{(\Delta m) g_0} \quad (\text{s})$$Métrica de eficiência do propelente. Requer a Massa Queimada ($\Delta m$).</td>
+        <td>**N/A** - Não pode ser calculado pelo sistema sem a inserção da massa do propelente queimada e do valor teórico de $I_{sp} \text{ Ideal}$.</td>
+      </tr>
+    </table>
+  </div>
+  <!-- FIM EXPLICAÇÃO TÉCNICA -->
 
   <!-- INFORMAÇÕES TÉCNICAS -->
   <div class="secao avoid-break">
