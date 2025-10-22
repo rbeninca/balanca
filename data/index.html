@@ -666,12 +666,23 @@
           </div>
         </div>
       </div>
-      <div id="abaGravacoes" class="tabcontent">
-        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
-        <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas
-          apenas neste navegador.</p>
-        <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-      </div>
+   <div id="abaGravacoes" class="tabcontent">
+    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
+    <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas apenas neste navegador.</p>
+    
+    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-borda); border-radius: 0.5rem;">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
+        <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
+            Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.
+        </p>
+        <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;">
+        <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;">
+        <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;">
+            Salvar Importação
+        </button>
+    </div>
+    <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+</div>
       <div id="abaConfig" class="tabcontent">
         <section>
           <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>

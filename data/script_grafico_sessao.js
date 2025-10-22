@@ -1085,3 +1085,147 @@ function testarCalculoImpulso() {
     console.log("❌ Teste falhou - Impulso fora da faixa");
   }
 }
+
+// ============================================
+// === FUNÇÕES DE IMPORTAÇÃO DE DADOS EXTERNOS ===
+// ============================================
+
+/**
+ * Inicia o processo de importação de um arquivo de texto.
+ */
+function importarGravacaoExterna() {
+    const fileInput = document.getElementById('importar-arquivo-motor');
+    const nomeInput = document.getElementById('nome-importacao');
+    const file = fileInput.files[0];
+    const nomeSessao = nomeInput.value.trim();
+
+    if (!file) {
+        showNotification('error', 'Selecione um arquivo de teste estático (.txt ou .log).');
+        return;
+    }
+
+    if (!nomeSessao) {
+        showNotification('error', 'Dê um nome para a sessão importada.');
+        nomeInput.focus();
+        return;
+    }
+    
+    showNotification('info', `Lendo arquivo "${file.name}"...`, 3000);
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const fileContent = e.target.result;
+        try {
+            const dadosProcessados = processarDadosExternos(fileContent);
+            salvarDadosImportados(nomeSessao, dadosProcessados);
+            
+            // Limpa o input após o sucesso
+            fileInput.value = '';
+            nomeInput.value = '';
+
+        } catch (error) {
+            showNotification('error', 'Erro ao processar arquivo: ' + error.message);
+            console.error('Erro ao processar dados externos:', error);
+        }
+    };
+
+    reader.onerror = function() {
+        showNotification('error', 'Erro ao ler o arquivo.');
+    };
+
+    reader.readAsText(file);
+}
+
+/**
+ * Faz o parse do conteúdo do arquivo de texto para extrair tempo e força.
+ * @param {string} content - Conteúdo textual do arquivo.
+ * @returns {Array<object>} Array de objetos de dados da sessão.
+ */
+function processarDadosExternos(content) {
+    const lines = content.split('\n');
+    const dadosLidos = [];
+    const gravity = 9.80665; // Assumindo gravidade padrão
+
+    // Regex para identificar linhas com dois números (tempo e força)
+    // Suporta notação científica (E+xx, E-xx) e pontos.
+    const dataRegex = /^\s*(\d+\.\d+e?[+-]?\d*)\s+(\d+\.\d+e?[+-]?\d*)\s*$/i;
+
+    let linhaInicial = 0;
+    let dadosEncontrados = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // Pula comentários ou linhas vazias no início
+        if (line.startsWith('#') || line.startsWith('//') || line.length === 0) {
+            continue;
+        }
+
+        // Verifica o cabeçalho e marca o início real dos dados
+        if (line.toLowerCase().includes('t [s]') && line.toLowerCase().includes('f [n]')) {
+            linhaInicial = i + 1; // Próxima linha é a primeira linha de dados
+            continue; 
+        }
+
+        // Tenta fazer o match com a regex para extrair os valores
+        const match = line.match(dataRegex);
+
+        if (match) {
+            const tempo = parseFloat(match[1]);
+            const newtons = parseFloat(match[2]);
+
+            if (!isNaN(tempo) && !isNaN(newtons)) {
+                dadosEncontrados = true;
+                const massaKg = gravity > 0 ? newtons / gravity : 0;
+                const g_force_conversion = 101.9716; // N para gf
+
+                dadosLidos.push({
+                    timestamp: new Date().toISOString(), // Usar a data atual ou inferir, mas melhor usar atual.
+                    tempo_esp: tempo.toFixed(6),
+                    newtons: newtons.toFixed(6),
+                    grama_forca: (newtons * g_force_conversion).toFixed(6),
+                    quilo_forca: (newtons * (g_force_conversion / 1000)).toFixed(6)
+                });
+            }
+        } else if (dadosEncontrados) {
+            // Se já encontramos dados e a linha atual não é um dado, paramos.
+            break;
+        }
+    }
+
+    if (dadosLidos.length === 0) {
+        throw new Error('Não foi possível extrair dados válidos de Tempo [s] e Força [N] do arquivo.');
+    }
+    
+    return dadosLidos;
+}
+
+/**
+ * Salva os dados processados no localStorage.
+ */
+function salvarDadosImportados(nomeSessao, dadosTabela) {
+    const gravacao = {
+        id: Date.now(),
+        nome: nomeSessao,
+        timestamp: new Date().toISOString(),
+        dadosTabela: dadosTabela
+    };
+
+    try {
+        let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+        gravacoes.push(gravacao);
+        localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+        showNotification('success', `Sessão "${nomeSessao}" importada e salva com sucesso!`);
+        
+        // Recarrega a lista para mostrar a nova gravação
+        carregarGravacoesComImpulso(); 
+        
+    } catch (e) {
+        showNotification('error', 'Erro ao salvar. O Local Storage pode estar cheio.');
+        console.error("Erro ao salvar no LocalStorage:", e);
+    }
+}
+
+// Nota: A função 'carregarGravacoesComImpulso' já existe no script.js e script_grafico_sessao.js e será chamada
+// para atualizar a lista de gravações na UI após a importação.
