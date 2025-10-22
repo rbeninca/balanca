@@ -304,4 +304,3 @@ Campus Gaspar - IFC
 
 **Versão**: 2.0 (Outubro 2024)
 **Última atualização**: 22/10/2025
-**Autores**: Equipe GFIG
