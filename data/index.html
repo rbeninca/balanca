@@ -34,7 +34,8 @@
       color: var(--cor-texto);
       line-height: 1.5;
       transition: background-color 0.5s ease;
-      padding-bottom: 50px; /* Adiciona padding para o rodapé fixo */
+      padding-bottom: 50px;
+      /* Adiciona padding para o rodapé fixo */
     }
 
     /* NOVA: Indicação visual de desconexão */
@@ -92,7 +93,9 @@
     }
 
     @keyframes pulse-disconnect {
-      0%, 100% {
+
+      0%,
+      100% {
         opacity: 1;
       }
 
@@ -442,12 +445,15 @@
     }
 
     /* CORRIGIDO: Labels do eixo X ficam dentro da área do gráfico */
- .ct-label.ct-horizontal {
-      font-size: 0.65rem; /* Reduz ligeiramente a fonte */
-      transform: translateY(5px); /* Move a label ligeiramente para baixo para descolar da linha */
-      white-space: nowrap; /* Evita quebra de linha */
-      overflow: hidden; 
-      text-overflow: ellipsis; 
+    .ct-label.ct-horizontal {
+      font-size: 0.65rem;
+      /* Reduz ligeiramente a fonte */
+      transform: translateY(5px);
+      /* Move a label ligeiramente para baixo para descolar da linha */
+      white-space: nowrap;
+      /* Evita quebra de linha */
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* NOVO: Controle de avisos sonoros */
@@ -478,15 +484,17 @@
         height: 300px !important;
       }
     }
-    
+
     /* NOVO: Estilos do Rodapé de Atalhos */
     #footer-atalhos {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
-      background-color: #2c3e50; /* Cor escura para contraste */
-      color: #ecf0f1; /* Texto claro */
+      background-color: #2c3e50;
+      /* Cor escura para contraste */
+      color: #ecf0f1;
+      /* Texto claro */
       padding: 8px 15px;
       font-size: 0.75rem;
       display: flex;
@@ -499,14 +507,14 @@
     }
 
     #footer-atalhos kbd {
-        background-color: #34495e;
-        color: #fff;
-        padding: 2px 5px;
-        border-radius: 3px;
-        border: 1px solid #7f8c8d;
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px #34495e inset;
-        font-family: monospace;
-        font-size: 0.8em;
+      background-color: #34495e;
+      color: #fff;
+      padding: 2px 5px;
+      border-radius: 3px;
+      border: 1px solid #7f8c8d;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px #34495e inset;
+      font-family: monospace;
+      font-size: 0.8em;
     }
   </style>
 </head>
@@ -587,9 +595,9 @@
             <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
           </div>
         </div>
-        
+
         <!-- O bloco de atalhos embutido foi removido daqui -->
-        
+
         <div id="grafico" class="ct-chart"></div>
       </div>
       <div id="abaTabela" class="tabcontent">
@@ -651,12 +659,14 @@
           <div class="grid-container">
             <div>
               <h3>Comando de Tara (<kbd>Shift+T</kbd>)</h3>
-              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Zera a balança.
+              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Zera a
+                balança.
                 Use com o prato vazio.</p><button onclick="tare()" class="btn btn-primario">Zerar (Tara)</button>
             </div>
             <div>
               <h3>Calibração (<kbd>Shift+C</kbd>)</h3>
-              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Coloque um peso
+              <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">Coloque um
+                peso
                 de
                 massa conhecida (em gramas) e digite o valor.</p>
               <div style="display: flex; align-items: center; gap: 0.5rem;"><input id="massaCalibracao" type="number"
@@ -666,68 +676,98 @@
           </div>
         </div>
       </div>
-   <div id="abaGravacoes" class="tabcontent">
-    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
-    <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas apenas neste navegador.</p>
-    
-    <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px dashed var(--cor-borda); border-radius: 0.5rem;">
-        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
-        <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
-            Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.
-        </p>
-        <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;">
-        <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;">
-        <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;">
-            Salvar Importação
-        </button>
-    </div>
-    <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-</div>
-      <div id="abaConfig" class="tabcontent">
-        <section>
-          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Configure a rede Wi-Fi
-            para conectar a balança.</p>
-          <div id="status-rede"
-            style="margin-bottom: 1rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.375rem; background-color: #f9fafb;">
-            <p style="margin: 0; font-weight: 600;">Status da Rede:</p>
-            <p id="status-rede-texto" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-              Conectando...</p>
-            <p id="status-rede-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-              IP: <span id="ip-rede">---</span></p>
-            <p id="status-rede-ap" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-              AP Ativo: <span id="ap-ativo">---</span></p>
-            <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-              IP do AP: <span id="ap-ip">---</span></p>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-              <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
-            </p>
+      <div id="abaGravacoes" class="tabcontent">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
+        <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas
+          apenas neste navegador.</p>
+
+        <div style="padding: 1rem; border: 1px dashed var(--cor-borda); border-radius: 0.5rem; margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px;">⚙️ Metadados do Motor (para .ENG)</h3>
+          <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 10px;">
+            Preencha para exportar o arquivo .ENG compatível com simuladores. *O Delay é geralmente 0s*.
+          </p>
+
+          <div class="grid-container"
+            style="gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 1rem;">
+            <div><label for="eng-name">Nome do Motor (Ex: NFB_20)</label><input id="eng-name" type="text" value="">
+            </div>
+            <div><label for="eng-diameter">Diâmetro (mm)</label><input id="eng-diameter" type="number" step="0.1"
+                value="45"></div>
+            <div><label for="eng-length">Comprimento (mm)</label><input id="eng-length" type="number" step="1"
+                value="200"></div>
+            <div><label for="eng-delay">Delay (s)</label><input id="eng-delay" type="number" step="0.1" value="0"></div>
+            <div><label for="eng-propweight">Peso Propelente (kg)</label><input id="eng-propweight" type="number"
+                step="0.001" value="0.100"></div>
+            <div><label for="eng-totalweight">Peso Total (kg)</label><input id="eng-totalweight" type="number"
+                step="0.001" value="0.250"></div>
+            <div><label for="eng-manufacturer">Fabricante</label><input id="eng-manufacturer" type="text"
+                value="GFIG-IFC"></div>
           </div>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a
-            senha
-            da rede Wi-Fi que deseja conectar.</p>
-          <form onsubmit="salvarRede(event)" style="display: flex; flex-direction: column; gap: 1rem;">
-            <div><label for="ssid">Nome da Rede (SSID)</label><input id="ssid" required style="max-width: 320px;"></div>
-            <div><label for="senha">Senha</label><input id="senha" type="text" style="max-width: 320px;"></div>
-            <button type="submit" class="btn"
-              style="background-color: #8b5cf6; color: white; align-self: flex-start;">Salvar Rede e
-              Reiniciar</button>
-          </form>
-        </section>
+
+          <div id="metadados-salvar-container" style="margin-top: 10px; display: flex; gap: 10px;">
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--cor-borda); margin: 10px 0;">
+
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
+          <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
+            Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.
+          </p>
+          <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;">
+          <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;">
+          <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;">
+            Salvar Importação
+          </button>
+        </div>
+        <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
       </div>
-      <div id="notification-area"></div>
-    </main>
-    
-    <!-- NOVO: Rodapé fixo para Atalhos -->
-    <footer id="footer-atalhos">
-        <span style="font-weight: bold;">⚡ ATALHOS:</span>
-        <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
-        <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>
-        <span>Análise Ruído: <kbd>Shift</kbd>+<kbd>A</kbd></span>
-        <span style="margin-left: 10px; opacity: 0.8;">|</span>
-        <span>Pausar Gráfico: <kbd>P</kbd></span>
-        <span>Limpar Gráfico: <kbd>L</kbd></span>
-    </footer>
+      <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+  </div>
+  <div id="abaConfig" class="tabcontent">
+    <section>
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>
+      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Configure a rede
+        Wi-Fi
+        para conectar a balança.</p>
+      <div id="status-rede"
+        style="margin-bottom: 1rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.375rem; background-color: #f9fafb;">
+        <p style="margin: 0; font-weight: 600;">Status da Rede:</p>
+        <p id="status-rede-texto" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          Conectando...</p>
+        <p id="status-rede-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          IP: <span id="ip-rede">---</span></p>
+        <p id="status-rede-ap" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          AP Ativo: <span id="ap-ativo">---</span></p>
+        <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          IP do AP: <span id="ap-ip">---</span></p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
+        </p>
+      </div>
+      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a
+        senha
+        da rede Wi-Fi que deseja conectar.</p>
+      <form onsubmit="salvarRede(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div><label for="ssid">Nome da Rede (SSID)</label><input id="ssid" required style="max-width: 320px;"></div>
+        <div><label for="senha">Senha</label><input id="senha" type="text" style="max-width: 320px;"></div>
+        <button type="submit" class="btn"
+          style="background-color: #8b5cf6; color: white; align-self: flex-start;">Salvar Rede e
+          Reiniciar</button>
+      </form>
+    </section>
+  </div>
+  <div id="notification-area"></div>
+  </main>
+
+  <!-- NOVO: Rodapé fixo para Atalhos -->
+  <footer id="footer-atalhos">
+    <span style="font-weight: bold;">⚡ ATALHOS:</span>
+    <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
+    <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>
+    <span>Análise Ruído: <kbd>Shift</kbd>+<kbd>A</kbd></span>
+    <span style="margin-left: 10px; opacity: 0.8;">|</span>
+    <span>Pausar Gráfico: <kbd>P</kbd></span>
+    <span>Limpar Gráfico: <kbd>L</kbd></span>
+  </footer>
 
   </div>
 

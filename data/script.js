@@ -1131,6 +1131,8 @@ function encerrarSessao() {
     document.getElementById('btn-encerrar-sessao').disabled = true;
 }
 
+// Localizado em script.js
+
 function salvarDadosDaSessao(nome, tabela) {
     const dadosTabela = [];
     for (const linha of tabela.rows) {
@@ -1142,11 +1144,25 @@ function salvarDadosDaSessao(nome, tabela) {
             quilo_forca: linha.cells[4].innerText
         });
     }
+
+    // --- NOVO: Coleta dos Metadados do Motor ---
+    const metadadosMotor = {
+        name: document.getElementById('eng-name').value.trim() || nome.replace(/[^a-zA-Z0-9_]/g, '_'),
+        diameter: parseFloat(document.getElementById('eng-diameter').value) || 45,
+        length: parseFloat(document.getElementById('eng-length').value) || 200,
+        delay: parseFloat(document.getElementById('eng-delay').value) || 0,
+        propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
+        totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
+        manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC'
+    };
+    // ------------------------------------------
+
     const gravacao = {
         id: Date.now(),
         nome: nome,
         timestamp: new Date().toISOString(),
-        dadosTabela: dadosTabela.reverse()
+        dadosTabela: dadosTabela.reverse(),
+        metadadosMotor: metadadosMotor // <--- NOVO CAMPO
     };
     try {
         let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
@@ -1383,70 +1399,14 @@ function salvarRede(event) {
     .then(text => showNotification("success", text))
     .catch(err => showNotification("error", "Falha ao salvar a rede: " + err));
 }
+// Localizado em script_grafico_sessao.js
 
-function carregarGravacoesComImpulso() {
-  const container = document.getElementById('lista-gravacoes');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  
-  if (gravacoes.length === 0) {
-    container.innerHTML = '<p style="color: var(--cor-texto-secundario);">Nenhuma gravação encontrada.</p>';
-    return;
-  }
-  
-  gravacoes.sort((a, b) => b.id - a.id);
-  
-  gravacoes.forEach(gravacao => {
-    const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
-    const card = document.createElement('div');
-    card.className = 'card-gravacao';
-    card.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 10px;
-    `;
-    
-    card.innerHTML = `
-      <div>
-        <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome}</p> 
-        <p style="font-size: 0.875rem; color: #7f8c8d;">
-          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras
-        </p>
-      </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button onclick="exportarPDFViaPrint(${gravacao.id})" 
-                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          📑 PDF
-        </button>
-        <button onclick="exportarCSV(${gravacao.id})" 
-                style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          📄 CSV
-        </button>
-        <button onclick="exportarImagemSessao(${gravacao.id})" 
-                style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🖼️ PNG
-        </button>
-        <button onclick="visualizarSessao(${gravacao.id})" 
-                style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          👁️ Ver
-        </button>
-        <button onclick="deletarGravacao(${gravacao.id})" 
-                style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🗑️ Del
-        </button>
-      </div>
-    `;
-    
-    container.appendChild(card);
-  });
-}
+/**
+ * Carrega e exibe as gravações salvas no localStorage na aba "Gravações".
+ * Calcula e exibe o impulso total e classifica o motor.
+ */// Localizado em script.js (versão simplificada)
+
+
 
 function exportarCSV(id) {
   const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
@@ -1828,123 +1788,174 @@ function verificarStatusEstabilizacao(status) {
   
   ultimoStatusEstabilizacao = !problemaEstabilizacao;
 }
+// Localizado em script_grafico_sessao.js
 
+/**
+ * Carrega e exibe as gravações salvas no localStorage na aba "Gravações".
+ * Calcula e exibe o impulso total e classifica o motor.
+ */
 function carregarGravacoesComImpulso() {
-  const container = document.getElementById('lista-gravacoes');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  
-  if (gravacoes.length === 0) {
-    container.innerHTML = '<p style="color: var(--cor-texto-secundario);">Nenhuma gravação encontrada.</p>';
-    return;
-  }
-  
-  gravacoes.sort((a, b) => b.id - a.id);
-  
-  gravacoes.forEach(gravacao => {
-    const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
-    const card = document.createElement('div');
-    card.className = 'card-gravacao';
-    card.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 10px;
-    `;
+    const container = document.getElementById('lista-gravacoes');
+    if (!container) return;
     
-    card.innerHTML = `
-      <div>
-        <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome}</p> 
-        <p style="font-size: 0.875rem; color: #7f8c8d;">
-          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras
-        </p>
-      </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button onclick="exportarPDFViaPrint(${gravacao.id})" 
-                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          📑 PDF
-        </button>
-        <button onclick="exportarCSV(${gravacao.id})" 
-                style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          📄 CSV
-        </button>
-        <button onclick="exportarImagemSessao(${gravacao.id})" 
-                style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🖼️ PNG
-        </button>
-        <button onclick="visualizarSessao(${gravacao.id})" 
-                style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          👁️ Ver
-        </button>
-        <button onclick="deletarGravacao(${gravacao.id})" 
-                style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🗑️ Del
-        </button>
-      </div>
-    `;
+    container.innerHTML = '';
+    const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
     
-    container.appendChild(card);
-  });
+    if (gravacoes.length === 0) {
+        container.innerHTML = '<p style="color: var(--cor-texto-secundario);">Nenhuma gravação encontrada.</p>';
+        return;
+    }
+    
+    // Ordena pela data/id mais recente primeiro
+    gravacoes.sort((a, b) => b.id - a.id);
+    
+    gravacoes.forEach(gravacao => {
+        const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
+        
+        let classe = '...';
+        let impulso = '---';
+        let corClasse = 'var(--cor-texto-secundario)'; 
+
+        // Tenta obter informações de impulso/classe (as funções estão neste arquivo)
+        try {
+            const dados = processarDadosSimples(gravacao.dadosTabela);
+            const impulsoData = dados.impulso;
+            const metricasPropulsao = dados.propulsao;
+            
+            impulso = impulsoData.impulsoTotal.toFixed(2);
+            classe = metricasPropulsao.classificacaoMotor.classe;
+            corClasse = metricasPropulsao.classificacaoMotor.cor || 'var(--cor-primaria)';
+            
+        } catch (e) {
+            // Se as funções de cálculo falharem, exibe os placeholders
+            console.warn("Erro ao calcular impulso/classe para a sessão:", gravacao.nome, e);
+        }
+
+        const card = document.createElement('div');
+        card.className = 'card-gravacao';
+        card.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        `;
+        
+        card.innerHTML = `
+            <div>
+                <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} 
+                    <span style="font-size: 0.75rem; background: ${corClasse}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">
+                        CLASSE ${classe}
+                    </span>
+                </p> 
+                <p style="font-size: 0.875rem; color: #7f8c8d;">
+                    ${dataFormatada} • Impulso Total: ${impulso} N⋅s
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button onclick="abrirEdicaoMetadados(${gravacao.id})" 
+                        title="Editar Metadados do Motor (Diâmetro, Peso, etc.)"
+                        style="background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                    🛠️ Edit Meta
+                </button>
+                <button onclick="exportarMotorENG(${gravacao.id})" 
+                        title="Exportar Curva de Empuxo para OpenRocket/RASAero"
+                        style="background: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                    🚀 ENG
+                </button>
+                <button onclick="exportarPDFViaPrint(${gravacao.id})" 
+                        style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    📑 PDF
+                </button>
+                <button onclick="exportarCSV(${gravacao.id})" 
+                        style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    📄 CSV
+                </button>
+                <button onclick="exportarImagemSessao(${gravacao.id})" 
+                        style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    🖼️ PNG
+                </button>
+                <button onclick="visualizarSessao(${gravacao.id})" 
+                        style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    👁️ Ver
+                </button>
+                <button onclick="deletarGravacao(${gravacao.id})" 
+                        style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    🗑️ Del
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
 }
 
+/**
+ * Carrega e exibe os dados de uma sessão de teste salva no localStorage.
+ * Esta função também carrega os metadados do motor associados à sessão
+ * nos campos da UI na aba "Gravações".
+ * * @param {number} sessionId - ID da sessão a ser carregada.
+ */
 function visualizarSessao(sessionId) {
-  try {
-    const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-    const sessao = gravacoes.find(g => g.id === sessionId);
-    
-    if (!sessao) {
-      showNotification('error', 'Sessão não encontrada');
-      return;
+    try {
+        const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+        const sessao = gravacoes.find(g => g.id === sessionId);
+        
+        if (!sessao) {
+            showNotification('error', 'Sessão não encontrada');
+            return;
+        }
+
+        // 1. Resetar o estado da sessão em tempo real
+        isSessionActive = false;
+        
+        // 2. Preparar os dados para o gráfico
+        // Assume que a sessão.dadosTabela armazena {tempo_esp, newtons, ...}
+        const labels = sessao.dadosTabela.map(dado => parseFloat(dado.tempo_esp));
+        const seriesData = sessao.dadosTabela.map(dado => {
+            const newtons = parseFloat(dado.newtons);
+            maxForceInN = Math.max(maxForceInN, newtons);
+            minForceInN = Math.min(minForceInN, newtons);
+            return newtons;
+        });
+
+        // Atualiza as variáveis globais de dados
+        chartData.labels = labels;
+        chartData.series = [seriesData];
+        rawDataN = seriesData; // Utilizado para funções de análise (CSV, PDF, ENG)
+
+        // 3. Carregar Metadados do Motor na UI
+        const meta = sessao.metadadosMotor || {};
+
+        // Preenche os campos de metadados na aba "Gravações"
+        // Usa valores da sessão.metadadosMotor, ou um fallback se for uma sessão antiga.
+        document.getElementById('eng-name').value = meta.name || sessao.nome.replace(/[^a-zA-Z0-9_]/g, '_');
+        document.getElementById('eng-diameter').value = meta.diameter || 45;
+        document.getElementById('eng-length').value = meta.length || 200;
+        document.getElementById('eng-delay').value = meta.delay || 0;
+        document.getElementById('eng-propweight').value = meta.propweight || 0.1;
+        document.getElementById('eng-totalweight').value = meta.totalweight || 0.25;
+        document.getElementById('eng-manufacturer').value = meta.manufacturer || 'GFIG-IFC';
+        
+        // 4. Atualizar o Título do Gráfico
+        document.getElementById('graph-title').textContent = `Visualizando: ${sessao.nome}`;
+        
+        // 5. Atualizar o Gráfico
+        chart.update(chartData);
+        
+        // 6. Mudar para a aba de Gráfico
+        abrirAba(document.getElementById("padrao"), 'abaGrafico');
+        
+        // 7. Notificar sucesso
+        showNotification('success', `Sessão "${sessao.nome}" carregada! (Metadados .ENG prontos para exportação)`);
+        
+    } catch (e) {
+        console.error('Erro ao visualizar sessão:', e);
+        showNotification('error', 'Erro ao carregar sessão. Verifique o console para detalhes.');
     }
-    
-    clearChart();
-    
-    chartData.labels = [];
-    chartData.series = [[]];
-    rawDataN = [];
-    
-    sessao.dadosTabela.forEach(dado => {
-      const tempo = parseFloat(dado.tempo_esp) || 0;
-      const newtons = parseFloat(dado.newtons) || 0;
-      const displayForce = convertForce(newtons, displayUnit);
-      
-      chartData.labels.push(tempo.toFixed(1));
-      chartData.series[0].push(parseFloat(formatForce(displayForce, displayUnit)));
-      rawDataN.push(newtons);
-    });
-    
-    if (rawDataN.length > 0) {
-      maxForceInN = Math.max(...rawDataN);
-      minForceInN = Math.min(...rawDataN);
-      
-      const currentDisplayForce = convertForce(rawDataN[rawDataN.length - 1], displayUnit);
-      const maxDisplayForce = convertForce(maxForceInN, displayUnit);
-      const minDisplayForce = convertForce(minForceInN, displayUnit);
-      const avgForce = rawDataN.reduce((a, b) => a + b, 0) / rawDataN.length;
-      const avgDisplayForce = convertForce(avgForce, displayUnit);
-      
-      document.getElementById('forca-atual').textContent = `${formatForce(currentDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-maxima').textContent = `${formatForce(maxDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-minima').textContent = `mín: ${formatForce(minDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-ems').textContent = `${formatForce(avgDisplayForce, displayUnit)} ${displayUnit}`;
-    }
-    
-    chart.update(chartData);
-    
-    abrirAba(document.getElementById("padrao"), 'abaGrafico');
-    
-    showNotification('success', `Sessão "${sessao.nome}" carregada!`);
-    
-  } catch (e) {
-    console.error('Erro ao visualizar:', e);
-    showNotification('error', 'Erro ao carregar sessão');
-  }
 }
 
 // Stub para exportarImagemSessao se não existir
@@ -1991,4 +2002,140 @@ function setupKeyboardShortcuts() {
         }
     }
   });
+}
+/**
+ * Abre a aba de gravações e carrega os metadados de uma sessão específica 
+ * nos campos de input da UI para edição.
+ * @param {number} sessionId - ID da sessão a ser editada.
+ */
+function abrirEdicaoMetadados(sessionId) {
+    try {
+        const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+        const sessao = gravacoes.find(g => g.id === sessionId);
+
+        if (!sessao) {
+            showNotification('error', 'Sessão não encontrada');
+            return;
+        }
+
+        // 1. Carregar Metadados do Motor na UI (o mesmo que fazemos em visualizarSessao)
+        const meta = sessao.metadadosMotor || {};
+
+        document.getElementById('eng-name').value = meta.name || sessao.nome.replace(/[^a-zA-Z0-9_]/g, '_');
+        document.getElementById('eng-diameter').value = meta.diameter || 45;
+        document.getElementById('eng-length').value = meta.length || 200;
+        document.getElementById('eng-delay').value = meta.delay || 0;
+        document.getElementById('eng-propweight').value = meta.propweight || 0.1;
+        document.getElementById('eng-totalweight').value = meta.totalweight || 0.25;
+        document.getElementById('eng-manufacturer').value = meta.manufacturer || 'GFIG-IFC';
+
+        // Armazena o ID da sessão atualmente em edição nos inputs (usado por salvarMetadadosEditados)
+        document.getElementById('eng-name').setAttribute('data-editing-id', sessionId);
+
+        // 2. Muda para a aba de Gravações
+        abrirAba(document.getElementById("padrao"), 'abaGravacoes');
+        
+        // 3. Notificar o usuário
+        showNotification('info', `Metadados de "${sessao.nome}" carregados para edição.`, 5000);
+        
+        // 4. Cria e exibe o botão de salvar edição
+        exibirBotaoSalvarEdicao(sessionId);
+
+    } catch (e) {
+        console.error('Erro ao abrir edição:', e);
+        showNotification('error', 'Erro ao carregar dados para edição.');
+    }
+}
+
+/**
+ * Cria e insere um botão de "Salvar Edição" que só aparece quando um motor está sendo editado.
+ * @param {number} sessionId - ID da sessão atualmente em edição.
+ */
+function exibirBotaoSalvarEdicao(sessionId) {
+    let container = document.getElementById('metadados-salvar-container');
+    const inputName = document.getElementById('eng-name');
+    
+    // Se o container ainda não existe, cria-o no local ideal
+    if (!container) {
+        const parentDiv = inputName.closest('div').parentElement.parentElement;
+        container = document.createElement('div');
+        container.id = 'metadados-salvar-container';
+        container.style.cssText = 'margin-top: 10px; display: flex; gap: 10px;';
+        parentDiv.appendChild(container);
+    }
+    
+    // Limpa conteúdo anterior e adiciona o botão de salvar
+    container.innerHTML = `
+        <button onclick="salvarMetadadosEditados(${sessionId})" class="btn btn-sucesso">
+            ✅ Salvar Edição
+        </button>
+        <button onclick="cancelarEdicaoMetadados()" class="btn btn-secundario">
+            ❌ Cancelar
+        </button>
+    `;
+}
+
+/**
+ * Salva os metadados do motor que estão nos inputs de volta para o localStorage.
+ * @param {number} sessionId - ID da sessão que está sendo salva (lida do input hidden).
+ */
+function salvarMetadadosEditados(sessionId) {
+    try {
+        let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+        const index = gravacoes.findIndex(g => g.id === sessionId);
+
+        if (index === -1) {
+            showNotification('error', 'Sessão não encontrada no armazenamento local.');
+            return;
+        }
+
+        const nome = document.getElementById('eng-name').value.trim();
+        const diameter = parseFloat(document.getElementById('eng-diameter').value);
+        const length = parseFloat(document.getElementById('eng-length').value);
+        const delay = parseFloat(document.getElementById('eng-delay').value);
+        const propweight = parseFloat(document.getElementById('eng-propweight').value);
+        const totalweight = parseFloat(document.getElementById('eng-totalweight').value);
+        const manufacturer = document.getElementById('eng-manufacturer').value.trim();
+
+        // Cria o novo objeto de metadados
+        const novosMetadados = {
+            name: nome,
+            diameter,
+            length,
+            delay,
+            propweight,
+            totalweight,
+            manufacturer
+        };
+
+        // Atualiza a sessão
+        gravacoes[index].metadadosMotor = novosMetadados;
+        
+        // Opcional: Atualizar o nome da sessão se o nome do motor foi alterado
+        gravacoes[index].nome = nome; 
+
+        // Salva de volta no localStorage
+        localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+
+        showNotification('success', `Metadados do motor "${nome}" salvos com sucesso!`);
+        
+        cancelarEdicaoMetadados(); // Limpa e retorna ao estado normal
+        carregarGravacoesComImpulso(); // Recarrega a lista
+        
+    } catch (e) {
+        console.error('Erro ao salvar metadados editados:', e);
+        showNotification('error', 'Erro ao salvar edição: ' + e.message);
+    }
+}
+
+/**
+ * Cancela o modo de edição e remove o botão de salvar.
+ */
+function cancelarEdicaoMetadados() {
+    const container = document.getElementById('metadados-salvar-container');
+    if (container) {
+        container.innerHTML = ''; // Remove os botões Salvar e Cancelar
+    }
+    document.getElementById('eng-name').removeAttribute('data-editing-id');
+    showNotification('info', 'Edição cancelada ou concluída.', 2000);
 }

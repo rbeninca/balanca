@@ -942,33 +942,51 @@ function carregarGravacoes() {
       margin-bottom: 10px;
     `;
     
-    card.innerHTML = `
-      <div>
-        <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome}</p> 
-        <p style="font-size: 0.875rem; color: #7f8c8d;">
-          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras
-        </p>
-      </div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button onclick="exportarCSV(${gravacao.id})" 
-                style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          📄 CSV
-        </button>
-        <button onclick="exportarImagemSessao(${gravacao.id})" 
-                style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🖼️ PNG
-        </button>
-        <button onclick="visualizarSessao(${gravacao.id})" 
-                style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          👁️ Ver
-        </button>
-        <button onclick="deletarGravacao(${gravacao.id})" 
-                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-          🗑️ Del
-        </button>
-      </div>
-    `;
-    
+   card.innerHTML = `
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} <span style="font-size: 0.75rem; background: var(--cor-primaria); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${classe}</span></p> 
+                    <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
+                        ${dataFormatada} • Impulso Total: ${impulsoData.impulsoTotal.toFixed(2)} N⋅s
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="abrirEdicaoMetadados(${gravacao.id})" 
+                            title="Editar Metadados do Motor (Diâmetro, Peso, etc.)"
+                            style="background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      🛠️ Edit Meta
+                    </button>
+                    <button onclick="exportarMotorENG(${gravacao.id})" 
+                            title="Exportar Curva de Empuxo para OpenRocket/RASAero"
+                            style="background: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      🚀 ENG
+                    </button>
+                    <button onclick="exportarPDFViaPrint(${gravacao.id})" 
+                            title="Exportar Relatório PDF"
+                            style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      📑 PDF
+                    </button>
+                    <button onclick="exportarCSV(${gravacao.id})" 
+                            title="Exportar Dados em CSV"
+                            style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      📄 CSV
+                    </button>
+                    <button onclick="exportarImagemSessao(${gravacao.id})" 
+                            title="Exportar Gráfico em PNG"
+                            style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      🖼️ PNG
+                    </button>
+                    <button onclick="visualizarSessao(${gravacao.id})" 
+                            title="Carregar para Análise/Gráfico"
+                            style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      👁️ Ver
+                    </button>
+                    <button onclick="deletarGravacao(${gravacao.id})" 
+                            title="Deletar Sessão"
+                            style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                      🗑️ Del
+                    </button>
+                </div>
+            `;
     container.appendChild(card);
   });
 }
@@ -1227,5 +1245,96 @@ function salvarDadosImportados(nomeSessao, dadosTabela) {
     }
 }
 
-// Nota: A função 'carregarGravacoesComImpulso' já existe no script.js e script_grafico_sessao.js e será chamada
-// para atualizar a lista de gravações na UI após a importação.
+
+// ============================================
+// === EXPORTAÇÃO DE ARQUIVO .ENG (openRocket) ===
+// ============================================
+
+/**
+ * Exporta os dados da sessão no formato de arquivo .eng, compatível com simuladores.
+ * @param {number} sessionId - ID da sessão a ser exportada.
+ */
+// Localizado em script_grafico_sessao.js
+
+function exportarMotorENG(sessionId) {
+    try {
+        const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+        const sessao = gravacoes.find(g => g.id === sessionId);
+        
+        if (!sessao || !sessao.dadosTabela || sessao.dadosTabela.length === 0) {
+            showNotification('error', 'Sessão não encontrada ou sem dados');
+            return;
+        }
+
+        // 1. Prioriza os metadados SALVOS na sessão
+        const meta = sessao.metadadosMotor || {};
+
+        // Define valores finais, usando a UI como fallback se a sessão for antiga ou estiver incompleta
+        const nome = meta.name || document.getElementById('eng-name').value.trim() || sessao.nome.replace(/[^a-zA-Z0-9_]/g, '_');
+        const diametro = meta.diameter || parseFloat(document.getElementById('eng-diameter').value) || 45; // mm
+        const comprimento = meta.length || parseFloat(document.getElementById('eng-length').value) || 200; // mm
+        const delay = meta.delay || parseFloat(document.getElementById('eng-delay').value) || 0; // s
+        const propWeight = meta.propweight || parseFloat(document.getElementById('eng-propweight').value) || 0.1; // kg
+        const totalWeight = meta.totalweight || parseFloat(document.getElementById('eng-totalweight').value) || 0.25; // kg
+        const fabricante = meta.manufacturer || document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC';
+
+
+        if (!nome || isNaN(diametro) || isNaN(comprimento) || isNaN(propWeight) || isNaN(totalWeight)) {
+            showNotification('error', 'Os Metadados do Motor estão incompletos. Por favor, preencha os campos na aba Gravações e salve a sessão novamente ou edite o motor.');
+            return;
+        }
+
+        // 2. Constrói o cabeçalho no formato openRocket/RASAero
+        const cabecalho = 
+`
+; Arquivo de Curva de Empuxo (.eng) gerado pelo GFIG (Balança Wi-Fi)
+; Sessão de Teste: ${sessao.nome}
+; Data de Gravação: ${new Date(sessao.timestamp).toLocaleString('pt-BR')}
+;
+; Parâmetros do Motor (Requeridos pelo openRocket):
+; name diameter length delay propweight totalweight manufacturer
+${nome} ${diametro.toFixed(1)} ${comprimento.toFixed(0)} ${delay.toFixed(1)} ${propWeight.toFixed(5)} ${totalWeight.toFixed(5)} ${fabricante}
+;
+; Dados no formato: Tempo [s] Empuxo [N]
+`;
+
+        // 3. Converte dados para o formato Time [s] Force [N]
+        let dadosENG = '';
+        
+        // Remove os dados com força negativa para o arquivo .eng (openRocket/RASAero ignoram a maior parte do negativo)
+        // E remove também a última leitura (tempo burnout) para fechar o motor corretamente no 0 N.
+        const pontosFinais = sessao.dadosTabela.length - 1;
+
+        for (let i = 0; i < pontosFinais; i++) {
+            const dado = sessao.dadosTabela[i];
+            const tempo = parseFloat(dado.tempo_esp) || 0;
+            const newtons = parseFloat(dado.newtons) || 0;
+
+            // Arredonda para 3 casas decimais
+            dadosENG += ` ${tempo.toFixed(3)}\t${Math.max(0, newtons).toFixed(3)}\n`;
+        }
+        
+        // Adiciona o ponto final de burnout (tempo da última amostra com 0 N)
+        const ultimoDado = sessao.dadosTabela[pontosFinais];
+        if (ultimoDado) {
+            dadosENG += ` ${parseFloat(ultimoDado.tempo_esp).toFixed(3)}\t0.000\n`;
+        }
+
+        const conteudoENG = cabecalho + dadosENG;
+
+        // 4. Cria e baixa o arquivo
+        const blob = new Blob([conteudoENG], { type: 'text/plain;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `${nome}.eng`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showNotification('success', `Arquivo ${nome}.eng exportado com sucesso!`);
+
+    } catch (e) {
+        console.error('Erro ao exportar .ENG:', e);
+        showNotification('error', 'Erro ao exportar motor .ENG: ' + e.message);
+    }
+}
