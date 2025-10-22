@@ -1,0 +1,25 @@
+    <title>Configurar WiFi da Balança</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 20px auto; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+        label { display: block; margin-top: 10px; }
+        input { width: 95%; padding: 8px; margin-top: 5px; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Configurar Rede Wi-Fi</h1>
+    <p>Conecte a balança à sua rede local.</p>
+    
+    <form action="/salvarRede" method="post">
+        <div>
+            <label for="ssid">Nome da Rede (SSID):</label>
+            <input type="text" id="ssid" name="ssid" required>
+        </div>
+        <div>
+            <label for="senha">Senha da Rede:</label>
+            <input type="password" id="senha" name="senha">
+        </div>
+        <button type="submit">Salvar e Conectar</button>
+    </form>
+</body>
+</html>
