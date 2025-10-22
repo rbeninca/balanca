@@ -7,9 +7,10 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
-#include <LittleFS.h>
+#include <FS.h> // Incluído para compatibilidade com SPIFFS (Substitui LittleFS.h)
 #include <ArduinoJson.h>
 #include <Ticker.h>
+#include <ESP8266mDNS.h> // Incluído para mDNS
 
 // --- CONFIGURAÇÃO CORRETA DO DISPLAY ---
 #define SCREEN_WIDTH 128
@@ -61,6 +62,8 @@ unsigned long lastNetworkActivity = 0;
 bool wifiConnected = false;
 bool apActive = false;
 bool systemOperational = true; // SEMPRE VERDADEIRO - sistema nunca para
+const char* mDnsHostname = "gfig"; 
+bool mDnsActive = true;
 
 // --- CONTROLE DE REDE MAIS INTELIGENTE ---
 unsigned long wifiReconnectAttempts = 0;
@@ -101,6 +104,8 @@ void initializeServices();
 void attemptWiFiConnection();
 void handleWiFiStates();
 String getConnectionStatus();
+void startMDNS();
+
 
 // =======================================================
 // SETUP
@@ -118,6 +123,7 @@ void setup() {
 
   // Inicialização da EEPROM e SPIFFS
   EEPROM.begin(sizeof(Config));
+  // REVERTIDO PARA SPIFFS.begin()
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS falhou, continuando sem arquivos");
   }
@@ -166,6 +172,9 @@ void setup() {
     attemptWiFiConnection();
   }
 
+  // INICIA MDNS NO SETUP
+  startMDNS();
+
   // Sistema sempre fica operacional
   systemOperational = true;
   balancaStatus = "Pronta";
@@ -174,6 +183,9 @@ void setup() {
   Serial.println("=== SISTEMA OPERACIONAL ===");
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
+  Serial.print("Nome de Host mDNS: ");
+  Serial.print(mDnsHostname);
+  Serial.println(".local");
   Serial.println("Serviços ativos independente da conexão WiFi");
 }
 
@@ -190,6 +202,11 @@ void loop() {
   
   // Gerencia estados do WiFi (sem bloquear)
   handleWiFiStates();
+
+  // MDNS PRECISA SER EXECUTADO NO LOOP PARA MANTER-SE ATIVO
+  if (mDnsActive) {
+    MDNS.update();
+  }
   
   yield();
 
@@ -297,6 +314,22 @@ void initializeAP() {
   }
 }
 
+// NOVA FUNÇÃO PARA INICIAR MDNS
+void startMDNS() {
+  if (MDNS.begin(mDnsHostname)) {
+    Serial.printf("mDNS iniciado. Nome de host: %s.local\n", mDnsHostname);
+    // Adiciona o serviço HTTP (web server)
+    MDNS.addService("http", "tcp", 80);
+    // Adiciona o serviço WebSocket
+    MDNS.addService("ws", "tcp", 81);
+    mDnsActive = true;
+  } else {
+    Serial.println("Erro ao iniciar mDNS");
+    mDnsActive = false;
+  }
+}
+
+
 void initializeServices() {
   Serial.println("Inicializando serviços web...");
   
@@ -340,6 +373,7 @@ void initializeServices() {
     doc["websocket_clients"] = webSocket.connectedClients();
     doc["system_operational"] = systemOperational;
     doc["connection_status"] = getConnectionStatus();
+    doc["mdns_hostname"] = mDnsHostname; // Adiciona nome de host mDNS
     
     
     String output;
@@ -399,6 +433,12 @@ void handleWiFiStates() {
         Serial.print("IP: ");
         Serial.println(WiFi.localIP());
         broadcastStatus("success", "WiFi conectado");
+        
+        // Se conectou ao WiFi, reinicia o mDNS para a nova interface
+        if (mDnsActive) {
+          MDNS.end();
+        }
+        startMDNS();
       }
       // Verifica timeout
       else if (currentTime - lastWiFiAttempt > WIFI_CONNECTION_TIMEOUT) {
@@ -415,6 +455,8 @@ void handleWiFiStates() {
         wifiConnected = false;
         Serial.println("WiFi desconectado");
         broadcastStatus("warning", "WiFi desconectado");
+        
+        // Se desconectou, o mDNS continua ativo na interface AP
       }
       break;
       
@@ -448,6 +490,11 @@ void wifiReconnectCallback() {
   if (!apActive) {
     Serial.println("AP inativo, reiniciando...");
     initializeAP();
+    // Reinicia mDNS (em caso de falha completa de rede)
+    if (mDnsActive) {
+      MDNS.end();
+    }
+    startMDNS();
   }
 }
 
@@ -483,6 +530,11 @@ void networkWatchdogCallback() {
   if (!apActive) {
     Serial.println("[WATCHDOG] AP inativo, reiniciando...");
     initializeAP();
+    // Reinicia mDNS
+    if (mDnsActive) {
+      MDNS.end();
+    }
+    startMDNS();
   }
   
   // Verifica memória
@@ -557,7 +609,7 @@ display.setCursor(0, 20);  // ajusta de acordo com altura do texto do peso
 display.print("AP: ");
 display.print(WiFi.softAPIP());
 
-// Linha 3 - WiFi Nome
+// Linha 3 - WiFi Nome ou mDNS Hostname
 display.setCursor(0, 30);
 if (wifiConnected) {
   String ssid = WiFi.SSID();
@@ -565,7 +617,9 @@ if (wifiConnected) {
   display.print("W:");
   display.print(ssid);
 } else {
-  display.print("WiFi: OFF");
+  // Mostra o nome de host para facilitar o acesso mesmo sem WiFi
+  display.print("Host: ");
+  display.print(mDnsHostname);
 }
 
 // Linha 4 - WiFi IP
@@ -654,6 +708,10 @@ bool aguardarEstabilidade(const String &proposito) {
     ESP.wdtFeed();
     webSocket.loop();
     server.handleClient();
+    // Processa MDNS durante espera
+    if (mDnsActive) {
+      MDNS.update();
+    }
     yield();
 
     if (loadcell.is_ready()) {
@@ -696,7 +754,8 @@ void handleFileRequest() {
   else if (path.endsWith(".json")) contentType = "application/json";
   else if (path.endsWith(".txt")) contentType = "text/plain";
 
-   if (SPIFFS.exists(path)) {
+   // REVERTIDO PARA SPIFFS.exists() e SPIFFS.open()
+   if (SPIFFS.exists(path)) { 
     File file = SPIFFS.open(path, "r");
 
     // Cabeçalho extra para cache no navegador
@@ -715,9 +774,6 @@ void handleFileRequest() {
     Serial.printf("[Web] Arquivo não encontrado: %s\n", path.c_str());
   }
   
-
-
-
 }
 void onWebSocketEvent(uint8_t client_num, WStype_t type, uint8_t *payload, size_t length) {
   lastClientActivity[client_num] = millis();
@@ -749,6 +805,7 @@ void onWebSocketEvent(uint8_t client_num, WStype_t type, uint8_t *payload, size_
       doc["wifi_ip"] = WiFi.localIP().toString();
       doc["ap_active"] = apActive;
       doc["ap_ip"] = WiFi.softAPIP().toString();
+      doc["mdns_hostname"] = mDnsHostname; // Envia o nome de host mDNS
       
       String output;
       serializeJson(doc, output);

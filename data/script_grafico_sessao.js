@@ -2,118 +2,115 @@
 
 function calcularAreaSobCurva(tempos, forcas, onlyPositive = false) {
   if (tempos.length !== forcas.length || tempos.length < 2) {
-    return {
-      areaTotal: 0,
-      areaPositiva: 0,
-      areaNegativa: 0,
-      impulsoTotal: 0,
-      impulsoPositivo: 0,
-      tempoIgnicao: 0,
-      tempoBurnout: 0,
-      forcaMaxima: 0,
-      forcaMedia: 0,
-      duracaoQueima: 0,
-      forcaMediaPositiva: 0
-    };
+    return { areaTotal: 0, areaPositiva: 0, areaNegativa: 0, impulsoTotal: 0, impulsoLiquido: 0,
+             impulsoPositivo: 0, tempoIgnicao: 0, tempoBurnout: 0, forcaMaxima: 0, forcaMedia: 0,
+             duracaoQueima: 0, forcaMediaPositiva: 0 };
   }
 
-  let areaTotal = 0;
+  let areaTotalSigned = 0;
   let areaPositiva = 0;
   let areaNegativa = 0;
   let tempoIgnicao = null;
   let tempoBurnout = null;
-  let forcaMaxima = Math.max(...forcas);
-  let forcaMedia = forcas.reduce((a, b) => a + b, 0) / forcas.length;
-  
-  // Detecta início e fim da queima (threshold de 5% da força máxima)
-  const thresholdIgnicao = Math.max(forcaMaxima * 0.05, 0.5); // Mínimo 0.5N
-  
+
+  const forcaMaxima = Math.max(...forcas);
+  const forcaMediaAmostral = forcas.reduce((a, b) => a + b, 0) / forcas.length;
+
+  // Threshold de ignição (5% de Fmax, mínimo 0.5N)
+  const thresholdIgnicao = Math.max(forcaMaxima * 0.05, 0.5);
+
   for (let i = 0; i < tempos.length - 1; i++) {
     const deltaT = tempos[i + 1] - tempos[i];
-    const forca1 = onlyPositive ? Math.max(0, forcas[i]) : forcas[i];
-    const forca2 = onlyPositive ? Math.max(0, forcas[i + 1]) : forcas[i + 1];
-    
-    // Área do trapézio: (base * (altura1 + altura2)) / 2
-    const areaTrapezio = deltaT * (forca1 + forca2) / 2;
-    
-    areaTotal += areaTrapezio;
-    
-    if (areaTrapezio > 0) {
-      areaPositiva += areaTrapezio;
-    } else {
-      areaNegativa += Math.abs(areaTrapezio);
-    }
-    
-    // Detecta ignição (primeira vez que passa do threshold)
-    if (tempoIgnicao === null && forcas[i] > thresholdIgnicao) {
-      tempoIgnicao = tempos[i];
-    }
-    
-    // Detecta burnout (última vez que estava acima do threshold)
-    if (forcas[i] > thresholdIgnicao) {
-      tempoBurnout = tempos[i];
-    }
+    const f1 = onlyPositive ? Math.max(0, forcas[i])     : forcas[i];
+    const f2 = onlyPositive ? Math.max(0, forcas[i + 1]) : forcas[i + 1];
+    const areaTrap = deltaT * (f1 + f2) / 2;
+
+    areaTotalSigned += areaTrap;
+    if (areaTrap >= 0) areaPositiva += areaTrap; else areaNegativa += -areaTrap;
+
+    // ignição: primeira amostra acima do threshold
+    if (tempoIgnicao === null && forcas[i] > thresholdIgnicao) tempoIgnicao = tempos[i];
+    // burnout: última amostra acima do threshold
+    if (forcas[i] > thresholdIgnicao) tempoBurnout = tempos[i];
   }
 
+  const duracaoQueima = (tempoBurnout ?? 0) - (tempoIgnicao ?? 0);
+  const impulsoTotalPositivo = areaPositiva;                 // o que se usa para classificar motor
+  const impulsoLiquido = areaPositiva - areaNegativa;        // útil para análise dinâmica
+  const forcaMediaQueima = duracaoQueima > 0 ? impulsoTotalPositivo / duracaoQueima : 0;
+  const forcaMediaPositiva = (() => {
+    const positivos = forcas.filter(f => f > 0);
+    return positivos.length ? (positivos.reduce((a,b)=>a+b,0) / positivos.length) : 0;
+  })();
+
   return {
-    areaTotal: Math.abs(areaTotal),
-    areaPositiva: areaPositiva,
-    areaNegativa: areaNegativa,
-    impulsoTotal: Math.abs(areaTotal), // Em N⋅s
-    impulsoPositivo: areaPositiva,
+    areaTotal: areaPositiva + areaNegativa,
+    areaPositiva,
+    areaNegativa,
+    impulsoTotal: impulsoTotalPositivo, // Em N⋅s — este é o “oficial”
+    impulsoLiquido,                     // Novo: pos − neg
+    impulsoPositivo: impulsoTotalPositivo,
     tempoIgnicao: tempoIgnicao || 0,
     tempoBurnout: tempoBurnout || 0,
-    duracaoQueima: (tempoBurnout || 0) - (tempoIgnicao || 0),
-    forcaMaxima: forcaMaxima,
-    forcaMedia: forcaMedia,
-    forcaMediaPositiva: forcas.filter(f => f > 0).reduce((a, b) => a + b, 0) / Math.max(1, forcas.filter(f => f > 0).length)
+    duracaoQueima,
+    forcaMaxima,
+    forcaMedia: forcaMediaAmostral,     // média amostral
+    forcaMediaPositiva,                 // média amostral somente >0
+    forcaMediaQueima                    // média temporal durante queima (impulso/duração)
   };
 }
 
+
 function calcularMetricasPropulsao(impulsoData, massaPropelente = null) {
-  const { impulsoTotal, duracaoQueima, forcaMaxima, forcaMedia } = impulsoData;
-  
-  const metricas = {
-    classificacaoMotor: classificarMotor(impulsoTotal),
-    impulsoEspecifico: massaPropelente ? impulsoTotal / (massaPropelente * 9.81) : null,
-    razaoImpulsoMedio: duracaoQueima > 0 ? impulsoTotal / duracaoQueima : 0,
-    eficienciaQueima: forcaMaxima > 0 ? (forcaMedia / forcaMaxima) * 100 : 0
-  };
-  
-  return metricas;
+  // usar o impulsoTotal (positivo) para classificar
+  const It = impulsoData.impulsoTotal;
+  const { duracaoQueima, forcaMaxima } = impulsoData;
+
+  const classificacaoMotor = classificarMotor(It);
+  const impulsoEspecifico = massaPropelente ? It / (massaPropelente * 9.81) : null;
+  const razaoImpulsoMedio = duracaoQueima > 0 ? It / duracaoQueima : 0; // = Fmédia durante queima
+  const eficienciaQueima = forcaMaxima > 0 ? (razaoImpulsoMedio / forcaMaxima) * 100 : 0;
+
+  return { classificacaoMotor, impulsoEspecifico, razaoImpulsoMedio, eficienciaQueima };
 }
 
 function classificarMotor(impulsoNs) {
+  const EPS = 1e-6; // tolerância p/ fronteiras
   const classificacoes = [
-    { max: 0.625, classe: '1/8A', cor: '#8e44ad' },
-    { max: 1.25, classe: '1/4A', cor: '#9b59b6' },
-    { max: 2.5, classe: '1/2A', cor: '#e74c3c' },
-    { max: 5.0, classe: 'A', cor: '#e67e22' },
-    { max: 10.0, classe: 'B', cor: '#f39c12' },
-    { max: 20.0, classe: 'C', cor: '#f1c40f' },
-    { max: 40.0, classe: 'D', cor: '#2ecc71' },
-    { max: 80.0, classe: 'E', cor: '#1abc9c' },
-    { max: 160.0, classe: 'F', cor: '#3498db' },
-    { max: 320.0, classe: 'G', cor: '#9b59b6' },
-    { max: 640.0, classe: 'H', cor: '#e74c3c' },
-    { max: 1280.0, classe: 'I', cor: '#e67e22' },
-    { max: 2560.0, classe: 'J', cor: '#f39c12' },
-    { max: 5120.0, classe: 'K', cor: '#2ecc71' },
-    { max: 10240.0, classe: 'L', cor: '#3498db' },
-    { max: 20480.0, classe: 'M', cor: '#9b59b6' },
-    { max: 40960.0, classe: 'N', cor: '#e74c3c' },
-    { max: Infinity, classe: 'O+', cor: '#c0392b' }
+    { min: 0.00,    max: 0.3125,   classe: 'Micro 1/8A', tipo: 'FM (foguetemodelo)', nivel: 'Micro',       cor: '#8e44ad' },
+    { min: 0.3126,  max: 0.625,    classe: '¼A',         tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#9b59b6' },
+    { min: 0.626,   max: 1.25,     classe: '½A',         tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#e74c3c' },
+    { min: 1.26,    max: 2.50,     classe: 'A',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#e67e22' },
+    { min: 2.51,    max: 5.00,     classe: 'B',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#f39c12' },
+    { min: 5.01,    max: 10.00,    classe: 'C',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#f1c40f' },
+    { min: 10.01,   max: 20.00,    classe: 'D',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#2ecc71' },
+    { min: 20.01,   max: 40.00,    classe: 'E',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#1abc9c' },
+    { min: 40.01,   max: 80.00,    classe: 'F',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#3498db' },
+    { min: 80.01,   max: 160.00,   classe: 'G',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#9b59b6' },
+    { min: 160.01,  max: 320.00,   classe: 'H',          tipo: 'MFE (experimental)', nivel: 'Nível 1',        cor: '#e74c3c' },
+    { min: 320.01,  max: 640.00,   classe: 'I',          tipo: 'MFE (experimental)', nivel: 'Nível 1',        cor: '#e67e22' },
+    { min: 640.01,  max: 1280.00,  classe: 'J',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#f39c12' },
+    { min: 1280.01, max: 2560.00,  classe: 'K',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#2ecc71' },
+    { min: 2560.01, max: 5120.00,  classe: 'L',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#3498db' },
+    { min: 5120.01, max: 10240.00, classe: 'M',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#9b59b6' },
+    { min: 10240.01,max: 20480.00, classe: 'N',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#e74c3c' },
+    { min: 20480.01,max: 40960.00, classe: 'O',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#c0392b' },
   ];
-  
-  for (const { max, classe, cor } of classificacoes) {
-    if (impulsoNs <= max) {
-      return { classe, cor, faixa: `≤ ${max} N⋅s` };
-    }
-  }
-  
-  return { classe: 'Indefinido', cor: '#95a5a6', faixa: 'N/A' };
-}
 
+  const c = classificacoes.find(c =>
+    impulsoNs >= (c.min - EPS) && impulsoNs <= (c.max + EPS)
+  );
+
+  if (!c) return { classe: 'Indefinido', tipo: '—', nivel: '—', cor: '#95a5a6', faixa: 'N/A' };
+
+  return { 
+    classe: c.classe, 
+    tipo: c.tipo, 
+    nivel: c.nivel,
+    cor: c.cor, 
+    faixa: `${c.min.toFixed(2)} a ${c.max.toFixed(2)} N⋅s`
+  };
+}
 
 
 

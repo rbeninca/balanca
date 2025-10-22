@@ -10,6 +10,7 @@
   <script src="/chartist.min.js"></script>
   <script src="script.js" defer></script>
   <script src="script_grafico_sessao.js" defer></script>
+  <script src="funcoespdf.js" defer></script>
 
   <style>
     :root {
@@ -31,7 +32,17 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--cor-fundo);
       color: var(--cor-texto);
-      line-height: 1.5
+      line-height: 1.5;
+      transition: background-color 0.5s ease;
+    }
+
+    /* NOVA: Indicação visual de desconexão */
+    body.desconectado {
+      background-color: #ffe5e5;
+    }
+
+    body.desconectado .container {
+      opacity: 0.85;
     }
 
     * {
@@ -41,7 +52,8 @@
     .container {
       max-width:100vw;
       margin: 0 auto;
-      padding: 1rem
+      padding: 1rem;
+      transition: opacity 0.3s ease;
     }
 
     header {
@@ -69,15 +81,21 @@
       height: 1rem;
       border-radius: 9999px;
       background-color: var(--cor-erro);
-      transition: background-color .5s
+      transition: background-color .5s;
+      animation: pulse-disconnect 2s infinite;
     }
 
     #ws-indicator.conectado {
-      background-color: var(--cor-sucesso)
+      background-color: var(--cor-sucesso);
+      animation: none;
+    }
+
+    @keyframes pulse-disconnect {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
     #balanca-status-line {
-
       text-align: center;
       font-weight: 600;
       margin-bottom: 1rem;
@@ -88,6 +106,23 @@
 
     #balanca-status {
       color: var(--cor-primaria)
+    }
+
+    /* NOVO: Banner de alerta de estabilização */
+    #alerta-estabilizacao {
+      display: none;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background-color: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: .5rem;
+      color: #856404;
+      font-weight: 600;
+      animation: fadeIn 0.5s;
+    }
+
+    #alerta-estabilizacao.ativo {
+      display: block;
     }
 
     .nav-abas {
@@ -209,7 +244,7 @@
     }
 
     .btn-aviso:hover {
-      background-color: #f68a0a
+      background-color: #e08e00
     }
 
     .btn-sucesso {
@@ -218,7 +253,7 @@
     }
 
     .btn-sucesso:hover {
-      background-color: #16a34a
+      background-color: #1ba84c
     }
 
     .btn-secundario {
@@ -230,91 +265,79 @@
       background-color: #4b5563
     }
 
-    .btn-indigo {
-      background-color: #6366f1;
-      color: #fff
-    }
-
-    .btn-indigo:hover {
-      background-color: #4f46e5
-    }
-
     input[type=text],
-    input[type=password],
-    input[type=number] {
+    input[type=number],
+    input[type=password] {
       padding: .5rem .75rem;
-      border: 1px solid #d1d5db;
+      background-color: #fff;
+      border: 1px solid var(--cor-borda);
       border-radius: .375rem;
+      font-size: .875rem;
+      color: var(--cor-texto);
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, .05);
+      transition: border-color .15s;
       width: 100%
     }
-   
-    
-    input:disabled {
-        background-color: #f3f4f6;
-        cursor: not-allowed;
+
+    input:focus {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      border-color: var(--cor-primaria)
     }
 
     label {
       display: block;
+      margin-bottom: .25rem;
       font-weight: 500;
-      margin-bottom: .25rem
+      font-size: .875rem;
+      color: #374151
     }
 
     .grid-container {
       display: grid;
-      gap: 1.5rem
-    }
-
-    @media (min-width:768px) {
-      .grid-container {
-        grid-template-columns: repeat(2, minmax(0, 1fr))
-      }
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr))
     }
 
     .flex-center {
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem
+      flex-wrap: wrap
     }
 
     .leituras-display {
-      display: flex;
-      justify-content: space-around;
-      text-align: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
       margin-bottom: 1.5rem;
-      padding: 1rem;
-      background-color: #f9fafb;
+      background-color: var(--cor-fundo-card);
+      padding: 1.25rem;
       border-radius: .5rem;
-      box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, .05)
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1)
+    }
+
+    .leituras-display div {
+      text-align: center
     }
 
     .leituras-display h4 {
-      margin: 0;
       font-size: .875rem;
       font-weight: 500;
       color: var(--cor-texto-secundario);
-      text-transform: uppercase
+      margin: 0 0 .25rem
     }
 
     .leituras-display p {
-      margin: 0;
-      font-size: 1.875rem;
-      font-weight: 700
-    }
-
-    #forca-atual {
-      color: var(--cor-primaria)
-    }
-
-    #forca-maxima {
-      color: var(--cor-erro)
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cor-texto);
+      margin: 0
     }
 
     .tabela-container {
-      overflow-y: auto;
-      max-height: 40rem
+      overflow-x: auto;
+      border-radius: .5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1)
     }
 
     table {
@@ -322,93 +345,73 @@
       border-collapse: collapse
     }
 
-    th,
-    td {
+    th {
+      background-color: #f9fafb;
       padding: .75rem 1rem;
       text-align: left;
+      font-weight: 600;
+      font-size: .875rem;
+      color: #374151;
       border-bottom: 1px solid var(--cor-borda)
     }
 
-    thead {
-      background-color: #f9fafb;
-      position: sticky;
-      top: 0
+    td {
+      padding: .75rem 1rem;
+      font-size: .875rem;
+      border-bottom: 1px solid var(--cor-borda)
     }
 
-    th {
-      font-size: .75rem;
-      font-weight: 500;
-      color: var(--cor-texto-secundario);
-      text-transform: uppercase
+    tbody tr:hover {
+      background-color: #f9fafb
     }
 
     #notification-area {
       position: fixed;
-      top: 1rem;
+      bottom: 1rem;
       right: 1rem;
-      z-index: 1000;
-      width: 320px;
+      z-index: 9999;
+      max-width: 400px
     }
 
-    .notificacao {
+    .notification {
+      background-color: #ffffff;
+      color: var(--cor-texto);
       padding: 1rem;
-      margin-bottom: .5rem;
-      border-left-width: 4px;
-      border-radius: .375rem;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
-    }
-
-    .notificacao p {
-      margin: 0
-    }
-
-    .notificacao .titulo {
-      font-weight: 700
-    }
-
-    .notificacao.sucesso {
-      border-color: var(--cor-sucesso);
-      background-color: #f0fdf4;
-      color: #15803d
-    }
-
-    .notificacao.erro {
-      border-color: var(--cor-erro);
-      background-color: #fef2f2;
-      color: #b91c1c
-    }
-
-    .notificacao.info {
-      border-color: var(--cor-info);
-      background-color: #eff6ff;
-      color: #1d4ed8
-    }
-
-    .card-gravacao {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: space-between;
-      padding: 1rem;
-      border: 1px solid var(--cor-borda);
+      margin-top: .5rem;
       border-radius: .5rem;
-      gap: .5rem
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -2px rgba(0, 0, 0, .05);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      animation: slideIn .3s ease-out
     }
 
-    @media (min-width:640px) {
-      .card-gravacao {
-        flex-direction: row;
-        align-items: center
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1
       }
     }
 
-    .card-gravacao .botoes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .5rem
+    .notification.success {
+      border-left: 4px solid var(--cor-sucesso)
     }
-    #grafico {
-      height: 50vh; /* 60% da altura da viewport */
+
+    .notification.error {
+      border-left: 4px solid var(--cor-erro)
+    }
+
+    .notification.warning {
+      border-left: 4px solid var(--cor-aviso)
+    }
+
+    .notification.info {
+      border-left: 4px solid var(--cor-info)
     }
 
     .ct-chart .ct-series.ct-series-a .ct-line {
@@ -426,16 +429,46 @@
     }
 
     .ct-chart .ct-label {
-      fill: rgba(0, 0, 0, 0.4);
-      color: rgba(0, 0, 0, 0.4);
+      fill: rgba(0, 0, 0, 0.7);
+      color: rgba(0, 0, 0, 0.7);
       font-size: 0.75rem;
+      font-weight: 500;
     }
 
+    /* CORRIGIDO: Labels do eixo X ficam dentro da área do gráfico */
     .ct-label.ct-horizontal.ct-end {
-      transform: rotate(90deg);
-      transform-origin: left center;
-      font-size: 8pt;
-      text-anchor: start;
+      display: flex;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    /* NOVO: Controle de avisos sonoros */
+    .controle-audio {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background-color: #f8f9fa;
+      border-radius: 0.375rem;
+      margin-bottom: 1rem;
+    }
+
+    .controle-audio label {
+      margin: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* NOVO: Ajuste de altura do gráfico para melhor visualização */
+    #grafico.ct-chart {
+      height: 400px !important;
+      max-height: 50vh;
+    }
+
+    @media (max-width: 768px) {
+      #grafico.ct-chart {
+        height: 300px !important;
+      }
     }
   </style>
 </head>
@@ -448,7 +481,21 @@
         <div id="ws-indicator" title="Desconectado"></div><span id="ws-text">Desconectado</span>
       </div>
     </header>
+
+    <!-- NOVO: Banner de alerta de estabilização -->
+    <div id="alerta-estabilizacao">
+      ⚠️ A balança não está estabilizando! A tolerância pode estar muito baixa. 
+      Vá em Parâmetros → Tolerância de Estabilidade e aumente o valor.
+    </div>
+
     <div id="balanca-status-line">Status da Balança: <span id="balanca-status">...</span></div>
+    
+    <!-- NOVO: Controle de avisos sonoros -->
+    <div class="controle-audio">
+      <input type="checkbox" id="audio-avisos" onchange="toggleAvisosAudio()">
+      <label for="audio-avisos">🔊 Ativar avisos sonoros</label>
+    </div>
+
     <div class="flex-center" style="margin-bottom: 1rem;">
       <div class="btn-grupo" role="group"><button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons
           (N)</button><button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força
@@ -505,7 +552,7 @@
           </div>
         </div>
         
-        <div id="grafico" class="ct-chart ct-golden-section"></div>
+        <div id="grafico" class="ct-chart"></div>
       </div>
   </div>
   <div id="abaTabela" class="tabcontent">
@@ -513,7 +560,7 @@
       <table id="tabela">
         <thead>
           <tr>
-            <th>Data e Hora</th>
+            <th>Timestamp</th>
             <th>Tempo ESP (s)</th>
             <th>Newtons (N)</th>
             <th>Grama-força (gf)</th>
@@ -543,10 +590,14 @@
       <div class="grid-container" style="gap: 1rem;">
         <div><label for="param-leituras-estaveis">Leituras Estáveis</label><input id="param-leituras-estaveis"
             type="number"></div>
-        <div><label for="param-tolerancia">Tolerância de Estabilidade</label><input id="param-tolerancia" type="number"
-            step="any" oninput="atualizarToleranciaEmGramas()"">  
-              <small id="tolerancia-em-gramas"
-            style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 0.00 g</small></div>
+        <div>
+          <label for="param-tolerancia">Tolerância de Estabilidade</label>
+          <input id="param-tolerancia" type="number" step="any" oninput="atualizarToleranciaEmGramas()">  
+          <small id="tolerancia-em-gramas" style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 0.00 g</small>
+          <small style="color: var(--cor-aviso); display: block; margin-top: 0.25rem;">
+            ⚠️ Se a balança não estabiliza, aumente este valor!
+          </small>
+        </div>
         <div><label for="param-num-amostras">Nº Amostras para Média</label><input id="param-num-amostras" type="number">
         </div>
         <div><label for="param-timeout">Timeout de Calibração (ms)</label><input id="param-timeout" type="number"></div>
@@ -593,6 +644,9 @@
           AP Ativo: <span id="ap-ativo">---</span></p>
         <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
           IP do AP: <span id="ap-ip">---</span></p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
+          <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
+        </p>
       </div>
       <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a senha
         da rede Wi-Fi que deseja conectar.</p>

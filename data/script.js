@@ -19,10 +19,16 @@ let noiseMean = 0;
 let antiNoisingMultiplier = 2.0;
 let isStabilityMode = false;
 
+// === NOVAS VARIÁVEIS PARA MELHORIAS ===
+let avisosAudioAtivados = false;
+let audioContext = null;
+let ultimoStatusEstabilizacao = true;
+let contadorFalhasEstabilizacao = 0;
+
 // --- NOVAS VARIÁVEIS PARA MELHORIAS (sem quebrar compatibilidade) ---
-let showDataLabels = false; // Começa desabilitado para não afetar performance
-let showPeaks = true;
-let showGrid = true;
+let showDataLabels = true; // Labels ativados por padrão
+let showPeaks = true; // Picos ativados por padrão
+let showGrid = true; // Grid ativado por padrão
 let isZoomed = false;
 let originalChartData = null;
 let peakThreshold = 0.15; // 15% da variação para detectar picos
@@ -45,6 +51,9 @@ window.onload = () => {
   addEnhancedControls();
    // NOVA LINHA: Adiciona controles de ruído
   setTimeout(addNoiseControlsToUI, 500);
+  
+  // === NOVO: Inicializa contexto de áudio ===
+  inicializarAudioContext();
 };
 
 // --- INICIALIZAÇÃO MELHORADA (mas compatível) ---
@@ -55,7 +64,10 @@ function initializeEnhancedChart() {
     axisX: { 
       showGrid: showGrid, 
       showLabel: true,
-      labelInterpolationFnc: (value) => value + "s"
+      labelInterpolationFnc: (value, index) => {
+        // Mostra apenas 1 a cada 5 labels para evitar sobreposição
+        return index % 5 === 0 ? value + "s" : null;
+      }
     },
     axisY: { 
       showGrid: showGrid, 
@@ -1070,15 +1082,25 @@ function handleWorkerMessage(event) {
       break;
     case 'status':
       document.getElementById('balanca-status').textContent = message || status;
-      if (message) {
-        const notificationType = (status === 'error' || status === 'disconnected') ? 'erro' : 'info';
-        showNotification(notificationType, message);
-      }
+      
+      // === NOVO: Atualiza indicador visual e toca beeps ===
       if (status === 'connected') {
         updateConnectionStatus(true);
+        atualizarIndicadorConexao(true);
+        tocarAlertaReconexao();
       } else if (status === 'disconnected' || status === 'error') {
         clearTimeout(connectionTimeout);
         updateConnectionStatus(false);
+        atualizarIndicadorConexao(false);
+        tocarAlertaDesconexao();
+      }
+      
+      // === NOVO: Verifica problemas de estabilização ===
+      verificarStatusEstabilizacao(message);
+      
+      if (message) {
+        const notificationType = (status === 'error' || status === 'disconnected') ? 'erro' : 'info';
+        showNotification(notificationType, message);
       }
       break;
     case 'error':
@@ -1192,7 +1214,22 @@ function updateConnectionStatus(isConnected) {
   indicator.classList.toggle('conectado', isConnected);
   document.getElementById('ws-text').textContent = isConnected ? "Conectado" : "Desconectado";
   if (!isConnected) {
+    changeConnectionStatus(false);
     tocarBip();
+  }
+}
+function changeConnectionStatus(connected) {
+  const statusIndicator = document.getElementById('connection-status-indicator');
+  if (connected) {
+    document.body.backgroundColor = '#e0f7e9';
+    statusIndicator.textContent = 'Conectado ao ESP32';
+    statusIndicator.classList.remove('desconectado');
+    statusIndicator.classList.add('conectado');
+  } else {
+    document.body.backgroundColor = '#e65e5eff';
+    statusIndicator.textContent = 'Desconectado do ESP32';
+    statusIndicator.classList.remove('conectado');
+    statusIndicator.classList.add('desconectado');
   }
 }
 
@@ -1679,6 +1716,259 @@ function addNoiseControlsToUI() {
   
   controlesTab.appendChild(noiseSection);
 }
+
+// ============================================
+// === NOVAS FUNÇÕES DE ÁUDIO E ALERTAS ===
+// ============================================
+
+function inicializarAudioContext() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) {
+    console.warn('Áudio não disponível neste navegador');
+  }
+}
+
+function toggleAvisosAudio() {
+  const checkbox = document.getElementById('audio-avisos');
+  avisosAudioAtivados = checkbox ? checkbox.checked : false;
+  
+  if (avisosAudioAtivados && audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  
+  if (avisosAudioAtivados) {
+    tocarBeep(440, 150);
+    showNotification('info', '🔊 Avisos sonoros ativados', 2000);
+  } else {
+    showNotification('info', '🔇 Avisos sonoros desativados', 2000);
+  }
+}
+
+function tocarBeep(frequencia = 800, duracao = 200, volume = 0.3) {
+  if (!avisosAudioAtivados || !audioContext) return;
+  
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequencia;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duracao / 1000);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duracao / 1000);
+  } catch (e) {
+    console.error('Erro ao tocar beep:', e);
+  }
+}
+
+function tocarAlertaDesconexao() {
+  if (!avisosAudioAtivados) return;
+  tocarBeep(400, 100);
+  setTimeout(() => tocarBeep(300, 100), 150);
+}
+
+function tocarAlertaReconexao() {
+  if (!avisosAudioAtivados) return;
+  tocarBeep(600, 100);
+  setTimeout(() => tocarBeep(800, 100), 120);
+}
+
+function tocarAlertaEstabilizacao() {
+  if (!avisosAudioAtivados) return;
+  tocarBeep(500, 150);
+  setTimeout(() => tocarBeep(500, 150), 200);
+  setTimeout(() => tocarBeep(500, 150), 400);
+}
+
+function atualizarIndicadorConexao(conectado) {
+  const indicator = document.getElementById('ws-indicator');
+  const text = document.getElementById('ws-text');
+  const body = document.body;
+  
+  if (conectado) {
+    indicator.classList.add('conectado');
+    indicator.title = 'Conectado';
+    if (text) text.textContent = 'Conectado';
+    body.classList.remove('desconectado');
+  } else {
+    indicator.classList.remove('conectado');
+    indicator.title = 'Desconectado';
+    if (text) text.textContent = 'Desconectado';
+    body.classList.add('desconectado');
+  }
+}
+
+function mostrarAlertaEstabilizacao() {
+  const alerta = document.getElementById('alerta-estabilizacao');
+  if (alerta) {
+    alerta.classList.add('ativo');
+    tocarAlertaEstabilizacao();
+  }
+}
+
+function ocultarAlertaEstabilizacao() {
+  const alerta = document.getElementById('alerta-estabilizacao');
+  if (alerta) {
+    alerta.classList.remove('ativo');
+  }
+}
+
+function verificarStatusEstabilizacao(status) {
+  const problemaEstabilizacao = status && (
+    status.includes('não estabilizando') || 
+    status.includes('timeout') ||
+    status.includes('tolerância')
+  );
+  
+  if (problemaEstabilizacao && !ultimoStatusEstabilizacao) {
+    contadorFalhasEstabilizacao++;
+    
+    if (contadorFalhasEstabilizacao >= 3) {
+      mostrarAlertaEstabilizacao();
+    }
+  } else if (!problemaEstabilizacao) {
+    contadorFalhasEstabilizacao = 0;
+    ocultarAlertaEstabilizacao();
+  }
+  
+  ultimoStatusEstabilizacao = !problemaEstabilizacao;
+}
+
+function carregarGravacoesComImpulso() {
+  const container = document.getElementById('lista-gravacoes');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  
+  if (gravacoes.length === 0) {
+    container.innerHTML = '<p style="color: var(--cor-texto-secundario);">Nenhuma gravação encontrada.</p>';
+    return;
+  }
+  
+  gravacoes.sort((a, b) => b.id - a.id);
+  
+  gravacoes.forEach(gravacao => {
+    const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
+    const card = document.createElement('div');
+    card.className = 'card-gravacao';
+    card.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+    `;
+    
+    card.innerHTML = `
+      <div>
+        <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome}</p> 
+        <p style="font-size: 0.875rem; color: #7f8c8d;">
+          ${dataFormatada} • ${gravacao.dadosTabela.length} leituras
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button onclick="exportarPDFViaPrint(${gravacao.id})" 
+                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          📑 PDF
+        </button>
+        <button onclick="exportarCSV(${gravacao.id})" 
+                style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          📄 CSV
+        </button>
+        <button onclick="exportarImagemSessao(${gravacao.id})" 
+                style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          🖼️ PNG
+        </button>
+        <button onclick="visualizarSessao(${gravacao.id})" 
+                style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          👁️ Ver
+        </button>
+        <button onclick="deletarGravacao(${gravacao.id})" 
+                style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          🗑️ Del
+        </button>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+function visualizarSessao(sessionId) {
+  try {
+    const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+    const sessao = gravacoes.find(g => g.id === sessionId);
+    
+    if (!sessao) {
+      showNotification('error', 'Sessão não encontrada');
+      return;
+    }
+    
+    clearChart();
+    
+    chartData.labels = [];
+    chartData.series = [[]];
+    rawDataN = [];
+    
+    sessao.dadosTabela.forEach(dado => {
+      const tempo = parseFloat(dado.tempo_esp) || 0;
+      const newtons = parseFloat(dado.newtons) || 0;
+      const displayForce = convertForce(newtons, displayUnit);
+      
+      chartData.labels.push(tempo.toFixed(1));
+      chartData.series[0].push(parseFloat(formatForce(displayForce, displayUnit)));
+      rawDataN.push(newtons);
+    });
+    
+    if (rawDataN.length > 0) {
+      maxForceInN = Math.max(...rawDataN);
+      minForceInN = Math.min(...rawDataN);
+      
+      const currentDisplayForce = convertForce(rawDataN[rawDataN.length - 1], displayUnit);
+      const maxDisplayForce = convertForce(maxForceInN, displayUnit);
+      const minDisplayForce = convertForce(minForceInN, displayUnit);
+      const avgForce = rawDataN.reduce((a, b) => a + b, 0) / rawDataN.length;
+      const avgDisplayForce = convertForce(avgForce, displayUnit);
+      
+      document.getElementById('forca-atual').textContent = `${formatForce(currentDisplayForce, displayUnit)} ${displayUnit}`;
+      document.getElementById('forca-maxima').textContent = `${formatForce(maxDisplayForce, displayUnit)} ${displayUnit}`;
+      document.getElementById('forca-minima').textContent = `mín: ${formatForce(minDisplayForce, displayUnit)} ${displayUnit}`;
+      document.getElementById('forca-ems').textContent = `${formatForce(avgDisplayForce, displayUnit)} ${displayUnit}`;
+    }
+    
+    chart.update(chartData);
+    
+    abrirAba(document.getElementById("padrao"), 'abaGrafico');
+    
+    showNotification('success', `Sessão "${sessao.nome}" carregada!`);
+    
+  } catch (e) {
+    console.error('Erro ao visualizar:', e);
+    showNotification('error', 'Erro ao carregar sessão');
+  }
+}
+
+// Stub para exportarImagemSessao se não existir
+if (typeof exportarImagemSessao === 'undefined') {
+  window.exportarImagemSessao = function(sessionId) {
+    showNotification('info', 'Função de exportação PNG disponível no script_grafico_sessao.js', 3000);
+  };
+}
+
+// === FIM DAS NOVAS FUNÇÕES ===
+
+
 // 8. VALIDAÇÃO E TESTES:
 function testAntiNoising() {
   console.log("=== TESTE DO SISTEMA ANTI-NOISING ===");
