@@ -1,5 +1,4 @@
 services:
-services:
   balanca:
     build:
       context: ..                      # raiz do repo: balancaGFIG
