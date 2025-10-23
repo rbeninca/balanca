@@ -9,7 +9,7 @@ set -euo pipefail
 : "${SERIAL_PORT:=/dev/ttyUSB0}"
 : "${SERIAL_BAUD:=921600}"
 : "${WS_PORT:=81}"
-: "${HTTP_PORT:=80}"   # apenas informativo no log; server.py usa 80 fixo
+: "${HTTP_PORT:=80}"   # apenas para log; server.py agora usa 80
 
 export SERIAL_PORT SERIAL_BAUD WS_PORT HTTP_PORT WEB_DIRECTORY
 
@@ -21,7 +21,7 @@ echo "[entrypoint] Pull interval: ${PULL_INTERVAL}s"
 
 mkdir -p "${WEB_DIRECTORY}"
 
-# --- GIT safe.directory para evitar 'dubious ownership'
+# Evita 'dubious ownership' do git
 git config --global --add safe.directory "${WEB_DIRECTORY}" || true
 
 # Clona ou atualiza
@@ -52,5 +52,8 @@ fi
   done
 ) &
 
-# Roda como root mesmo (precisa acessar /dev/ttyUSB0)
+# Roda como root (precisa da serial)
 exec python /app/server.py
+SH
+
+chmod +x balancaDocker/entrypoint.sh
