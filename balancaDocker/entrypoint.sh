@@ -3,7 +3,7 @@ set -euo pipefail
 
 : "${GIT_REPO:=https://github.com/rbeninca/balancaGFIG}"
 : "${GIT_BRANCH:=balanca_serial}"
-: "${WEB_DIRECTORY:=/app/data}"
+: "${WEB_DIRECTORY:=/app/data/data}"
 : "${PULL_INTERVAL:=120}"
 
 : "${SERIAL_PORT:=/dev/ttyUSB0}"
