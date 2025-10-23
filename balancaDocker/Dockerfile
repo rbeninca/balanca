@@ -4,7 +4,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Agora apontamos para o subdir onde estão esses arquivos
 COPY balancaDocker/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 

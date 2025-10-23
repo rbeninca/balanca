@@ -1,7 +1,7 @@
 services:
   balanca:
     build:
-      context: ..                      # <- contexto = raiz do repo (balancaGFIG)
+      context: ..                    # raiz do repo (balancaGFIG)
       dockerfile: balancaDocker/Dockerfile
     container_name: balanca
     restart: unless-stopped
