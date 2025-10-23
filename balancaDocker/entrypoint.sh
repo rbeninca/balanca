@@ -3,7 +3,7 @@ set -euo pipefail
 
 : "${GIT_REPO:=https://github.com/rbeninca/balancaGFIG}"
 : "${GIT_BRANCH:=balanca_serial}"
-: "${WEB_DIRECTORY:=/app/data/data}"
+: "${WEB_DIRECTORY:=/app/data}"
 : "${PULL_INTERVAL:=120}"
 
 : "${SERIAL_PORT:=/dev/ttyUSB0}"
@@ -56,7 +56,7 @@ fi
 python -m pip install --upgrade pip >/dev/null 2>&1 || true
 python -m pip install --no-cache-dir -r /app/requirements.txt >/dev/null 2>&1 || true
 
-
+cd "${WEB_DIRECTORY}"
 exec python /app/server.py
 SH
 
