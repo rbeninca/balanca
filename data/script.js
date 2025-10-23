@@ -1268,12 +1268,25 @@ function updateReadingsPerSecond() {
 }
 
 function sendCommandToWorker(command, value = null) {
-  if (dataWorker) {
-    const message = value !== null ? `${command}:${value}` : command;
-    dataWorker.postMessage({ type: 'sendCommand', payload: message });
-  } else {
+  console.log(`[sendCommandToWorker] Comando: "${command}", Valor: ${value}`);
+  
+  if (!dataWorker) {
+    console.error('[sendCommandToWorker] ❌ Worker não está conectado!');
     showNotification("error", "Worker não está conectado.");
+    return;
   }
+  
+  // Monta a mensagem
+  const message = value !== null ? `${command}:${value}` : command;
+  console.log(`[sendCommandToWorker] Mensagem montada: "${message}"`);
+  
+  // Envia para o worker
+  dataWorker.postMessage({ 
+    type: 'sendCommand', 
+    payload: message 
+  });
+  
+  console.log(`[sendCommandToWorker] ✅ Mensagem enviada ao worker`);
 }
 
 // FUNÇÕES TARA E CALIBRAR: Adiciona notificação de atalho
@@ -1292,7 +1305,9 @@ function calibrar() {
   }
 }
 
-function salvarParametros() {
+async function salvarParametros() {
+  console.log('=== INICIANDO SALVAMENTO DE PARÂMETROS ===');
+  
   const params = {
     conversionFactor: "param-conversao",
     gravity: "param-gravidade",
@@ -1303,13 +1318,110 @@ function salvarParametros() {
     timeoutCalibracao: "param-timeout",
   };
 
+  let allValid = true;
+  let paramsEnviados = 0;
+  let erros = [];
+
+  // Lista de comandos para enviar
+  const comandosParaEnviar = [];
+
+  // Primeiro, valida todos os campos e prepara os comandos
   for (const [key, id] of Object.entries(params)) {
-    const value = document.getElementById(id).value;
-    if (value !== '') {
-      sendCommandToWorker(`set_param`, `${key}:${value}`);
+    const element = document.getElementById(id);
+    
+    if (!element) {
+      console.error(`❌ Elemento com ID "${id}" não encontrado!`);
+      continue;
     }
+
+    // Usamos .trim() para remover espaços em branco
+    const valueStr = element.value.trim();
+
+    console.log(`📝 Processando ${key}: valor="${valueStr}"`);
+
+    // 1. Ignoramos campos que o usuário deixou em branco
+    if (valueStr === '') {
+      console.log(`⏭️ Campo ${key} vazio, pulando...`);
+      continue;
+    }
+
+    // 2. Tentamos converter para um número (substitui vírgula por ponto)
+    const valueNum = parseFloat(valueStr.replace(',', '.'));
+
+    // 3. VERIFICAÇÃO CRÍTICA: O valor é um número válido?
+    if (isNaN(valueNum)) {
+      // Não é um número válido!
+      allValid = false;
+      const label = document.querySelector(`label[for='${id}']`)?.textContent || key;
+      const erro = `Valor inválido no campo "${label}". Por favor, insira apenas números.`;
+      erros.push(erro);
+      showNotification("error", erro);
+      element.focus();
+      console.error(`❌ ${erro}`);
+      break; // Para a execução para o usuário corrigir
+    }
+
+    // Adiciona comando à lista
+    comandosParaEnviar.push({ key, valueNum });
   }
-  showNotification('success', 'Parâmetros enviados para salvamento no ESP32.');
+
+  // Se passou na validação, envia os comandos COM DELAY
+  if (allValid && comandosParaEnviar.length > 0) {
+    console.log(`✅ Todos os campos são válidos. Enviando ${comandosParaEnviar.length} comandos...`);
+    
+    showNotification('info', `Enviando ${comandosParaEnviar.length} parâmetro(s)... Por favor, aguarde.`);
+    
+    // CORREÇÃO CRÍTICA: Envia um comando por vez com delay
+    for (let i = 0; i < comandosParaEnviar.length; i++) {
+      const { key, valueNum } = comandosParaEnviar[i];
+      
+      // CRÍTICO: Monta o comando no formato correto
+      const comando = `set_param:${key}:${valueNum}`;
+      console.log(`📤 [${i+1}/${comandosParaEnviar.length}] Enviando comando: "${comando}"`);
+      
+      // Envia para o worker
+      if (dataWorker) {
+        dataWorker.postMessage({ 
+          type: 'sendCommand', 
+          payload: comando 
+        });
+        paramsEnviados++;
+        console.log(`✅ Comando ${paramsEnviados} enviado`);
+        
+        // CRÍTICO: Aguarda 300ms entre cada comando para evitar overflow
+        // Isso dá tempo para o ESP32 processar e salvar na EEPROM
+        if (i < comandosParaEnviar.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      } else {
+        console.error('❌ dataWorker não está definido!');
+        showNotification("error", "Worker não está conectado.");
+        return;
+      }
+    }
+
+    showNotification('success', `✅ ${paramsEnviados} parâmetro(s) enviado(s) para o ESP32. Aguarde a confirmação.`);
+    console.log(`✅ Total de ${paramsEnviados} parâmetros enviados`);
+    
+    // Solicita a configuração atualizada após um pequeno delay
+    setTimeout(() => {
+      if (dataWorker) {
+        console.log('🔄 Solicitando configuração atualizada do ESP32...');
+        dataWorker.postMessage({ 
+          type: 'sendCommand', 
+          payload: 'get_config' 
+        });
+      }
+    }, 500);
+    
+  } else if (comandosParaEnviar.length === 0) {
+    showNotification('info', 'Nenhum parâmetro foi alterado para salvar.');
+    console.log('ℹ️ Nenhum parâmetro para enviar');
+  } else {
+    console.error('❌ Validação falhou. Parâmetros não enviados.');
+  }
+  
+  console.log('=== FIM DO SALVAMENTO DE PARÂMETROS ===');
 }
 
 function formatForce(value, unit) {

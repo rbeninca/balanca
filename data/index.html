@@ -630,6 +630,31 @@
                 readonly></input>
             </div>
           </div>
+
+          <h3 style="font-size: 1.125rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem;">
+            ⚖️ Especificações da Célula de Carga
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
+            Configure a capacidade e precisão da sua célula para melhor filtragem e visualização.
+          </p>
+          <div class="grid-container" style="gap: 1rem;">
+            <div>
+              <label for="param-capacidade-maxima">Capacidade Máxima (g)</label>
+              <input id="param-capacidade-maxima" type="number" step="any" oninput="atualizarCapacidadeEmKg()">
+              <small id="capacidade-em-kg"
+                style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 5.00 kg</small>
+            </div>
+            <div>
+              <label for="param-acuracia">Acurácia (%)</label>
+              <input id="param-acuracia" type="number" step="0.001" oninput="atualizarErroAbsoluto()">
+              <small id="erro-absoluto"
+                style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">Erro: ±0.00 g</small>
+              <small style="color: var(--cor-info); display: block; margin-top: 0.25rem;">
+                💡 Valores típicos: 0.03% a 0.1%
+              </small>
+            </div>
+          </div>
+
           <h3 style="font-size: 1.125rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem;">Parâmetros de
             Estabilização</h3>
           <div class="grid-container" style="gap: 1rem;">

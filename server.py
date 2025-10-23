@@ -13,7 +13,7 @@ import time # CORREÇÃO CRÍTICA: Importação do time movida para o topo
 
 # --- Configurações ---
               
-SERIAL_BAUD = 230400 
+SERIAL_BAUD = 921600 
 SERIAL_PORT = '/dev/ttyUSB0'
 WS_PORT = 81
 HTTP_PORT = 8080
@@ -39,7 +39,7 @@ def find_serial_port():
     ports = [p for p in serial.tools.list_ports.comports() if 'USB' in p.device or 'ttyACM' in p.device]
     if ports:
         port_name = ports[0].device
-        logging.info(f"Porta encontrada: {port_name}")
+        logging.debug(f"Porta encontrada: {port_name}")
         SERIAL_PORT = port_name
         return port_name
     else:

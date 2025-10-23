@@ -33,9 +33,12 @@ struct Config {
   float gravity = 9.80665;
   int leiturasEstaveis = 10;
   float toleranciaEstabilidade = 100.0;
-  int numAmostrasMedia = 1;
+  int numAmostrasMedia = 3;
   unsigned long timeoutCalibracao = 20000;
   long tareOffset = 0;
+  // NOVO: Especificações da célula de carga
+  float capacidadeMaximaGramas = 5000.0;  // Capacidade máxima em gramas (padrão: 5kg)
+  float percentualAcuracia = 0.05;        // Acurácia em % (padrão: 0.05% = ±0.05%)
 };
 Config config;
 
@@ -64,7 +67,7 @@ void sendSimpleJson(const char* type, const char* message);
 
 
 void setup() {
-  Serial.begin(230400);
+  Serial.begin(921600);
   delay(100);
 
   // ################ TESTE CRÍTICO DE SERIAL ################
@@ -74,7 +77,7 @@ void setup() {
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.println("   Versao: ESTAVEL V14 (Individual Send)"); // Versão atualizada
+  Serial.println("   Versao: ESTAVEL V15 (LoadCell Specs)"); // Versão atualizada
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -190,8 +193,10 @@ void sendSerialConfig() {
     doc["numAmostrasMedia"] = config.numAmostrasMedia;
     doc["timeoutCalibracao"] = config.timeoutCalibracao;
     doc["tareOffset"] = config.tareOffset;
+    doc["capacidadeMaximaGramas"] = config.capacidadeMaximaGramas;
+    doc["percentualAcuracia"] = config.percentualAcuracia;
     doc["mode"] = "SERIAL_GATEWAY";
-    doc["version"] = "STABLE_V14"; // Versão atualizada
+    doc["version"] = "STABLE_V15"; // Versão atualizada
 
     size_t written = serializeJson(doc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
     if (written > 0) {
@@ -308,6 +313,22 @@ void processSerialCommand() {
                 loadcell.set_offset(config.tareOffset);
                 changed = true;
             }
+            else if (strcmp(paramName, "capacidadeMaximaGramas") == 0) {
+                if (paramValueF > 0 && paramValueF <= 1000000) { // Até 1000kg
+                    config.capacidadeMaximaGramas = paramValueF;
+                    changed = true;
+                } else {
+                    sendSimpleJson("error", "Capacidade invalida (0-1000000g)");
+                }
+            }
+            else if (strcmp(paramName, "percentualAcuracia") == 0) {
+                if (paramValueF >= 0 && paramValueF <= 10.0) { // Até 10%
+                    config.percentualAcuracia = paramValueF;
+                    changed = true;
+                } else {
+                    sendSimpleJson("error", "Acuracia invalida (0-10%)");
+                }
+            }
              else {
                 sendSimpleJson("error", "Parametro desconhecido");
             }
@@ -352,7 +373,7 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("VERSAO ESTAVEL V14"); // Versão atualizada
+  display.println("VERSAO ESTAVEL V15"); // Versão atualizada
   display.setCursor(0, 45);
   display.printf("Serial: %u Baud", 230400);
   display.setCursor(0, 55);
