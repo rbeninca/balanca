@@ -1178,12 +1178,13 @@ function salvarDadosDaSessao(nome, tabela) {
 
 function updateConfigForm(config) {
   const getValue = (val) => (val !== null && val !== undefined) ? val : '';
-   // Formulário de configuração de rede
-  document.getElementById("ssid").value = getValue(config.ssid);
-  document.getElementById("senha").value = getValue(config.senha);
+   
+  // --- CORREÇÃO: Estas linhas foram comentadas porque 'ssid' e 'senha' não existem no index.html ---
+  // document.getElementById("ssid").value = getValue(config.ssid);
+  // document.getElementById("senha").value = getValue(config.senha);
+  // ------------------------------------------------------------------------------------------
 
-
-  // Parâmetros da balança
+  // Parâmetros da balança (Agora devem carregar)
   document.getElementById("param-conversao").value = getValue(config.conversionFactor);
   document.getElementById("param-gravidade").value = getValue(config.gravity);
   document.getElementById("param-offset").value = getValue(config.tareOffset);
@@ -1202,22 +1203,47 @@ function updateConfigForm(config) {
     4: "Falha na Conexão"
   };
 
-  document.getElementById("status-rede-texto").textContent =
-    wifiStatusMap[config.wifi_status] || ("Código: " + getValue(config.wifi_status));
+  // NOTA: Estes IDs também não parecem existir no seu index.html, 
+  // mas não causarão um erro se 'config.wifi_status' não for enviado.
+  // Se ainda tiver problemas, comente estas linhas também.
+  const statusRedeTexto = document.getElementById("status-rede-texto");
+  if (statusRedeTexto) {
+    statusRedeTexto.textContent =
+      wifiStatusMap[config.wifi_status] || ("Código: " + getValue(config.wifi_status));
+  }
 
-  document.getElementById("ip-rede").textContent = getValue(config.wifi_ip);
-  document.getElementById("ap-ativo").textContent = config.ap_active ? "Sim" : "Não";
-  document.getElementById("ap-ip").textContent = getValue(config.ap_ip);
+  const ipRede = document.getElementById("ip-rede");
+  if (ipRede) {
+    ipRede.textContent = getValue(config.wifi_ip);
+  }
 
+  const apAtivo = document.getElementById("ap-ativo");
+  if (apAtivo) {
+    apAtivo.textContent = config.ap_active ? "Sim" : "Não";
+  }
+
+  const apIp = document.getElementById("ap-ip");
+  if (apIp) {
+    apIp.textContent = getValue(config.ap_ip);
+  }
+}
+function solicitarParametros() {
+    if (dataWorker) {
+        console.log("[UI] Solicitando parâmetros atualizados do worker...");
+        // Envia o novo comando 'get_config'
+        dataWorker.postMessage({ type: 'sendCommand', payload: 'get_config' });
+    } else {
+        showNotification("error", "Worker não está conectado para pedir parâmetros.");
+    }
 }
 
 function updateConnectionStatus(isConnected) {
   const indicator = document.getElementById('ws-indicator');
   indicator.classList.toggle('conectado', isConnected);
   document.getElementById('ws-text').textContent = isConnected ? "Conectado" : "Desconectado";
-  if (!isConnected) {
-    changeConnectionStatus(false);
-    tocarBip();
+if (!isConnected) {
+    // changeConnectionStatus(false); // <--- COMENTE OU REMOVA ESTA LINHA
+    
   }
 }
 function changeConnectionStatus(connected) {
@@ -1335,6 +1361,9 @@ function abrirAba(element, abaID) {
   document.querySelectorAll('.tabcontent').forEach(tab => { tab.style.display = "none"; tab.classList.remove('active'); });
   document.querySelectorAll('.tablink').forEach(link => link.classList.remove('active'));
   const el = document.getElementById(abaID);
+  if (abaID === 'abaControles') {
+    solicitarParametros();
+  }
   el.style.display = "block";
   el.classList.add('active');
   element.classList.add('active');

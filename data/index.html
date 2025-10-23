@@ -13,6 +13,7 @@
   <script src="funcoespdf.js" defer></script>
 
   <style>
+    /* ... ESTILOS CSS INALTERADOS ... */
     :root {
       --cor-fundo: #f3f4f6;
       --cor-texto: #1f2937;
@@ -522,7 +523,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>GFIG 🚀 - Balança Wi-Fi</h1>
+      <h1>GFIG 🚀 - Balança Serial</h1>
       <div class="status-conexao">
         <div id="ws-indicator" title="Desconectado"></div><span id="ws-text">Desconectado</span>
       </div>
@@ -572,9 +573,8 @@
       <nav><button class="tablink" onclick="abrirAba(this, 'abaGrafico')" id="padrao">📈 Gráfico</button><button
           class="tablink" onclick="abrirAba(this, 'abaTabela')">📋 Tabela</button><button class="tablink"
           onclick="abrirAba(this, 'abaGravacoes')">💾 Gravações</button><button class="tablink"
-          onclick="abrirAba(this, 'abaControles')">⚙️ Parâmetros</button><button class="tablink"
-          onclick="abrirAba(this, 'abaConfig')">📡 Rede Wi-Fi</button>
-      </nav>
+          onclick="abrirAba(this, 'abaControles')">⚙️ Parâmetros</button>
+          </nav>
     </div>
     <main>
       <div id="abaGrafico" class="tabcontent">
@@ -595,8 +595,6 @@
             <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
           </div>
         </div>
-
-        <!-- O bloco de atalhos embutido foi removido daqui -->
 
         <div id="grafico" class="ct-chart"></div>
       </div>
@@ -722,43 +720,9 @@
       </div>
       <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
   </div>
-  <div id="abaConfig" class="tabcontent">
-    <section>
-      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuração da Rede Wi-Fi</h2>
-      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Configure a rede
-        Wi-Fi
-        para conectar a balança.</p>
-      <div id="status-rede"
-        style="margin-bottom: 1rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.375rem; background-color: #f9fafb;">
-        <p style="margin: 0; font-weight: 600;">Status da Rede:</p>
-        <p id="status-rede-texto" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          Conectando...</p>
-        <p id="status-rede-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          IP: <span id="ip-rede">---</span></p>
-        <p id="status-rede-ap" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          AP Ativo: <span id="ap-ativo">---</span></p>
-        <p id="status-rede-ap-ip" style="margin: 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          IP do AP: <span id="ap-ip">---</span></p>
-        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--cor-texto-secundario);">
-          <strong>Acesso mDNS:</strong> <a href="http://gfig.local" target="_blank">gfig.local</a>
-        </p>
-      </div>
-      <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">Digite o SSID e a
-        senha
-        da rede Wi-Fi que deseja conectar.</p>
-      <form onsubmit="salvarRede(event)" style="display: flex; flex-direction: column; gap: 1rem;">
-        <div><label for="ssid">Nome da Rede (SSID)</label><input id="ssid" required style="max-width: 320px;"></div>
-        <div><label for="senha">Senha</label><input id="senha" type="text" style="max-width: 320px;"></div>
-        <button type="submit" class="btn"
-          style="background-color: #8b5cf6; color: white; align-self: flex-start;">Salvar Rede e
-          Reiniciar</button>
-      </form>
-    </section>
-  </div>
-  <div id="notification-area"></div>
+    <div id="notification-area"></div>
   </main>
 
-  <!-- NOVO: Rodapé fixo para Atalhos -->
   <footer id="footer-atalhos">
     <span style="font-weight: bold;">⚡ ATALHOS:</span>
     <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>

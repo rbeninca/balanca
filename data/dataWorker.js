@@ -1,8 +1,9 @@
 // --- Variáveis Globais do Worker ---
+console.log("🚀 dataWorker.js carregado com sucesso!");
 let socket;
-let dataBuffer = []; // Buffer para acumular dados antes de enviar para a UI
-let gravity = 9.80665; // Valor padrão, será atualizado pela config do ESP
-let emaAlpha = 0.2; // Fator de suavização para Média Móvel Exponencial (EMA)
+let dataBuffer = []; 
+let gravity = 9.80665; 
+let emaAlpha = 0.2; 
 let emaValue = 0;
 let emaInitialized = false;
 let maxForce = -Infinity;
@@ -13,81 +14,102 @@ let totalLeiturasMCU = 0;
 let rpsCalculadoMCU = 0;
 
 /**
- * Conecta ao servidor WebSocket do ESP8266.
+ * Conecta ao servidor WebSocket do Host (Raspberry Pi/PC).
  */
 function connectWebSocket() {
     // Evita criar múltiplas conexões se uma já estiver ativa ou tentando conectar.
     if (socket && socket.readyState !== WebSocket.CLOSED) {
+        console.log(`[Worker] Socket já existe. Estado: ${socket.readyState}`);
         return;
     }
     
-    
-    // O endereço IP deve ser o do seu ESP8266.
-    const port =location.port;
-    if (port==5500){
-        var url="localhost";
-    }else{
-        var url=location.hostname;
+    // CRÍTICO: Constrói a URL usando o HOST onde a página foi carregada (Raspberry Pi/PC)
+    let host = location.hostname;
+    let port = 81; 
+
+    if (location.port === '5500' || host === 'localhost' || host === '127.0.0.1') {
+        host = 'localhost'; // Use 'localhost' ou o IP fixo da sua Raspberry Pi
     }
-    //const wsURL = `ws://192.168.1.2:81`;
-    const wsURL = `ws://`+url+`:81`;
-    socket = new WebSocket(wsURL);
+
+    const wsURL = `ws://${host}:${port}`;
+    console.log(`[Worker] 🔄 Tentando conectar WebSocket: ${wsURL}`);
+    
+    try {
+        socket = new WebSocket(wsURL);
+    } catch (e) {
+        console.error("[Worker] ❌ Erro ao criar WebSocket:", e);
+        self.postMessage({ type: 'status', status: 'error', message: 'Erro ao criar WebSocket: ' + e.message });
+        return;
+    }
 
     socket.onopen = () => {
-        self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao dispositivo' });
+        console.log(`[Worker] ✅ WebSocket CONECTADO! Estado: ${socket.readyState}`);
+        self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao Gateway Serial (Host)' });
     };
 
-    socket.onclose = () => {
-        self.postMessage({ type: 'status', status: 'disconnected', message: 'Desconectado. Tentando reconectar...' });
-        socket = null; // Limpa a referência para forçar a reconexão.
+    socket.onclose = (event) => {
+        console.log(`[Worker] ⚠️ WebSocket FECHADO. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
+        self.postMessage({ type: 'status', status: 'disconnected', message: `Desconectado (${event.code}). Tentando reconectar...` });
+        socket = null; 
     };
 
     socket.onerror = (error) => {
-        self.postMessage({ type: 'status', status: 'error', message: 'Erro na conexão WebSocket.' });
-        console.error("WebSocket Error:", error);
-        socket = null; // Limpa a referência para forçar a reconexão.
+        console.error("[Worker] ❌ Erro WebSocket:", error);
+        self.postMessage({ type: 'status', status: 'error', message: 'Erro na conexão WebSocket com o Host.' });
+        socket = null; 
     };
 
     /**
      * Manipulador de mensagens recebidas do WebSocket.
-     * Esta é a função principal que processa os dados da balança.
      */
     socket.onmessage = (event) => {
-        // A string de dados pode começar com '[' (array de dados) ou '{' (objeto de status/config).
+      //  console.log(`[Worker] 📨 Mensagem recebida do WebSocket. Tipo: ${typeof event.data}, Tamanho: ${event.data.length}`);
+        
+        // Assume que as mensagens do Host são JSON Array (dados) ou JSON Objeto (status/config).
         if (typeof event.data === 'string' && (event.data.startsWith('[') || event.data.startsWith('{'))) {
             try {
                 const data = JSON.parse(event.data);
                 
-                // 1. VERIFICA SE A MENSAGEM É UM LOTE DE DADOS (ARRAY)
                 if (Array.isArray(data)) {
-                    // Se for um array, processamos cada item como um ponto de dado individual.
+                   // console.log(`[Worker] 📊 Array de dados recebido! ${data.length} leituras`);
                     data.forEach(reading => {
                       processDataPoint(reading);
                     });
                 }   
-                // 2. SE NÃO FOR UM ARRAY, VERIFICA SE É UMA MENSAGEM ÚNICA (OBJETO)
                 else if (typeof data === 'object' && data.type) {
-                    switch (data.type) {
-                        case "config":
-                            if (data.gravity) {
-                                gravity = parseFloat(data.gravity);
-                            }
-                            // Retransmite a configuração para a UI principal.
-                            self.postMessage({ type: 'config', payload: data });
-                            break;
+                    //console.log(`[Worker] 📋 Objeto recebido. Tipo: ${data.type}`);
+                switch (data.type) {
+                    
+                    // --- ADICIONE ESTAS 3 LINHAS ---
+                    case "data":
+                        processDataPoint(data);
+                        break;
+                    // ---------------------------------
 
-                        case "status":
-                            // Retransmite a mensagem de status para a UI principal.
-                            self.postMessage({ type: 'status', status: data.status, message: data.message });
+                    case "config":
+                        if (data.gravity) {
+                            gravity = parseFloat(data.gravity);
+                        }
+                        console.log("[UI] CONFIGURAÇÃO RECEBIDA:", data);
+                        self.postMessage({ type: 'config', payload: data });
+                        
+                        break;
+
+                        case "success":
+                        case "error":
+                        case "info": 
+                            // Retransmite a mensagem de status/erro do ESP8266
+                            self.postMessage({ type: 'status', status: data.type, message: data.message });
                             break;
                     }
                 }
             } catch (e) {
-                //console.warn("Worker: JSON malformado ou tipo de dado inesperado.", event.data);
-                self.postMessage({ type: 'status', status: 'info', message: event.data });
+                console.error("[Worker] ❌ JSON malformado do Host:", e);
+                console.error("[Worker] Dados recebidos:", event.data.substring(0, 200));
+                self.postMessage({ type: 'status', status: 'error', message: 'JSON malformado do Host: ' + event.data.substring(0, 50) + '...' });
             }
         } else {
-            // Trata mensagens que não são JSON (texto puro).
+            console.warn("[Worker] ⚠️ Mensagem não JSON recebida:", event.data.substring(0, 100));
             self.postMessage({ type: 'status', status: 'info', message: event.data });
         }
     };
@@ -95,26 +117,23 @@ function connectWebSocket() {
 
 /**
  * Processa um ÚNICO ponto de dado recebido do ESP32.
- * Esta função é chamada para cada item dentro do lote (array) recebido.
- * @param {object} data - O objeto de dados com {type, tempo, forca, status}.
  */
 function processDataPoint(data) {
-    // Garante que estamos processando apenas mensagens do tipo 'data'.
-    if (data.type !== 'data') return;
+    if (data.type !== 'data') {
+        console.log(`[Worker] ⚠️ Ignorando ponto que não é 'data'. Tipo: ${data.type}`);
+        return;
+    }
 
     const forceN = data.forca;
+    //console.log(`[Worker] ⚡ Processando ponto: tempo=${data.tempo}s, força=${forceN}N`);
     
-    // Atualiza a força máxima.
     if (forceN > maxForce) {
         maxForce = forceN;
     }
 
-    // Calcula a Média Móvel Exponencial (EMA).
     const ema = getEmaValue(forceN);
-    // Calcula a massa em kg.
     const massaKg = gravity > 0 ? forceN / gravity : 0;
 
-    // Adiciona o dado processado ao buffer, que será enviado para a UI.
     dataBuffer.push({
         tempo: data.tempo,
         forca: forceN,
@@ -123,12 +142,13 @@ function processDataPoint(data) {
         massaKg: massaKg
     });
 
+    //console.log(`[Worker] 📦 Buffer agora tem ${dataBuffer.length} pontos`);
  
     // --- RPS USANDO TEMPO DO MICROCONTROLADOR ---
     if (lastTempoMCU !== null) {
-        const deltaTempo = data.tempo - lastTempoMCU; // segundos vindos do MCU
+        const deltaTempo = data.tempo - lastTempoMCU; 
         if (deltaTempo > 0) {
-            const rpsInstantaneo = 1 / deltaTempo; // leituras por segundo
+            const rpsInstantaneo = 1 / deltaTempo; 
             rpsCalculadoMCU = (rpsCalculadoMCU * totalLeiturasMCU + rpsInstantaneo) / (totalLeiturasMCU + 1);
             totalLeiturasMCU++;
         }
@@ -138,8 +158,6 @@ function processDataPoint(data) {
 
 /**
  * Calcula a Média Móvel Exponencial (EMA).
- * @param {number} newValue - O novo valor de força.
- * @returns {number} O valor EMA calculado.
  */
 function getEmaValue(newValue) {
     if (!emaInitialized) {
@@ -158,23 +176,54 @@ self.onmessage = (e) => {
     const { type, payload } = e.data;
 
     switch (type) {
-        // A UI está pedindo os dados acumulados para desenhar o gráfico.
         case 'solicitarDados':
             if (dataBuffer.length > 0) {
+              //  console.log(`[Worker] 📤 Enviando ${dataBuffer.length} pontos para a UI`);
                 self.postMessage({ type: 'dadosDisponiveis', payload: dataBuffer });
-                dataBuffer = []; // Limpa o buffer após o envio.
+                dataBuffer = []; 
+            } else {
+              //  console.log(`[Worker] 📭 Buffer vazio, nada para enviar`);
             }
             break;
 
-        // A UI está pedindo a taxa de leituras por segundo.
           case 'getRPS':
             self.postMessage({ type: 'rps', payload: rpsCalculadoMCU.toFixed(1) });
             break;
 
-        // A UI está enviando um comando para o ESP32 (ex: 't' para tarar).
         case 'sendCommand':
             if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(payload);
+                const commandObject = {};
+
+                // Comando de Tara
+                if (payload === 't') {
+                    commandObject.cmd = 't';
+                }
+                
+                // Comando de Calibração: c:1000 -> {cmd: 'c', massa_g: 1000}
+                else if (payload.startsWith('c:')) {
+                    const mass = parseFloat(payload.substring(2));
+                    commandObject.cmd = 'c';
+                    commandObject.massa_g = mass;
+                }
+                else if (payload === 'get_config') {
+                    // Este comando apenas pede a configuração atual
+                    commandObject.cmd = 'get_config';
+                }
+                
+                // Comando Set Param: set_param:gravity:9.81 -> {cmd: 'set', param: 'gravity', value: 9.81}
+                else if (payload.startsWith('set_param:')) {
+                    const parts = payload.substring(10).split(':');
+                    if (parts.length === 2) {
+                        commandObject.cmd = 'set';
+                        commandObject.param = parts[0];
+                        commandObject.value = parseFloat(parts[1]); 
+                    }
+                }
+                
+                // Envia a string JSON para o Host, que envia para a Serial do ESP
+                if (commandObject.cmd) {
+                   socket.send(JSON.stringify(commandObject)); 
+                }
             }
             break;
     }
@@ -183,11 +232,11 @@ self.onmessage = (e) => {
 
 /**
  * Inicia o Gerenciador de Conexão.
- * Este loop verifica o estado da conexão a cada 2 segundos e tenta conectar se necessário.
+ * Este loop verifica o estado da conexão a cada 5 segundos e tenta conectar se necessário.
  */
 setInterval(() => {
     if (socket == null || socket.readyState === WebSocket.CLOSED) {
-        console.log("Tentando reconectar ao WebSocket...");
+        console.log("Tentando reconectar ao WebSocket do Host...");
         connectWebSocket();
     }
 }, 5000);
