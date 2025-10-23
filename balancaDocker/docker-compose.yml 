@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  balanca:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: balanca
+    restart: unless-stopped
+    # Mapeie a serial do seu TV box; ajuste para ttyACM0 se for o caso
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+    environment:
+      # Porta serial e baud rate (podem ser auto-detectados; aqui é padrão)
+      SERIAL_PORT: "/dev/ttyUSB0"
+      SERIAL_BAUD: "921600"
+
+      # Portas dos servidores
+      WS_PORT: "81"
+      HTTP_PORT: "80"
+
+      # Repositório e branch para popular ./data
+      GIT_REPO: "https://github.com/rbeninca/balancaGFIG"
+      GIT_BRANCH: "balança_serial"
+
+      # Intervalo (seg) para verificar atualizações no repositório
+      PULL_INTERVAL: "120"
+
+      # Diretório onde o conteúdo do repo será servido via HTTP
+      WEB_DIRECTORY: "/app/data"
+
+    ports:
+      - "80:80"  # HTTP
+      - "81:81"      # WebSocket
+    # Se precisar de permissões de grupo para a serial no host, descomente:
+    # group_add:
+    #   - "dialout"
