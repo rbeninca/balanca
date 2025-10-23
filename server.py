@@ -16,7 +16,7 @@ import time # CORREÇÃO CRÍTICA: Importação do time movida para o topo
 SERIAL_BAUD = 921600 
 SERIAL_PORT = '/dev/ttyUSB0'
 WS_PORT = 81
-HTTP_PORT = 8080
+HTTP_PORT = 80
 WEB_DIRECTORY = './data/'
 # ---------------------
 
