@@ -16,7 +16,7 @@ import time # CORREÇÃO CRÍTICA: Importação do time movida para o topo
 SERIAL_BAUD = 921600 
 SERIAL_PORT = '/dev/ttyUSB0'
 WS_PORT = 81
-HTTP_PORT = 80
+HTTP_PORT = 8080
 WEB_DIRECTORY = './data/'
 # ---------------------
 
@@ -116,8 +116,22 @@ def serial_reader_thread(loop):
                 logging.info(f"Recebido da Serial: {line}") 
                 
                 if line.startswith('[') or line.startswith('{'):
-                    # Envia para o loop principal para broadcast
-                    asyncio.run_coroutine_threadsafe(broadcast(line), loop)
+                    # NOVO: Valida se é JSON completo antes de enviar
+                    try:
+                        # Tenta fazer parse para validar
+                        json.loads(line)
+                        
+                        # Se passou na validação, envia
+                        asyncio.run_coroutine_threadsafe(broadcast(line), loop)
+                        
+                        # NOVO: Pequeno delay para não sobrecarregar WebSocket
+                        # Permite ~100 mensagens/segundo (mais que suficiente)
+                        time.sleep(0.005)  # 5ms
+                        
+                    except json.JSONDecodeError as json_err:
+                        # JSON incompleto ou malformado - ignora e registra
+                        logging.warning(f"JSON inválido ignorado: {line[:100]}... Erro: {json_err}")
+                        continue
                 else:
                     # Ignora linhas vazias ou não JSON (como a mensagem de inicialização do ESP)
                     if line:

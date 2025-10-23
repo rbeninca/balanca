@@ -8,6 +8,9 @@ let emaValue = 0;
 let emaInitialized = false;
 let maxForce = -Infinity;
 
+// NOVO: Buffer para mensagens parciais do WebSocket
+let messageBuffer = "";
+
 // --- Variáveis para cálculo de Leituras por Segundo (RPS) ---
 let lastTempoMCU = null;
 let totalLeiturasMCU = 0;
@@ -61,58 +64,125 @@ function connectWebSocket() {
 
     /**
      * Manipulador de mensagens recebidas do WebSocket.
+     * CORRIGIDO: Trata mensagens parciais/fragmentadas
      */
     socket.onmessage = (event) => {
-        //  console.log(`[Worker] 📨 Mensagem recebida do WebSocket. Tipo: ${typeof event.data}, Tamanho: ${event.data.length}`);
-
-        // Assume que as mensagens do Host são JSON Array (dados) ou JSON Objeto (status/config).
-        if (typeof event.data === 'string' && (event.data.startsWith('[') || event.data.startsWith('{'))) {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (Array.isArray(data)) {
-                    // console.log(`[Worker] 📊 Array de dados recebido! ${data.length} leituras`);
-                    data.forEach(reading => {
-                        processDataPoint(reading);
-                    });
+        // Adiciona os dados recebidos ao buffer
+        messageBuffer += event.data;
+        
+        // Tenta processar JSONs completos do buffer
+        let jsonStartIndex = 0;
+        
+        while (jsonStartIndex < messageBuffer.length) {
+            // Procura o início de um JSON
+            let startChar = messageBuffer[jsonStartIndex];
+            
+            // Ignora caracteres que não são início de JSON
+            if (startChar !== '{' && startChar !== '[') {
+                jsonStartIndex++;
+                continue;
+            }
+            
+            // Tenta encontrar o final do JSON
+            let braceCount = 0;
+            let inString = false;
+            let escapeNext = false;
+            let jsonEndIndex = -1;
+            
+            const isArray = startChar === '[';
+            
+            for (let i = jsonStartIndex; i < messageBuffer.length; i++) {
+                const char = messageBuffer[i];
+                
+                // Controle de strings (para não contar chaves dentro de strings)
+                if (char === '"' && !escapeNext) {
+                    inString = !inString;
                 }
-                else if (typeof data === 'object' && data.type) {
-                    //console.log(`[Worker] 📋 Objeto recebido. Tipo: ${data.type}`);
-                    switch (data.type) {
-
-                        // --- ADICIONE ESTAS 3 LINHAS ---
-                        case "data":
-                            processDataPoint(data);
+                
+                if (char === '\\' && inString) {
+                    escapeNext = !escapeNext;
+                } else {
+                    escapeNext = false;
+                }
+                
+                if (!inString) {
+                    if (char === '{' || char === '[') {
+                        braceCount++;
+                    } else if (char === '}' || char === ']') {
+                        braceCount--;
+                        
+                        if (braceCount === 0) {
+                            // Encontrou o final do JSON
+                            jsonEndIndex = i;
                             break;
-                        // ---------------------------------
-
-                        case "config":
-                            if (data.gravity) {
-                                gravity = parseFloat(data.gravity);
-                            }
-                            console.log("[UI] CONFIGURAÇÃO RECEBIDA:", data);
-                            self.postMessage({ type: 'config', payload: data });
-
-                            break;
-
-                        case "success":
-                        case "error":
-                        case "info":
-                            // Retransmite a mensagem de status/erro do ESP8266
-                            self.postMessage({ type: 'status', status: data.type, message: data.message });
-                            break;
+                        }
                     }
                 }
-            } catch (e) {
-                console.error("[Worker] ❌ JSON malformado do Host:", e);
-                console.error("[Worker] Dados recebidos:", event.data.substring(0, 200));
-                self.postMessage({ type: 'status', status: 'error', message: 'JSON malformado do Host: ' + event.data.substring(0, 50) + '...' });
             }
-        } else {
-            console.warn("[Worker] ⚠️ Mensagem não JSON recebida:", event.data.substring(0, 100));
-            self.postMessage({ type: 'status', status: 'info', message: event.data });
+            
+            // Se encontrou um JSON completo, processa
+            if (jsonEndIndex !== -1) {
+                const jsonString = messageBuffer.substring(jsonStartIndex, jsonEndIndex + 1);
+                
+                try {
+                    const data = JSON.parse(jsonString);
+                    processWebSocketMessage(data);
+                } catch (e) {
+                    console.error("[Worker] ❌ JSON inválido:", e);
+                    console.error("[Worker] String problemática:", jsonString.substring(0, 100));
+                }
+                
+                // Remove o JSON processado do buffer
+                jsonStartIndex = jsonEndIndex + 1;
+            } else {
+                // JSON incompleto - sai do loop e espera mais dados
+                break;
+            }
+        }
+        
+        // Remove a parte processada do buffer
+        messageBuffer = messageBuffer.substring(jsonStartIndex);
+        
+        // Limita o tamanho do buffer para evitar memory leak
+        if (messageBuffer.length > 10000) {
+            console.warn("[Worker] ⚠️ Buffer muito grande, limpando...");
+            messageBuffer = "";
         }
     };
+}
+
+/**
+ * Processa uma mensagem WebSocket completa (JSON já parseado)
+ */
+function processWebSocketMessage(data) {
+    if (Array.isArray(data)) {
+        // Array de leituras
+        data.forEach(reading => {
+            processDataPoint(reading);
+        });
+    }
+    else if (typeof data === 'object' && data.type) {
+        switch (data.type) {
+            case "data":
+                processDataPoint(data);
+                break;
+
+            case "config":
+                if (data.gravity) {
+                    gravity = parseFloat(data.gravity);
+                }
+                console.log("[Worker] CONFIGURAÇÃO RECEBIDA:", data);
+                self.postMessage({ type: 'config', payload: data });
+                break;
+
+            case "success":
+            case "error":
+            case "info":
+                // Retransmite a mensagem de status/erro do ESP8266
+                self.postMessage({ type: 'status', status: data.type, message: data.message });
+                break;
+        }
+    }
 }
 
 /**
