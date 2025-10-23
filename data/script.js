@@ -25,6 +25,12 @@ let audioContext = null;
 let ultimoStatusEstabilizacao = true;
 let contadorFalhasEstabilizacao = 0;
 
+// === NOVAS VARIÁVEIS PARA ESPECIFICAÇÕES DA CÉLULA ===
+let capacidadeMaximaGramas = 5000.0;
+let percentualAcuracia = 0.05;
+let filtroZonaMortaAtivo = true; // Ativo por padrão
+let arredondamentoInteligenteAtivo = true; // Ativo por padrão
+
 // --- NOVAS VARIÁVEIS PARA MELHORIAS (sem quebrar compatibilidade) ---
 let showDataLabels = false; // Começa desabilitado para não afetar performance
 let showPeaks = true;
@@ -923,7 +929,19 @@ function exportChartAsPNG() {
 // =======================================
 // --- FUNÇÃO updateUIFromData MELHORADA (mantém compatibilidade total) ---
 function updateUIFromData(dado) {
-  const { tempo, forca, ema, maxForce, massaKg } = dado;
+  let { tempo, forca, ema, maxForce, massaKg } = dado;
+
+  // === NOVO: APLICA FILTROS DA CÉLULA DE CARGA ===
+  // Converte Newton para gramas para aplicar os filtros
+  const forcaGramas = (forca / 9.80665) * 1000; // N → kg → g
+  const forcaGramasFiltrada = aplicarFiltrosGramas(forcaGramas);
+  
+  // Converte de volta para Newton
+  forca = (forcaGramasFiltrada / 1000) * 9.80665; // g → kg → N
+  
+  // Atualiza massa também
+  massaKg = forcaGramasFiltrada / 1000;
+  // ================================================
 
   // Mantém a lógica original
   if (forca > maxForceInN) maxForceInN = forca;
@@ -1193,6 +1211,19 @@ function updateConfigForm(config) {
   atualizarToleranciaEmGramas();
   document.getElementById("param-num-amostras").value = getValue(config.numAmostrasMedia);
   document.getElementById("param-timeout").value = getValue(config.timeoutCalibracao);
+  
+  // NOVO: Especificações da célula de carga
+  document.getElementById("param-capacidade-maxima").value = getValue(config.capacidadeMaximaGramas);
+  document.getElementById("param-acuracia").value = getValue(config.percentualAcuracia);
+  atualizarCapacidadeEmKg();
+  atualizarErroAbsoluto();
+  
+  // Salva nas variáveis globais para uso nos filtros
+  capacidadeMaximaGramas = parseFloat(config.capacidadeMaximaGramas) || 5000.0;
+  percentualAcuracia = parseFloat(config.percentualAcuracia) || 0.05;
+  
+  // Atualiza o indicador visual dos filtros
+  atualizarStatusFiltros();
 
   // --- Atualiza Status da Rede ---
   // Tradução do status numérico para texto
@@ -1316,6 +1347,8 @@ async function salvarParametros() {
     toleranciaEstabilidade: "param-tolerancia",
     numAmostrasMedia: "param-num-amostras",
     timeoutCalibracao: "param-timeout",
+    capacidadeMaximaGramas: "param-capacidade-maxima",
+    percentualAcuracia: "param-acuracia",
   };
 
   let allValid = true;
@@ -1602,6 +1635,191 @@ function atualizarToleranciaEmGramas() {
   } else {
     toleranciaElement.textContent = '';
   }
+}
+
+// NOVA: Atualiza o display de capacidade em kg
+function atualizarCapacidadeEmKg() {
+  const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima").value);
+  const capacidadeElement = document.getElementById("capacidade-em-kg");
+  
+  if (!capacidadeElement) return;
+  
+  if (!isNaN(capacidadeGramas) && capacidadeGramas > 0) {
+    const capacidadeKg = capacidadeGramas / 1000;
+    capacidadeElement.textContent = `≈ ${capacidadeKg.toFixed(2)} kg`;
+    
+    // Atualiza a variável global
+    capacidadeMaximaGramas = capacidadeGramas;
+    
+    // Atualiza status dos filtros
+    if (typeof atualizarStatusFiltros === 'function') {
+      atualizarStatusFiltros();
+    }
+  } else {
+    capacidadeElement.textContent = '';
+  }
+}
+
+// NOVA: Atualiza o display de erro absoluto baseado na acurácia
+function atualizarErroAbsoluto() {
+  const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima").value);
+  const percentAcuracia = parseFloat(document.getElementById("param-acuracia").value);
+  const erroElement = document.getElementById("erro-absoluto");
+  
+  if (!erroElement) return;
+  
+  if (!isNaN(capacidadeGramas) && !isNaN(percentAcuracia) && capacidadeGramas > 0) {
+    const erroAbsoluto = (capacidadeGramas * percentAcuracia) / 100;
+    erroElement.textContent = `Erro: ±${erroAbsoluto.toFixed(2)} g`;
+    
+    // Atualiza a variável global
+    percentualAcuracia = percentAcuracia;
+    
+    // Atualiza status dos filtros
+    if (typeof atualizarStatusFiltros === 'function') {
+      atualizarStatusFiltros();
+    }
+  } else {
+    erroElement.textContent = '';
+  }
+}
+
+// === NOVAS FUNÇÕES DE FILTRAGEM ===
+
+/**
+ * Calcula o erro absoluto da célula em gramas
+ */
+function calcularErroAbsolutoGramas() {
+  return (capacidadeMaximaGramas * percentualAcuracia) / 100;
+}
+
+/**
+ * Aplica filtro de zona morta (deadband)
+ * Valores dentro do erro da célula são considerados zero
+ */
+function aplicarZonaMorta(valorGramas) {
+  if (!filtroZonaMortaAtivo) return valorGramas;
+  
+  const erroAbsoluto = calcularErroAbsolutoGramas();
+  
+  // Se o valor absoluto está dentro do erro, retorna zero
+  if (Math.abs(valorGramas) <= erroAbsoluto) {
+    return 0;
+  }
+  
+  return valorGramas;
+}
+
+/**
+ * Aplica arredondamento inteligente baseado na acurácia da célula
+ * Não faz sentido mostrar mais casas decimais que a precisão permite
+ */
+function aplicarArredondamentoInteligente(valorGramas) {
+  if (!arredondamentoInteligenteAtivo) return valorGramas;
+  
+  const erroAbsoluto = calcularErroAbsolutoGramas();
+  
+  // Define o número de casas decimais baseado no erro
+  let casasDecimais;
+  if (erroAbsoluto >= 100) {
+    casasDecimais = 0; // Erros de 100g+ = sem decimais
+  } else if (erroAbsoluto >= 10) {
+    casasDecimais = 0; // Erros de 10-100g = sem decimais
+  } else if (erroAbsoluto >= 1) {
+    casasDecimais = 1; // Erros de 1-10g = 1 casa
+  } else if (erroAbsoluto >= 0.1) {
+    casasDecimais = 2; // Erros de 0.1-1g = 2 casas
+  } else {
+    casasDecimais = 3; // Erros < 0.1g = 3 casas
+  }
+  
+  return parseFloat(valorGramas.toFixed(casasDecimais));
+}
+
+/**
+ * Aplica todos os filtros ativos a um valor em gramas
+ */
+function aplicarFiltrosGramas(valorGramas) {
+  let valor = valorGramas;
+  
+  // 1. Zona morta (antes do arredondamento para não perder valores próximos de zero)
+  valor = aplicarZonaMorta(valor);
+  
+  // 2. Arredondamento inteligente
+  valor = aplicarArredondamentoInteligente(valor);
+  
+  return valor;
+}
+
+/**
+ * Atualiza o display de status dos filtros
+ */
+function atualizarStatusFiltros() {
+  const erroAbsoluto = calcularErroAbsolutoGramas();
+  const casasDecimais = calcularCasasDecimaisInteligente();
+  
+  const infoZonaMorta = document.getElementById('info-zona-morta');
+  const infoArredondamento = document.getElementById('info-arredondamento');
+  
+  if (infoZonaMorta) {
+    if (filtroZonaMortaAtivo) {
+      infoZonaMorta.textContent = `✓ Zona Morta (±${erroAbsoluto.toFixed(2)}g)`;
+      infoZonaMorta.style.color = '#27ae60';
+    } else {
+      infoZonaMorta.textContent = `✗ Zona Morta (desativado)`;
+      infoZonaMorta.style.color = '#95a5a6';
+    }
+  }
+  
+  if (infoArredondamento) {
+    if (arredondamentoInteligenteAtivo) {
+      infoArredondamento.textContent = `✓ Arredondamento (${casasDecimais} ${casasDecimais === 1 ? 'casa' : 'casas'})`;
+      infoArredondamento.style.color = '#27ae60';
+    } else {
+      infoArredondamento.textContent = `✗ Arredondamento (desativado)`;
+      infoArredondamento.style.color = '#95a5a6';
+    }
+  }
+}
+
+/**
+ * Calcula quantas casas decimais devem ser usadas
+ */
+function calcularCasasDecimaisInteligente() {
+  const erroAbsoluto = calcularErroAbsolutoGramas();
+  
+  if (erroAbsoluto >= 10) return 0;
+  if (erroAbsoluto >= 1) return 1;
+  if (erroAbsoluto >= 0.1) return 2;
+  return 3;
+}
+
+/**
+ * Toggle do filtro de zona morta
+ */
+function toggleFiltroZonaMorta() {
+  filtroZonaMortaAtivo = !filtroZonaMortaAtivo;
+  const btn = document.getElementById('btn-zona-morta');
+  if (btn) {
+    btn.textContent = `Zona Morta: ${filtroZonaMortaAtivo ? 'ON' : 'OFF'}`;
+    btn.style.background = filtroZonaMortaAtivo ? '#27ae60' : '#95a5a6';
+  }
+  atualizarStatusFiltros();
+  showNotification('info', `Filtro de Zona Morta ${filtroZonaMortaAtivo ? 'ATIVADO' : 'DESATIVADO'}`);
+}
+
+/**
+ * Toggle do arredondamento inteligente
+ */
+function toggleArredondamentoInteligente() {
+  arredondamentoInteligenteAtivo = !arredondamentoInteligenteAtivo;
+  const btn = document.getElementById('btn-arredondamento');
+  if (btn) {
+    btn.textContent = `Arredondar: ${arredondamentoInteligenteAtivo ? 'ON' : 'OFF'}`;
+    btn.style.background = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
+  }
+  atualizarStatusFiltros();
+  showNotification('info', `Arredondamento Inteligente ${arredondamentoInteligenteAtivo ? 'ATIVADO' : 'DESATIVADO'}`);
 }
 
 function toggleAntiNoising() {

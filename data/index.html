@@ -591,8 +591,18 @@
             <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
             <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
             <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
-            <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>
             <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+          </div>
+          <div class="btn-grupo" style="margin-top: 0.5rem;">
+            <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>
+            <button id="btn-zona-morta" class="btn" onclick="toggleFiltroZonaMorta()" style="background: #27ae60;">Zona Morta: ON</button>
+            <button id="btn-arredondamento" class="btn" onclick="toggleArredondamentoInteligente()" style="background: #27ae60;">Arredondar: ON</button>
+          </div>
+          
+          <div id="status-filtros" style="margin-top: 0.75rem; padding: 0.75rem; background: #ecf0f1; border-radius: 0.5rem; font-size: 0.875rem;">
+            <strong>📊 Filtros da Célula:</strong>
+            <span id="info-zona-morta" style="margin-left: 1rem; color: #27ae60;">✓ Zona Morta (±0.0g)</span>
+            <span id="info-arredondamento" style="margin-left: 1rem; color: #27ae60;">✓ Arredondamento (0 casas)</span>
           </div>
         </div>
 
