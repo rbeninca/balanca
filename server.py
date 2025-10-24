@@ -23,14 +23,14 @@ Revised server:
 Env vars:
   SERIAL_PORT=/dev/ttyUSB0 (or COM3)
   SERIAL_BAUD=921600
-  HTTP_PORT=8080
-  WS_PORT=8765
+  HTTP_PORT=80
+  WS_PORT=81
 """
 
 # ================== Config ==================
 SERIAL_BAUD = int(os.environ.get("SERIAL_BAUD", "921600"))
 SERIAL_PORT = os.environ.get("SERIAL_PORT", "/dev/ttyUSB0")
-HTTP_PORT   = int(os.environ.get("HTTP_PORT", "8080"))
+HTTP_PORT   = int(os.environ.get("HTTP_PORT", "80"))
 WS_PORT     = int(os.environ.get("WS_PORT", "81"))
 
 # Packet (little-endian) <HBBIfH>
