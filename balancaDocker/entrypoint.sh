@@ -32,7 +32,7 @@ if [ ! -d "${WEB_DIRECTORY}/.git" ]; then
 else
   echo "[entrypoint] Atualizando repositório existente..."
   git -C "${WEB_DIRECTORY}" fetch origin "${GIT_BRANCH}" --depth 1 || true
-  git -C "${WEB_DIRECTORY}" pull origin "${GIT_BRANCH}" || true
+  
 
   git -C "${WEB_DIRECTORY}" reset --hard "origin/${GIT_BRANCH}" || true
 fi
