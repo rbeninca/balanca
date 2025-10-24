@@ -9,7 +9,7 @@ import os
 import json
 import logging
 import functools
-import time # CORREÇÃO CRÍTICA: Importação do time movida para o topo
+import time
 
 # --- Configurações ---
               
@@ -21,7 +21,6 @@ WEB_DIRECTORY = './data/'
 # ---------------------
 
 # Configuração do Logging
-# O nível INFO garante que os payloads da Serial sejam impressos
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 # Gerenciamento de conexões
@@ -35,7 +34,6 @@ def find_serial_port():
         return SERIAL_PORT
 
     logging.warning(f"Porta {SERIAL_PORT} não encontrada. Procurando automaticamente...")
-    # Ajuste para grep (Linux)
     ports = [p for p in serial.tools.list_ports.comports() if 'USB' in p.device or 'ttyACM' in p.device]
     if ports:
         port_name = ports[0].device
@@ -63,7 +61,6 @@ async def unregister(websocket):
     logging.info(f"Cliente desconectado: {websocket.remote_address}")
     CONNECTED_CLIENTS.remove(websocket)
 
-# A assinatura aceita path=None para compatibilidade com o ambiente Python 3.13
 async def websocket_handler(websocket, path=None):
     """Lida com conexões WebSocket (recebe comandos do Worker)."""
     await register(websocket)
@@ -72,7 +69,6 @@ async def websocket_handler(websocket, path=None):
             logging.info(f"Recebido do WS: {message}")
             if serial_connection and serial_connection.is_open:
                 try:
-                    # O Host envia o comando JSON para o ESP via Serial
                     serial_connection.write(f"{message}\n".encode('utf-8'))
                 except serial.SerialException as e:
                     logging.error(f"Erro ao escrever na serial: {e}")
@@ -84,99 +80,108 @@ async def websocket_handler(websocket, path=None):
         await unregister(websocket)
 
 def serial_reader_thread(loop):
-    """Lê dados da porta serial (em uma thread separada) e os envia para o WebSocket."""
+    """Lê dados da porta serial e os envia para o WebSocket."""
     global serial_connection
+    
+    # Buffer para acumular dados parciais
+    line_buffer = ""
+    
     while True:
         if serial_connection is None or not serial_connection.is_open:
             port_name = find_serial_port()
             if port_name:
                 try:
                     logging.info(f"Conectando à serial {port_name} a {SERIAL_BAUD} baud...")
-                    # Timeout otimizado para melhor performance
                     serial_connection = serial.Serial(
                         port_name, 
                         SERIAL_BAUD, 
                         timeout=1.0,
-                        write_timeout=1.0,
-                        inter_byte_timeout=0.1
+                        write_timeout=1.0
                     ) 
                     logging.info("Conectado à serial.")
                 except serial.SerialException as e:
                     logging.error(f"Falha ao conectar na serial: {e}")
                     serial_connection = None
-                    time.sleep(3) # Usa time.sleep (síncrono)
+                    time.sleep(3)
                     continue
             else:
-                 time.sleep(3) # Usa time.sleep (síncrono)
+                 time.sleep(3)
                  continue
         
         try:
-            # Tenta ler UMA linha (pacote JSON) terminada em \n
-            line_bytes = serial_connection.readline()
+            # Lê dados disponíveis (pode ser parcial)
+            if serial_connection.in_waiting > 0:
+                chunk = serial_connection.read(serial_connection.in_waiting).decode('utf-8', errors='ignore')
+                line_buffer += chunk
+                
+                # Processa linhas completas (terminadas em \n)
+                while '\n' in line_buffer:
+                    line, line_buffer = line_buffer.split('\n', 1)
+                    line = line.strip()
+                    
+                    if not line:
+                        continue
+                    
+                    # Log da linha recebida
+                    logging.info(f"Recebido da Serial: {line}")
+                    
+                    # Verifica se parece JSON
+                    if line.startswith('{') or line.startswith('['):
+                        # Tenta processar como JSON único primeiro
+                        try:
+                            json.loads(line)
+                            asyncio.run_coroutine_threadsafe(broadcast(line), loop)
+                        except json.JSONDecodeError:
+                            # Pode ser múltiplos JSONs concatenados
+                            # Separa por }{ ou ][
+                            line_split = line.replace('}{', '}|{').replace('][', ']|[')
+                            parts = line_split.split('|')
+                            
+                            valid_count = 0
+                            for part in parts:
+                                part = part.strip()
+                                if part and (part.startswith('{') or part.startswith('[')):
+                                    try:
+                                        json.loads(part)
+                                        asyncio.run_coroutine_threadsafe(broadcast(part), loop)
+                                        valid_count += 1
+                                    except json.JSONDecodeError as e:
+                                        logging.warning(f"JSON inválido ignorado: {part[:100]}... Erro: {e}")
+                            
+                            if valid_count > 0:
+                                logging.info(f"Processados {valid_count} JSONs concatenados")
+                            else:
+                                logging.warning(f"Nenhum JSON válido encontrado em: {line[:100]}...")
+                    else:
+                        # Não é JSON, apenas loga se for significativo
+                        if len(line) > 5:
+                            logging.warning(f"Dado serial ignorado (não JSON): {line[:100]}")
+                
+                # Limita tamanho do buffer para evitar memory leak
+                if len(line_buffer) > 10000:
+                    logging.warning("Buffer muito grande, limpando...")
+                    line_buffer = ""
             
-            if line_bytes:
-                # Decodifica e limpa espaços em branco e nova linha
-                line = line_bytes.decode('utf-8').strip()
-                
-                # Dados da Serial são impressos aqui (Log INFO)
-                logging.info(f"Recebido da Serial: {line}") 
-                
-                if line.startswith('[') or line.startswith('{'):
-                    # Primeiro tenta processar como um único JSON (caso mais comum)
-                    try:
-                        json.loads(line)
-                        asyncio.run_coroutine_threadsafe(broadcast(line), loop)
-                    except json.JSONDecodeError:
-                        # Se falhar, pode ser múltiplos JSONs concatenados
-                        # Tenta separar por }{ ou ][
-                        json_parts = []
-                        
-                        # Substitui }{ por }|{ para facilitar split
-                        line_split = line.replace('}{', '}|{').replace('][', ']|[')
-                        potential_jsons = line_split.split('|')
-                        
-                        for part in potential_jsons:
-                            part = part.strip()
-                            if part and (part.startswith('{') or part.startswith('[')):
-                                try:
-                                    json.loads(part)
-                                    json_parts.append(part)
-                                except json.JSONDecodeError:
-                                    logging.warning(f"JSON inválido ignorado: {part[:100]}...")
-                        
-                        # Envia cada JSON válido
-                        for valid_json in json_parts:
-                            asyncio.run_coroutine_threadsafe(broadcast(valid_json), loop)
-                        
-                        if json_parts:
-                            logging.info(f"Processados {len(json_parts)} JSONs concatenados")
-                        else:
-                            logging.warning(f"Nenhum JSON válido encontrado em: {line[:100]}...")
-                
-                else:
-                    # Ignora linhas vazias ou não JSON
-                    if line:
-                        logging.warning(f"Dado serial ignorado (não JSON/Vazio): {line}")
-            
-            # Se não houver dados, espera um pouco para não esgotar a CPU
             else:
-                 time.sleep(0.01) # Usa time.sleep (síncrono)
-
+                # Não há dados, espera um pouco
+                time.sleep(0.01)
         
         except serial.SerialException as e:
             logging.error(f"Erro de leitura serial: {e}. Reconectando...")
             if serial_connection:
                 serial_connection.close()
             serial_connection = None
+            line_buffer = ""  # Limpa buffer ao reconectar
         except UnicodeDecodeError:
             logging.warning("Erro de decodificação. Descartando pacote.")
+            line_buffer = ""  # Limpa buffer em erro
         except Exception as e:
             logging.error(f"Erro inesperado no reader: {e}")
+            line_buffer = ""  # Limpa buffer em erro
 
 def http_server_thread():
     """Inicia um servidor HTTP simples para servir os arquivos estáticos."""
     try:
-        # Usa functools.partial para definir o diretório raiz ANTES de iniciar o servidor
         Handler = functools.partial(
             http.server.SimpleHTTPRequestHandler,
             directory=WEB_DIRECTORY
@@ -186,14 +191,12 @@ def http_server_thread():
             logging.info(f"Servidor HTTP iniciado em http://localhost:{HTTP_PORT} (servindo de {WEB_DIRECTORY})")
             httpd.serve_forever()
     except OSError as e:
-        if e.errno == 98: # Endereço já em uso
+        if e.errno == 98:
              logging.error(f"Erro no HTTP: A porta {HTTP_PORT} já está em uso.")
         else:
              logging.error(f"Falha ao iniciar servidor HTTP: {e}")
     except Exception as e:
         logging.error(f"Falha ao iniciar servidor HTTP: {e}")
-
-# --- Ponto de Entrada Principal ---
 
 async def main():
     """Função principal assíncrona para iniciar os serviços."""
@@ -201,16 +204,15 @@ async def main():
     
     loop = asyncio.get_running_loop()
 
-    # 2. Inicia o leitor serial em uma thread separada
+    # Inicia o leitor serial em uma thread separada
     threading.Thread(target=serial_reader_thread, args=(loop,), daemon=True, name="SerialThread").start()
 
-    # 3. Inicia o servidor HTTP em uma thread separada
+    # Inicia o servidor HTTP em uma thread separada
     threading.Thread(target=http_server_thread, daemon=True, name="HTTPThread").start()
 
-    # 4. Inicia o servidor WebSocket
+    # Inicia o servidor WebSocket
     logging.info(f"Iniciando Servidor WebSocket na porta {WS_PORT}")
     
-    # Inicia o servidor WS e o mantém rodando
     ws_server = await websockets.serve(
         websocket_handler, 
         "0.0.0.0", 
@@ -219,7 +221,7 @@ async def main():
     )
     
     try:
-        await asyncio.Future() # Mantém o servidor rodando indefinidamente
+        await asyncio.Future()
     finally:
         ws_server.close()
         await ws_server.wait_closed()

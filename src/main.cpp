@@ -5,10 +5,10 @@
 #include <HX711.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
-#include <string.h> // Necessário para strcpy e strstr
+#include <string.h>
 
-// BALANÇA GFIG - VERSÃO GATEWAY SERIAL (ESTÁVEL V14)
-// CORREÇÃO: Leituras são enviadas individualmente para evitar bloqueio do buffer serial.
+// BALANÇA GFIG - VERSÃO GATEWAY SERIAL (ESTÁVEL V17 - PRODUÇÃO)
+// OTIMIZADO PARA SISTEMAS DE BAIXA PERFORMANCE (Raspberry Pi, Docker)
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -18,13 +18,13 @@
 #define OLED_SCL 12
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Buffer para comandos e mensagens de status. O buffer de leituras foi removido.
+// Buffer para comandos e mensagens
 char jsonOutputBuffer[512];
 
-// CRÍTICO: Tamanho máximo para o comando Serial
+// Tamanho máximo para o comando Serial
 const size_t MAX_COMMAND_LEN = 256;
 
-// Estrutura de Configuração (Mantida na EEPROM)
+// Estrutura de Configuração
 struct Config {
   unsigned long magic_number = 123456789;
   char staSSID[32] = "";
@@ -36,9 +36,8 @@ struct Config {
   int numAmostrasMedia = 3;
   unsigned long timeoutCalibracao = 20000;
   long tareOffset = 0;
-  // NOVO: Especificações da célula de carga
-  float capacidadeMaximaGramas = 5000.0;  // Capacidade máxima em gramas (padrão: 5kg)
-  float percentualAcuracia = 0.05;        // Acurácia em % (padrão: 0.05% = ±0.05%)
+  float capacidadeMaximaGramas = 5000.0;
+  float percentualAcuracia = 0.05;
 };
 Config config;
 
@@ -48,7 +47,6 @@ const uint8_t pinClock = D8;
 HX711 loadcell;
 StaticJsonDocument<256> commandDoc;
 
-// Usando char array em vez de String para balancaStatus para maior estabilidade
 char balancaStatusBuffer[32] = "Iniciando...";
 float pesoAtual_g = 0.0;
 unsigned long lastReadTime = 0;
@@ -70,14 +68,14 @@ void setup() {
   Serial.begin(921600);
   delay(100);
 
-  // ################ TESTE CRÍTICO DE SERIAL ################
   Serial.println("\n\n################################################");
   Serial.println("## PONTO DE INÍCIO ALCANÇADO COM SUCESSO! ##");
   Serial.println("################################################\n");
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.println("   Versao: ESTAVEL V15 (LoadCell Specs)"); // Versão atualizada
+  Serial.println("   Versao: ESTAVEL V17 (Producao)");
+  Serial.println("   Taxa: 10 Hz (100ms) - Otimizado");
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -119,18 +117,20 @@ void loop() {
   ESP.wdtFeed();
   yield();
 
-  // --- Rotina de Verificação de Comandos (a cada 100ms) ---
-  if (millis() - lastCommandCheckTime >= 100) {
+  // --- Verificação de Comandos (a cada 50ms) ---
+  if (millis() - lastCommandCheckTime >= 50) {
     lastCommandCheckTime = millis();
     processSerialCommand();
     yield();
   }
 
-  // --- Rotina de Leitura e Envio da Célula de Carga (Alta Frequência) ---
-  if (millis() - lastReadTime >= 12) {
+  // --- LEITURA E ENVIO DA CÉLULA DE CARGA ---
+  // CRÍTICO: 100ms (10 Hz) para sistemas de baixa performance
+  // Esta taxa garante estabilidade em Raspberry Pi e containers Docker
+  if (millis() - lastReadTime >= 100) {
     lastReadTime = millis();
 
-    // Não lê durante calibração/tara.
+    // Não lê durante calibração/tara
     if (strstr(balancaStatusBuffer, "Tarar") != NULL || strstr(balancaStatusBuffer, "Calibrar") != NULL) {
       return;
     }
@@ -144,21 +144,33 @@ void loop() {
           pesoAtual_g *= -1;
         }
 
-        // Envia a leitura individualmente para evitar bloqueio do buffer serial
+        // Envia a leitura de forma otimizada
         StaticJsonDocument<256> readingDoc;
         readingDoc["type"] = "data";
         readingDoc["tempo"] = millis() / 1000.0;
         readingDoc["forca"] = (pesoAtual_g / 1000.0) * config.gravity;
         readingDoc["status"] = balancaStatusBuffer;
 
-        serializeJson(readingDoc, Serial);
-        Serial.println();
+        // Serializa para buffer primeiro
+        size_t len = serializeJson(readingDoc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
+        
+        if (len > 0) {
+            // Envia o buffer completo de uma vez
+            Serial.println(jsonOutputBuffer);
+            
+            // CRÍTICO: Aguarda o Serial terminar antes de continuar
+            // Isso previne corrupção dos dados
+            Serial.flush();
+            
+            // Pequeno delay adicional para sistemas lentos
+            delay(5);
+        }
 
         yield();
     }
   }
 
-  // --- Rotina de Display (a cada 500ms) ---
+  // --- Display (a cada 500ms) ---
   if (millis() - lastDisplayUpdateTime >= 500) {
     lastDisplayUpdateTime = millis();
     atualizarDisplay(balancaStatusBuffer, pesoAtual_g);
@@ -166,23 +178,18 @@ void loop() {
   }
 }
 
-/**
- * Utilitário para enviar JSON simples (status/erro/info) sem usar String.
- */
 void sendSimpleJson(const char* type, const char* message) {
     StaticJsonDocument<128> doc;
     doc["type"] = type;
     doc["message"] = message;
-    // Usa o buffer global jsonOutputBuffer temporariamente
     size_t written = serializeJson(doc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
     if(written > 0) {
         Serial.println(jsonOutputBuffer);
+        Serial.flush();
+        delay(5);
     }
 }
 
-/**
- * Envia a configuração do dispositivo para o Serial Host.
- */
 void sendSerialConfig() {
     StaticJsonDocument<512> doc;
     doc["type"] = "config";
@@ -196,17 +203,17 @@ void sendSerialConfig() {
     doc["capacidadeMaximaGramas"] = config.capacidadeMaximaGramas;
     doc["percentualAcuracia"] = config.percentualAcuracia;
     doc["mode"] = "SERIAL_GATEWAY";
-    doc["version"] = "STABLE_V15"; // Versão atualizada
+    doc["version"] = "STABLE_V17_PROD";
+    doc["rate_hz"] = 10;
 
     size_t written = serializeJson(doc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
     if (written > 0) {
         Serial.println(jsonOutputBuffer);
+        Serial.flush();
+        delay(5);
     }
 }
 
-/**
- * CRÍTICO: Função que monitora e processa comandos JSON recebidos via Serial.
- */
 void processSerialCommand() {
     if (Serial.available() <= 0) {
         return;
@@ -217,7 +224,6 @@ void processSerialCommand() {
 
     inputBuffer[len] = '\0';
 
-    // Limpa o buffer serial de qualquer resíduo
     while (Serial.available() > 0) {
         Serial.read();
     }
@@ -314,7 +320,7 @@ void processSerialCommand() {
                 changed = true;
             }
             else if (strcmp(paramName, "capacidadeMaximaGramas") == 0) {
-                if (paramValueF > 0 && paramValueF <= 1000000) { // Até 1000kg
+                if (paramValueF > 0 && paramValueF <= 1000000) {
                     config.capacidadeMaximaGramas = paramValueF;
                     changed = true;
                 } else {
@@ -322,7 +328,7 @@ void processSerialCommand() {
                 }
             }
             else if (strcmp(paramName, "percentualAcuracia") == 0) {
-                if (paramValueF >= 0 && paramValueF <= 10.0) { // Até 10%
+                if (paramValueF >= 0 && paramValueF <= 10.0) {
                     config.percentualAcuracia = paramValueF;
                     changed = true;
                 } else {
@@ -373,9 +379,9 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("VERSAO ESTAVEL V15"); // Versão atualizada
+  display.println("V17 PROD - 10Hz");
   display.setCursor(0, 45);
-  display.printf("Serial: %u Baud", 230400);
+  display.printf("Serial: %u Baud", 921600);
   display.setCursor(0, 55);
   display.printf("RAM: %u KB", ESP.getFreeHeap() / 1024);
   display.display();
@@ -399,16 +405,15 @@ void loadConfig() {
   }
 }
 
-
 bool aguardarEstabilidade(const char *proposito) {
   Serial.printf("{\"type\":\"info\",\"message\":\"[Estabilidade] Aguardando: %s\"}\n", proposito);
+  Serial.flush();
 
   unsigned long inicio = millis();
   int leiturasEstaveisCount = 0;
   long ultimaLeitura = 0;
 
   while (millis() - inicio < config.timeoutCalibracao) {
-    // CRÍTICO: Alimentar o WDT antes da leitura demorada e em cada iteração
     ESP.wdtFeed();
     yield();
 
@@ -434,7 +439,7 @@ bool aguardarEstabilidade(const char *proposito) {
     }
 
     ultimaLeitura = leituraAtual;
-    delay(100); // Manter o delay entre as amostras de estabilidade
+    delay(100);
   }
 
   sendSimpleJson("info", "[Estabilidade] Timeout");
