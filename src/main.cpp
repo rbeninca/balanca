@@ -119,8 +119,8 @@ void loop() {
   ESP.wdtFeed();
   yield();
 
-  // --- Rotina de Verificação de Comandos (a cada 50ms) ---
-  if (millis() - lastCommandCheckTime >= 12) {
+  // --- Rotina de Verificação de Comandos (a cada 100ms) ---
+  if (millis() - lastCommandCheckTime >= 100) {
     lastCommandCheckTime = millis();
     processSerialCommand();
     yield();
