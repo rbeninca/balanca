@@ -5,10 +5,58 @@
 #include <HX711.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
-#include <string.h>
 
-// BALANÇA GFIG - VERSÃO GATEWAY SERIAL (ESTÁVEL V17 - PRODUÇÃO)
-// OTIMIZADO PARA SISTEMAS DE BAIXA PERFORMANCE (Raspberry Pi, Docker)
+// ======== PROTOCOLO BINÁRIO (16 bytes, little-endian) ========
+static const uint16_t MAGIC_BIN_PROTO = 0xA1B2;
+
+#pragma pack(push,1)
+struct PacketBin {
+  uint16_t magic;   // 0xA1B2
+  uint8_t  ver;     // 1
+  uint8_t  status;  // 0=Pesando,1=Tarar,2=Calibrar,3=Pronta
+  uint32_t t_ms;    // millis()
+  float    forca_N; // Newtons
+  uint16_t crc;     // CRC16-CCITT
+};
+#pragma pack(pop)
+
+static uint16_t crc16_ccitt(const uint8_t* data, size_t len) {
+  uint16_t crc = 0xFFFF;
+  for (size_t i = 0; i < len; ++i) {
+    crc ^= (uint16_t)data[i] << 8;
+    for (uint8_t b = 0; b < 8; ++b) {
+      if (crc & 0x8000) crc = (uint16_t)((crc << 1) ^ 0x1021);
+      else              crc = (uint16_t)(crc << 1);
+    }
+  }
+  return crc;
+}
+
+static inline uint8_t status_code_from_str(const char* s) {
+  if (!s) return 0;
+  if (strcmp(s, "Pesando")  == 0) return 0;
+  if (strcmp(s, "Tarar")    == 0) return 1;
+  if (strcmp(s, "Calibrar") == 0) return 2;
+  if (strcmp(s, "Pronta")   == 0) return 3;
+  return 0; // default
+}
+
+static inline void sendBinaryFrame(uint8_t status_code, float forca_N) {
+  PacketBin p;
+  p.magic   = MAGIC_BIN_PROTO;
+  p.ver     = 1;
+  p.status  = status_code;
+  p.t_ms    = millis();
+  p.forca_N = forca_N;
+  p.crc     = 0;
+  p.crc     = crc16_ccitt((const uint8_t*)&p, sizeof(PacketBin) - sizeof(uint16_t));
+  Serial.write((const uint8_t*)&p, sizeof(PacketBin));
+}
+
+#include <string.h> // Necessário para strcpy e strstr
+
+// BALANÇA GFIG - VERSÃO GATEWAY SERIAL (ESTÁVEL V14)
+// CORREÇÃO: Leituras são enviadas individualmente para evitar bloqueio do buffer serial.
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -18,13 +66,13 @@
 #define OLED_SCL 12
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Buffer para comandos e mensagens
-char jsonOutputBuffer[512];
+// Buffer para comandos e mensagens de status. O buffer de leituras foi removido.
+char jsonOutputBuffer[1024];
 
-// Tamanho máximo para o comando Serial
+// CRÍTICO: Tamanho máximo para o comando Serial
 const size_t MAX_COMMAND_LEN = 256;
 
-// Estrutura de Configuração
+// Estrutura de Configuração (Mantida na EEPROM)
 struct Config {
   unsigned long magic_number = 123456789;
   char staSSID[32] = "";
@@ -36,8 +84,9 @@ struct Config {
   int numAmostrasMedia = 3;
   unsigned long timeoutCalibracao = 20000;
   long tareOffset = 0;
-  float capacidadeMaximaGramas = 5000.0;
-  float percentualAcuracia = 0.05;
+  // NOVO: Especificações da célula de carga
+  float capacidadeMaximaGramas = 5000.0;  // Capacidade máxima em gramas (padrão: 5kg)
+  float percentualAcuracia = 0.05;        // Acurácia em % (padrão: 0.05% = ±0.05%)
 };
 Config config;
 
@@ -47,6 +96,7 @@ const uint8_t pinClock = D8;
 HX711 loadcell;
 StaticJsonDocument<256> commandDoc;
 
+// Usando char array em vez de String para balancaStatus para maior estabilidade
 char balancaStatusBuffer[32] = "Iniciando...";
 float pesoAtual_g = 0.0;
 unsigned long lastReadTime = 0;
@@ -68,14 +118,14 @@ void setup() {
   Serial.begin(921600);
   delay(100);
 
+  // ################ TESTE CRÍTICO DE SERIAL ################
   Serial.println("\n\n################################################");
   Serial.println("## PONTO DE INÍCIO ALCANÇADO COM SUCESSO! ##");
   Serial.println("################################################\n");
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.println("   Versao: ESTAVEL V17 (Producao)");
-  Serial.println("   Taxa: 10 Hz (100ms) - Otimizado");
+  Serial.println("   Versao: ESTAVEL V15 (LoadCell Specs)"); // Versão atualizada
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -117,20 +167,18 @@ void loop() {
   ESP.wdtFeed();
   yield();
 
-  // --- Verificação de Comandos (a cada 50ms) ---
-  if (millis() - lastCommandCheckTime >= 50) {
+  // --- Rotina de Verificação de Comandos (a cada 100ms) ---
+  if (millis() - lastCommandCheckTime >= 100) {
     lastCommandCheckTime = millis();
     processSerialCommand();
     yield();
   }
 
-  // --- LEITURA E ENVIO DA CÉLULA DE CARGA ---
-  // CRÍTICO: 100ms (10 Hz) para sistemas de baixa performance
-  // Esta taxa garante estabilidade em Raspberry Pi e containers Docker
-  if (millis() - lastReadTime >= 100) {
+  // --- Rotina de Leitura e Envio da Célula de Carga (Alta Frequência) ---
+  if (millis() - lastReadTime >= 10) {
     lastReadTime = millis();
 
-    // Não lê durante calibração/tara
+    // Não lê durante calibração/tara.
     if (strstr(balancaStatusBuffer, "Tarar") != NULL || strstr(balancaStatusBuffer, "Calibrar") != NULL) {
       return;
     }
@@ -144,33 +192,15 @@ void loop() {
           pesoAtual_g *= -1;
         }
 
-        // Envia a leitura de forma otimizada
-        StaticJsonDocument<256> readingDoc;
-        readingDoc["type"] = "data";
-        readingDoc["tempo"] = millis() / 1000.0;
-        readingDoc["forca"] = (pesoAtual_g / 1000.0) * config.gravity;
-        readingDoc["status"] = balancaStatusBuffer;
-
-        // Serializa para buffer primeiro
-        size_t len = serializeJson(readingDoc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
-        
-        if (len > 0) {
-            // Envia o buffer completo de uma vez
-            Serial.println(jsonOutputBuffer);
-            
-            // CRÍTICO: Aguarda o Serial terminar antes de continuar
-            // Isso previne corrupção dos dados
-            Serial.flush();
-            
-            // Pequeno delay adicional para sistemas lentos
-            delay(5);
-        }
-
-        yield();
+        // Envia a leitura individualmente para evitar bloqueio do buffer serial
+        float __forcaN = (pesoAtual_g / 1000.0f) * config.gravity;
+uint8_t __st = status_code_from_str(balancaStatusBuffer);
+sendBinaryFrame(__st, __forcaN);
+yield();
     }
   }
 
-  // --- Display (a cada 500ms) ---
+  // --- Rotina de Display (a cada 500ms) ---
   if (millis() - lastDisplayUpdateTime >= 500) {
     lastDisplayUpdateTime = millis();
     atualizarDisplay(balancaStatusBuffer, pesoAtual_g);
@@ -178,18 +208,25 @@ void loop() {
   }
 }
 
+/**
+ * Utilitário para enviar JSON simples (status/erro/info) sem usar String.
+ */
 void sendSimpleJson(const char* type, const char* message) {
     StaticJsonDocument<128> doc;
     doc["type"] = type;
     doc["message"] = message;
+    // Usa o buffer global jsonOutputBuffer temporariamente
     size_t written = serializeJson(doc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
     if(written > 0) {
         Serial.println(jsonOutputBuffer);
         Serial.flush();
-        delay(5);
+        delay(10); // Pequeno delay para evitar mistura com dados binários
     }
 }
 
+/**
+ * Envia a configuração do dispositivo para o Serial Host.
+ */
 void sendSerialConfig() {
     StaticJsonDocument<512> doc;
     doc["type"] = "config";
@@ -203,39 +240,55 @@ void sendSerialConfig() {
     doc["capacidadeMaximaGramas"] = config.capacidadeMaximaGramas;
     doc["percentualAcuracia"] = config.percentualAcuracia;
     doc["mode"] = "SERIAL_GATEWAY";
-    doc["version"] = "STABLE_V17_PROD";
-    doc["rate_hz"] = 10;
+    doc["version"] = "STABLE_V15"; // Versão atualizada
+
+    size_t len = measureJson(doc);
+    if (len > sizeof(jsonOutputBuffer) - 1) {
+        Serial.printf("{\"type\":\"error\",\"message\":\"Config JSON too large: %u bytes\"}\n", len);
+        return;
+    }
 
     size_t written = serializeJson(doc, jsonOutputBuffer, sizeof(jsonOutputBuffer));
     if (written > 0) {
         Serial.println(jsonOutputBuffer);
         Serial.flush();
-        delay(5);
+        delay(50); // Aguarda transmissão completa antes de retomar envio binário
     }
 }
 
+/**
+ * CRÍTICO: Função que monitora e processa comandos JSON recebidos via Serial.
+ */
 void processSerialCommand() {
     if (Serial.available() <= 0) {
         return;
     }
 
+    sendSimpleJson("info", "Serial data available");
+
     char inputBuffer[MAX_COMMAND_LEN];
     size_t len = Serial.readBytesUntil('\n', inputBuffer, MAX_COMMAND_LEN - 1);
 
+    // Adiciona null terminator
     inputBuffer[len] = '\0';
 
-    while (Serial.available() > 0) {
-        Serial.read();
+    // Remove caracteres de controle e whitespace no final
+    while (len > 0 && (inputBuffer[len-1] == '\r' || inputBuffer[len-1] == '\n' || inputBuffer[len-1] == ' ')) {
+        inputBuffer[--len] = '\0';
     }
 
+    // Ignora linhas vazias ou muito curtas
     if (len == 0 || len < 5) {
+        sendSimpleJson("info", "Command too short");
         return;
     }
+
+    sendSimpleJson("info", "Parsing command");
 
     DeserializationError error = deserializeJson(commandDoc, inputBuffer);
 
     if (error) {
-        sendSimpleJson("error", error.c_str());
+        sendSimpleJson("error", "JSON parse error");
         return;
     }
 
@@ -245,6 +298,8 @@ void processSerialCommand() {
         sendSimpleJson("error", "Comando 'cmd' ausente");
         return;
     }
+
+    sendSimpleJson("info", "Command identified");
 
     // === LÓGICA DE COMANDOS ===
     if (strcmp(cmd, "t") == 0) {
@@ -320,7 +375,7 @@ void processSerialCommand() {
                 changed = true;
             }
             else if (strcmp(paramName, "capacidadeMaximaGramas") == 0) {
-                if (paramValueF > 0 && paramValueF <= 1000000) {
+                if (paramValueF > 0 && paramValueF <= 1000000) { // Até 1000kg
                     config.capacidadeMaximaGramas = paramValueF;
                     changed = true;
                 } else {
@@ -328,7 +383,7 @@ void processSerialCommand() {
                 }
             }
             else if (strcmp(paramName, "percentualAcuracia") == 0) {
-                if (paramValueF >= 0 && paramValueF <= 10.0) {
+                if (paramValueF >= 0 && paramValueF <= 10.0) { // Até 10%
                     config.percentualAcuracia = paramValueF;
                     changed = true;
                 } else {
@@ -350,6 +405,7 @@ void processSerialCommand() {
     }
 
     else if (strcmp(cmd, "get_config") == 0) {
+        sendSimpleJson("info", "Sending config");
         sendSerialConfig();
     }
 
@@ -379,9 +435,9 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("V17 PROD - 10Hz");
+  display.println("VERSAO ESTAVEL V15"); // Versão atualizada
   display.setCursor(0, 45);
-  display.printf("Serial: %u Baud", 921600);
+  display.printf("Serial: %u Baud", 230400);
   display.setCursor(0, 55);
   display.printf("RAM: %u KB", ESP.getFreeHeap() / 1024);
   display.display();
@@ -405,15 +461,16 @@ void loadConfig() {
   }
 }
 
+
 bool aguardarEstabilidade(const char *proposito) {
   Serial.printf("{\"type\":\"info\",\"message\":\"[Estabilidade] Aguardando: %s\"}\n", proposito);
-  Serial.flush();
 
   unsigned long inicio = millis();
   int leiturasEstaveisCount = 0;
   long ultimaLeitura = 0;
 
   while (millis() - inicio < config.timeoutCalibracao) {
+    // CRÍTICO: Alimentar o WDT antes da leitura demorada e em cada iteração
     ESP.wdtFeed();
     yield();
 
@@ -439,7 +496,7 @@ bool aguardarEstabilidade(const char *proposito) {
     }
 
     ultimaLeitura = leituraAtual;
-    delay(100);
+    delay(100); // Manter o delay entre as amostras de estabilidade
   }
 
   sendSimpleJson("info", "[Estabilidade] Timeout");
