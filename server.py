@@ -92,8 +92,14 @@ def serial_reader_thread(loop):
             if port_name:
                 try:
                     logging.info(f"Conectando à serial {port_name} a {SERIAL_BAUD} baud...")
-                    # Timeout baixo para não travar o loop
-                    serial_connection = serial.Serial(port_name, SERIAL_BAUD, timeout=0.5) 
+                    # Timeout otimizado para melhor performance
+                    serial_connection = serial.Serial(
+                        port_name, 
+                        SERIAL_BAUD, 
+                        timeout=1.0,
+                        write_timeout=1.0,
+                        inter_byte_timeout=0.1
+                    ) 
                     logging.info("Conectado à serial.")
                 except serial.SerialException as e:
                     logging.error(f"Falha ao conectar na serial: {e}")
@@ -116,24 +122,39 @@ def serial_reader_thread(loop):
                 logging.info(f"Recebido da Serial: {line}") 
                 
                 if line.startswith('[') or line.startswith('{'):
-                    # NOVO: Valida se é JSON completo antes de enviar
+                    # Primeiro tenta processar como um único JSON (caso mais comum)
                     try:
-                        # Tenta fazer parse para validar
                         json.loads(line)
-                        
-                        # Se passou na validação, envia
                         asyncio.run_coroutine_threadsafe(broadcast(line), loop)
+                    except json.JSONDecodeError:
+                        # Se falhar, pode ser múltiplos JSONs concatenados
+                        # Tenta separar por }{ ou ][
+                        json_parts = []
                         
-                        # NOVO: Pequeno delay para não sobrecarregar WebSocket
-                        # Permite ~100 mensagens/segundo (mais que suficiente)
-                        time.sleep(0.005)  # 5ms
+                        # Substitui }{ por }|{ para facilitar split
+                        line_split = line.replace('}{', '}|{').replace('][', ']|[')
+                        potential_jsons = line_split.split('|')
                         
-                    except json.JSONDecodeError as json_err:
-                        # JSON incompleto ou malformado - ignora e registra
-                        logging.warning(f"JSON inválido ignorado: {line[:100]}... Erro: {json_err}")
-                        continue
+                        for part in potential_jsons:
+                            part = part.strip()
+                            if part and (part.startswith('{') or part.startswith('[')):
+                                try:
+                                    json.loads(part)
+                                    json_parts.append(part)
+                                except json.JSONDecodeError:
+                                    logging.warning(f"JSON inválido ignorado: {part[:100]}...")
+                        
+                        # Envia cada JSON válido
+                        for valid_json in json_parts:
+                            asyncio.run_coroutine_threadsafe(broadcast(valid_json), loop)
+                        
+                        if json_parts:
+                            logging.info(f"Processados {len(json_parts)} JSONs concatenados")
+                        else:
+                            logging.warning(f"Nenhum JSON válido encontrado em: {line[:100]}...")
+                
                 else:
-                    # Ignora linhas vazias ou não JSON (como a mensagem de inicialização do ESP)
+                    # Ignora linhas vazias ou não JSON
                     if line:
                         logging.warning(f"Dado serial ignorado (não JSON/Vazio): {line}")
             
