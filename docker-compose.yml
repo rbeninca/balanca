@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: balanca
-    restart: unless-always
+    restart: always
   
     # network_mode: host permite acesso direto às portas do host
     # Portas 80 (HTTP) e 81 (WebSocket) ficam disponíveis automaticamente
