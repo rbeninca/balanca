@@ -48,14 +48,12 @@ window.onload = () => {
   
   setDisplayUnit('kgf');
   setChartMode('deslizante');
-  //carregarGravacoes();
-   carregarGravacoesComImpulso();
+  carregarGravacoesComImpulso();
   conectarWorker();
   setInterval(updateReadingsPerSecond, 1000);
   
   // Adiciona controles melhorados se existir o container
   addEnhancedControls();
-   // NOVA LINHA: Adiciona controles de ruído
   setTimeout(addNoiseControlsToUI, 500);
   
   // === NOVO: Inicializa contexto de áudio ===
@@ -63,6 +61,36 @@ window.onload = () => {
   
   // === NOVO: Configura atalhos de teclado ===
   setupKeyboardShortcuts();
+
+  // === NOVO: Lógica de Tema (Dark Mode) ===
+  const themeToggle = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme');
+
+  if (currentTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeToggle.textContent = '☀️';
+  }
+
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    let theme = 'light';
+    if (document.body.classList.contains('dark-mode')) {
+      theme = 'dark';
+      themeToggle.textContent = '☀️';
+    } else {
+      themeToggle.textContent = '🌙';
+    }
+    localStorage.setItem('theme', theme);
+  });
+
+  // === NOVO: Lógica de Conexão WebSocket ===
+  const savedWsUrl = localStorage.getItem('wsUrl');
+  if (savedWsUrl) {
+    document.getElementById('ws-url').value = savedWsUrl;
+    if (dataWorker) {
+      dataWorker.postMessage({ type: 'set_ws_url', payload: { url: savedWsUrl } });
+    }
+  }
 };
 
 // --- INICIALIZAÇÃO MELHORADA (mas compatível) ---
@@ -1955,6 +1983,15 @@ function resetNoiseAnalysis() {
   updateNoiseDisplay();
   showNotification('info', 'Análise de ruído resetada');
 }
+
+function salvarWsUrl() {
+  const wsUrl = document.getElementById('ws-url').value;
+  localStorage.setItem('wsUrl', wsUrl);
+  if (dataWorker) {
+    dataWorker.postMessage({ type: 'set_ws_url', payload: { url: wsUrl } });
+  }
+  showNotification('success', 'URL do WebSocket salva. A conexão será reiniciada.');
+}
 function addNoiseControlsToUI() {
   const controlesTab = document.getElementById('abaControles');
   if (!controlesTab || document.getElementById('noise-controls-section')) return;
@@ -1978,47 +2015,32 @@ function addNoiseControlsToUI() {
     <div class="grid-container" style="gap: 1rem; margin-bottom: 1rem;">
       <div>
         <label>Ruído Médio</label>
-        <div id="noise-mean" style="padding: 0.5rem; background: #f8f9fa; border-radius: 0.375rem; font-family: monospace;">
+        <div id="noise-mean" style="padding: 0.5rem; background: var(--cor-fundo); border-radius: 0.375rem; font-family: monospace;">
           --- ${displayUnit}
         </div>
       </div>
       <div>
         <label>Desvio Padrão</label>
-        <div id="noise-stddev" style="padding: 0.5rem; background: #f8f9fa; border-radius: 0.375rem; font-family: monospace;">
+        <div id="noise-stddev" style="padding: 0.5rem; background: var(--cor-fundo); border-radius: 0.375rem; font-family: monospace;">
           --- ${displayUnit}
         </div>
       </div>
       <div>
         <label>Threshold</label>
-        <div id="noise-threshold" style="padding: 0.5rem; background: #f8f9fa; border-radius: 0.375rem; font-family: monospace;">
+        <div id="noise-threshold" style="padding: 0.5rem; background: var(--cor-fundo); border-radius: 0.375rem; font-family: monospace;">
           --- ${displayUnit}
         </div>
       </div>
       <div>
         <label for="noise-multiplier">Sensibilidade (σ)</label>
         <input id="noise-multiplier" type="number" step="0.1" min="0.5" max="5.0" value="2.0" 
-               onchange="setAntiNoisingMultiplier(this.value)"
-               style="padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; width: 100%;">
-        <small style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">
-          1.0=sensível, 2.0=balanceado, 3.0=tolerante
-        </small>
+               onchange="setAntiNoisingMultiplier(this.value)" />
       </div>
     </div>
     
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-      <button onclick="startNoiseAnalysis()" class="btn btn-primario">
-        📊 Analisar Ruído (10s)
-      </button>
-      <button onclick="resetNoiseAnalysis()" class="btn btn-secundario">
-        🔄 Reset
-      </button>
-    </div>
-    
-    <div style="margin-top: 1rem; padding: 0.75rem; background: #e8f4fd; border-radius: 0.375rem; border-left: 4px solid #3498db;">
-      <p style="margin: 0; font-size: 0.875rem;"><strong>💡 Como usar:</strong></p>
-      <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; color: #2c3e50;">
-        1. Deixe a balança VAZIA • 2. Clique "Analisar Ruído" (<kbd>Shift+A</kbd>) • 3. Aguarde 10s sem tocar • 4. Ative Anti-Noising no gráfico
-      </p>
+    <div class="btn-grupo">
+        <button onclick="startNoiseAnalysis()" class="btn btn-primario">Analisar Ruído (Shift+A)</button>
+        <button onclick="resetNoiseAnalysis()" class="btn btn-secundario">Resetar Análise</button>
     </div>
   `;
   

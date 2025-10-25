@@ -7,6 +7,7 @@ let emaAlpha = 0.2;
 let emaValue = 0;
 let emaInitialized = false;
 let maxForce = -Infinity;
+let wsURL = ''; // NOVO: Variável para armazenar a URL do WebSocket
 
 // NOVO: Buffer para mensagens parciais do WebSocket
 let messageBuffer = "";
@@ -26,22 +27,48 @@ function connectWebSocket() {
         return;
     }
 
-    // CRÍTICO: Constrói a URL usando o HOST onde a página foi carregada (Raspberry Pi/PC)
-    let host = location.hostname;
-    let port = 81;
+    let finalWsURL = wsURL;
 
-    if (location.port === '5500' || host === 'localhost' || host === '127.0.0.1') {
-        host = 'localhost'; // Use 'localhost' ou o IP fixo da sua Raspberry Pi
+    // Se a URL não foi definida pela UI, usa a lógica de fallback
+    if (!finalWsURL) {
+        console.log("[Worker] Nenhuma URL customizada. Usando lógica de fallback.");
+        let host = location.hostname;
+        let port = 81;
+
+        if (location.port === '5500' || host === 'localhost' || host === '127.0.0.1') {
+            host = 'localhost';
+        }
+        finalWsURL = `ws://${host}:${port}`;
+    } else {
+        let givenUrl = finalWsURL.trim();
+
+        // 1. Adiciona o protocolo se não estiver presente
+        if (!givenUrl.startsWith('ws://') && !givenUrl.startsWith('wss://')) {
+            givenUrl = `ws://${givenUrl}`;
+        }
+
+        // 2. Verifica a presença da porta de forma robusta
+        const lastColon = givenUrl.lastIndexOf(':');
+        const lastBracket = givenUrl.lastIndexOf(']');
+
+        // A porta existe se o último dois-pontos vem depois do último colchete (para IPv6)
+        // ou se não há colchetes e há um dois-pontos (para IPv4/hostname)
+        const hasPort = lastColon > lastBracket;
+
+        if (!hasPort) {
+            givenUrl += ':81';
+        }
+
+        finalWsURL = givenUrl;
     }
-
-    const wsURL = `ws://${host}:${port}`;
-    console.log(`[Worker] 🔄 Tentando conectar WebSocket: ${wsURL}`);
+    
+    console.log(`[Worker] 🔄 Tentando conectar WebSocket: ${finalWsURL}`);
 
     try {
-        socket = new WebSocket(wsURL);
+        socket = new WebSocket(finalWsURL);
     } catch (e) {
         console.error("[Worker] ❌ Erro ao criar WebSocket:", e);
-        self.postMessage({ type: 'status', status: 'error', message: 'Erro ao criar WebSocket: ' + e.message });
+        self.postMessage({ type: 'status', status: 'error', message: 'URL de WebSocket inválida: ' + e.message });
         return;
     }
 
@@ -62,68 +89,43 @@ function connectWebSocket() {
         socket = null;
     };
 
-    /**
-     * Manipulador de mensagens recebidas do WebSocket.
-     * CORRIGIDO: Trata mensagens parciais/fragmentadas
-     */
     socket.onmessage = (event) => {
-        // Adiciona os dados recebidos ao buffer
         messageBuffer += event.data;
-        
-        // Tenta processar JSONs completos do buffer
         let jsonStartIndex = 0;
-        
         while (jsonStartIndex < messageBuffer.length) {
-            // Procura o início de um JSON
             let startChar = messageBuffer[jsonStartIndex];
-            
-            // Ignora caracteres que não são início de JSON
             if (startChar !== '{' && startChar !== '[') {
                 jsonStartIndex++;
                 continue;
             }
-            
-            // Tenta encontrar o final do JSON
             let braceCount = 0;
             let inString = false;
             let escapeNext = false;
             let jsonEndIndex = -1;
-            
-            const isArray = startChar === '[';
-            
             for (let i = jsonStartIndex; i < messageBuffer.length; i++) {
                 const char = messageBuffer[i];
-                
-                // Controle de strings (para não contar chaves dentro de strings)
                 if (char === '"' && !escapeNext) {
                     inString = !inString;
                 }
-                
                 if (char === '\\' && inString) {
                     escapeNext = !escapeNext;
                 } else {
                     escapeNext = false;
                 }
-                
                 if (!inString) {
                     if (char === '{' || char === '[') {
                         braceCount++;
                     } else if (char === '}' || char === ']') {
                         braceCount--;
-                        
                         if (braceCount === 0) {
-                            // Encontrou o final do JSON
                             jsonEndIndex = i;
                             break;
                         }
                     }
                 }
             }
-            
-            // Se encontrou um JSON completo, processa
             if (jsonEndIndex !== -1) {
                 const jsonString = messageBuffer.substring(jsonStartIndex, jsonEndIndex + 1);
-                
                 try {
                     const data = JSON.parse(jsonString);
                     processWebSocketMessage(data);
@@ -131,19 +133,12 @@ function connectWebSocket() {
                     console.error("[Worker] ❌ JSON inválido:", e);
                     console.error("[Worker] String problemática:", jsonString.substring(0, 100));
                 }
-                
-                // Remove o JSON processado do buffer
                 jsonStartIndex = jsonEndIndex + 1;
             } else {
-                // JSON incompleto - sai do loop e espera mais dados
                 break;
             }
         }
-        
-        // Remove a parte processada do buffer
         messageBuffer = messageBuffer.substring(jsonStartIndex);
-        
-        // Limita o tamanho do buffer para evitar memory leak
         if (messageBuffer.length > 10000) {
             console.warn("[Worker] ⚠️ Buffer muito grande, limpando...");
             messageBuffer = "";
@@ -246,6 +241,17 @@ self.onmessage = (e) => {
     const { type, payload } = e.data;
 
     switch (type) {
+        case 'set_ws_url':
+            if (payload && payload.url) {
+                wsURL = payload.url;
+                console.log(`[Worker] URL do WebSocket definida para: ${wsURL}`);
+                // Força a reconexão se o socket já existir e estiver fechado
+                if (socket && socket.readyState === WebSocket.CLOSED) {
+                    connectWebSocket();
+                }
+            }
+            break;
+
         case 'solicitarDados':
             if (dataBuffer.length > 0) {
                 //  console.log(`[Worker] 📤 Enviando ${dataBuffer.length} pontos para a UI`);
