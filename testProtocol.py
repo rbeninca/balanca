@@ -41,9 +41,9 @@ def create_test_config_packet():
     percentualAcuracia = 0.05
     mode = 0
     
-    # Pack config data (58 bytes)
+    # Pack config data (56 bytes)
     config_data = struct.pack(
-        "<ffHIHHBBHiIfB23x",  # 23x = 23 bytes de padding
+        "<ffHIHHBBHiIfB21x",  # 21x = 21 bytes de padding
         conversionFactor,
         gravity,
         leiturasEstaveis,
@@ -108,7 +108,7 @@ def parse_config_packet(data: bytes):
     print(f"✅ CRC válido!")
     
     # Unpack config fields
-    fmt = "<ffHIHHBBHiIfB23x"
+    fmt = "<ffHIHHBBHiIfB21x"
     fields = struct.unpack_from(fmt, data, 4)
     
     config = {
@@ -162,9 +162,9 @@ def main():
     # Informações adicionais
     print()
     print("📝 INFORMAÇÕES DO FORMATO:")
-    print("   Formato struct: <ffHIHHBBHiIfB23x")
+    print("   Formato struct: <ffHIHHBBHiIfB21x")
     print("   Header: <HBB (4 bytes)")
-    print("   Config: 58 bytes")
+    print("   Config: 56 bytes")
     print("   CRC: <H (2 bytes)")
     print("   Total: 64 bytes")
     print()
