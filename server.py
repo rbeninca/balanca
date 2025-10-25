@@ -53,6 +53,8 @@ SIZE_CMD_GETCONF = 8
 SIZE_CMD_SETPAR = 18
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+logging.info(f"Configuração de BIND_HOST: {BIND_HOST}")
+logging.info(f"Configuração de IPV6_V6ONLY: {V6ONLY_ENV}")
 
 CONNECTED_CLIENTS = set()
 serial_connection: Optional[serial.Serial] = None
@@ -145,6 +147,7 @@ async def ws_server_main():
         async with websockets.serve(ws_handler, "0.0.0.0", WS_PORT, max_size=None):
             logging.info(f"WebSocket IPv4 ativo em 0.0.0.0:{WS_PORT}")
             await asyncio.Future()
+
 
 async def broadcast_json(obj: Dict[str, Any]):
     if not CONNECTED_CLIENTS:

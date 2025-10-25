@@ -281,7 +281,7 @@ void sendBinaryConfig(const Config& cfg) {
   Serial.write((const uint8_t*)&p, sizeof(PacketConfig));
   Serial.flush();
   
-  Serial.println("[INFO] Config enviada (binario)");
+  
 }
 
 void sendBinaryStatus(uint8_t status_type, uint8_t code, uint16_t value) {
@@ -351,7 +351,7 @@ bool processBinaryCommand() {
   uint16_t crc_calc = crc16_ccitt(cmd_buffer, expected_size - 2);
   
   if (crc_calc != crc_rx) {
-    Serial.println("[WARNING] CRC invalido no comando");
+    
     memmove(cmd_buffer, cmd_buffer + expected_size, cmd_buffer_pos - expected_size);
     cmd_buffer_pos -= expected_size;
     return false;
@@ -362,7 +362,7 @@ bool processBinaryCommand() {
   
   switch (cmd_type) {
     case CMD_TARA: {
-      Serial.println("[INFO] Comando TARA recebido (binario)");
+      
       sendBinaryStatus(STATUS_INFO, MSG_CMD_RECEIVED);
       
       strcpy(balancaStatusBuffer, "Tarar");
@@ -373,10 +373,10 @@ bool processBinaryCommand() {
         config.tareOffset = loadcell.get_offset();
         // saveConfig(); // REMOVIDO: Evita bloqueio durante a tara. O usuário deve salvar explicitamente.
         sendBinaryStatus(STATUS_SUCCESS, MSG_TARA_DONE);
-        Serial.println("[INFO] Tara concluida");
+        
       } else {
         sendBinaryStatus(STATUS_ERROR, MSG_ERROR_GENERIC);
-        Serial.println("[ERROR] Tara falhou");
+        
       }
       
       strcpy(balancaStatusBuffer, "Pronta");
@@ -387,7 +387,7 @@ bool processBinaryCommand() {
     case CMD_CALIBRATE: {
       CmdCalibrate cmd;
       memcpy(&cmd, cmd_buffer, sizeof(CmdCalibrate));
-      Serial.printf("[INFO] Comando CALIBRATE recebido: massa=%.1fg (binario)\n", cmd.massa_g);
+      
       sendBinaryStatus(STATUS_INFO, MSG_CMD_RECEIVED);
       
       float massa_conhecida_g = cmd.massa_g;
@@ -403,17 +403,17 @@ bool processBinaryCommand() {
           loadcell.set_scale(config.conversionFactor);
           saveConfig();
           sendBinaryStatus(STATUS_SUCCESS, MSG_CALIB_DONE);
-          Serial.println("[INFO] Calibracao concluida");
+          
           sendBinaryConfig(config);  // Envia config atualizada
         } else {
           sendBinaryStatus(STATUS_ERROR, MSG_CALIB_FAILED);
-          Serial.println("[ERROR] Calibracao falhou");
+          
         }
         
         strcpy(balancaStatusBuffer, "Pronta");
       } else {
         sendBinaryStatus(STATUS_ERROR, MSG_ERROR_GENERIC);
-        Serial.println("[ERROR] Massa invalida");
+        
       }
       
       processed = true;
@@ -421,7 +421,7 @@ bool processBinaryCommand() {
     }
     
     case CMD_GET_CONFIG: {
-      Serial.println("[INFO] Comando GET_CONFIG recebido (binario)");
+      
       sendBinaryConfig(config);
       processed = true;
       break;
@@ -429,7 +429,7 @@ bool processBinaryCommand() {
     
     case CMD_SET_PARAM: {
       CmdSetParam* cmd = (CmdSetParam*)cmd_buffer;
-      Serial.printf("[INFO] Comando SET_PARAM recebido: param_id=0x%02X (binario)\n", cmd->param_id);
+      
       
       bool updated = false;
       
@@ -437,61 +437,61 @@ bool processBinaryCommand() {
         case PARAM_GRAVITY:
           config.gravity = cmd->value_f;
           updated = true;
-          Serial.printf("[INFO] Gravity atualizado: %.5f\n", config.gravity);
+          
           break;
           
         case PARAM_CONV_FACTOR:
           config.conversionFactor = cmd->value_f;
           loadcell.set_scale(config.conversionFactor);
           updated = true;
-          Serial.printf("[INFO] ConversionFactor atualizado: %.2f\n", config.conversionFactor);
+          
           break;
           
         case PARAM_LEIT_ESTAV:
           config.leiturasEstaveis = (int)cmd->value_i;
           updated = true;
-          Serial.printf("[INFO] LeiturasEstaveis atualizado: %d\n", config.leiturasEstaveis);
+          
           break;
           
         case PARAM_TOLERANCIA:
           config.toleranciaEstabilidade = cmd->value_f;
           updated = true;
-          Serial.printf("[INFO] Tolerancia atualizada: %.1f\n", config.toleranciaEstabilidade);
+          
           break;
           
         case PARAM_NUM_AMOSTRAS:
           config.numAmostrasMedia = (int)cmd->value_i;
           updated = true;
-          Serial.printf("[INFO] NumAmostrasMedia atualizado: %d\n", config.numAmostrasMedia);
+          
           break;
 
         case PARAM_TARE_OFFSET:
           config.tareOffset = (long)cmd->value_i;
           loadcell.set_offset(config.tareOffset);
           updated = true;
-          Serial.printf("[INFO] Tare Offset atualizado: %ld\n", config.tareOffset);
+          
           break;
 
         case PARAM_TIMEOUT_CAL:
           config.timeoutCalibracao = (unsigned long)cmd->value_i * 1000; // Convert seconds from UI to ms
           updated = true;
-          Serial.printf("[INFO] Timeout Calibracao atualizado: %lu\n", config.timeoutCalibracao);
+          
           break;
 
         case PARAM_CAPACIDADE:
           config.capacidadeMaximaGramas = cmd->value_f;
           updated = true;
-          Serial.printf("[INFO] Capacidade Maxima atualizada: %.1f\n", config.capacidadeMaximaGramas);
+          
           break;
 
         case PARAM_ACURACIA:
           config.percentualAcuracia = cmd->value_f;
           updated = true;
-          Serial.printf("[INFO] Percentual Acuracia atualizado: %.4f\n", config.percentualAcuracia);
+          
           break;
           
         default:
-          Serial.printf("[WARNING] Parametro desconhecido: 0x%02X\n", cmd->param_id);
+          
           sendBinaryStatus(STATUS_ERROR, MSG_ERROR_GENERIC);
           break;
       }
@@ -645,7 +645,7 @@ void processSerialCommand() {
     return;
   }
 
-  sendSimpleJson("info", "Serial data available");
+  
 
   char inputBuffer[MAX_COMMAND_LEN];
   size_t len = Serial.readBytesUntil('\n', inputBuffer, MAX_COMMAND_LEN - 1);
@@ -657,27 +657,27 @@ void processSerialCommand() {
   }
 
   if (len == 0 || len < 5) {
-    sendSimpleJson("info", "Command too short");
+    
     return;
   }
 
-  sendSimpleJson("info", "Parsing JSON command");
+  
 
   DeserializationError error = deserializeJson(commandDoc, inputBuffer);
 
   if (error) {
-    sendSimpleJson("error", "JSON parse error");
+    
     return;
   }
 
   const char* cmd = commandDoc["cmd"];
 
   if (!cmd) {
-    sendSimpleJson("error", "Comando 'cmd' ausente");
+    
     return;
   }
 
-  sendSimpleJson("info", "Command identified");
+  
 
   // === LÓGICA DE COMANDOS JSON (LEGACY) ===
   if (strcmp(cmd, "t") == 0) {
@@ -686,10 +686,10 @@ void processSerialCommand() {
       loadcell.tare(config.numAmostrasMedia);
       config.tareOffset = loadcell.get_offset();
       saveConfig();
-      sendSimpleJson("success", "Tara OK");
+      
       strcpy(balancaStatusBuffer, "Pronta");
     } else {
-      sendSimpleJson("error", "Falha tara");
+      
       strcpy(balancaStatusBuffer, "Pronta");
     }
   }
@@ -704,14 +704,14 @@ void processSerialCommand() {
         config.conversionFactor = (float)(leituraRaw - offset) / massa_g;
         loadcell.set_scale(config.conversionFactor);
         saveConfig();
-        sendSimpleJson("success", "Calibracao OK");
+        
         strcpy(balancaStatusBuffer, "Pronta");
       } else {
-        sendSimpleJson("error", "Falha calibracao");
+        
         strcpy(balancaStatusBuffer, "Pronta");
       }
     } else {
-      sendSimpleJson("error", "Massa invalida");
+      
     }
   }
 
@@ -757,7 +757,7 @@ void processSerialCommand() {
           config.capacidadeMaximaGramas = paramValueF;
           changed = true;
         } else {
-          sendSimpleJson("error", "Capacidade invalida (0-1000000g)");
+          
         }
       }
       else if (strcmp(paramName, "percentualAcuracia") == 0) {
@@ -766,31 +766,29 @@ void processSerialCommand() {
           changed = true;
         }
         else {
-          sendSimpleJson("error", "Acuracia invalida (0-10%)");
+          
         }
       }
       else {
-        sendSimpleJson("error", "Parametro desconhecido");
+        
       }
 
       if (changed) {
         saveConfig();
-        sendSimpleJson("success", "Parametro atualizado!");
+        
         sendSerialConfig();
       }
     } else {
-      sendSimpleJson("error", "Parametro ou valor ausente");
+      
     }
   }
 
   else if (strcmp(cmd, "get_config") == 0) {
-    sendSimpleJson("info", "Sending config");
+    
     sendSerialConfig();
   }
 
-  else {
-    sendSimpleJson("error", "Comando desconhecido");
-  }
+  
 }
 
 void atualizarDisplay(const char* status, float peso_em_gramas) {
@@ -823,7 +821,7 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
 void saveConfig() {
   EEPROM.put(0, config);
   EEPROM.commit();
-  sendSimpleJson("info", "[CONFIG] Salvo na EEPROM");
+  
 }
 
 void loadConfig() {
@@ -831,15 +829,15 @@ void loadConfig() {
   EEPROM.get(0, tempConfig);
   if (tempConfig.magic_number == 123456789) {
     config = tempConfig;
-    sendSimpleJson("info", "[CONFIG] Carregado da EEPROM");
+    
   } else {
-    sendSimpleJson("info", "[CONFIG] Usando padrao");
+    
     saveConfig();
   }
 }
 
 bool aguardarEstabilidade(const char *proposito) {
-  Serial.printf("{\"type\":\"info\",\"message\":\"[Estabilidade] Aguardando: %s\"}\n", proposito);
+  
 
   unsigned long inicio = millis();
   int leiturasEstaveisCount = 0;
@@ -861,7 +859,7 @@ bool aguardarEstabilidade(const char *proposito) {
     if (diferenca <= config.toleranciaEstabilidade) {
       leiturasEstaveisCount++;
       if (leiturasEstaveisCount >= config.leiturasEstaveis) {
-        sendSimpleJson("info", "[Estabilidade] Estavel!");
+        
         return true;
       }
     } else {
@@ -873,6 +871,6 @@ bool aguardarEstabilidade(const char *proposito) {
     yield();
   }
 
-  sendSimpleJson("info", "[Estabilidade] Timeout");
+  
   return false;
 }
