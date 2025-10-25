@@ -147,7 +147,11 @@ function initializeApexChart() {
       }
     },
     dataLabels: {
-      enabled: false
+      enabled: false,
+      offsetY: -10,
+      style: {
+        fontSize: '10px',
+      },
     },
     markers: {
       size: chartDisplayMode === 'points' || chartDisplayMode === 'both' ? 4 : 0,
@@ -749,6 +753,10 @@ function toggleDataLabels() {
   chart.updateOptions({
     dataLabels: {
       enabled: isDataLabelsEnabled,
+      offsetY: -10, // Move labels slightly above the points
+      style: {
+        fontSize: '10px', // Smaller font size
+      },
       formatter: function (val) {
         return val.toFixed(casasDecimais) + ' ' + displayUnit;
       }
