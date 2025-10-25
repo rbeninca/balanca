@@ -59,12 +59,17 @@ class SilentHandler(http.server.SimpleHTTPRequestHandler):
         return
 
 def start_http_server():
-    # Ensure the port is free before binding
-    with socketserver.TCPServer(("", HTTP_PORT), SilentHandler) as httpd:
+    try:
+        logging.info("Tentando iniciar o servidor HTTP...")
+        httpd = socketserver.TCPServer(("", HTTP_PORT), SilentHandler)
+        logging.info(f"Servidor HTTP criado. Endereço: {httpd.server_address}")
         t = threading.Thread(target=httpd.serve_forever, daemon=True)
         t.start()
-        logging.info(f"HTTP estático em :{HTTP_PORT}")
+        logging.info(f"Servidor HTTP iniciado em background na porta {HTTP_PORT}")
         return httpd
+    except Exception as e:
+        logging.error(f"Falha catastrófica ao iniciar servidor HTTP: {e}", exc_info=True)
+        return None
 
 # ================== WebSocket ==================
 async def ws_handler(websocket):

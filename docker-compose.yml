@@ -22,7 +22,7 @@ services:
 
     # Monta o repositório em /app (read-only)
     volumes:
-      - ./:/app:ro
+      - ./:/app
 
     # Define /app/data como diretório de trabalho (onde estão os arquivos web)
     working_dir: /app/data
