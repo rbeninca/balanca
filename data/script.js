@@ -10,6 +10,8 @@ let minForceInN = Infinity;
 let rawDataN = []; // Mantido para conversão de unidades
 let isSessionActive = false;
 let isChartPaused = false;
+let chartUpdateBuffer = [];
+let animationFrameId = null;
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -293,9 +295,13 @@ function updateUIFromData(dado) {
     rawDataN.shift();
   }
   
-  const displayData = rawDataN.map(p => [p[0], convertForce(p[1], displayUnit)]);
+  // Adiciona o novo ponto ao buffer de atualização do gráfico
+  chartUpdateBuffer.push([tempo, forcaFiltrada]);
 
-  chart.updateSeries([{ data: displayData }]);
+  // Se não houver uma atualização de quadro de animação agendada, agende uma
+  if (!animationFrameId) {
+    animationFrameId = requestAnimationFrame(processChartUpdates);
+  }
 
   if (isSessionActive) {
     const tbody = document.getElementById("tabela").querySelector("tbody");
@@ -313,6 +319,23 @@ function updateUIFromData(dado) {
       tbody.deleteRow(tbody.rows.length - 1);
     }
   }
+}
+
+function processChartUpdates() {
+  if (chartUpdateBuffer.length === 0) {
+    animationFrameId = null;
+    return;
+  }
+
+  // Converte todos os pontos do buffer para a unidade de exibição
+  const displayData = rawDataN.map(p => [p[0], convertForce(p[1], displayUnit)]);
+
+  // Atualiza o gráfico uma única vez com todos os dados acumulados
+  chart.updateSeries([{ data: displayData }]);
+
+  // Limpa o buffer e redefine o ID do quadro de animação
+  chartUpdateBuffer = [];
+  animationFrameId = null;
 }
 
 function updateConnectionStatus(isConnected) {
