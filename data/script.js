@@ -758,7 +758,7 @@ function toggleDataLabels() {
         fontSize: '10px', // Smaller font size
       },
       formatter: function (val) {
-        return val.toFixed(casasDecimais) + ' ' + displayUnit;
+        return val.toFixed(6) + ' ' + displayUnit;
       }
     }
   });
