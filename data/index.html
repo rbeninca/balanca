@@ -6,12 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GFIG 🚀 - Balança Wi-Fi</title>
 
-  <link rel="stylesheet" href="/chartist.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <link rel="stylesheet" href="/estilo.css">
-  <script src="/chartist.min.js"></script>
-  <script src="script.js" defer></script>
   <script src="script_grafico_sessao.js" defer></script>
   <script src="funcoespdf.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -83,6 +82,16 @@
             <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
             <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
             <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+          </div>
+          <div class="btn-grupo" style="margin-top: 0.5rem;">
+            <button class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
+            <button class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
+            <button class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
+          </div>
+          <div class="btn-grupo" style="margin-top: 0.5rem;">
+            <button class="btn" onclick="toggleFullscreen()">Tela Cheia</button>
+            <button class="btn" onclick="setYAxisRange('auto')">Range Automático</button>
+            <button class="btn" onclick="setYAxisRange('fixed')">Range Fixo (Célula)</button>
           </div>
           <div class="btn-grupo" style="margin-top: 0.5rem;">
             <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>

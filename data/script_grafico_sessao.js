@@ -913,7 +913,7 @@ function exportarResumoSessao(sessionId) {
 }
 
 // ATUALIZA A FUNÇÃO DE CARREGAR GRAVAÇÕES COM BOTÕES CORRETOS
-function carregarGravacoes() {
+function carregarGravacoesComImpulso() {
   const container = document.getElementById('lista-gravacoes');
   if (!container) return;
   
@@ -928,6 +928,10 @@ function carregarGravacoes() {
   gravacoes.sort((a, b) => b.id - a.id);
   
   gravacoes.forEach(gravacao => {
+    const dados = processarDadosSimples(gravacao.dadosTabela);
+    const impulsoData = dados.impulso;
+    const classe = dados.propulsao.classificacaoMotor.classe;
+
     const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
     const card = document.createElement('div');
     card.className = 'card-gravacao';
@@ -935,58 +939,30 @@ function carregarGravacoes() {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
+      background: var(--cor-fundo-card);
       padding: 15px;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       margin-bottom: 10px;
+      border-left: 5px solid ${dados.propulsao.classificacaoMotor.cor || 'var(--cor-primaria)'};
     `;
     
    card.innerHTML = `
-                <div>
-                    <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} <span style="font-size: 0.75rem; background: var(--cor-primaria); color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${classe}</span></p> 
-                    <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
-                        ${dataFormatada} • Impulso Total: ${impulsoData.impulsoTotal.toFixed(2)} N⋅s
-                    </p>
-                </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button onclick="abrirEdicaoMetadados(${gravacao.id})" 
-                            title="Editar Metadados do Motor (Diâmetro, Peso, etc.)"
-                            style="background: #f39c12; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      🛠️ Edit Meta
-                    </button>
-                    <button onclick="exportarMotorENG(${gravacao.id})" 
-                            title="Exportar Curva de Empuxo para OpenRocket/RASAero"
-                            style="background: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      🚀 ENG
-                    </button>
-                    <button onclick="exportarPDFViaPrint(${gravacao.id})" 
-                            title="Exportar Relatório PDF"
-                            style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      📑 PDF
-                    </button>
-                    <button onclick="exportarCSV(${gravacao.id})" 
-                            title="Exportar Dados em CSV"
-                            style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      📄 CSV
-                    </button>
-                    <button onclick="exportarImagemSessao(${gravacao.id})" 
-                            title="Exportar Gráfico em PNG"
-                            style="background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      🖼️ PNG
-                    </button>
-                    <button onclick="visualizarSessao(${gravacao.id})" 
-                            title="Carregar para Análise/Gráfico"
-                            style="background: #9b59b6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      👁️ Ver
-                    </button>
-                    <button onclick="deletarGravacao(${gravacao.id})" 
-                            title="Deletar Sessão"
-                            style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: background 0.2s;">
-                      🗑️ Del
-                    </button>
-                </div>
-            `;
+      <div>
+          <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} <span style="font-size: 0.75rem; background: ${dados.propulsao.classificacaoMotor.cor || 'var(--cor-primaria)'}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${classe}</span></p> 
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
+              ${dataFormatada} • Impulso Total: ${impulsoData.impulsoTotal.toFixed(2)} N⋅s
+          </p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button onclick="visualizarSessao(${gravacao.id})" title="Carregar para Análise/Gráfico" class="btn btn-info">👁️ Ver</button>
+          <button onclick="exportarImagemSessao(${gravacao.id})" title="Exportar Gráfico em PNG" class="btn btn-primario">🖼️ PNG</button>
+          <button onclick="exportarPDFViaPrint(${gravacao.id})" title="Exportar Relatório PDF" class="btn btn-secundario">📑 PDF</button>
+          <button onclick="exportarCSV(${gravacao.id})" title="Exportar Dados em CSV" class="btn btn-sucesso">📄 CSV</button>
+          <button onclick="exportarMotorENG(${gravacao.id})" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso">🚀 ENG</button>
+          <button onclick="deletarGravacao(${gravacao.id})" title="Deletar Sessão" class="btn btn-perigo">🗑️ Del</button>
+      </div>
+    `;
     container.appendChild(card);
   });
 }
@@ -1002,47 +978,27 @@ function visualizarSessao(sessionId) {
       return;
     }
     
-    // Limpa gráfico atual
     clearChart();
     
-    // Carrega dados no gráfico
-    chartData.labels = [];
-    chartData.series = [[]];
-    rawDataN = [];
-    
+    const seriesData = [];
+    rawDataN = []; // Limpa os dados brutos
+
     sessao.dadosTabela.forEach(dado => {
       const tempo = parseFloat(dado.tempo_esp) || 0;
       const newtons = parseFloat(dado.newtons) || 0;
-      const displayForce = convertForce(newtons, displayUnit);
       
-      chartData.labels.push(tempo.toFixed(1));
-      chartData.series[0].push(parseFloat(formatForce(displayForce, displayUnit)));
-      rawDataN.push(newtons);
+      seriesData.push([tempo, convertForce(newtons, displayUnit)]);
+      rawDataN.push([tempo, newtons]);
     });
     
-    // Atualiza estatísticas nos painéis
+    chart.updateSeries([{ data: seriesData }]);
+
     if (rawDataN.length > 0) {
-      maxForceInN = Math.max(...rawDataN);
-      minForceInN = Math.min(...rawDataN);
-      
-      const currentDisplayForce = convertForce(rawDataN[rawDataN.length - 1], displayUnit);
-      const maxDisplayForce = convertForce(maxForceInN, displayUnit);
-      const minDisplayForce = convertForce(minForceInN, displayUnit);
-      const avgForce = rawDataN.reduce((a, b) => a + b, 0) / rawDataN.length;
-      const avgDisplayForce = convertForce(avgForce, displayUnit);
-      
-      document.getElementById('forca-atual').textContent = `${formatForce(currentDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-maxima').textContent = `${formatForce(maxDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-minima').textContent = `mín: ${formatForce(minDisplayForce, displayUnit)} ${displayUnit}`;
-      document.getElementById('forca-ems').textContent = `${formatForce(avgDisplayForce, displayUnit)} ${displayUnit}`;
+        maxForceInN = Math.max(...rawDataN.map(p => p[1]));
+        minForceInN = Math.min(...rawDataN.map(p => p[1]));
     }
-    
-    // Atualiza gráfico
-    chart.update(chartData);
-    
-    // Vai para aba do gráfico
+
     abrirAba(document.getElementById("padrao"), 'abaGrafico');
-    
     showNotification('success', `Sessão "${sessao.nome}" carregada!`);
     
   } catch (e) {

@@ -80,14 +80,14 @@ struct PacketConfig {
   float    conversionFactor;         // 4 bytes
   float    gravity;                  // 4 bytes
   uint16_t leiturasEstaveis;         // 2 bytes
-  uint32_t toleranciaEstabilidade;   // 4 bytes
+  float    toleranciaEstabilidade;   // 4 bytes
   uint16_t numAmostrasMedia;         // 2 bytes
   uint16_t numAmostrasCalibracao;    // 2 bytes
   uint8_t  usarMediaMovel;           // 1 byte
   uint8_t  usarEMA;                  // 1 byte
   uint16_t timeoutCalibracao;        // 2 bytes (em segundos)
   int32_t  tareOffset;               // 4 bytes
-  uint32_t capacidadeMaximaGramas;   // 4 bytes
+  float    capacidadeMaximaGramas;   // 4 bytes
   float    percentualAcuracia;       // 4 bytes
   uint8_t  mode;                     // 1 byte
   uint8_t  reserved[23];             // Padding para 58 bytes (total payload)
@@ -266,14 +266,14 @@ void sendBinaryConfig(const Config& cfg) {
   p.conversionFactor = cfg.conversionFactor;
   p.gravity = cfg.gravity;
   p.leiturasEstaveis = (uint16_t)cfg.leiturasEstaveis;
-  p.toleranciaEstabilidade = (uint32_t)cfg.toleranciaEstabilidade;
+  p.toleranciaEstabilidade = cfg.toleranciaEstabilidade;
   p.numAmostrasMedia = (uint16_t)cfg.numAmostrasMedia;
   p.numAmostrasCalibracao = 10000;
   p.usarMediaMovel = 1;
   p.usarEMA = 0;
   p.timeoutCalibracao = (uint16_t)(cfg.timeoutCalibracao / 1000);
   p.tareOffset = cfg.tareOffset;
-  p.capacidadeMaximaGramas = (uint32_t)cfg.capacidadeMaximaGramas;
+  p.capacidadeMaximaGramas = cfg.capacidadeMaximaGramas;
   p.percentualAcuracia = cfg.percentualAcuracia;
   p.mode = 0;
   
@@ -499,7 +499,7 @@ bool processBinaryCommand() {
       if (updated) {
         saveConfig();
         sendBinaryStatus(STATUS_SUCCESS, MSG_CONFIG_UPDATE);
-        sendBinaryConfig(config);  // Envia config atualizada
+        // sendBinaryConfig(config);  // REMOVIDO: Ineficiente e propenso a erros. O frontend pedirá se precisar.
       }
       
       processed = true;
@@ -843,35 +843,34 @@ bool aguardarEstabilidade(const char *proposito) {
 
   unsigned long inicio = millis();
   int leiturasEstaveisCount = 0;
-  long ultimaLeitura = 0;
+  long ultimaLeitura = loadcell.read_average(config.numAmostrasMedia);
 
   while (millis() - inicio < config.timeoutCalibracao) {
     ESP.wdtFeed();
     yield();
 
     if (!loadcell.is_ready()) {
-      delay(1);
+      delay(5); // Pequeno delay para não sobrecarregar
+      yield();
       continue;
     }
 
-    long leituraAtual = loadcell.read_average(3);
+    long leituraAtual = loadcell.read_average(config.numAmostrasMedia);
+    long diferenca = abs(leituraAtual - ultimaLeitura);
 
-    if (ultimaLeitura != 0) {
-      long diferenca = abs(leituraAtual - ultimaLeitura);
-
-      if (diferenca <= config.toleranciaEstabilidade) {
-        leiturasEstaveisCount++;
-        if (leiturasEstaveisCount >= config.leiturasEstaveis) {
-          sendSimpleJson("info", "[Estabilidade] Estavel!");
-          return true;
-        }
-      } else {
-        leiturasEstaveisCount = 0;
+    if (diferenca <= config.toleranciaEstabilidade) {
+      leiturasEstaveisCount++;
+      if (leiturasEstaveisCount >= config.leiturasEstaveis) {
+        sendSimpleJson("info", "[Estabilidade] Estavel!");
+        return true;
       }
+    } else {
+      leiturasEstaveisCount = 0;
     }
 
     ultimaLeitura = leituraAtual;
-    delay(100);
+    delay(50); // Reduzido de 100ms para 50ms para ser menos bloqueante
+    yield(); // Adicionado yield extra
   }
 
   sendSimpleJson("info", "[Estabilidade] Timeout");

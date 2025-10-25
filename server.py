@@ -215,12 +215,19 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
 
         if crc_calc != crc_rx:
             logging.warning(f"CRC mismatch in CONFIG packet: calc={crc_calc:04X}, rx={crc_rx:04X}")
-            # Debug: print first bytes
             logging.warning(f"First 20 bytes: {' '.join(f'{b:02X}' for b in data[:20])}")
+            # Tenta fazer o parse mesmo com CRC inválido para depuração
+            try:
+                fmt = "<ffHfHHBBHiffB23x"
+                offset = 4
+                fields = struct.unpack_from(fmt, data, offset)
+                logging.warning(f"DEBUG (unpacked with error): {fields}")
+            except Exception as e:
+                logging.error(f"DEBUG: Falha ao desempacotar mesmo para depuração: {e}")
             return None
 
         # Unpack config fields (offset 4, 58 bytes total)
-        fmt = "<ffHIHHBBHiIfB23x"  # 23x = skip 23 reserved bytes
+        fmt = "<ffHfHHBBHiffB23x"  # 23x = skip 23 reserved bytes
         offset = 4
         fields = struct.unpack_from(fmt, data, offset)
 
@@ -404,6 +411,7 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
                     continue
 
                 buf.extend(chunk)
+                logging.info(f"Serial buffer received: {chunk.hex()}")
 
                 # Try to parse packets
                 while len(buf) >= 8:  # Minimum packet size
