@@ -120,7 +120,7 @@ function initializeApexChart() {
     },
     stroke: {
       curve: 'smooth',
-      width: 2.5
+      width: chartDisplayMode === 'line' || chartDisplayMode === 'both' ? 2.5 : 0
     },
     xaxis: {
       type: 'numeric',
@@ -150,7 +150,8 @@ function initializeApexChart() {
       enabled: false
     },
     markers: {
-      size: 0
+      size: chartDisplayMode === 'points' || chartDisplayMode === 'both' ? 4 : 0,
+      colors: ['#FF0000']
     },
     theme: {
       mode: currentTheme
@@ -740,6 +741,7 @@ function setupKeyboardShortcuts() {
 }
 
 let isDataLabelsEnabled = false;
+let chartDisplayMode = 'points';
 let casasDecimais = 3; // Default value
 
 function toggleDataLabels() {
@@ -754,6 +756,47 @@ function toggleDataLabels() {
   });
 }
 
+function toggleChartDisplayMode() {
+  const modes = ['points', 'line', 'both'];
+  let currentIndex = modes.indexOf(chartDisplayMode);
+  let nextIndex = (currentIndex + 1) % modes.length;
+  chartDisplayMode = modes[nextIndex];
+
+  const btn = document.getElementById('btn-toggle-display-mode');
+  let btnText = '';
+  let strokeWidth = 0;
+  let markerSize = 0;
+
+  switch (chartDisplayMode) {
+    case 'points':
+      btnText = 'Modo: Somente Pontos';
+      markerSize = 4;
+      strokeWidth = 0;
+      break;
+    case 'line':
+      btnText = 'Modo: Somente Linha';
+      markerSize = 0;
+      strokeWidth = 2.5;
+      break;
+    case 'both':
+      btnText = 'Modo: Linha + Pontos';
+      markerSize = 4;
+      strokeWidth = 2.5;
+      break;
+  }
+
+  btn.textContent = btnText;
+  chart.updateOptions({
+    stroke: {
+      width: strokeWidth
+    },
+    markers: {
+      size: markerSize
+    }
+  });
+  showNotification('info', `Modo de exibição do gráfico: ${btnText.replace('Modo: ', '')}.`);
+}
+
 function setInterpolation(curve) {
   chart.updateOptions({
     stroke: {
@@ -761,6 +804,8 @@ function setInterpolation(curve) {
     }
   });
 }
+
+
 
 function toggleFullscreen() {
   const chartEl = document.querySelector("#grafico");
