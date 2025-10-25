@@ -310,10 +310,10 @@ function updateUIFromData(dado) {
     const timestamp = `${agora.toLocaleDateString('pt-BR')} ${agora.toLocaleTimeString('pt-BR')}.${String(agora.getMilliseconds()).padStart(3, '0')}`;
 
     linha.insertCell(0).innerText = timestamp;
-    linha.insertCell(1).innerText = tempo.toFixed(1);
-    linha.insertCell(2).innerText = forcaFiltrada.toFixed(3);
-    linha.insertCell(3).innerText = (forcaFiltrada / 9.80665 * 1000).toFixed(1);
-    linha.insertCell(4).innerText = (forcaFiltrada / 9.80665).toFixed(4);
+    linha.insertCell(1).innerText = tempo;
+    linha.insertCell(2).innerText = forcaFiltrada;
+    linha.insertCell(3).innerText = (forcaFiltrada / 9.80665 * 1000);
+    linha.insertCell(4).innerText = (forcaFiltrada / 9.80665);
 
     if (tbody.rows.length > 5000) {
       tbody.deleteRow(tbody.rows.length - 1);
@@ -583,7 +583,7 @@ function aplicarArredondamentoInteligente(valorGramas) {
 
 function atualizarStatusFiltros() {
   const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
-  const casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
+  casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
   
   const infoZonaMorta = document.getElementById('info-zona-morta');
   if (infoZonaMorta) {
@@ -730,12 +730,16 @@ function setupKeyboardShortcuts() {
 }
 
 let isDataLabelsEnabled = false;
+let casasDecimais = 3; // Default value
 
 function toggleDataLabels() {
   isDataLabelsEnabled = !isDataLabelsEnabled;
   chart.updateOptions({
     dataLabels: {
-      enabled: isDataLabelsEnabled
+      enabled: isDataLabelsEnabled,
+      formatter: function (val) {
+        return val.toFixed(casasDecimais) + ' ' + displayUnit;
+      }
     }
   });
 }

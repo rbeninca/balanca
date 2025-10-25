@@ -1267,7 +1267,8 @@ ${nome} ${diametro.toFixed(1)} ${comprimento.toFixed(0)} ${delay.toFixed(1)} ${p
             const newtons = parseFloat(dado.newtons) || 0;
 
             // Arredonda para 3 casas decimais
-            dadosENG += ` ${tempo.toFixed(3)}\t${Math.max(0, newtons).toFixed(3)}\n`;
+            dadosENG += ` ${tempo}	${Math.max(0, newtons)}
+`;
         }
         
         // Adiciona o ponto final de burnout (tempo da última amostra com 0 N)

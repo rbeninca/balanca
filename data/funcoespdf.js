@@ -359,9 +359,9 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
     linhasTabela += `
       <tr style="${rowStyle}">
         <td>${index + 1}</td>
-        <td>${tempo.toFixed(3)}</td>
-        <td>${newtons.toFixed(4)}</td>
-        <td>${gramaForca.toFixed(2)}</td>
+        <td>${tempo.toFixed(6)}</td>
+        <td>${newtons.toFixed(6)}</td>
+        <td>${gramaForca.toFixed(6)}</td>
         <td>${quiloForca.toFixed(6)}</td>
       </tr>
     `;
