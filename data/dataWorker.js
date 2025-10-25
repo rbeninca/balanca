@@ -73,18 +73,22 @@ function connectWebSocket() {
     }
 
     socket.onopen = () => {
-        console.log(`[Worker] ✅ WebSocket CONECTADO! Estado: ${socket.readyState}`);
+        console.log(`[Worker] ✅ WebSocket CONECTADO! Estado: ${socket.readyState}, URL: ${socket.url}`);
         self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao Gateway Serial (Host)' });
     };
 
     socket.onclose = (event) => {
-        console.log(`[Worker] ⚠️ WebSocket FECHADO. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
+        console.log(`[Worker] ⚠️ WebSocket FECHADO. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}. Estado: ${socket.readyState}, URL: ${socket.url}`);
         self.postMessage({ type: 'status', status: 'disconnected', message: `Desconectado (${event.code}). Tentando reconectar...` });
         socket = null;
     };
 
     socket.onerror = (error) => {
         console.error("[Worker] ❌ Erro WebSocket:", error);
+        // Adiciona mais detalhes do socket ao log de erro
+        if (socket) {
+            console.error(`[Worker] Estado do Socket: ${socket.readyState}, URL: ${socket.url}`);
+        }
         self.postMessage({ type: 'status', status: 'error', message: 'Erro na conexão WebSocket com o Host.' });
         socket = null;
     };

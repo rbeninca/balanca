@@ -74,9 +74,19 @@ function setupTheme() {
 }
 
 function setupWebSocketUrl() {
+    const wsUrlInput = document.getElementById('ws-url');
     const savedWsUrl = localStorage.getItem('wsUrl');
+
     if (savedWsUrl) {
-        document.getElementById('ws-url').value = savedWsUrl;
+        wsUrlInput.value = savedWsUrl;
+    } else {
+        // Se não houver URL salva, preenche com o host atual e a porta padrão do WS
+        let defaultHost = location.hostname;
+        // Se estiver em um ambiente de desenvolvimento como Live Server, use localhost
+        if (location.port === '5500' || defaultHost === '127.0.0.1') {
+            defaultHost = 'localhost';
+        }
+        wsUrlInput.value = `ws://${defaultHost}:81`;
     }
 }
 
