@@ -69,6 +69,7 @@
           <div class="btn-grupo">
             <button class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
             <button id="btn-toggle-display-mode" class="btn" onclick="toggleChartDisplayMode()">Modo: Somente Pontos</button>
+            <button id="btn-toggle-grid" class="btn" onclick="toggleGrid()">Grade: ON</button>
             <button class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
             <button class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
           </div>
@@ -90,7 +91,7 @@
           </div>
         </div>
 
-        <div class="grafico-e-controles" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div class="grafico-e-controles" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: nowrap;">
           <div id="grafico" class="ct-chart" style="flex-grow: 1;"></div>
           <div class="btn-grupo" style="flex-direction: column;">
             <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>

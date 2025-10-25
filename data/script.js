@@ -118,6 +118,29 @@ function initializeApexChart() {
       },
       background: 'transparent'
     },
+    grid: {
+      show: true,
+      borderColor: '#90A4AE',
+      strokeDashArray: 4,
+      xaxis: {
+        lines: {
+          show: true
+        }
+      },
+      yaxis: {
+        lines: {
+          show: true
+        }
+      },
+      row: {
+        colors: ['#f3f3f3', 'transparent'], // alternating row colors
+        opacity: 0.5
+      },
+      column: {
+        colors: ['#f3f3f3', 'transparent'], // alternating column colors
+        opacity: 0.5
+      }
+    },
     stroke: {
       curve: 'smooth',
       width: chartDisplayMode === 'line' || chartDisplayMode === 'both' ? 2.5 : 0
@@ -746,7 +769,8 @@ function setupKeyboardShortcuts() {
 
 let isDataLabelsEnabled = false;
 let chartDisplayMode = 'points';
-let casasDecimais = 3; // Default value
+let casasDecimais = 6; // Default value
+let isGridEnabled = true;
 
 function toggleDataLabels() {
   isDataLabelsEnabled = !isDataLabelsEnabled;
@@ -824,6 +848,18 @@ function toggleFullscreen() {
   } else {
     document.exitFullscreen();
   }
+}
+
+function toggleGrid() {
+  isGridEnabled = !isGridEnabled;
+  chart.updateOptions({
+    grid: {
+      show: isGridEnabled
+    }
+  });
+  const btn = document.getElementById('btn-toggle-grid');
+  btn.textContent = `Grade: ${isGridEnabled ? 'ON' : 'OFF'}`;
+  showNotification('info', `Grade do gráfico: ${isGridEnabled ? 'ON' : 'OFF'}.`);
 }
 
 function setYAxisRange(mode) {
