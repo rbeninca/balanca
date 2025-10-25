@@ -15,22 +15,39 @@
 
 <body>
   <div class="container">
-    <header>
-      <h1>GFIG 🚀 - Balança Serial</h1>
-      <div class="header-actions">
-        <div class="status-conexao">
-          <div id="ws-indicator" title="Desconectado"></div><span id="ws-text">Desconectado</span>
-        </div>
-        <button id="theme-toggle" class="btn btn-secundario">🌙</button>
-      </div>
-    </header>
-
     <div id="alerta-estabilizacao">
       ⚠️ A balança não está estabilizando! A tolerância pode estar muito baixa.
       Vá em Parâmetros → Tolerância de Estabilidade e aumente o valor.
     </div>
 
-    <div id="balanca-status-line">Status da Balança: <span id="balanca-status">...</span></div>
+    <div style="position: sticky; top:0px; z-index: 10;" class="leituras-display">
+      <div class="leituras-valores">
+        <div>
+          <h4>Força Atual</h4>
+          <p id="forca-atual">---</p>
+        </div>
+        <div>
+          <h4>Força EMS</h4>
+          <p id="forca-ems">---</p>
+        </div>
+        <div>
+          <h4>Força Máxima</h4>
+          <p id="forca-maxima">---</p>
+          <small id="forca-minima" style="display: block; font-size: 0.75rem; color: var(--cor-texto-secundario);">mín: ---</small>
+        </div>
+        <div>
+          <h4>Leituras/Seg</h4>
+          <p id="leituras-por-segundo">---</p>
+        </div>
+      </div>
+      <div class="unidade-selecao">
+        <div class="btn-grupo" role="group">
+          <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons (N)</button>
+          <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força (gf)</button>
+          <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')">Quilo-força (kgf)</button>
+        </div>
+      </div>
+    </div>
 
     <div class="nav-abas">
       <nav>
@@ -43,70 +60,44 @@
     </div>
     <main>
       <div id="abaGrafico" class="tabcontent">
-        <div class="flex-center" style="margin-bottom: 1rem; flex-direction: column; gap: 1rem;">
-          <div class="btn-grupo" role="group">
-            <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons (N)</button>
-            <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força (gf)</button>
-            <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')">Quilo-força (kgf)</button>
-          </div>
-        </div>
-
-        <div style="position: sticky; top:-10px; z-index: 10;" class="leituras-display">
-          <div>
-            <h4>Força Atual</h4>
-            <p id="forca-atual">---</p>
-          </div>
-          <div>
-            <h4>Força EMS</h4>
-            <p id="forca-ems">---</p>
-          </div>
-          <div>
-            <h4>Força Máxima</h4>
-            <p id="forca-maxima">---</p>
-            <small id="forca-minima" style="display: block; font-size: 0.75rem; color: var(--cor-texto-secundario);">mín: ---</small>
-          </div>
-          <div>
-            <h4>Leituras/Seg</h4>
-            <p id="leituras-por-segundo">---</p>
-          </div>
-        </div>
-
-        <div class="flex-center" style="margin-bottom: 1rem; flex-direction: column; gap: 1rem;">
+        <div class="controles-grafico-sessao" style="margin-bottom: 0.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
             <input type="text" id="nome-sessao" placeholder="Nome da Sessão...">
             <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso">▶ Iniciar</button>
             <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
           </div>
           <div class="btn-grupo">
-            <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
-            <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
-            <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
-            <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
-          </div>
-          <div class="btn-grupo" style="margin-top: 0.5rem;">
             <button class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
             <button class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
             <button class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
           </div>
-          <div class="btn-grupo" style="margin-top: 0.5rem;">
+          <div class="btn-grupo">
             <button class="btn" onclick="toggleFullscreen()">Tela Cheia</button>
             <button class="btn" onclick="setYAxisRange('auto')">Range Automático</button>
             <button class="btn" onclick="setYAxisRange('fixed')">Range Fixo (Célula)</button>
           </div>
-          <div class="btn-grupo" style="margin-top: 0.5rem;">
+          <div class="btn-grupo">
             <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>
             <button id="btn-zona-morta" class="btn" onclick="toggleFiltroZonaMorta()" style="background: #27ae60;">Zona Morta: ON</button>
             <button id="btn-arredondamento" class="btn" onclick="toggleArredondamentoInteligente()" style="background: #27ae60;">Arredondar: ON</button>
           </div>
           
-          <div id="status-filtros" style="margin-top: 0.75rem; padding: 0.75rem; background: #ecf0f1; border-radius: 0.5rem; font-size: 0.875rem;">
+          <div id="status-filtros" style="margin-top: 0.5rem; padding: 0.5rem; background: #ecf0f1; border-radius: 0.5rem; font-size: 0.875rem;">
             <strong>📊 Filtros da Célula:</strong>
             <span id="info-zona-morta" style="margin-left: 1rem; color: #27ae60;">✓ Zona Morta (±0.0g)</span>
             <span id="info-arredondamento" style="margin-left: 1rem; color: #27ae60;">✓ Arredondamento (0 casas)</span>
           </div>
         </div>
 
-        <div id="grafico" class="ct-chart"></div>
+        <div class="grafico-e-controles" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+          <div id="grafico" class="ct-chart" style="flex-grow: 1;"></div>
+          <div class="btn-grupo" style="flex-direction: column;">
+            <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
+            <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
+            <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
+            <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+          </div>
+        </div>
       </div>
       <div id="abaTabela" class="tabcontent">
         <div class="tabela-container">
@@ -266,7 +257,12 @@
       </div>
     </main>
 
-    <footer id="footer-atalhos">
+    <footer id="footer-atalhos" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 8px 15px; font-size: 0.75rem; background-color: #2c3e50; color: #ecf0f1; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); z-index: 100; position: fixed; bottom: 0; left: 0; width: 100%;">
+      <h3 style="font-size: 1rem; font-weight: 700; margin: 0; color: #ecf0f1;">GFIG 🚀 - Balança Serial</h3>
+      <div class="status-conexao" style="display: flex; align-items: center; gap: .5rem;">
+        <div id="ws-indicator" title="Desconectado"></div><span id="ws-text" style="color: #ecf0f1;">Desconectado</span>
+      </div>
+      <div id="balanca-status-line" style="text-align: center; font-weight: 600; color: #ecf0f1; margin: 0;">Status: <span id="balanca-status" style="color: var(--cor-primaria);">...</span></div>
       <span style="font-weight: bold;">⚡ ATALHOS:</span>
       <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
       <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>
@@ -274,6 +270,7 @@
       <span style="margin-left: 10px; opacity: 0.8;">|</span>
       <span>Pausar Gráfico: <kbd>P</kbd></span>
       <span>Limpar Gráfico: <kbd>L</kbd></span>
+      <button id="theme-toggle" class="btn btn-secundario" style="background: none; border: none; color: #ecf0f1; font-size: 1.2rem; padding: 0;">🌙</button>
     </footer>
 
     <div id="notification-area"></div>

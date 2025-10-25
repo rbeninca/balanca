@@ -114,12 +114,24 @@ function initializeApexChart() {
       type: 'numeric',
       tickAmount: 10,
       labels: {
-        formatter: (val) => val.toFixed(1) + 's'
+        formatter: (val) => {
+          if (val % 1 === 0) {
+            return parseInt(val) + 's';
+          } else {
+            return val.toFixed(1) + 's';
+          }
+        }
       }
     },
     yaxis: {
       labels: {
-        formatter: (val) => val.toFixed(3) + ' ' + displayUnit
+        formatter: (val) => {
+          if (Math.abs(val) < 0.001) return '0.000 ' + displayUnit;
+          if (Math.abs(val) < 0.01) return val.toFixed(4) + ' ' + displayUnit;
+          if (Math.abs(val) < 0.1) return val.toFixed(3) + ' ' + displayUnit;
+          if (Math.abs(val) < 10) return val.toFixed(2) + ' ' + displayUnit;
+          return val.toFixed(1) + ' ' + displayUnit;
+        }
       }
     },
     dataLabels: {

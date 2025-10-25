@@ -31,9 +31,9 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 95%;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 header {
@@ -98,7 +98,7 @@ header h1 {
 
 #alerta-estabilizacao {
   display: none;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   padding: 1rem;
   background-color: #fff3cd;
   border: 2px solid #ffc107;
@@ -113,7 +113,7 @@ header h1 {
 }
 
 .nav-abas {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--cor-borda);
 }
 
@@ -124,7 +124,7 @@ header h1 {
 }
 
 .tablink {
-  padding: 1rem .25rem;
+  padding: 0.5rem .25rem; /* Reduzido */
   border: 2px solid transparent;
   background: none;
   font-weight: 500;
@@ -245,14 +245,22 @@ label {
 .flex-center { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; }
 
 .leituras-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza os itens horizontalmente */
+  gap: 0.5rem; /* Espaçamento entre os blocos de valores e botões */
+  margin-bottom: 0.5rem;
+  background-color: var(--cor-fundo-card);
+  padding: 0.75rem; /* Reduzido */
+  border-radius: .5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1);
+}
+
+.leituras-valores {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: var(--cor-fundo-card);
-  padding: 1.25rem;
-  border-radius: .5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1);
+  width: 100%; /* Ocupa a largura total do flex container */
 }
 
 .leituras-display div { text-align: center; }

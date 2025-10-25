@@ -369,9 +369,9 @@ bool processBinaryCommand() {
       atualizarDisplay(balancaStatusBuffer, 0);
       
       if (aguardarEstabilidade("Tara Manual")) {
-        loadcell.tare(config.numAmostrasMedia);
+        loadcell.tare(1); // Usar apenas 1 amostra para uma tara rápida
         config.tareOffset = loadcell.get_offset();
-        saveConfig();
+        // saveConfig(); // REMOVIDO: Evita bloqueio durante a tara. O usuário deve salvar explicitamente.
         sendBinaryStatus(STATUS_SUCCESS, MSG_TARA_DONE);
         Serial.println("[INFO] Tara concluida");
       } else {
@@ -843,19 +843,19 @@ bool aguardarEstabilidade(const char *proposito) {
 
   unsigned long inicio = millis();
   int leiturasEstaveisCount = 0;
-  long ultimaLeitura = loadcell.read_average(config.numAmostrasMedia);
+  long ultimaLeitura = loadcell.read_average(1); // Apenas 1 amostra para agilizar a leitura inicial
 
   while (millis() - inicio < config.timeoutCalibracao) {
     ESP.wdtFeed();
     yield();
 
     if (!loadcell.is_ready()) {
-      delay(5); // Pequeno delay para não sobrecarregar
+      delay(5);
       yield();
       continue;
     }
 
-    long leituraAtual = loadcell.read_average(config.numAmostrasMedia);
+    long leituraAtual = loadcell.read_average(1); // Apenas 1 amostra para agilizar a leitura
     long diferenca = abs(leituraAtual - ultimaLeitura);
 
     if (diferenca <= config.toleranciaEstabilidade) {
@@ -869,8 +869,8 @@ bool aguardarEstabilidade(const char *proposito) {
     }
 
     ultimaLeitura = leituraAtual;
-    delay(50); // Reduzido de 100ms para 50ms para ser menos bloqueante
-    yield(); // Adicionado yield extra
+    delay(50);
+    yield();
   }
 
   sendSimpleJson("info", "[Estabilidade] Timeout");
