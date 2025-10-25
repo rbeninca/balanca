@@ -1,5 +1,6 @@
 :root {
   --cor-fundo: #ffffff;
+  --cor-fundo-rgb: 255, 255, 255; /* RGB para uso com transparência */
   --cor-texto: #1f2937;
   --cor-texto-secundario: #6b7280;
   --cor-primaria: #570df8;
@@ -14,6 +15,7 @@
 
 .dark-mode {
   --cor-fundo: #1f2937;
+  --cor-fundo-rgb: 31, 41, 55; /* RGB para uso com transparência no modo escuro */
   --cor-texto: #f3f4f6;
   --cor-texto-secundario: #9ca3af;
   --cor-borda: #374151;
@@ -340,4 +342,55 @@ tbody tr:hover { background-color: var(--cor-fundo); }
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px #34495e inset;
   font-family: monospace;
   font-size: 0.8em;
+}
+
+/* Estilos para o novo modo de tela cheia do gráfico (modal) */
+.fullscreen-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(var(--cor-fundo-rgb), 0.95); /* Fundo branco/escuro com opacidade */
+  z-index: 1000;
+  display: none; /* Escondido por padrão */
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 10px; /* Pequeno padding para não colar nas bordas */
+}
+
+.fullscreen-modal-overlay.active {
+  display: flex; /* Visível quando ativo */
+}
+
+.fullscreen-modal-overlay .grafico-e-controles {
+  width: 98vw; /* Ocupa quase toda a largura do modal */
+  height: 98vh; /* Ocupa quase toda a altura do modal */
+  display: flex;
+  flex-direction: row; /* Garante que o gráfico e os botões fiquem lado a lado */
+  align-items: flex-start;
+  gap: 1rem;
+  background-color: var(--cor-fundo-card); /* Fundo para o conteúdo do modal */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+.fullscreen-modal-overlay #grafico {
+  flex-grow: 1; /* Gráfico ocupa o espaço restante */
+  height: 100% !important; /* Ocupa 100% da altura do seu container flex */
+  width: auto !important; /* Deixa o flex-grow gerenciar a largura */
+  max-height: none !important;
+}
+
+.fullscreen-modal-overlay .btn-grupo {
+  flex-direction: column; /* Botões empilhados verticalmente */
+  flex-shrink: 0; /* Não encolhe os botões */
+  margin-top: 120px; /* Adiciona espaço para o botão de sair */
+}
+
+/* Para evitar scroll na página quando o modal está ativo */
+body.no-scroll {
+  overflow: hidden;
 }

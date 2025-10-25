@@ -67,14 +67,14 @@
             <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
           </div>
           <div class="btn-grupo">
-            <button class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
+            <button id="btn-toggle-labels" class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
             <button id="btn-toggle-display-mode" class="btn" onclick="toggleChartDisplayMode()">Modo: Somente Pontos</button>
             <button id="btn-toggle-grid" class="btn" onclick="toggleGrid()">Grade: ON</button>
-            <button class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
-            <button class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
+            <button id="btn-set-smooth-line" class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
+            <button id="btn-set-straight-line" class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
           </div>
           <div class="btn-grupo">
-            <button class="btn" onclick="toggleFullscreen()">Tela Cheia</button>
+            <button id="btn-toggle-fullscreen" class="btn" onclick="toggleFullscreen()">Tela Cheia</button>
             <button class="btn" onclick="setYAxisRange('auto')">Range Automático</button>
             <button class="btn" onclick="setYAxisRange('fixed')">Range Fixo (Célula)</button>
           </div>
@@ -279,6 +279,11 @@
     </footer>
 
     <div id="notification-area"></div>
+
+    <div id="fullscreen-chart-modal" class="fullscreen-modal-overlay">
+      <button id="btn-exit-fullscreen" class="btn btn-perigo" style="position: absolute; top: 30px; right: 20px; z-index: 1001;">✖ Sair da Tela Cheia</button>
+      <!-- Chart and controls will be moved here by JavaScript -->
+    </div>
   </div>
 
 </body>

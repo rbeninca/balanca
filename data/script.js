@@ -12,6 +12,10 @@ let isSessionActive = false;
 let isChartPaused = false;
 let chartUpdateBuffer = [];
 let animationFrameId = null;
+let originalChartContainer = null; // New global variable to store original parent
+let originalChartSessionControlsContainer = null; // New global variable for session controls
+let originalChartControlsParent = null; // Parent of the specific chart controls
+let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -48,6 +52,22 @@ window.onload = () => {
   setupKeyboardShortcuts();
   setupTheme();
   setupWebSocketUrl();
+  originalChartContainer = document.querySelector("#abaGrafico .grafico-e-controles"); // Initialize originalChartContainer
+  originalChartSessionControlsContainer = document.querySelector("#abaGrafico .controles-grafico-sessao"); // Initialize new variable
+
+  // Initialize specific chart control buttons and their original parent
+  originalChartControlsParent = originalChartSessionControlsContainer.querySelector(".btn-grupo");
+  btnToggleLabels = document.getElementById('btn-toggle-labels');
+  btnToggleDisplayMode = document.getElementById('btn-toggle-display-mode');
+  btnToggleGrid = document.getElementById('btn-toggle-grid');
+  btnSetSmoothLine = document.getElementById('btn-set-smooth-line');
+  btnSetStraightLine = document.getElementById('btn-set-straight-line');
+
+  // Add event listener for the new exit fullscreen button
+  const exitFullscreenButton = document.getElementById('btn-exit-fullscreen');
+  if (exitFullscreenButton) {
+    exitFullscreenButton.addEventListener('click', toggleFullscreen);
+  }
 };
 
 function setupTheme() {
@@ -756,6 +776,15 @@ function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (event) => {
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
     const key = event.key.toLowerCase();
+    const fullscreenModalEl = document.getElementById('fullscreen-chart-modal');
+
+    // Handle Escape key for fullscreen exit
+    if (key === 'escape' && fullscreenModalEl.classList.contains('active')) {
+      event.preventDefault();
+      toggleFullscreen();
+      return; // Exit early to prevent other shortcuts from firing
+    }
+
     if (event.shiftKey) {
         if (key === 't') { event.preventDefault(); tare(); }
         else if (key === 'c') { event.preventDefault(); calibrar(); }
@@ -841,12 +870,83 @@ function setInterpolation(curve) {
 
 function toggleFullscreen() {
   const chartEl = document.querySelector("#grafico");
-  if (!document.fullscreenElement) {
-    chartEl.requestFullscreen().catch(err => {
-      alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+  const fullscreenModalEl = document.getElementById('fullscreen-chart-modal');
+  const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
+  const bodyEl = document.body;
+
+  // Get the target btn-grupo within originalChartContainer (the one next to the chart)
+  const chartSideControls = originalChartContainer.querySelector(".btn-grupo");
+
+  if (!fullscreenModalEl.classList.contains('active')) {
+    // Entering Fullscreen Modal Mode
+    if (!originalChartContainer || !originalChartSessionControlsContainer || !originalChartControlsParent) {
+      console.error("Original chart containers or controls parent not found!");
+      return;
+    }
+
+    // Move specific buttons from originalChartControlsParent to chartSideControls
+    chartSideControls.appendChild(btnToggleLabels);
+    chartSideControls.appendChild(btnToggleDisplayMode);
+    chartSideControls.appendChild(btnToggleGrid);
+    chartSideControls.appendChild(btnSetSmoothLine);
+    chartSideControls.appendChild(btnSetStraightLine);
+
+    // Move the entire originalChartContainer (now with all relevant buttons) to the modal
+    fullscreenModalEl.appendChild(originalChartContainer);
+    
+    // Hide the original session controls container as its buttons have been moved
+    originalChartSessionControlsContainer.style.display = 'none';
+
+    fullscreenModalEl.classList.add('active');
+    bodyEl.classList.add('no-scroll');
+    if (fullscreenButton) fullscreenButton.textContent = 'Sair da Tela Cheia';
+
+    // Update chart options for fullscreen
+    requestAnimationFrame(() => {
+      chart.updateOptions({
+        chart: {
+          height: '100%', // Let ApexCharts manage height based on its new parent
+          width: '100%'
+        }
+      });
+      setTimeout(() => {
+        chart.windowResize();
+      }, 50);
     });
+
   } else {
-    document.exitFullscreen();
+    // Exiting Fullscreen Modal Mode
+    const abaGrafico = document.getElementById('abaGrafico');
+
+    // Move specific buttons back from chartSideControls to originalChartControlsParent
+    originalChartControlsParent.appendChild(btnToggleLabels);
+    originalChartControlsParent.appendChild(btnToggleDisplayMode);
+    originalChartControlsParent.appendChild(btnToggleGrid);
+    originalChartControlsParent.appendChild(btnSetSmoothLine);
+    originalChartControlsParent.appendChild(btnSetStraightLine);
+
+    // Move the originalChartContainer back to its original location
+    abaGrafico.appendChild(originalChartContainer);
+
+    // Show the original session controls container again
+    originalChartSessionControlsContainer.style.display = 'flex'; // Assuming it was flex
+
+    fullscreenModalEl.classList.remove('active');
+    bodyEl.classList.remove('no-scroll');
+    if (fullscreenButton) fullscreenButton.textContent = 'Tela Cheia';
+
+    // Revert chart options to original
+    requestAnimationFrame(() => {
+      chart.updateOptions({
+        chart: {
+          height: 450, // Original height from initializeApexChart
+          width: '100%'
+        }
+      });
+      setTimeout(() => {
+        chart.windowResize();
+      }, 50);
+    });
   }
 }
 
