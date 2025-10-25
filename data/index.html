@@ -66,6 +66,13 @@
             <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso">▶ Iniciar</button>
             <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
           </div>
+          
+          <!-- New input for MAX_DATA_POINTS -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
+            <label for="max-data-points-input">Max Pontos:</label>
+            <input type="number" id="max-data-points-input" value="100" min="10" step="10" style="width: 80px;">
+          </div>
+
           <div class="btn-grupo">
             <button id="btn-toggle-labels" class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
             <button id="btn-toggle-display-mode" class="btn" onclick="toggleChartDisplayMode()">Modo: Somente Pontos</button>

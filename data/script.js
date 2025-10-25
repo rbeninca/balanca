@@ -2,7 +2,7 @@
 // --- Variáveis Globais da UI ---
 let chart;
 let dataWorker;
-const MAX_DATA_POINTS = 100;
+let MAX_DATA_POINTS = 100; // Changed from const to let
 let chartMode = 'deslizante';
 let displayUnit = 'kgf';
 let maxForceInN = -Infinity;
@@ -67,6 +67,27 @@ window.onload = () => {
   const exitFullscreenButton = document.getElementById('btn-exit-fullscreen');
   if (exitFullscreenButton) {
     exitFullscreenButton.addEventListener('click', toggleFullscreen);
+  }
+
+  // Setup for MAX_DATA_POINTS input
+  const maxDataPointsInput = document.getElementById('max-data-points-input');
+  if (maxDataPointsInput) {
+    maxDataPointsInput.value = MAX_DATA_POINTS;
+    maxDataPointsInput.addEventListener('change', (event) => {
+      const newValue = parseInt(event.target.value);
+      if (!isNaN(newValue) && newValue > 0) {
+        MAX_DATA_POINTS = newValue;
+        showNotification('info', `Número máximo de pontos atualizado para ${MAX_DATA_POINTS}.`);
+        // Optionally, trim existing data if new limit is smaller
+        if (rawDataN.length > MAX_DATA_POINTS) {
+          rawDataN = rawDataN.slice(rawDataN.length - MAX_DATA_POINTS);
+          chart.updateSeries([{ data: rawDataN.map(p => [p[0], convertForce(p[1], displayUnit)]) }]);
+        }
+      } else {
+        showNotification('error', 'Valor inválido para o número máximo de pontos.');
+        event.target.value = MAX_DATA_POINTS; // Revert to old value
+      }
+    });
   }
 };
 
@@ -349,7 +370,7 @@ function updateUIFromData(dado) {
 
   rawDataN.push([tempo, forcaFiltrada]);
   
-  if (chartMode === 'deslizante' && rawDataN.length > MAX_DATA_POINTS) {
+  if (rawDataN.length > MAX_DATA_POINTS) {
     rawDataN.shift();
   }
   
