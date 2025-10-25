@@ -41,11 +41,11 @@ CMD_SET_PARAM    = 0x13  # Set parameter (Host→ESP)
 # Packet sizes
 SIZE_DATA       = 16
 SIZE_CONFIG     = 64
-SIZE_STATUS     = 12
+SIZE_STATUS     = 14
 SIZE_CMD_TARA   = 8
-SIZE_CMD_CALIB  = 12
+SIZE_CMD_CALIB  = 10
 SIZE_CMD_GETCONF = 8
-SIZE_CMD_SETPAR = 20
+SIZE_CMD_SETPAR = 18
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
@@ -59,11 +59,12 @@ class SilentHandler(http.server.SimpleHTTPRequestHandler):
         return
 
 def start_http_server():
-    httpd = socketserver.TCPServer(("", HTTP_PORT), SilentHandler)
-    t = threading.Thread(target=httpd.serve_forever, daemon=True)
-    t.start()
-    logging.info(f"HTTP estático em :{HTTP_PORT}")
-    return httpd
+    # Ensure the port is free before binding
+    with socketserver.TCPServer(("", HTTP_PORT), SilentHandler) as httpd:
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        logging.info(f"HTTP estático em :{HTTP_PORT}")
+        return httpd
 
 # ================== WebSocket ==================
 async def ws_handler(websocket):
@@ -96,9 +97,16 @@ async def ws_handler(websocket):
         CONNECTED_CLIENTS.remove(websocket)
 
 async def ws_server_main():
-    async with websockets.serve(ws_handler, "", WS_PORT, max_size=None):
-        logging.info(f"WebSocket em :{WS_PORT}")
-        await asyncio.Future()
+    # Stop any existing server on the port before starting a new one
+    try:
+        async with websockets.serve(ws_handler, "", WS_PORT, max_size=None):
+            logging.info(f"WebSocket em :{WS_PORT}")
+            await asyncio.Future()
+    except OSError as e:
+        if e.errno == 98: # Address already in use
+            logging.error(f"WebSocket port {WS_PORT} já está em uso. Encerrando.")
+        else:
+            raise
 
 async def broadcast_json(obj: Dict[str, Any]):
     if not CONNECTED_CLIENTS:
@@ -172,13 +180,6 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
             return None
         
         # Unpack config fields (offset 4, 58 bytes total)
-        # Format matches C++ struct exactly:
-        # float conversionFactor, float gravity, uint16 leiturasEstaveis, 
-        # uint32 toleranciaEstabilidade, uint16 numAmostrasMedia, uint16 numAmostrasCalibracao,
-        # uint8 usarMediaMovel, uint8 usarEMA, uint16 timeoutCalibracao,
-        # int32 tareOffset, uint32 capacidadeMaximaGramas, float percentualAcuracia,
-        # uint8 mode, uint8[23] reserved
-        
         fmt = "<ffHIHHBBHiIfB23x"  # 23x = skip 23 reserved bytes
         offset = 4
         fields = struct.unpack_from(fmt, data, offset)
@@ -286,7 +287,11 @@ def json_to_binary_command(cmd: Dict[str, Any]) -> Optional[bytes]:
             "toleranciaEstabilidade": (0x04, "f"),
             "mode": (0x05, "B"),
             "usarEMA": (0x06, "B"),
-            "numAmostrasMedia": (0x07, "I")
+            "numAmostrasMedia": (0x07, "I"),
+            "tareOffset": (0x08, "I"),
+            "timeoutCalibracao": (0x09, "I"),
+            "capacidadeMaximaGramas": (0x0A, "f"),
+            "percentualAcuracia": (0x0B, "f")
         }
         
         if param_name not in param_map:
@@ -373,8 +378,13 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
                             buf = buf[-1:]
                         break
                     
-                    # Remove data before magic
+                    # Remove and LOG data before magic
                     if magic_idx > 0:
+                        discarded_data = bytes(buf[:magic_idx])
+                        try:
+                            logging.info(f"Dados não-binários recebidos: {discarded_data.decode('utf-8').strip()}")
+                        except UnicodeDecodeError:
+                            logging.warning(f"Dados não-binários (não-UTF8) descartados: {discarded_data}")
                         del buf[:magic_idx]
                     
                     # Check if we have enough bytes for header
@@ -439,18 +449,21 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
 
 # ================== Main ==================
 async def main():
-    httpd = start_http_server()
-    loop = asyncio.get_running_loop()
-    t = threading.Thread(target=serial_reader, args=(loop,), daemon=True)
-    t.start()
-    
+    httpd = None
     try:
+        httpd = start_http_server()
+        loop = asyncio.get_running_loop()
+        t = threading.Thread(target=serial_reader, args=(loop,), daemon=True)
+        t.start()
         await ws_server_main()
+    except OSError as e:
+        if e.errno == 98:
+            logging.error(f"Porta {HTTP_PORT} ou {WS_PORT} já está em uso. Encerrando.")
+        else:
+            raise
     finally:
-        try:
+        if httpd:
             httpd.shutdown()
-        except:
-            pass
 
 if __name__ == "__main__":
     try:

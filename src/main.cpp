@@ -49,6 +49,10 @@ static const uint8_t PARAM_TOLERANCIA  = 0x04;
 static const uint8_t PARAM_MODE        = 0x05;
 static const uint8_t PARAM_USE_EMA     = 0x06;
 static const uint8_t PARAM_NUM_AMOSTRAS= 0x07;
+static const uint8_t PARAM_TARE_OFFSET = 0x08;
+static const uint8_t PARAM_TIMEOUT_CAL = 0x09;
+static const uint8_t PARAM_CAPACIDADE  = 0x0A;
+static const uint8_t PARAM_ACURACIA    = 0x0B;
 
 // ======== ESTRUTURAS DE PACOTES ========
 
@@ -91,7 +95,7 @@ struct PacketConfig {
   uint16_t crc;                      // 2 bytes
 };
 
-// Pacote STATUS (12 bytes)
+// Pacote STATUS (14 bytes)
 struct PacketStatus {
   uint16_t magic;         // 0xA1B2
   uint8_t  ver;           // 0x01
@@ -114,7 +118,7 @@ struct CmdTara {
   uint16_t crc;
 };
 
-// Comando CALIBRATE (12 bytes)
+// Comando CALIBRATE (10 bytes)
 struct CmdCalibrate {
   uint16_t magic;
   uint8_t  ver;
@@ -132,7 +136,7 @@ struct CmdGetConfig {
   uint16_t crc;
 };
 
-// Comando SET_PARAM (20 bytes)
+// Comando SET_PARAM (18 bytes)
 struct CmdSetParam {
   uint16_t magic;
   uint8_t  ver;
@@ -327,9 +331,9 @@ bool processBinaryCommand() {
   size_t expected_size = 0;
   switch (cmd_type) {
     case CMD_TARA:       expected_size = 8;  break;
-    case CMD_CALIBRATE:  expected_size = 12; break;
+    case CMD_CALIBRATE:  expected_size = 10; break;
     case CMD_GET_CONFIG: expected_size = 8;  break;
-    case CMD_SET_PARAM:  expected_size = 20; break;
+    case CMD_SET_PARAM:  expected_size = 18; break;
     default:
       // Tipo desconhecido, descarta este MAGIC
       memmove(cmd_buffer, cmd_buffer + 2, cmd_buffer_pos - 2);
@@ -381,11 +385,12 @@ bool processBinaryCommand() {
     }
     
     case CMD_CALIBRATE: {
-      CmdCalibrate* cmd = (CmdCalibrate*)cmd_buffer;
-      Serial.printf("[INFO] Comando CALIBRATE recebido: massa=%.1fg (binario)\n", cmd->massa_g);
+      CmdCalibrate cmd;
+      memcpy(&cmd, cmd_buffer, sizeof(CmdCalibrate));
+      Serial.printf("[INFO] Comando CALIBRATE recebido: massa=%.1fg (binario)\n", cmd.massa_g);
       sendBinaryStatus(STATUS_INFO, MSG_CMD_RECEIVED);
       
-      float massa_conhecida_g = cmd->massa_g;
+      float massa_conhecida_g = cmd.massa_g;
       
       if (massa_conhecida_g > 0 && massa_conhecida_g < 100000) {
         strcpy(balancaStatusBuffer, "Calibrar");
@@ -458,6 +463,31 @@ bool processBinaryCommand() {
           config.numAmostrasMedia = (int)cmd->value_i;
           updated = true;
           Serial.printf("[INFO] NumAmostrasMedia atualizado: %d\n", config.numAmostrasMedia);
+          break;
+
+        case PARAM_TARE_OFFSET:
+          config.tareOffset = (long)cmd->value_i;
+          loadcell.set_offset(config.tareOffset);
+          updated = true;
+          Serial.printf("[INFO] Tare Offset atualizado: %ld\n", config.tareOffset);
+          break;
+
+        case PARAM_TIMEOUT_CAL:
+          config.timeoutCalibracao = (unsigned long)cmd->value_i * 1000; // Convert seconds from UI to ms
+          updated = true;
+          Serial.printf("[INFO] Timeout Calibracao atualizado: %lu\n", config.timeoutCalibracao);
+          break;
+
+        case PARAM_CAPACIDADE:
+          config.capacidadeMaximaGramas = cmd->value_f;
+          updated = true;
+          Serial.printf("[INFO] Capacidade Maxima atualizada: %.1f\n", config.capacidadeMaximaGramas);
+          break;
+
+        case PARAM_ACURACIA:
+          config.percentualAcuracia = cmd->value_f;
+          updated = true;
+          Serial.printf("[INFO] Percentual Acuracia atualizado: %.4f\n", config.percentualAcuracia);
           break;
           
         default:
@@ -734,7 +764,8 @@ void processSerialCommand() {
         if (paramValueF >= 0 && paramValueF <= 10.0) {
           config.percentualAcuracia = paramValueF;
           changed = true;
-        } else {
+        }
+        else {
           sendSimpleJson("error", "Acuracia invalida (0-10%)");
         }
       }

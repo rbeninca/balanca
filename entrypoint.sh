@@ -34,7 +34,7 @@ else
   git -C "${WEB_DIRECTORY}" fetch origin "${GIT_BRANCH}" --depth 1 || true
   
 
-  git -C "${WEB_DIRECTORY}" reset --hard "origin/${GIT_BRANCH}" || true
+  # git -C "${WEB_DIRECTORY}" reset --hard "origin/${GIT_BRANCH}" || true
 fi
 
 # Loop de atualização em background
@@ -47,7 +47,7 @@ fi
     NEW_SHA="$(git -C "${WEB_DIRECTORY}" rev-parse origin/${GIT_BRANCH} || echo 'unknown')"
     if [ "$OLD_SHA" != "$NEW_SHA" ]; then
       echo "[entrypoint] Novas alterações detectadas. Aplicando..."
-      git -C "${WEB_DIRECTORY}" reset --hard "origin/${GIT_BRANCH}" || true
+      # git -C "${WEB_DIRECTORY}" reset --hard "origin/${GIT_BRANCH}" || true
     else
       echo "[entrypoint] Nenhuma mudança."
     fi
