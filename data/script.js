@@ -91,7 +91,7 @@ function initializeApexChart() {
     }],
     chart: {
       id: 'realtime',
-      height: 350,
+      height: 450,
       type: 'line',
       animations: {
         enabled: true,
@@ -557,7 +557,7 @@ function atualizarErroAbsoluto() {
   const percentAcuracia = parseFloat(document.getElementById("param-acuracia").value);
   const el = document.getElementById("erro-absoluto");
   if (el && !isNaN(capacidadeGramas) && !isNaN(percentAcuracia)) {
-    el.textContent = `Erro: ±${((capacidadeGramas * percentAcuracia) / 100).toFixed(2)} g`;
+    el.textContent = `Erro: ±${(capacidadeGramas * percentAcuracia).toFixed(2)} g`;
   }
 }
 
@@ -571,18 +571,18 @@ function aplicarFiltrosGramas(valorGramas) {
 }
 
 function aplicarZonaMorta(valorGramas) {
-  const erroAbsoluto = (capacidadeMaximaGramas * percentualAcuracia) / 100;
+  const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
   return Math.abs(valorGramas) <= erroAbsoluto ? 0 : valorGramas;
 }
 
 function aplicarArredondamentoInteligente(valorGramas) {
-  const erroAbsoluto = (capacidadeMaximaGramas * percentualAcuracia) / 100;
+  const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
   let casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
   return parseFloat(valorGramas.toFixed(casasDecimais));
 }
 
 function atualizarStatusFiltros() {
-  const erroAbsoluto = (capacidadeMaximaGramas * percentualAcuracia) / 100;
+  const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
   const casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
   
   const infoZonaMorta = document.getElementById('info-zona-morta');
