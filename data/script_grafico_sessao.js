@@ -999,7 +999,8 @@ function visualizarSessao(sessionId) {
     }
 
     abrirAba(document.getElementById("padrao"), 'abaGrafico');
-    showNotification('success', `Sessão "${sessao.nome}" carregada!`);
+    setChartMode('pausado'); // Pausa o gráfico ao carregar uma sessão
+    showNotification('success', `Sessão "${sessao.nome}" carregada! Gráfico pausado.`);
     
   } catch (e) {
     console.error('Erro ao visualizar:', e);
