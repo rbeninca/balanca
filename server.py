@@ -12,6 +12,8 @@ import logging
 import struct
 import time
 from typing import Optional, Dict, Any
+import pymysql.cursors
+from datetime import datetime # NEW: Import datetime
 
 """
 Binary Protocol Server - Balança GFIG (IPv4 + IPv6)
@@ -27,8 +29,14 @@ SERIAL_PORT = os.environ.get("SERIAL_PORT", "/dev/ttyUSB0")
 HTTP_PORT   = int(os.environ.get("HTTP_PORT", "80"))
 WS_PORT     = int(os.environ.get("WS_PORT", "81"))
 # Optional overrides
-BIND_HOST   = os.environ.get("BIND_HOST", "::")  # "::" for IPv6 (dual-stack when available); use "0.0.0.0" for IPv4-only
+BIND_HOST   = os.environ.get("BIND_HOST", "0.0.0.0")  # CHANGED: from "::" to "0.0.0.0" for IPv4-only
 V6ONLY_ENV  = os.environ.get("IPV6_V6ONLY", "0") # "0" tries dual-stack, "1" forces IPv6-only
+
+# MySQL Config
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "db")
+MYSQL_USER = os.environ.get("MYSQL_USER", "balanca_user")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "balanca_password")
+MYSQL_DB = os.environ.get("MYSQL_DB", "balanca_db")
 
 # Binary Protocol Constants
 MAGIC = 0xA1B2
@@ -59,6 +67,8 @@ logging.info(f"Configuração de IPV6_V6ONLY: {V6ONLY_ENV}")
 CONNECTED_CLIENTS = set()
 serial_connection: Optional[serial.Serial] = None
 serial_lock = threading.Lock()
+mysql_connection = None
+mysql_connected = False
 
 # ================== HTTP Server ==================
 class SilentHandler(http.server.SimpleHTTPRequestHandler):
@@ -109,21 +119,35 @@ async def ws_handler(websocket):
     CONNECTED_CLIENTS.add(websocket)
     try:
         async for message in websocket:
-            # Recebe comando JSON do cliente e converte para binário
             try:
                 cmd = json.loads(message)
-                binary_packet = json_to_binary_command(cmd)
+                cmd_type = cmd.get("cmd")
 
-                if binary_packet:
-                    with serial_lock:
-                        if serial_connection and serial_connection.is_open:
-                            serial_connection.write(binary_packet)
-                            serial_connection.flush()
-                            logging.info(f"Comando binário enviado: type={cmd.get('cmd')}")
+                if cmd_type == "save_session_to_mysql":
+                    session_data = cmd.get("payload")
+                    if session_data:
+                        success = await save_session_to_mysql_db(session_data)
+                        if success:
+                            await websocket.send(json.dumps({"type": "mysql_save_success", "message": session_data.get("nome"), "sessionId": session_data.get("id")}))
                         else:
-                            logging.warning("Serial não disponível")
+                            await websocket.send(json.dumps({"type": "mysql_save_error", "message": session_data.get("nome"), "sessionId": session_data.get("id")}))
+                    else:
+                        logging.warning("Received save_session_to_mysql command without payload.")
+                elif cmd_type == "fetch_sessions_from_mysql": # NEW: Handle fetch command
+                    sessions_from_db = await fetch_sessions_from_mysql_db()
+                    await websocket.send(json.dumps({"type": "mysql_sessions_fetched", "payload": sessions_from_db}))
                 else:
-                    logging.warning(f"Comando desconhecido: {cmd}")
+                    binary_packet = json_to_binary_command(cmd)
+                    if binary_packet:
+                        with serial_lock:
+                            if serial_connection and serial_connection.is_open:
+                                serial_connection.write(binary_packet)
+                                serial_connection.flush()
+                                logging.info(f"Comando binário enviado: type={cmd.get('cmd')}")
+                            else:
+                                logging.warning("Serial não disponível")
+                    else:
+                        logging.warning(f"Comando desconhecido: {cmd}")
 
             except json.JSONDecodeError:
                 logging.error(f"Mensagem WS inválida: {message}")
@@ -152,6 +176,8 @@ async def ws_server_main():
 async def broadcast_json(obj: Dict[str, Any]):
     if not CONNECTED_CLIENTS:
         return
+    # Adiciona o status do MySQL ao objeto JSON antes de transmitir
+    obj["mysql_connected"] = mysql_connected
     data = json.dumps(obj, separators=(",", ":"))
     await asyncio.gather(*[ws.send(data) for ws in list(CONNECTED_CLIENTS)], return_exceptions=True)
 
@@ -187,12 +213,17 @@ def parse_data_packet(data: bytes) -> Optional[Dict[str, Any]]:
             logging.warning(f"CRC mismatch in DATA packet: calc={crc_calc:04X}, rx={crc_rx:04X}")
             return None
 
-        return {
+        json_obj = {
             "type": "data",
             "tempo": t_ms / 1000.0,
             "forca": float(forca_N),
             "status": status
         }
+        
+        # Salva os dados no MySQL
+        save_data_to_mysql(json_obj)
+
+        return json_obj
     except struct.error as e:
         logging.error(f"Error unpacking DATA packet: {e}")
         return None
@@ -383,6 +414,159 @@ def find_serial_port() -> Optional[str]:
             return SERIAL_PORT
     return None
 
+# ================== MySQL Utils ==================
+def connect_to_mysql():
+    global mysql_connection, mysql_connected
+    if mysql_connection and mysql_connection.open:
+        return mysql_connection # Already connected
+
+    try:
+        mysql_connection = pymysql.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DB,
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=5
+        )
+        logging.info("Conectado ao MySQL com sucesso!")
+        mysql_connected = True
+        return mysql_connection
+    except pymysql.Error as e:
+        logging.error(f"Erro ao conectar ao MySQL: {e}")
+        mysql_connected = False
+        return None
+
+def init_mysql_db():
+    global mysql_connection, mysql_connected
+    mysql_connection = connect_to_mysql() # Tenta conectar na inicialização
+
+    if mysql_connection: # Verifica se a conexão foi bem-sucedida
+        try:
+            with mysql_connection.cursor() as cursor:
+                # Cria a tabela 'recordings' se não existir
+                sql_recordings_create = """
+                CREATE TABLE IF NOT EXISTS recordings (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    tempo FLOAT,
+                    forca FLOAT,
+                    status INT
+                )
+                """
+                cursor.execute(sql_recordings_create)
+
+                # NEW: Cria a tabela 'sessions' se não existir
+                sql_sessions_create = """
+                CREATE TABLE IF NOT EXISTS sessions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    session_id BIGINT UNIQUE NOT NULL,
+                    session_name VARCHAR(255) NOT NULL,
+                    session_timestamp DATETIME NOT NULL,
+                    dados_tabela_json JSON,
+                    metadados_motor_json JSON,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+                cursor.execute(sql_sessions_create)
+
+            mysql_connection.commit()
+            logging.info("Tabelas 'recordings' e 'sessions' verificadas/criadas no MySQL.")
+        except pymysql.Error as e:
+            logging.error(f"Erro ao inicializar o banco de dados MySQL: {e}")
+            mysql_connected = False
+    else:
+        logging.warning("Não foi possível inicializar o banco de dados MySQL: conexão não estabelecida.")
+
+def save_data_to_mysql(data_packet: Dict[str, Any]):
+    global mysql_connection, mysql_connected
+    if not mysql_connected or not mysql_connection or not mysql_connection.open:
+        logging.warning("Tentando salvar dados no MySQL, mas a conexão não está ativa. Tentando reconectar...")
+        mysql_connection = connect_to_mysql()
+        if not mysql_connected:
+            logging.error("Não foi possível reconectar ao MySQL. Dados não salvos.")
+            return
+
+    try:
+        with mysql_connection.cursor() as cursor:
+            sql = "INSERT INTO recordings (tempo, forca, status) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (data_packet["tempo"], data_packet["forca"], data_packet["status"]))
+        mysql_connection.commit()
+        # logging.info("Dados salvos no MySQL.") # Comentar para evitar log excessivo
+    except pymysql.Error as e:
+        logging.error(f"Erro ao salvar dados no MySQL: {e}")
+        mysql_connected = False # Marca como desconectado em caso de erro de escrita
+        if mysql_connection and mysql_connection.open:
+            mysql_connection.close() # Fecha a conexão para forçar reconexão
+        mysql_connection = None
+
+
+async def save_session_to_mysql_db(session_data: Dict[str, Any]) -> bool:
+    global mysql_connection, mysql_connected
+    if not mysql_connected or not mysql_connection or not mysql_connection.open:
+        logging.warning("Tentando salvar sessão no MySQL, mas a conexão não está ativa. Tentando reconectar...")
+        mysql_connection = connect_to_mysql()
+        if not mysql_connected:
+            logging.error("Não foi possível reconectar ao MySQL. Sessão não salva.")
+            return False
+
+    try:
+        with mysql_connection.cursor() as cursor:
+            # Prepare data for insertion
+            session_name = session_data.get("nome")
+            session_timestamp = session_data.get("timestamp")
+            session_id = session_data.get("id")
+            dados_tabela_json = json.dumps(session_data.get("dadosTabela"))
+            metadados_motor_json = json.dumps(session_data.get("metadadosMotor"))
+
+            # NEW: Convert timestamp to MySQL DATETIME format
+            raw_session_timestamp = session_data.get("timestamp")
+            logging.info(f"Raw timestamp from frontend: {raw_session_timestamp}")
+
+            # Try to parse with datetime.fromisoformat first, which is more robust
+            try:
+                dt_object = datetime.fromisoformat(raw_session_timestamp.replace('Z', '+00:00'))
+                mysql_formatted_timestamp = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                # Fallback to string manipulation if parsing fails (e.g., if format is slightly off)
+                logging.warning(f"Failed to parse timestamp '{raw_session_timestamp}' with fromisoformat. Falling back to string manipulation.")
+                mysql_formatted_timestamp = raw_session_timestamp.split('.')[0].replace('T', ' ')
+                if mysql_formatted_timestamp.endswith('Z'):
+                    mysql_formatted_timestamp = mysql_formatted_timestamp[:-1]
+
+            logging.info(f"Formatted timestamp for MySQL: {mysql_formatted_timestamp}")
+
+            # Check if a session with this ID already exists to prevent duplicates
+            cursor.execute("SELECT id FROM sessions WHERE session_id = %s", (session_id,))
+            if cursor.fetchone():
+                logging.info(f"Sessão com ID {session_id} já existe no MySQL. Atualizando...")
+                sql = """
+                UPDATE sessions SET
+                    session_name = %s,
+                    session_timestamp = %s, # Use mysql_formatted_timestamp here
+                    dados_tabela_json = %s,
+                    metadados_motor_json = %s
+                WHERE session_id = %s
+                """
+                cursor.execute(sql, (session_name, mysql_formatted_timestamp, dados_tabela_json, metadados_motor_json, session_id))
+            else:
+                sql = """
+                INSERT INTO sessions (session_id, session_name, session_timestamp, dados_tabela_json, metadados_motor_json)
+                VALUES (%s, %s, %s, %s, %s) # Use mysql_formatted_timestamp here
+                """
+                cursor.execute(sql, (session_id, session_name, mysql_formatted_timestamp, dados_tabela_json, metadados_motor_json))
+        mysql_connection.commit()
+        logging.info(f"Sessão '{session_name}' salva/atualizada no MySQL.")
+        return True
+    except pymysql.Error as e:
+        logging.error(f"Erro ao salvar sessão no MySQL: {e}")
+        mysql_connected = False
+        if mysql_connection and mysql_connection.open:
+            mysql_connection.close()
+        mysql_connection = None
+        return False
+
+
 # ================== Serial Reader Thread ==================
 def serial_reader(loop: asyncio.AbstractEventLoop):
     """Reads binary packets from serial and broadcasts as JSON"""
@@ -414,7 +598,7 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
                     continue
 
                 buf.extend(chunk)
-                logging.info(f"Serial buffer received: {chunk.hex()}")
+                # logging.info(f"Serial buffer received: {chunk.hex()}") # Comentar para evitar log excessivo
 
                 # Try to parse packets
                 while len(buf) >= 8:  # Minimum packet size
@@ -504,6 +688,7 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
 async def main():
     httpd = None
     try:
+        init_mysql_db()
         httpd = start_http_server()
         loop = asyncio.get_running_loop()
         t = threading.Thread(target=serial_reader, args=(loop,), daemon=True)
@@ -517,6 +702,9 @@ async def main():
     finally:
         if httpd:
             httpd.shutdown()
+        if mysql_connection and mysql_connection.open:
+            mysql_connection.close()
+            logging.info("Conexão MySQL fechada.")
 
 if __name__ == "__main__":
     try:

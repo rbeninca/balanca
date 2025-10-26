@@ -16,6 +16,7 @@ let originalChartContainer = null; // New global variable to store original pare
 let originalChartSessionControlsContainer = null; // New global variable for session controls
 let originalChartControlsParent = null; // Parent of the specific chart controls
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
+let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -44,7 +45,7 @@ window.onload = () => {
   initializeApexChart(); // NOVA FUNÇÃO DE GRÁFICO
   setDisplayUnit('kgf');
   setChartMode('deslizante');
-  carregarGravacoesComImpulso();
+  // carregarGravacoesComImpulso(); // REMOVED THIS LINE
   conectarWorker();
   setInterval(updateReadingsPerSecond, 1000);
   addNoiseControlsToUI();
@@ -280,6 +281,16 @@ function toggleChartPause() {
 
 // --- Comunicação com o Web Worker ---
 
+// Global variable to hold the promise resolver for MySQL sessions
+let mysqlSessionsResolver = null;
+
+function fetchSessionsFromMysqlViaWorker() {
+    return new Promise(resolve => {
+        mysqlSessionsResolver = resolve; // Store the resolver
+        dataWorker.postMessage({ type: 'sendCommand', payload: { cmd: 'fetch_sessions_from_mysql' } });
+    });
+}
+
 function conectarWorker() {
   if (window.Worker) {
     if (!dataWorker) {
@@ -297,9 +308,19 @@ function conectarWorker() {
 }
 
 function handleWorkerMessage(event) {
-  const { type, payload, status, message } = event.data;
+  const { type, payload, status, message } = event.data; // sessionId is NOT here anymore
+  let currentSessionId = null; // Declare it here
+  let notificationMessage = message; // Use a new variable for notification message
+
+  // Extract sessionId and update notificationMessage for specific cases
+  if (type === 'mysql_save_success' || type === 'mysql_save_error') {
+      currentSessionId = payload.sessionId;
+      notificationMessage = payload.message; // Update message for notification
+  }
+
   switch (type) {
     case 'dadosDisponiveis':
+      // No longer updating isMysqlConnected here, it's handled by mysql_status_update
       payload.forEach(updateUIFromData);
       break;
     case 'rps':
@@ -310,22 +331,48 @@ function handleWorkerMessage(event) {
       updateConfigForm(payload);
       break;
     case 'status':
-      document.getElementById('balanca-status').textContent = message || status;
-      // Apenas atualiza o indicador de conexão principal para status reais de conexão
+      document.getElementById('balanca-status').textContent = notificationMessage || status; // Use notificationMessage
       if (status === 'connected' || status === 'disconnected') {
         updateConnectionStatus(status === 'connected');
       }
-      if (message) {
+      if (notificationMessage) { // Use notificationMessage
         const notificationType = (status === 'error' || status === 'disconnected') ? 'error' : 'info';
-        showNotification(notificationType, message);
+        showNotification(notificationType, notificationMessage); // Use notificationMessage
       }
-      verificarStatusEstabilizacao(message);
+      verificarStatusEstabilizacao(notificationMessage); // Use notificationMessage
+      break;
+    case 'mysql_status_update': // NEW: Handle MySQL status updates
+      isMysqlConnected = payload;
+      updateMysqlIndicator(isMysqlConnected);
       break;
     case 'error':
-      showNotification("error", message || "Erro desconhecido no worker");
+      showNotification("error", notificationMessage || "Erro desconhecido no worker"); // Use notificationMessage
+      break;
+    case 'mysql_save_success':
+      showNotification('success', `Sessão "${notificationMessage}" salva no MySQL!`); // Use notificationMessage
+      // Update localStorage and re-render the list
+      let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+      const index = gravacoes.findIndex(g => g.id === currentSessionId);
+      if (index !== -1) {
+        gravacoes[index].savedToMysql = true;
+        localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+        carregarGravacoesComImpulso(); // Re-render the list
+      }
+      break;
+    case 'mysql_save_error':
+      showNotification('error', `Erro ao salvar sessão "${notificationMessage}" no MySQL.`); // Use notificationMessage
       break;
     default:
       console.warn("Mensagem desconhecida do worker:", event.data);
+  }
+}
+
+// NEW: Function to update the MySQL UI indicator
+function updateMysqlIndicator(connected) {
+  const indicator = document.getElementById('mysql-indicator');
+  if (indicator) {
+    indicator.style.backgroundColor = connected ? '#27ae60' : 'gray'; // Green for connected, gray for disconnected
+    indicator.title = connected ? 'MySQL Conectado' : 'MySQL Desconectado';
   }
 }
 
@@ -334,8 +381,18 @@ function sendCommandToWorker(command, value = null) {
     showNotification("error", "Worker não está conectado.");
     return;
   }
-  const message = value !== null ? `${command}:${value}` : command;
-  dataWorker.postMessage({ type: 'sendCommand', payload: message });
+  // NEW: Always send a JSON object as payload to the worker
+  const messagePayload = { cmd: command };
+  if (value !== null) {
+      // For 'save_session_to_mysql', value is the entire session object
+      if (command === 'save_session_to_mysql') {
+          messagePayload.sessionData = value;
+      } else {
+          // For other commands, value is a simple parameter
+          messagePayload.value = value;
+      }
+  }
+  dataWorker.postMessage({ type: 'sendCommand', payload: messagePayload });
 }
 
 // --- Atualização da UI ---
@@ -519,6 +576,23 @@ function salvarWsUrl() {
 
 // --- Funções de Sessão ---
 
+function persistToMysql(sessionId) {
+    const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+    const sessao = gravacoes.find(g => g.id === sessionId);
+
+    if (!sessao) {
+        showNotification('error', 'Sessão não encontrada para persistir no MySQL.');
+        return;
+    }
+
+    if (isMysqlConnected) {
+        showNotification('info', `Enviando sessão "${sessao.nome}" para o MySQL...`);
+        sendCommandToWorker('save_session_to_mysql', sessao); // REVERTED TO ORIGINAL CALL
+    } else {
+        showNotification('error', 'Não foi possível salvar no MySQL: Banco de dados desconectado.');
+    }
+}
+
 function iniciarSessao() {
     const nomeSessaoInput = document.getElementById('nome-sessao');
     if (!nomeSessaoInput.value.trim()) {
@@ -573,7 +647,8 @@ function salvarDadosDaSessao(nome, tabela) {
 
     const gravacao = {
         id: Date.now(), nome, timestamp: new Date().toISOString(),
-        dadosTabela, metadadosMotor
+        dadosTabela, metadadosMotor,
+        savedToMysql: isMysqlConnected // Use the global status here
     };
 
     try {
@@ -587,6 +662,8 @@ function salvarDadosDaSessao(nome, tabela) {
     }
 }
 
+
+
 // --- Funções Auxiliares e de UI ---
 
 function abrirAba(element, abaID) {
@@ -596,6 +673,8 @@ function abrirAba(element, abaID) {
   if (abaID === 'abaControles') {
     el.classList.add('config-loading'); // Add loading class
     sendCommandToWorker('get_config');
+  } else if (abaID === 'abaGravacoes') { // NEW: Load recordings when "Gravações" tab is opened
+    carregarGravacoesComImpulso();
   }
   el.style.display = "block";
   el.classList.add('active');

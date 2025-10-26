@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   balanca:
     build:
@@ -5,10 +7,13 @@ services:
       dockerfile: Dockerfile
     container_name: balanca
     restart: always
-  
-    # network_mode: host permite acesso direto às portas do host
-    # Portas 80 (HTTP) e 81 (WebSocket) ficam disponíveis automaticamente
-    network_mode: host
+    depends_on:
+      db:
+        condition: service_healthy # NEW: Wait until db is healthy
+    mem_limit: 512m # NEW: Add memory limit
+    ports:
+      - "80:80"
+      - "81:81"
 
     # Dispositivo serial (ajuste para ttyACM0 se necessário)
     devices:
@@ -19,6 +24,12 @@ services:
       SERIAL_BAUD: "921600"
       WS_PORT: "81"
       HTTP_PORT: "80"
+      MYSQL_HOST: "db" # Nome do serviço MySQL no Docker Compose
+      MYSQL_USER: "balanca_user"
+      MYSQL_PASSWORD: "balanca_password"
+      MYSQL_DB: "balanca_db"
+
+    # dns: - 1.1.1.1 removed
 
     # Monta o repositório em /app (read-only)
     volumes:
@@ -35,3 +46,58 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - balanca_network
+
+  db:
+    image: mysql:8.0
+    container_name: balanca_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password"
+      MYSQL_DATABASE: "balanca_db"
+      MYSQL_USER: "balanca_user"
+      MYSQL_PASSWORD: "balanca_password"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    secrets:
+      - db_root_password
+    ports:
+      - "3306:3306" # Expor a porta do MySQL para acesso externo, se necessário
+    networks:
+      - balanca_network # Adiciona o serviço 'db' à rede interna
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: balanca_phpmyadmin
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy # NEW: Wait until db is healthy
+    environment:
+      PMA_HOST: db # Connects to the 'db' service
+      MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password" # Use the same root password secret
+      # PMA_USER: balanca_user # Optional: if you want to log in directly with the app user
+      # PMA_PASSWORD: balanca_password # Optional: if you want to log in directly with the app user
+    ports:
+      - "8080:80" # Access PhpMyAdmin on port 8080
+    secrets:
+      - db_root_password
+    networks:
+      - balanca_network
+
+networks:
+  balanca_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
+secrets:
+  db_root_password:
+    file: ./db_root_password.txt

@@ -27,42 +27,41 @@ function connectWebSocket() {
         return;
     }
 
-    let finalWsURL = wsURL;
+    let finalWsURL = wsURL; // Use the wsURL from the main thread
 
-    // Se a URL não foi definida pela UI, usa a lógica de fallback
+    // If wsURL is empty, try to construct it from location
     if (!finalWsURL) {
-        console.log("[Worker] Nenhuma URL customizada. Usando lógica de fallback.");
+        console.log("[Worker] wsURL is empty. Constructing from location.");
         let host = location.hostname;
         let port = 81;
 
+        // Special handling for development servers or direct IP access
         if (location.port === '5500' || host === 'localhost' || host === '127.0.0.1') {
             host = 'localhost';
         }
         finalWsURL = `ws://${host}:${port}`;
+        console.log(`[Worker] Constructed default WebSocket URL: ${finalWsURL}`);
     } else {
+        // Ensure the URL has a protocol and port if missing
         let givenUrl = finalWsURL.trim();
 
-        // 1. Adiciona o protocolo se não estiver presente
         if (!givenUrl.startsWith('ws://') && !givenUrl.startsWith('wss://')) {
             givenUrl = `ws://${givenUrl}`;
         }
 
-        // 2. Verifica a presença da porta de forma robusta
         const lastColon = givenUrl.lastIndexOf(':');
         const lastBracket = givenUrl.lastIndexOf(']');
 
-        // A porta existe se o último dois-pontos vem depois do último colchete (para IPv6)
-        // ou se não há colchetes e há um dois-pontos (para IPv4/hostname)
         const hasPort = lastColon > lastBracket;
 
         if (!hasPort) {
             givenUrl += ':81';
         }
-
         finalWsURL = givenUrl;
+        console.log(`[Worker] Using provided WebSocket URL: ${finalWsURL}`);
     }
     
-    console.log(`[Worker] 🔄 Tentando conectar WebSocket: ${finalWsURL}`);
+    console.log(`[Worker] 🔄 Attempting to connect WebSocket to: ${finalWsURL}`);
 
     try {
         socket = new WebSocket(finalWsURL);
@@ -78,7 +77,7 @@ function connectWebSocket() {
     };
 
     socket.onclose = (event) => {
-        console.log(`[Worker] ⚠️ WebSocket FECHADO. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}. Estado: ${socket.readyState}, URL: ${socket.url}`);
+        console.log(`[Worker] ⚠️ WebSocket FECHADO. Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}. Estado: ${socket ? socket.readyState : 'null'}, URL: ${socket ? socket.url : 'null'}`); // Add null check
         self.postMessage({ type: 'status', status: 'disconnected', message: `Desconectado (${event.code}). Tentando reconectar...` });
         socket = null;
     };
@@ -154,6 +153,11 @@ function connectWebSocket() {
  * Processa uma mensagem WebSocket completa (JSON já parseado)
  */
 function processWebSocketMessage(data) {
+    // NEW: Extract mysql_connected status and send to main thread
+    if (data.mysql_connected !== undefined) {
+        self.postMessage({ type: 'mysql_status_update', payload: data.mysql_connected });
+    }
+
     if (Array.isArray(data)) {
         // Array de leituras
         data.forEach(reading => {
@@ -174,11 +178,17 @@ function processWebSocketMessage(data) {
                 self.postMessage({ type: 'config', payload: data });
                 break;
 
-            case "success":
-            case "error":
-            case "info":
+            case "status":
                 // Retransmite a mensagem de status/erro do ESP8266
                 self.postMessage({ type: 'status', status: data.type, message: data.message });
+                break;
+
+            case "mysql_save_success": // NEW: Handle MySQL save success
+                self.postMessage({ type: 'mysql_save_success', payload: { message: data.message, sessionId: data.sessionId } });
+                break;
+
+            case "mysql_save_error": // NEW: Handle MySQL save error
+                self.postMessage({ type: 'mysql_save_error', payload: { message: data.message, sessionId: data.sessionId } });
                 break;
         }
     }
@@ -271,125 +281,99 @@ self.onmessage = (e) => {
             break;
             
         case 'sendCommand':
-            // CORREÇÃO CRÍTICA: Verifica se o socket está conectado ANTES de processar
             if (!socket || socket.readyState !== WebSocket.OPEN) {
                 console.error("[Worker] ❌ WebSocket não está conectado! Estado:", socket ? socket.readyState : 'null');
-                self.postMessage({ 
-                    type: 'status', 
-                    status: 'error', 
-                    message: 'Erro: WebSocket não conectado. Não foi possível enviar o comando.' 
-                });
-                return; // SAI IMEDIATAMENTE
-            }
-
-            // NOVO: Log detalhado do payload recebido
-            console.log(`[Worker] 📤 Comando recebido da UI: "${payload}"`);
-
-            const commandObject = {};
-
-            // Comando de Tara
-            if (payload === 't') {
-                commandObject.cmd = 't';
-                console.log('[Worker] ✅ Comando de TARA identificado');
-            }
-
-            // Comando 'get_config'
-            else if (payload === 'get_config') {
-                commandObject.cmd = 'get_config';
-                console.log('[Worker] ✅ Comando GET_CONFIG identificado');
-            }
-
-            // Comando de Calibração: c:1000
-            else if (payload.startsWith('c:')) {
-                const mass = parseFloat(payload.substring(2));
-                if (isNaN(mass) || mass <= 0) {
-                    console.error("[Worker] ❌ Comando 'c:' inválido. Massa não numérica ou <= 0.");
-                    self.postMessage({ type: 'status', status: 'error', message: 'Massa de calibração inválida.' });
-                    return; // CRÍTICO: SAI IMEDIATAMENTE.
-                }
-                commandObject.cmd = 'c';
-                commandObject.massa_g = mass;
-                console.log(`[Worker] ✅ Comando de CALIBRAÇÃO identificado com massa: ${mass}g`);
-            }
-
-            // CORREÇÃO: Comando Set Param: set_param:gravity:9.81
-            else if (payload.startsWith('set_param:')) {
-                console.log(`[Worker] 🔧 Processando comando set_param: "${payload}"`);
-                
-                // Remove o prefixo 'set_param:' e divide o resto
-                const paramsString = payload.substring(10); // Remove 'set_param:'
-                const parts = paramsString.split(':');
-                
-                console.log(`[Worker] 🔍 Partes após split: [${parts.join(', ')}]`);
-                
-                if (parts.length === 2) {
-                    const param = parts[0].trim();
-                    const value = parseFloat(parts[1]);
-
-                    console.log(`[Worker] 📝 Parâmetro: "${param}", Valor: ${value}`);
-
-                    if (isNaN(value)) {
-                        console.error(`[Worker] ❌ Comando 'set_param' inválido para ${param}. Valor não numérico: "${parts[1]}"`);
-                        self.postMessage({ 
-                            type: 'status', 
-                            status: 'error', 
-                            message: `Erro: Valor inválido para ${param}` 
-                        });
-                        return; // CRÍTICO: SAI IMEDIATAMENTE.
-                    }
-
-                    commandObject.cmd = 'set';
-                    commandObject.param = param;
-                    commandObject.value = value;
-                    
-                    console.log(`[Worker] ✅ Comando SET_PARAM montado:`, commandObject);
-                } else {
-                    console.error(`[Worker] ❌ Formato inválido para set_param. Esperado 2 partes, recebido ${parts.length}`);
-                    self.postMessage({ 
-                        type: 'status', 
-                        status: 'error', 
-                        message: 'Formato de comando inválido' 
-                    });
-                    return;
-                }
-            }
-
-            // Comando desconhecido
-            else {
-                console.warn(`[Worker] ⚠️ Payload desconhecido: "${payload}"`);
-                self.postMessage({ 
-                    type: 'status', 
-                    status: 'error', 
-                    message: `Comando desconhecido: ${payload}` 
+                self.postMessage({
+                    type: 'status',
+                    status: 'error',
+                    message: 'Erro: WebSocket não conectado. Não foi possível enviar o comando.'
                 });
                 return;
             }
 
-            // Envia a string JSON para o Host, SOMENTE SE commandObject.cmd FOI DEFINIDO
-            if (commandObject.cmd) {
-                const jsonCommand = JSON.stringify(commandObject);
+            console.log(`[Worker] 📤 Comando recebido da UI:`, payload);
+
+            const commandToSend = {}; // This will be the object sent to server.py
+
+            if (payload.cmd === 'save_session_to_mysql') {
+                commandToSend.cmd = 'save_session_to_mysql';
+                commandToSend.payload = payload.sessionData;
+                console.log('[Worker] ✅ Comando SAVE_SESSION_TO_MYSQL identificado');
+            }
+            else if (payload.cmd === 't') {
+                commandToSend.cmd = 't';
+                console.log('[Worker] ✅ Comando de TARA identificado');
+            }
+            else if (payload.cmd === 'get_config') {
+                commandToSend.cmd = 'get_config';
+                console.log('[Worker] ✅ Comando GET_CONFIG identificado');
+            }
+            else if (payload.cmd === 'c') { // Calibrate
+                const mass = parseFloat(payload.value);
+                if (isNaN(mass) || mass <= 0) {
+                    console.error("[Worker] ❌ Comando 'c' inválido. Massa não numérica ou <= 0.");
+                    self.postMessage({ type: 'status', status: 'error', message: 'Massa de calibração inválida.' });
+                    return;
+                }
+                commandToSend.cmd = 'c';
+                commandToSend.massa_g = mass;
+                console.log(`[Worker] ✅ Comando de CALIBRAÇÃO identificado com massa: ${mass}g`);
+            }
+            else if (payload.cmd === 'set') { // Set parameter
+                const param = payload.value.param;
+                const paramValue = payload.value.value;
+
+                if (!param || isNaN(paramValue)) {
+                    console.error(`[Worker] ❌ Comando 'set' inválido. Parâmetro ou valor inválido.`);
+                    self.postMessage({
+                        type: 'status',
+                        status: 'error',
+                        message: 'Formato de comando inválido para set_param.'
+                    });
+                    return;
+                }
+                commandToSend.cmd = 'set';
+                commandToSend.param = param;
+                commandToSend.value = paramValue;
+                console.log(`[Worker] ✅ Comando SET_PARAM montado:`, commandToSend);
+            }
+            else if (payload.cmd === 'fetch_sessions_from_mysql') { // NEW: Handle fetch sessions command
+                commandToSend.cmd = 'fetch_sessions_from_mysql';
+                console.log('[Worker] ✅ Comando FETCH_SESSIONS_FROM_MYSQL identificado');
+            }
+            else {
+                console.warn(`[Worker] ⚠️ Comando desconhecido da UI:`, payload);
+                self.postMessage({
+                    type: 'status',
+                    status: 'error',
+                    message: `Comando desconhecido: ${payload.cmd}`
+                });
+                return;
+            }
+
+            if (commandToSend.cmd) {
+                const jsonCommand = JSON.stringify(commandToSend);
                 console.log(`[Worker] 🚀 Enviando para WebSocket: ${jsonCommand}`);
-                
+
                 try {
                     socket.send(jsonCommand);
                     console.log(`[Worker] ✅ Comando enviado com sucesso`);
-                    
-                    // Notifica a UI sobre o envio bem-sucedido
-                    self.postMessage({ 
-                        type: 'status', 
-                        status: 'info', 
-                        message: `Comando "${commandObject.cmd}" enviado ao ESP32` 
+
+                    self.postMessage({
+                        type: 'status',
+                        status: 'info',
+                        message: `Comando "${commandToSend.cmd}" enviado ao ESP32`
                     });
                 } catch (error) {
                     console.error(`[Worker] ❌ Erro ao enviar comando:`, error);
-                    self.postMessage({ 
-                        type: 'status', 
-                        status: 'error', 
-                        message: `Erro ao enviar comando: ${error.message}` 
+                    self.postMessage({
+                        type: 'status',
+                        status: 'error',
+                        message: `Erro ao enviar comando: ${error.message}`
                     });
                 }
             } else {
-                console.error(`[Worker] ❌ commandObject.cmd não foi definido!`);
+                console.error(`[Worker] ❌ commandToSend.cmd não foi definido!`);
             }
             break;
     }

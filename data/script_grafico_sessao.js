@@ -913,26 +913,55 @@ function exportarResumoSessao(sessionId) {
 }
 
 // ATUALIZA A FUNÇÃO DE CARREGAR GRAVAÇÕES COM BOTÕES CORRETOS
-function carregarGravacoesComImpulso() {
+async function carregarGravacoesComImpulso() { // Make it async
   const container = document.getElementById('lista-gravacoes');
   if (!container) return;
-  
-  container.innerHTML = '';
-  const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  
-  if (gravacoes.length === 0) {
-    container.innerHTML = '<p>Nenhuma gravação encontrada.</p>';
-    return;
-  }
-  
-  gravacoes.sort((a, b) => b.id - a.id);
-  
-  gravacoes.forEach(gravacao => {
-    const dados = processarDadosSimples(gravacao.dadosTabela);
-    const impulsoData = dados.impulso;
-    const classe = dados.propulsao.classificacaoMotor.classe;
 
+  container.innerHTML = ''; // Clear existing list
+
+  let localGravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  let mysqlGravacoes = [];
+
+  // Fetch sessions from MySQL if connected
+  if (isMysqlConnected) {
+      showNotification('info', 'Buscando gravações do MySQL...');
+      mysqlGravacoes = await fetchSessionsFromMysqlViaWorker(); // NEW: Await MySQL sessions
+  }
+
+  // Create a map for quick lookup of local sessions by ID
+  const localMap = new Map(localGravacoes.map(s => [s.id, s]));
+
+  // Merge sessions: prioritize MySQL data, mark local-only
+  const combinedSessions = [];
+  const processedIds = new Set();
+
+  // Add MySQL sessions first
+  mysqlGravacoes.forEach(mysqlSessao => {
+      combinedSessions.push(mysqlSessao);
+      processedIds.add(mysqlSessao.id);
+  });
+
+  // Add local sessions that are not in MySQL
+  localGravacoes.forEach(localSessao => {
+      if (!processedIds.has(localSessao.id)) {
+          combinedSessions.push(localSessao);
+      }
+  });
+
+  // Sort combined sessions (newest first)
+  combinedSessions.sort((a, b) => b.id - a.id);
+
+  // Render the combined list
+  renderCombinedSessions(combinedSessions); // This function is in script.js
+  showNotification('info', `Carregadas ${combinedSessions.length} gravações (local e MySQL).`);
+}
+
+// NEW: Helper function to create the HTML for a session card
+function criarElementoGravacaoHTML(gravacao, dados) {
     const dataFormatada = new Date(gravacao.timestamp).toLocaleString('pt-BR');
+    const classe = dados.propulsao.classificacaoMotor.classe;
+    const impulsoData = dados.impulso;
+
     const card = document.createElement('div');
     card.className = 'card-gravacao';
     card.style.cssText = `
@@ -946,12 +975,25 @@ function carregarGravacoesComImpulso() {
       margin-bottom: 10px;
       border-left: 5px solid ${dados.propulsao.classificacaoMotor.cor || 'var(--cor-primaria)'};
     `;
-    
+
+    let storageIcons = '';
+    storageIcons += '<span title="Salvo Localmente" style="margin-left: 5px; color: #3498db;">&#x1F4C7;</span>'; // Blue folder for Local Storage
+
+    if (gravacao.savedToMysql) {
+        storageIcons += '<span title="Salvo no MySQL" style="margin-left: 5px; color: #27ae60;">&#x1F4BE;</span>'; // Green floppy disk for MySQL
+    }
+
+    let persistButton = '';
+    if (!gravacao.savedToMysql) {
+        persistButton = `<button class="btn btn-sucesso btn-small" onclick="persistToMysql(${gravacao.id})">💾 Salvar no MySQL</button>`;
+    }
+
    card.innerHTML = `
       <div>
-          <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} <span style="font-size: 0.75rem; background: ${dados.propulsao.classificacaoMotor.cor || 'var(--cor-primaria)'}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${classe}</span></p> 
+          <p style="font-weight: 600; margin-bottom: 5px;">${gravacao.nome} <span style="font-size: 0.75rem; background: ${dados.propulsao.classificacaoMotor.cor || 'var(--cor-primaria)'}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${classe}</span></p>
           <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
               ${dataFormatada} • Impulso Total: ${impulsoData.impulsoTotal.toFixed(2)} N⋅s
+              ${storageIcons}
           </p>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -960,11 +1002,30 @@ function carregarGravacoesComImpulso() {
           <button onclick="exportarPDFViaPrint(${gravacao.id})" title="Exportar Relatório PDF" class="btn btn-secundario">📑 PDF</button>
           <button onclick="exportarCSV(${gravacao.id})" title="Exportar Dados em CSV" class="btn btn-sucesso">📄 CSV</button>
           <button onclick="exportarMotorENG(${gravacao.id})" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso">🚀 ENG</button>
+          ${persistButton}
           <button onclick="deletarGravacao(${gravacao.id})" title="Deletar Sessão" class="btn btn-perigo">🗑️ Del</button>
       </div>
     `;
-    container.appendChild(card);
-  });
+    return card;
+}
+
+// NEW: Function to render the combined list of sessions
+function renderCombinedSessions(sessions) {
+    const container = document.getElementById('lista-gravacoes');
+    if (!container) return;
+
+    container.innerHTML = ''; // Clear existing list
+
+    if (sessions.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--cor-texto-secundario);">Nenhuma gravação salva localmente ou no MySQL.</p>';
+        return;
+    }
+
+    sessions.forEach(gravacao => {
+        const dados = processarDadosSimples(gravacao.dadosTabela);
+        const card = criarElementoGravacaoHTML(gravacao, dados);
+        container.appendChild(card);
+    });
 }
 
 // FUNÇÃO PARA VISUALIZAR SESSÃO (mantém a mesma do artifact anterior)
