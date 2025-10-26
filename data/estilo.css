@@ -394,3 +394,10 @@ tbody tr:hover { background-color: var(--cor-fundo); }
 body.no-scroll {
   overflow: hidden;
 }
+
+/* Estilos para desabilitar a tela de configurações durante o carregamento */
+.config-loading {
+  pointer-events: none; /* Desabilita cliques e interações */
+  opacity: 0.6; /* Diminui a opacidade para indicar estado de carregamento */
+  transition: opacity 0.3s ease; /* Transição suave */
+}

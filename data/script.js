@@ -452,6 +452,9 @@ function updateConfigForm(config) {
     atualizarCapacidadeEmKg();
     atualizarErroAbsoluto();
     atualizarStatusFiltros();
+
+    // Remove loading class after updating form
+    document.getElementById('abaControles').classList.remove('config-loading');
 }
 
 // --- Funções de Ação do Usuário ---
@@ -587,6 +590,7 @@ function abrirAba(element, abaID) {
   document.querySelectorAll('.tablink').forEach(link => link.classList.remove('active'));
   const el = document.getElementById(abaID);
   if (abaID === 'abaControles') {
+    el.classList.add('config-loading'); // Add loading class
     sendCommandToWorker('get_config');
   }
   el.style.display = "block";
