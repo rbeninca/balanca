@@ -462,6 +462,8 @@ function updateConfigForm(config) {
 function tare() {
   sendCommandToWorker("t");
   showNotification('info', 'Comando de Tara enviado. (Atalho: Shift + T)');
+  // Request config update after tare
+  setTimeout(() => sendCommandToWorker('get_config'), 1000); 
 }
 
 function calibrar() {
@@ -469,6 +471,8 @@ function calibrar() {
   if (!isNaN(massa) && massa > 0) {
     sendCommandToWorker("c", massa);
     showNotification('info', `Comando de calibração com ${massa}g enviado. (Atalho: Shift + C)`);
+    // Request config update after calibration
+    setTimeout(() => sendCommandToWorker('get_config'), 1000); 
   } else {
     showNotification("error", "Informe uma massa de calibração válida.");
   }
