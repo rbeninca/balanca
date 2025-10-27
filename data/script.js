@@ -1234,20 +1234,25 @@ async function loadAndDisplayAllSessions() {
             <button onclick="exportarCSV(${session.id}, '${session.source}')" title="Exportar Dados em CSV" class="btn btn-sucesso"> CSV</button>
             <button onclick="exportarEng(${session.id}, '${session.source}')" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso"> ENG</button>
             ${session.inLocal && !session.inDb
-        ? `<button class="btn btn-info btn-small" 
-                ${!isMysqlConnected ? 'disabled title="MySQL desconectado"' : ''}
+        ? `<button class="btn btn-info btn-small"
+                ${!isMysqlConnected ? 'disabled title="MySQL desconectado"' : 'title="Salvar do LocalStorage para o Banco de Dados"'}
                 onclick="salvarNoDB(${session.id})">
-                Salvar DB
-             </button>`
+                💾 ➜ ☁️ Salvar no BD
+             </button>
+             <button class="btn btn-perigo btn-small" title="Excluir do LocalStorage" onclick="deleteLocalSession(${session.id})">🗑️ Excluir do Local</button>`
         : ''}
             ${session.inDb && !session.inLocal
-        ? `<button class="btn btn-info btn-small"
+        ? `<button class="btn btn-perigo btn-small" title="Excluir do Banco de Dados" onclick="deleteDbSession(${session.id})">🗑️ Excluir do BD</button>
+             <button class="btn btn-info btn-small"
+                title="Salvar do Banco de Dados para o LocalStorage"
                 onclick="salvarNoLocalStorage(${session.id})">
-                Salvar Local
+                ☁️ ➜ 💾 Salvar Local
              </button>`
         : ''}
-            ${session.inDb ? `<button class="btn btn-perigo btn-small" onclick="deleteDbSession(${session.id})">Excluir DB</button>` : ''}
-            ${session.inLocal ? `<button class="btn btn-perigo btn-small" onclick="deleteLocalSession(${session.id})">Excluir Local</button>` : ''}
+            ${session.inDb && session.inLocal
+        ? `<button class="btn btn-perigo btn-small" title="Excluir do Banco de Dados" onclick="deleteDbSession(${session.id})">🗑️ Excluir do BD</button>
+             <button class="btn btn-perigo btn-small" title="Excluir do LocalStorage" onclick="deleteLocalSession(${session.id})">🗑️ Excluir do Local</button>`
+        : ''}
         </div>
       </div>
     `;
@@ -1255,7 +1260,12 @@ async function loadAndDisplayAllSessions() {
   }).join('');
 }
 
+/** Ordem dos botões  para salvar 
+Só no LocalStorage:       💾 ➜ ☁️ Salvar no BD e 🗑️ Excluir do Local
+Só no BD:                🗑️ Excluir do BD e  ☁️ ➜ 💾 Salvar Local
+Em ambos:                🗑️ Excluir do BD e 🗑️ Excluir do Local
 
+ */
 
 function salvarNoLocalStorage(sessionId) {
   saveDbSessionToLocal(sessionId);
