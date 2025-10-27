@@ -1288,21 +1288,52 @@ async function getSessionDataForExport(sessionId, source) {
   return sessionData;
 }
 // Visualiza uma sessão salva (gráfico + tabela) garantindo eixo X numérico e ordenado
+// Localizado em script.js
+
+// ... (resto do código)
+
+// Visualiza uma sessão salva (gráfico + tabela) garantindo eixo X numérico e ordenado
 async function visualizarSessao(sessionId) {
   try {
     // 1) Obter sessão (LocalStorage → API)
     const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes') || '[]');
     let sessao = gravacoes.find(g => String(g.id) === String(sessionId));
 
+    // Se não for encontrada localmente, tenta buscar o registro no DB
     if (!sessao) {
-      // Fallback para backend (se disponível)
       try {
         const resp = await fetch(`/api/sessoes/${sessionId}`, { cache: 'no-store' });
         if (resp.ok) sessao = await resp.json();
       } catch (e) {
-        /* ignora, será tratado abaixo se sessao ficar undefined */
+        console.error("Erro ao buscar metadados da sessão no DB:", e);
       }
     }
+
+    // Se o registro da sessão foi encontrado (local ou DB), mas os dadosTabela estão ausentes ou vazios,
+    // E a sessão *pode* estar no DB (checar se tem os campos do DB, ex: data_inicio), buscamos as leituras no DB.
+    if (sessao && (!Array.isArray(sessao.dadosTabela) || sessao.dadosTabela.length === 0)) {
+        // Tentativa de buscar leituras do DB, caso o registro da sessão tenha vindo da API.
+        // Assumimos que a sessão é do DB se ela veio da API e não tem dadosTabela.
+        try {
+            const readingsResp = await fetch(`/api/sessoes/${sessionId}/leituras`, { cache: 'no-store' });
+            if (readingsResp.ok) {
+                const dbReadings = await readingsResp.json();
+                
+                // Anexa os dados lidos do DB ao objeto 'sessao'
+                sessao.dadosTabela = dbReadings.map(r => ({
+                    timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
+                    tempo_esp: r.tempo,
+                    newtons: r.forca,
+                    grama_forca: (r.forca / 9.80665 * 1000).toFixed(3),
+                    quilo_forca: (r.forca / 9.80665).toFixed(6)
+                }));
+            }
+        } catch (e) {
+            console.error("Erro ao buscar leituras da sessão no DB:", e);
+            // Continua, mas com um alerta
+        }
+    }
+
 
     if (!sessao || !Array.isArray(sessao.dadosTabela) || sessao.dadosTabela.length === 0) {
       showNotification('error', 'Sessão não encontrada ou sem dados.');
@@ -1408,7 +1439,6 @@ async function visualizarSessao(sessionId) {
   //pausa  
   toggleChartPause(true);
 }
-
 
 async function exportarEng(sessionId, source) {
   const session = await getSessionDataForExport(sessionId, source); // Try both sources
