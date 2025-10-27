@@ -1207,16 +1207,27 @@ async function loadAndDisplayAllSessions() {
       classColor = metricasPropulsao.classificacaoMotor.cor; // Get color from classification
     }
 
+    // Metadados do motor
+    const meta = session.metadadosMotor || {};
+    const metadadosDisplay = meta.name ? `
+      <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-top: 5px;">
+        🚀 Motor: ${meta.name || 'N/D'} • ⌀${meta.diameter || 'N/D'}mm • L${meta.length || 'N/D'}mm • 
+        Prop: ${meta.propweight || 'N/D'}kg • Total: ${meta.totalweight || 'N/D'}kg • ${meta.manufacturer || 'N/D'}
+      </p>
+    ` : '';
+
     return `
       <div class="card-gravacao" style="display: flex; justify-content: space-between; align-items: center; background: var(--cor-fundo-card); padding: 15px; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px; margin-bottom: 10px; border-left: 5px solid ${classColor};" id="session-${session.id}">
-        <div>
+        <div style="flex: 1;">
             <p style="font-weight: 600; margin-bottom: 5px;">${sourceIcons}${session.nome} <span style="font-size: 0.75rem; background: ${classColor}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${motorClass}</span></p> 
             <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
                 ${dataInicio} • Impulso Total: ${impulsoTotal} N⋅s
             </p>
+            ${metadadosDisplay}
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button onclick="visualizarSessao(${session.id}, '${session.source}')" title="Carregar para Análise/Gráfico" class="btn btn-info">️ Ver</button>
+            <button onclick="editarMetadadosMotor(${session.id})" title="Editar Metadados do Motor" class="btn btn-secundario">⚙️ Metadados</button>
             <button onclick="exportarPNG(${session.id}, '${session.source}')" title="Exportar Gráfico em PNG" class="btn btn-primario">️ PNG</button>
             <button onclick="gerarRelatorioPdf(${session.id}, '${session.source}')" title="Exportar Relatório PDF" class="btn btn-secundario"> PDF</button>
             <button onclick="exportarJSON(${session.id}, '${session.source}')" title="Exportar Dados em JSON" class="btn btn-sucesso"> JSON</button>
@@ -1253,6 +1264,111 @@ function salvarNoLocalStorage(sessionId) {
 function salvarNoDB(sessionId) {
   saveLocalSessionToDb(sessionId);
 }
+
+function editarMetadadosMotor(sessionId) {
+  // Busca a sessão (local ou DB)
+  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  let session = localSessions.find(s => s.id === sessionId);
+  
+  if (!session) {
+    showNotification('error', 'Sessão não encontrada para editar metadados.');
+    return;
+  }
+
+  const meta = session.metadadosMotor || {};
+
+  // Cria um modal para edição
+  const modalHtml = `
+    <div id="modal-metadados" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <h2 style="margin-top: 0; color: var(--cor-titulo);">⚙️ Metadados do Motor - ${session.nome}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nome do Motor</label>
+            <input type="text" id="meta-name" value="${meta.name || ''}" placeholder="Ex: NFB_20" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fabricante</label>
+            <input type="text" id="meta-manufacturer" value="${meta.manufacturer || 'GFIG-IFC'}" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Diâmetro (mm)</label>
+            <input type="number" id="meta-diameter" value="${meta.diameter || 45}" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Comprimento (mm)</label>
+            <input type="number" id="meta-length" value="${meta.length || 200}" step="1" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Delay (s)</label>
+            <input type="number" id="meta-delay" value="${meta.delay || 0}" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Peso Propelente (kg)</label>
+            <input type="number" id="meta-propweight" value="${meta.propweight || 0.1}" step="0.001" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Peso Total (kg)</label>
+            <input type="number" id="meta-totalweight" value="${meta.totalweight || 0.25}" step="0.001" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button onclick="fecharModalMetadados()" class="btn btn-secundario">Cancelar</button>
+          <button onclick="salvarMetadadosMotor(${sessionId})" class="btn btn-sucesso">💾 Salvar Metadados</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function fecharModalMetadados() {
+  const modal = document.getElementById('modal-metadados');
+  if (modal) modal.remove();
+}
+
+function salvarMetadadosMotor(sessionId) {
+  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  const sessionIndex = localSessions.findIndex(s => s.id === sessionId);
+  
+  if (sessionIndex === -1) {
+    showNotification('error', 'Sessão não encontrada.');
+    fecharModalMetadados();
+    return;
+  }
+
+  // Captura os valores do formulário
+  const metadadosMotor = {
+    name: document.getElementById('meta-name').value.trim(),
+    manufacturer: document.getElementById('meta-manufacturer').value.trim(),
+    diameter: parseFloat(document.getElementById('meta-diameter').value) || 45,
+    length: parseFloat(document.getElementById('meta-length').value) || 200,
+    delay: parseFloat(document.getElementById('meta-delay').value) || 0,
+    propweight: parseFloat(document.getElementById('meta-propweight').value) || 0.1,
+    totalweight: parseFloat(document.getElementById('meta-totalweight').value) || 0.25
+  };
+
+  // Atualiza a sessão
+  localSessions[sessionIndex].metadadosMotor = metadadosMotor;
+  
+  try {
+    localStorage.setItem('balancaGravacoes', JSON.stringify(localSessions));
+    showNotification('success', 'Metadados do motor salvos com sucesso!');
+    fecharModalMetadados();
+    
+    // Se a sessão também está no DB e MySQL está conectado, atualiza lá também
+    if (localSessions[sessionIndex].inDb && isMysqlConnected) {
+      sendCommandToWorker('save_session_to_mysql', localSessions[sessionIndex]);
+    }
+    
+    // Recarrega a lista para mostrar os novos metadados
+    loadAndDisplayAllSessions();
+  } catch (e) {
+    showNotification('error', 'Erro ao salvar metadados: ' + e.message);
+  }
+}
+
 
 async function exportarPNG(sessionId, source) {
   showNotification('info', 'Gerando imagem do gráfico...');
