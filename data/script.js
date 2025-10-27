@@ -52,6 +52,7 @@ window.onload = () => {
   setupKeyboardShortcuts();
   setupTheme();
   setupWebSocketUrl();
+  setupApiBaseUrlHelpers();
   originalChartContainer = document.querySelector("#abaGrafico .grafico-e-controles"); // Initialize originalChartContainer
   originalChartSessionControlsContainer = document.querySelector("#abaGrafico .controles-grafico-sessao"); // Initialize new variable
 
@@ -129,6 +130,59 @@ function setupWebSocketUrl() {
         }
         wsUrlInput.value = 'ws://' + defaultHost + ':81';
     }
+}
+
+// --- Helpers para API HTTP (funcionam mesmo fora do host do servidor) ---
+let apiBaseUrl = '';
+
+function setupApiBaseUrlHelpers() {
+  try {
+    // Usa a origem atual por padrão
+    apiBaseUrl = window.location.origin;
+
+    // Se estiver em Live Server (porta 5500) ou arquivo local, derive do wsUrl salvo
+    if (location.port === '5500' || location.protocol === 'file:') {
+      const savedWsUrl = localStorage.getItem('wsUrl');
+      if (savedWsUrl) {
+        const { host, protocol } = parseUrlLike(savedWsUrl);
+        const httpProto = protocol === 'wss:' ? 'https:' : 'http:';
+        const httpPort = '80';
+        // Atenção para IPv6: se vier como ws://[addr]:81, URL() já retorna hostname sem colchetes
+        apiBaseUrl = `${httpProto}//${host}:${httpPort}`;
+      }
+    }
+  } catch (e) {
+    console.warn('setupApiBaseUrlHelpers fallback para origem atual:', e);
+    apiBaseUrl = window.location.origin;
+  }
+}
+
+function parseUrlLike(urlStr) {
+  try {
+    let u = urlStr.trim();
+    if (!u.startsWith('ws://') && !u.startsWith('wss://') && !u.startsWith('http')) {
+      u = 'ws://' + u;
+    }
+    const url = new URL(u);
+    return { protocol: url.protocol, host: url.hostname, port: url.port };
+  } catch (e) {
+    return { protocol: 'http:', host: location.hostname, port: '' };
+  }
+}
+
+async function apiFetch(path, options = {}) {
+  // Primeiro tenta relativo (mesma origem). Se falhar por erro de rede, tenta apiBaseUrl
+  try {
+    const res = await fetch(path, options);
+    return res;
+  } catch (e) {
+    try {
+      const url = path.startsWith('/') ? apiBaseUrl + path : apiBaseUrl + '/' + path;
+      return await fetch(url, options);
+    } catch (e2) {
+      throw e2;
+    }
+  }
 }
 
 // --- Inicialização e Controle do Gráfico (ApexCharts) ---
@@ -537,7 +591,8 @@ async function salvarParametros() {
       if (!isNaN(valueNum)) {
         // Envia um comando de cada vez com um pequeno atraso
         await new Promise(resolve => setTimeout(resolve, 100)); 
-        sendCommandToWorker('set_param:' + key + ':' + valueNum);
+        // Usa o protocolo padronizado do worker: cmd 'set' com objeto {param, value}
+        sendCommandToWorker('set', { param: key, value: valueNum });
       }
     }
   }
@@ -1073,7 +1128,7 @@ function setYAxisRange(mode) {
 
 async function fetchDbSessions() {
   try {
-    const response = await fetch('/api/sessoes');
+    const response = await apiFetch('/api/sessoes');
     if (!response.ok) {
       throw new Error('Erro na rede: ' + response.statusText);
     }
@@ -1254,13 +1309,13 @@ async function getSessionDataForExport(sessionId, source) {
   
   if (!sessionData && (source === 'db' || source === 'both')) { // Try DB if local not found or explicitly DB
     try {
-      const dbSessionResponse = await fetch('/api/sessoes');
+      const dbSessionResponse = await apiFetch('/api/sessoes');
       if (!dbSessionResponse.ok) throw new Error('Falha ao carregar detalhes da sessão do DB para exportação.');
       const allDbSessions = await dbSessionResponse.json();
       const dbSession = allDbSessions.find(s => s.id === sessionId);
 
       if (dbSession) {
-        const readingsResponse = await fetch('/api/sessoes/' + sessionId + '/leituras');
+        const readingsResponse = await apiFetch('/api/sessoes/' + sessionId + '/leituras');
         if (!readingsResponse.ok) throw new Error('Falha ao carregar leituras do DB para exportação.');
         const dbReadings = await readingsResponse.json();
 
@@ -1302,7 +1357,7 @@ async function visualizarSessao(sessionId) {
     // Se não for encontrada localmente, tenta buscar o registro no DB
     if (!sessao) {
       try {
-        const resp = await fetch(`/api/sessoes/${sessionId}`, { cache: 'no-store' });
+        const resp = await apiFetch(`/api/sessoes/${sessionId}`, { cache: 'no-store' });
         if (resp.ok) sessao = await resp.json();
       } catch (e) {
         console.error("Erro ao buscar metadados da sessão no DB:", e);
@@ -1315,7 +1370,7 @@ async function visualizarSessao(sessionId) {
         // Tentativa de buscar leituras do DB, caso o registro da sessão tenha vindo da API.
         // Assumimos que a sessão é do DB se ela veio da API e não tem dadosTabela.
         try {
-            const readingsResp = await fetch(`/api/sessoes/${sessionId}/leituras`, { cache: 'no-store' });
+      const readingsResp = await apiFetch(`/api/sessoes/${sessionId}/leituras`, { cache: 'no-store' });
             if (readingsResp.ok) {
                 const dbReadings = await readingsResp.json();
                 
@@ -1544,7 +1599,7 @@ async function deleteDbSession(sessionId) {
     return;
   }
   try {
-    const response = await fetch(`/api/sessoes/${sessionId}`, { method: 'DELETE' });
+  const response = await apiFetch(`/api/sessoes/${sessionId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Falha ao excluir a sessão do DB.');
     
     showNotification('success', 'Sessão ' + sessionId + ' excluída do banco de dados.');
@@ -1558,7 +1613,7 @@ async function deleteDbSession(sessionId) {
 async function saveDbSessionToLocal(sessionId) {
   try {
     // Fetch session details from DB
-    const dbSessionResponse = await fetch('/api/sessoes');
+  const dbSessionResponse = await apiFetch('/api/sessoes');
     if (!dbSessionResponse.ok) throw new Error('Falha ao carregar detalhes da sessão do DB para salvar localmente.');
     const allDbSessions = await dbSessionResponse.json();
     const dbSession = allDbSessions.find(s => s.id === sessionId);
@@ -1569,7 +1624,7 @@ async function saveDbSessionToLocal(sessionId) {
     }
 
     // Fetch readings from DB
-    const readingsResponse = await fetch('/api/sessoes/' + sessionId + '/leituras');
+  const readingsResponse = await apiFetch('/api/sessoes/' + sessionId + '/leituras');
     if (!readingsResponse.ok) throw new Error('Falha ao carregar leituras do DB para salvar localmente.');
     const dbReadings = await readingsResponse.json();
 
