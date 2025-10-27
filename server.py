@@ -133,7 +133,9 @@ def init_mysql_db():
                     motor_delay FLOAT,
                     motor_propweight FLOAT,
                     motor_totalweight FLOAT,
-                    motor_manufacturer VARCHAR(255)
+                    motor_manufacturer VARCHAR(255),
+                    motor_description TEXT,
+                    motor_observations TEXT
                 )
                 """
                 cursor.execute(sql_sessoes_create)
@@ -147,7 +149,9 @@ def init_mysql_db():
                     ('motor_delay', 'FLOAT'),
                     ('motor_propweight', 'FLOAT'),
                     ('motor_totalweight', 'FLOAT'),
-                    ('motor_manufacturer', 'VARCHAR(255)')
+                    ('motor_manufacturer', 'VARCHAR(255)'),
+                    ('motor_description', 'TEXT'),
+                    ('motor_observations', 'TEXT')
                 ]
 
                 for column_name, column_type in motor_columns:
@@ -232,6 +236,8 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
             motor_propweight = metadados.get('propweight')
             motor_totalweight = metadados.get('totalweight')
             motor_manufacturer = metadados.get('manufacturer')
+            motor_description = metadados.get('description')
+            motor_observations = metadados.get('observations')
 
             logging.info(f"Metadados do motor: name={motor_name}, diameter={motor_diameter}, length={motor_length}, "
                         f"delay={motor_delay}, propweight={motor_propweight}, totalweight={motor_totalweight}, "
@@ -239,8 +245,9 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
 
             sql_sessoes = """
             INSERT INTO sessoes (id, nome, data_inicio, data_fim, motor_name, motor_diameter,
-                                motor_length, motor_delay, motor_propweight, motor_totalweight, motor_manufacturer)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                motor_length, motor_delay, motor_propweight, motor_totalweight, motor_manufacturer,
+                                motor_description, motor_observations)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 nome = VALUES(nome),
                 data_inicio = VALUES(data_inicio),
@@ -251,11 +258,14 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
                 motor_delay = VALUES(motor_delay),
                 motor_propweight = VALUES(motor_propweight),
                 motor_totalweight = VALUES(motor_totalweight),
-                motor_manufacturer = VALUES(motor_manufacturer)
+                motor_manufacturer = VALUES(motor_manufacturer),
+                motor_description = VALUES(motor_description),
+                motor_observations = VALUES(motor_observations)
             """
             cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim,
                                         motor_name, motor_diameter, motor_length, motor_delay,
-                                        motor_propweight, motor_totalweight, motor_manufacturer))
+                                        motor_propweight, motor_totalweight, motor_manufacturer,
+                                        motor_description, motor_observations))
 
             cursor.execute("DELETE FROM leituras WHERE sessao_id = %s", (session_data['id'],))
 
@@ -345,7 +355,8 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
                 cursor.execute("""
                     SELECT id, nome, data_inicio, data_fim, data_modificacao,
                            motor_name, motor_diameter, motor_length, motor_delay,
-                           motor_propweight, motor_totalweight, motor_manufacturer
+                           motor_propweight, motor_totalweight, motor_manufacturer,
+                           motor_description, motor_observations
                     FROM sessoes ORDER BY data_inicio DESC
                 """)
                 sessoes = cursor.fetchall()
@@ -358,7 +369,9 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'delay': sessao.pop('motor_delay', None),
                         'propweight': sessao.pop('motor_propweight', None),
                         'totalweight': sessao.pop('motor_totalweight', None),
-                        'manufacturer': sessao.pop('motor_manufacturer', None)
+                        'manufacturer': sessao.pop('motor_manufacturer', None),
+                        'description': sessao.pop('motor_description', None),
+                        'observations': sessao.pop('motor_observations', None)
                     }
                 self.send_json_response(200, sessoes)
         except pymysql.Error as e:
@@ -399,7 +412,8 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute("""
                         SELECT id, nome, data_inicio, data_fim, data_modificacao,
                                motor_name, motor_diameter, motor_length, motor_delay,
-                               motor_propweight, motor_totalweight, motor_manufacturer
+                               motor_propweight, motor_totalweight, motor_manufacturer,
+                               motor_description, motor_observations
                         FROM sessoes WHERE id = %s
                     """, (sessao_id,))
                     sessao = cursor.fetchone()
@@ -412,7 +426,9 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'delay': sessao.pop('motor_delay', None),
                             'propweight': sessao.pop('motor_propweight', None),
                             'totalweight': sessao.pop('motor_totalweight', None),
-                            'manufacturer': sessao.pop('motor_manufacturer', None)
+                            'manufacturer': sessao.pop('motor_manufacturer', None),
+                            'description': sessao.pop('motor_description', None),
+                            'observations': sessao.pop('motor_observations', None)
                         }
                         self.send_json_response(200, sessao)
                     else:

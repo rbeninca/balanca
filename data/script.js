@@ -1363,8 +1363,8 @@ async function editarMetadadosMotor(sessionId) {
 
   // Cria um modal para edição
   const modalHtml = `
-    <div id="modal-metadados" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+    <div id="modal-metadados" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; overflow-y: auto;">
+      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: 20px;">
         <h2 style="margin-top: 0; color: var(--cor-titulo);">⚙️ Metadados do Motor - ${session.nome}</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
           <div>
@@ -1395,6 +1395,14 @@ async function editarMetadadosMotor(sessionId) {
             <label style="display: block; margin-bottom: 5px; font-weight: 600;">Peso Total (kg)</label>
             <input type="number" id="meta-totalweight" value="${meta.totalweight || 0.25}" step="0.001" style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px;">
           </div>
+          <div style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">📝 Descrição</label>
+            <textarea id="meta-description" placeholder="Descrição detalhada do motor..." style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; min-height: 80px; resize: vertical; font-family: inherit;">${meta.description || ''}</textarea>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">💬 Observações</label>
+            <textarea id="meta-observations" placeholder="Observações adicionais sobre o teste..." style="width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; min-height: 80px; resize: vertical; font-family: inherit;">${meta.observations || ''}</textarea>
+          </div>
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button onclick="fecharModalMetadados()" class="btn btn-secundario">Cancelar</button>
@@ -1424,7 +1432,9 @@ async function salvarMetadadosMotor(sessionId) {
     length: parseFloat(document.getElementById('meta-length').value) || 200,
     delay: parseFloat(document.getElementById('meta-delay').value) || 0,
     propweight: parseFloat(document.getElementById('meta-propweight').value) || 0.1,
-    totalweight: parseFloat(document.getElementById('meta-totalweight').value) || 0.25
+    totalweight: parseFloat(document.getElementById('meta-totalweight').value) || 0.25,
+    description: document.getElementById('meta-description').value.trim(),
+    observations: document.getElementById('meta-observations').value.trim()
   };
 
   let sessionToUpdate = null;
@@ -1993,6 +2003,8 @@ async function resolverConflito(sessionId) {
         <div><strong>Peso Propelente:</strong> ${formatMetaValue(localMeta.propweight)} kg</div>
         <div><strong>Peso Total:</strong> ${formatMetaValue(localMeta.totalweight)} kg</div>
         <div><strong>Fabricante:</strong> ${formatMetaValue(localMeta.manufacturer)}</div>
+        ${localMeta.description ? `<div style="margin-top: 5px;"><strong>Descrição:</strong> ${localMeta.description}</div>` : ''}
+        ${localMeta.observations ? `<div style="margin-top: 5px;"><strong>Observações:</strong> ${localMeta.observations}</div>` : ''}
       </div>
     </div>
   `;
@@ -2008,6 +2020,8 @@ async function resolverConflito(sessionId) {
         <div><strong>Peso Propelente:</strong> ${formatMetaValue(dbMeta.propweight)} kg</div>
         <div><strong>Peso Total:</strong> ${formatMetaValue(dbMeta.totalweight)} kg</div>
         <div><strong>Fabricante:</strong> ${formatMetaValue(dbMeta.manufacturer)}</div>
+        ${dbMeta.description ? `<div style="margin-top: 5px;"><strong>Descrição:</strong> ${dbMeta.description}</div>` : ''}
+        ${dbMeta.observations ? `<div style="margin-top: 5px;"><strong>Observações:</strong> ${dbMeta.observations}</div>` : ''}
       </div>
     </div>
   `;
