@@ -125,10 +125,37 @@ def init_mysql_db():
                     id BIGINT PRIMARY KEY,
                     nome VARCHAR(255) NOT NULL,
                     data_inicio DATETIME NOT NULL,
-                    data_fim DATETIME
+                    data_fim DATETIME,
+                    motor_name VARCHAR(255),
+                    motor_diameter FLOAT,
+                    motor_length FLOAT,
+                    motor_delay FLOAT,
+                    motor_propweight FLOAT,
+                    motor_totalweight FLOAT,
+                    motor_manufacturer VARCHAR(255)
                 )
                 """
                 cursor.execute(sql_sessoes_create)
+
+                # Migrate existing table to add motor metadata columns if they don't exist
+                motor_columns = [
+                    ('motor_name', 'VARCHAR(255)'),
+                    ('motor_diameter', 'FLOAT'),
+                    ('motor_length', 'FLOAT'),
+                    ('motor_delay', 'FLOAT'),
+                    ('motor_propweight', 'FLOAT'),
+                    ('motor_totalweight', 'FLOAT'),
+                    ('motor_manufacturer', 'VARCHAR(255)')
+                ]
+
+                for column_name, column_type in motor_columns:
+                    try:
+                        cursor.execute(f"ALTER TABLE sessoes ADD COLUMN {column_name} {column_type}")
+                        logging.info(f"Coluna '{column_name}' adicionada à tabela 'sessoes'")
+                    except pymysql.Error as e:
+                        # Column already exists (error 1060), ignore
+                        if e.args[0] != 1060:
+                            logging.warning(f"Erro ao adicionar coluna '{column_name}': {e}")
 
                 sql_leituras_create = """
                 CREATE TABLE IF NOT EXISTS leituras (
@@ -157,60 +184,123 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
     if not mysql_connected or not mysql_connection or not mysql_connection.open:
         logging.warning("Tentando salvar sessão no MySQL, mas a conexão não está ativa. Tentando reconectar...")
         mysql_connection = connect_to_mysql()
-        if not mysql_connected:
+        if not mysql_connection or not mysql_connected:
             logging.error("Não foi possível reconectar ao MySQL. Sessão não salva.")
             return False
 
     try:
+        # Validate required fields
+        if 'id' not in session_data:
+            logging.error("session_data não contém o campo 'id'")
+            return False
+        if 'nome' not in session_data:
+            logging.error("session_data não contém o campo 'nome'")
+            return False
+        if 'timestamp' not in session_data:
+            logging.error("session_data não contém o campo 'timestamp'")
+            return False
+
+        logging.info(f"Salvando sessão '{session_data['nome']}' (ID: {session_data['id']}) no MySQL...")
+
         with mysql_connection.cursor() as cursor:
             dados_tabela = session_data.get('dadosTabela', [])
-            data_inicio = datetime.fromisoformat(session_data['timestamp'].replace('Z', '+00:00'))
+
+            # Parse data_inicio
+            try:
+                data_inicio = datetime.fromisoformat(session_data['timestamp'].replace('Z', '+00:00'))
+            except (ValueError, KeyError) as e:
+                logging.error(f"Erro ao converter timestamp '{session_data.get('timestamp')}': {e}")
+                return False
+
             data_fim = None
             if dados_tabela:
                 try:
                     # Timestamp format from frontend: '27/10/2025 15:13:06.334'
                     data_fim = datetime.strptime(dados_tabela[-1]['timestamp'], '%d/%m/%Y %H:%M:%S.%f')
-                except (ValueError, IndexError):
+                except (ValueError, IndexError, KeyError) as e:
+                    logging.warning(f"Erro ao converter data_fim, usando data_inicio: {e}")
                     data_fim = data_inicio
 
+            # Extract motor metadata
+            metadados = session_data.get('metadadosMotor', {})
+            motor_name = metadados.get('name')
+            motor_diameter = metadados.get('diameter')
+            motor_length = metadados.get('length')
+            motor_delay = metadados.get('delay')
+            motor_propweight = metadados.get('propweight')
+            motor_totalweight = metadados.get('totalweight')
+            motor_manufacturer = metadados.get('manufacturer')
+
+            logging.info(f"Metadados do motor: name={motor_name}, diameter={motor_diameter}, length={motor_length}, "
+                        f"delay={motor_delay}, propweight={motor_propweight}, totalweight={motor_totalweight}, "
+                        f"manufacturer={motor_manufacturer}")
+
             sql_sessoes = """
-            INSERT INTO sessoes (id, nome, data_inicio, data_fim)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO sessoes (id, nome, data_inicio, data_fim, motor_name, motor_diameter,
+                                motor_length, motor_delay, motor_propweight, motor_totalweight, motor_manufacturer)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 nome = VALUES(nome),
                 data_inicio = VALUES(data_inicio),
-                data_fim = VALUES(data_fim)
+                data_fim = VALUES(data_fim),
+                motor_name = VALUES(motor_name),
+                motor_diameter = VALUES(motor_diameter),
+                motor_length = VALUES(motor_length),
+                motor_delay = VALUES(motor_delay),
+                motor_propweight = VALUES(motor_propweight),
+                motor_totalweight = VALUES(motor_totalweight),
+                motor_manufacturer = VALUES(motor_manufacturer)
             """
-            cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim))
+            cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim,
+                                        motor_name, motor_diameter, motor_length, motor_delay,
+                                        motor_propweight, motor_totalweight, motor_manufacturer))
 
             cursor.execute("DELETE FROM leituras WHERE sessao_id = %s", (session_data['id'],))
 
             if dados_tabela:
                 sql_leituras = "INSERT INTO leituras (sessao_id, tempo, forca, massaKg, timestamp) VALUES (%s, %s, %s, %s, %s)"
                 leituras_to_insert = []
-                for leitura in dados_tabela:
+                for i, leitura in enumerate(dados_tabela):
                     try:
                         leitura_timestamp = datetime.strptime(leitura['timestamp'], '%d/%m/%Y %H:%M:%S.%f')
-                    except ValueError:
+                    except (ValueError, KeyError) as e:
+                        logging.warning(f"Erro ao converter timestamp da leitura {i}: {e}")
                         leitura_timestamp = None
-                    
-                    leituras_to_insert.append((
-                        session_data['id'],
-                        float(leitura.get('tempo_esp', 0)),
-                        float(leitura.get('newtons', 0)),
-                        float(leitura.get('quilo_forca', 0)),
-                        leitura_timestamp
-                    ))
+
+                    try:
+                        leituras_to_insert.append((
+                            session_data['id'],
+                            float(leitura.get('tempo_esp', 0)),
+                            float(leitura.get('newtons', 0)),
+                            float(leitura.get('quilo_forca', 0)),
+                            leitura_timestamp
+                        ))
+                    except (ValueError, KeyError) as e:
+                        logging.warning(f"Erro ao processar leitura {i}: {e}, pulando...")
+                        continue
+
                 if leituras_to_insert:
                     cursor.executemany(sql_leituras, leituras_to_insert)
+                    logging.info(f"Inseridas {len(leituras_to_insert)} leituras para sessão {session_data['id']}")
 
         mysql_connection.commit()
-        logging.info(f"Sessão '{session_data['nome']}' salva/atualizada no MySQL.")
+        logging.info(f"Sessão '{session_data['nome']}' (ID: {session_data['id']}) salva/atualizada no MySQL.")
         return True
-    except (pymysql.Error, ValueError, KeyError) as e:
-        logging.error(f"Erro ao salvar sessão no MySQL: {e}")
+    except pymysql.Error as e:
+        logging.error(f"Erro de MySQL ao salvar sessão: {type(e).__name__}: {e}")
         if mysql_connection:
-            mysql_connection.rollback()
+            try:
+                mysql_connection.rollback()
+            except:
+                pass
+        return False
+    except Exception as e:
+        logging.error(f"Erro inesperado ao salvar sessão no MySQL: {type(e).__name__}: {e}", exc_info=True)
+        if mysql_connection:
+            try:
+                mysql_connection.rollback()
+            except:
+                pass
         return False
 
 # ================== HTTP Server & API ==================
@@ -246,8 +336,24 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
         try:
             with mysql_connection.cursor() as cursor:
-                cursor.execute("SELECT id, nome, data_inicio, data_fim FROM sessoes ORDER BY data_inicio DESC")
+                cursor.execute("""
+                    SELECT id, nome, data_inicio, data_fim, 
+                           motor_name, motor_diameter, motor_length, motor_delay,
+                           motor_propweight, motor_totalweight, motor_manufacturer 
+                    FROM sessoes ORDER BY data_inicio DESC
+                """)
                 sessoes = cursor.fetchall()
+                # Transform motor fields into metadadosMotor object
+                for sessao in sessoes:
+                    sessao['metadadosMotor'] = {
+                        'name': sessao.pop('motor_name', None),
+                        'diameter': sessao.pop('motor_diameter', None),
+                        'length': sessao.pop('motor_length', None),
+                        'delay': sessao.pop('motor_delay', None),
+                        'propweight': sessao.pop('motor_propweight', None),
+                        'totalweight': sessao.pop('motor_totalweight', None),
+                        'manufacturer': sessao.pop('motor_manufacturer', None)
+                    }
                 self.send_json_response(200, sessoes)
         except pymysql.Error as e:
             logging.error(f"API Error (get_sessoes): {e}")
@@ -284,12 +390,27 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
         try:
             with mysql_connection.cursor() as cursor:
-                cursor.execute("SELECT id, nome, data_inicio, data_fim FROM sessoes WHERE id = %s", (sessao_id,))
-                sessao = cursor.fetchone()
-                if sessao:
-                    self.send_json_response(200, sessao)
-                else:
-                    self.send_error(404, "Session Not Found")
+                    cursor.execute("""
+                        SELECT id, nome, data_inicio, data_fim,
+                               motor_name, motor_diameter, motor_length, motor_delay,
+                               motor_propweight, motor_totalweight, motor_manufacturer 
+                        FROM sessoes WHERE id = %s
+                    """, (sessao_id,))
+                    sessao = cursor.fetchone()
+                    if sessao:
+                        # Transform motor fields into metadadosMotor object
+                        sessao['metadadosMotor'] = {
+                            'name': sessao.pop('motor_name', None),
+                            'diameter': sessao.pop('motor_diameter', None),
+                            'length': sessao.pop('motor_length', None),
+                            'delay': sessao.pop('motor_delay', None),
+                            'propweight': sessao.pop('motor_propweight', None),
+                            'totalweight': sessao.pop('motor_totalweight', None),
+                            'manufacturer': sessao.pop('motor_manufacturer', None)
+                        }
+                        self.send_json_response(200, sessao)
+                    else:
+                        self.send_error(404, "Session Not Found")
         except pymysql.Error as e:
             logging.error(f"API Error (get_sessao_by_id): {e}")
             self.send_error(500, "Internal Server Error")

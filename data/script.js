@@ -1265,11 +1265,23 @@ function salvarNoDB(sessionId) {
   saveLocalSessionToDb(sessionId);
 }
 
-function editarMetadadosMotor(sessionId) {
+async function editarMetadadosMotor(sessionId) {
   // Busca a sessão (local ou DB)
   const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
   let session = localSessions.find(s => s.id === sessionId);
-  
+
+  // Se não está localmente, tenta buscar do DB
+  if (!session) {
+    try {
+      const resp = await apiFetch(`/api/sessoes/${sessionId}`);
+      if (resp.ok) {
+        session = await resp.json();
+      }
+    } catch (e) {
+      console.error('Erro ao buscar sessão do DB:', e);
+    }
+  }
+
   if (!session) {
     showNotification('error', 'Sessão não encontrada para editar metadados.');
     return;
@@ -1328,15 +1340,9 @@ function fecharModalMetadados() {
   if (modal) modal.remove();
 }
 
-function salvarMetadadosMotor(sessionId) {
+async function salvarMetadadosMotor(sessionId) {
   const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
   const sessionIndex = localSessions.findIndex(s => s.id === sessionId);
-  
-  if (sessionIndex === -1) {
-    showNotification('error', 'Sessão não encontrada.');
-    fecharModalMetadados();
-    return;
-  }
 
   // Captura os valores do formulário
   const metadadosMotor = {
@@ -1349,24 +1355,80 @@ function salvarMetadadosMotor(sessionId) {
     totalweight: parseFloat(document.getElementById('meta-totalweight').value) || 0.25
   };
 
-  // Atualiza a sessão
-  localSessions[sessionIndex].metadadosMotor = metadadosMotor;
-  
-  try {
-    localStorage.setItem('balancaGravacoes', JSON.stringify(localSessions));
-    showNotification('success', 'Metadados do motor salvos com sucesso!');
-    fecharModalMetadados();
-    
-    // Se a sessão também está no DB e MySQL está conectado, atualiza lá também
-    if (localSessions[sessionIndex].inDb && isMysqlConnected) {
-      sendCommandToWorker('save_session_to_mysql', localSessions[sessionIndex]);
+  let sessionToUpdate = null;
+  let isInLocal = sessionIndex !== -1;
+
+  // Se existe localmente, atualiza no local storage
+  if (isInLocal) {
+    localSessions[sessionIndex].metadadosMotor = metadadosMotor;
+    sessionToUpdate = localSessions[sessionIndex];
+
+    try {
+      localStorage.setItem('balancaGravacoes', JSON.stringify(localSessions));
+      showNotification('success', 'Metadados do motor salvos localmente!');
+    } catch (e) {
+      showNotification('error', 'Erro ao salvar metadados localmente: ' + e.message);
+      fecharModalMetadados();
+      return;
     }
-    
-    // Recarrega a lista para mostrar os novos metadados
-    loadAndDisplayAllSessions();
-  } catch (e) {
-    showNotification('error', 'Erro ao salvar metadados: ' + e.message);
   }
+
+  // Se não está localmente, busca do DB para ter os dados completos
+  if (!sessionToUpdate) {
+    try {
+      const resp = await apiFetch(`/api/sessoes/${sessionId}`);
+      if (resp.ok) {
+        sessionToUpdate = await resp.json();
+        sessionToUpdate.metadadosMotor = metadadosMotor;
+
+        // Normaliza campos do DB para o formato esperado pelo worker
+        if (sessionToUpdate.data_inicio && !sessionToUpdate.timestamp) {
+          sessionToUpdate.timestamp = sessionToUpdate.data_inicio;
+        }
+        if (!sessionToUpdate.nome) {
+          sessionToUpdate.nome = 'Sessão ' + sessionId;
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar sessão do DB:', e);
+    }
+  } else {
+    // Atualiza os metadados na sessão local se já temos ela
+    sessionToUpdate.metadadosMotor = metadadosMotor;
+  }
+
+  // Tenta salvar no DB se MySQL está conectado e temos a sessão
+  if (isMysqlConnected && sessionToUpdate) {
+    // Busca as leituras se não estiverem presentes
+    if (!sessionToUpdate.dadosTabela || sessionToUpdate.dadosTabela.length === 0) {
+      try {
+        const readingsResp = await apiFetch(`/api/sessoes/${sessionId}/leituras`);
+        if (readingsResp.ok) {
+          const dbReadings = await readingsResp.json();
+          sessionToUpdate.dadosTabela = dbReadings.map(r => ({
+            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            tempo_esp: r.tempo,
+            newtons: r.forca,
+            grama_forca: (r.forca / 9.80665 * 1000),
+            quilo_forca: (r.forca / 9.80665)
+          }));
+        }
+      } catch (e) {
+        console.warn('Não foi possível carregar leituras:', e);
+      }
+    }
+
+    console.log('Enviando para o banco:', sessionToUpdate); // Debug
+    sendCommandToWorker('save_session_to_mysql', sessionToUpdate);
+    showNotification('info', 'Atualizando metadados no banco de dados...');
+  } else if (!isMysqlConnected) {
+    showNotification('warning', 'MySQL desconectado. Metadados salvos apenas localmente.');
+  }
+
+  fecharModalMetadados();
+
+  // Recarrega a lista para mostrar os novos metadados
+  setTimeout(() => loadAndDisplayAllSessions(), 500);
 }
 
 
@@ -1464,7 +1526,7 @@ async function getSessionDataForExport(sessionId, source) {
             grama_forca: (r.forca / 9.80665 * 1000),
             quilo_forca: (r.forca / 9.80665)
           })),
-          metadadosMotor: {},
+          metadadosMotor: dbSession.metadadosMotor || {},
           savedToMysql: true
         };
       }
@@ -1773,7 +1835,7 @@ async function saveDbSessionToLocal(sessionId) {
         grama_forca: (r.forca / 9.80665 * 1000),
         quilo_forca: (r.forca / 9.80665)
       })),
-      metadadosMotor: {},
+      metadadosMotor: dbSession.metadadosMotor || {},
       savedToMysql: true // Mark as saved to MySQL since it came from there
     };
 
