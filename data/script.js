@@ -93,43 +93,43 @@ window.onload = () => {
 };
 
 function setupTheme() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const currentTheme = localStorage.getItem('theme') || 'light';
+  const themeToggle = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'light';
 
-    if (currentTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️';
-    }
+  if (currentTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeToggle.textContent = '☀️';
+  }
 
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        localStorage.setItem('theme', theme);
-        
-        // Atualiza o tema do gráfico ApexCharts
-        chart.updateOptions({
-            chart: { background: 'transparent' },
-            theme: { mode: theme }
-        });
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem('theme', theme);
+
+    // Atualiza o tema do gráfico ApexCharts
+    chart.updateOptions({
+      chart: { background: 'transparent' },
+      theme: { mode: theme }
     });
+  });
 }
 
 function setupWebSocketUrl() {
-    const wsUrlInput = document.getElementById('ws-url');
-    const savedWsUrl = localStorage.getItem('wsUrl');
+  const wsUrlInput = document.getElementById('ws-url');
+  const savedWsUrl = localStorage.getItem('wsUrl');
 
-    if (savedWsUrl) {
-        wsUrlInput.value = savedWsUrl;
-    } else {
-        // Se não houver URL salva, preenche com o host atual e a porta padrão do WS
-        let defaultHost = location.hostname;
-        // Se estiver em um ambiente de desenvolvimento como Live Server, use localhost
-        if (location.port === '5500' || defaultHost === '127.0.0.1') {
-            defaultHost = 'localhost';
-        }
-        wsUrlInput.value = 'ws://' + defaultHost + ':81';
+  if (savedWsUrl) {
+    wsUrlInput.value = savedWsUrl;
+  } else {
+    // Se não houver URL salva, preenche com o host atual e a porta padrão do WS
+    let defaultHost = location.hostname;
+    // Se estiver em um ambiente de desenvolvimento como Live Server, use localhost
+    if (location.port === '5500' || defaultHost === '127.0.0.1') {
+      defaultHost = 'localhost';
     }
+    wsUrlInput.value = 'ws://' + defaultHost + ':81';
+  }
 }
 
 // --- Helpers para API HTTP (funcionam mesmo fora do host do servidor) ---
@@ -293,26 +293,26 @@ function clearChart() {
 }
 
 function setDisplayUnit(unit) {
-    displayUnit = unit;
-    document.querySelectorAll('#btn-unit-n, #btn-unit-gf, #btn-unit-kgf').forEach(b => b.classList.remove('ativo'));
-    document.getElementById(`btn-unit-${unit.toLowerCase()}`).classList.add('ativo');
+  displayUnit = unit;
+  document.querySelectorAll('#btn-unit-n, #btn-unit-gf, #btn-unit-kgf').forEach(b => b.classList.remove('ativo'));
+  document.getElementById(`btn-unit-${unit.toLowerCase()}`).classList.add('ativo');
 
-    // Re-processa os dados existentes para a nova unidade
-    const newData = rawDataN.map(point => {
-        return [point[0], convertForce(point[1], displayUnit)];
-    });
+  // Re-processa os dados existentes para a nova unidade
+  const newData = rawDataN.map(point => {
+    return [point[0], convertForce(point[1], displayUnit)];
+  });
 
-    chart.updateSeries([{
-        data: newData
-    }]);
+  chart.updateSeries([{
+    data: newData
+  }]);
 
-    chart.updateOptions({
-        yaxis: {
-            labels: {
-                formatter: (val) => val.toFixed(3) + ' ' + displayUnit
-            }
-        }
-    });
+  chart.updateOptions({
+    yaxis: {
+      labels: {
+        formatter: (val) => val.toFixed(3) + ' ' + displayUnit
+      }
+    }
+  });
 }
 
 function setChartMode(mode) {
@@ -344,7 +344,7 @@ function conectarWorker() {
       dataWorker.onmessage = handleWorkerMessage;
       const savedWsUrl = localStorage.getItem('wsUrl');
       if (savedWsUrl) {
-          dataWorker.postMessage({ type: 'set_ws_url', payload: { url: savedWsUrl } });
+        dataWorker.postMessage({ type: 'set_ws_url', payload: { url: savedWsUrl } });
       }
       setInterval(() => dataWorker.postMessage({ type: 'solicitarDados' }), 200);
     }
@@ -360,8 +360,8 @@ function handleWorkerMessage(event) {
 
   // Extract sessionId and update notificationMessage for specific cases
   if (type === 'mysql_save_success' || type === 'mysql_save_error') {
-      currentSessionId = payload.sessionId;
-      notificationMessage = payload.message; // Update message for notification
+    currentSessionId = payload.sessionId;
+    notificationMessage = payload.message; // Update message for notification
   }
 
   switch (type) {
@@ -422,13 +422,13 @@ function sendCommandToWorker(command, value = null) {
   // NEW: Always send a JSON object as payload to the worker
   const messagePayload = { cmd: command };
   if (value !== null) {
-      // For 'save_session_to_mysql', value is the entire session object
-      if (command === 'save_session_to_mysql') {
-          messagePayload.sessionData = value;
-      } else {
-          // For other commands, value is a simple parameter
-          messagePayload.value = value;
-      }
+    // For 'save_session_to_mysql', value is the entire session object
+    if (command === 'save_session_to_mysql') {
+      messagePayload.sessionData = value;
+    } else {
+      // For other commands, value is a simple parameter
+      messagePayload.value = value;
+    }
   }
   dataWorker.postMessage({ type: 'sendCommand', payload: messagePayload });
 }
@@ -443,7 +443,7 @@ function updateUIFromData(dado) {
   const forcaGramas = (forca / 9.80665) * 1000;
   const forcaGramasFiltrada = aplicarFiltrosGramas(forcaGramas);
   forca = (forcaGramasFiltrada / 1000) * 9.80665;
-  
+
   let forcaFiltrada = antiNoisingAtivo ? applyAntiNoising(forca) : forca;
 
   if (isStabilityMode) {
@@ -464,11 +464,11 @@ function updateUIFromData(dado) {
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
 
   rawDataN.push([tempo, forcaFiltrada]);
-  
+
   if (rawDataN.length > MAX_DATA_POINTS) {
     rawDataN.shift();
   }
-  
+
   // Adiciona o novo ponto ao buffer de atualização do gráfico
   chartUpdateBuffer.push([tempo, forcaFiltrada]);
 
@@ -519,7 +519,7 @@ function updateConnectionStatus(isConnected) {
   indicator.classList.toggle('conectado', isConnected);
   indicator.title = isConnected ? 'Conectado' : 'Desconectado';
   if (text) text.textContent = isConnected ? 'Conectado' : 'Desconectado';
-  if(isConnected) tocarAlertaReconexao(); else tocarAlertaDesconexao();
+  if (isConnected) tocarAlertaReconexao(); else tocarAlertaDesconexao();
 }
 
 function updateReadingsPerSecond() {
@@ -529,27 +529,27 @@ function updateReadingsPerSecond() {
 }
 
 function updateConfigForm(config) {
-    const getValue = (val) => (val !== null && val !== undefined) ? val : '';
-    document.getElementById("param-conversao").value = getValue(config.conversionFactor);
-    document.getElementById("param-gravidade").value = getValue(config.gravity);
-    document.getElementById("param-offset").value = getValue(config.tareOffset);
-    document.getElementById("param-leituras-estaveis").value = getValue(config.leiturasEstaveis);
-    document.getElementById("param-tolerancia").value = getValue(config.toleranciaEstabilidade);
-    document.getElementById("param-num-amostras").value = getValue(config.numAmostrasMedia);
-    document.getElementById("param-timeout").value = getValue(config.timeoutCalibracao);
-    document.getElementById("param-capacidade-maxima").value = getValue(config.capacidadeMaximaGramas);
-    document.getElementById("param-acuracia").value = getValue(config.percentualAcuracia);
+  const getValue = (val) => (val !== null && val !== undefined) ? val : '';
+  document.getElementById("param-conversao").value = getValue(config.conversionFactor);
+  document.getElementById("param-gravidade").value = getValue(config.gravity);
+  document.getElementById("param-offset").value = getValue(config.tareOffset);
+  document.getElementById("param-leituras-estaveis").value = getValue(config.leiturasEstaveis);
+  document.getElementById("param-tolerancia").value = getValue(config.toleranciaEstabilidade);
+  document.getElementById("param-num-amostras").value = getValue(config.numAmostrasMedia);
+  document.getElementById("param-timeout").value = getValue(config.timeoutCalibracao);
+  document.getElementById("param-capacidade-maxima").value = getValue(config.capacidadeMaximaGramas);
+  document.getElementById("param-acuracia").value = getValue(config.percentualAcuracia);
 
-    capacidadeMaximaGramas = parseFloat(config.capacidadeMaximaGramas) || 5000.0;
-    percentualAcuracia = parseFloat(config.percentualAcuracia) || 0.05;
+  capacidadeMaximaGramas = parseFloat(config.capacidadeMaximaGramas) || 5000.0;
+  percentualAcuracia = parseFloat(config.percentualAcuracia) || 0.05;
 
-    atualizarToleranciaEmGramas();
-    atualizarCapacidadeEmKg();
-    atualizarErroAbsoluto();
-    atualizarStatusFiltros();
+  atualizarToleranciaEmGramas();
+  atualizarCapacidadeEmKg();
+  atualizarErroAbsoluto();
+  atualizarStatusFiltros();
 
-    // Remove loading class after updating form
-    document.getElementById('abaControles').classList.remove('config-loading');
+  // Remove loading class after updating form
+  document.getElementById('abaControles').classList.remove('config-loading');
 }
 
 // --- Funções de Ação do Usuário ---
@@ -558,7 +558,7 @@ function tare() {
   sendCommandToWorker("t");
   showNotification('info', 'Comando de Tara enviado. (Atalho: Shift + T)');
   // Request config update after tare
-  setTimeout(() => sendCommandToWorker('get_config'), 1000); 
+  setTimeout(() => sendCommandToWorker('get_config'), 1000);
 }
 
 function calibrar() {
@@ -567,7 +567,7 @@ function calibrar() {
     sendCommandToWorker("c", massa);
     showNotification('info', 'Comando de calibração com ' + massa + 'g enviado. (Atalho: Shift + C)');
     // Request config update after calibration
-    setTimeout(() => sendCommandToWorker('get_config'), 1000); 
+    setTimeout(() => sendCommandToWorker('get_config'), 1000);
   } else {
     showNotification("error", "Informe uma massa de calibração válida.");
   }
@@ -590,7 +590,7 @@ async function salvarParametros() {
       const valueNum = parseFloat(valueStr.replace(',', '.'));
       if (!isNaN(valueNum)) {
         // Envia um comando de cada vez com um pequeno atraso
-        await new Promise(resolve => setTimeout(resolve, 100)); 
+        await new Promise(resolve => setTimeout(resolve, 100));
         // Usa o protocolo padronizado do worker: cmd 'set' com objeto {param, value}
         sendCommandToWorker('set', { param: key, value: valueNum });
       }
@@ -616,77 +616,77 @@ function salvarWsUrl() {
 // --- Funções de Sessão ---
 
 function iniciarSessao() {
-    const nomeSessaoInput = document.getElementById('nome-sessao');
-    if (!nomeSessaoInput.value.trim()) {
-        showNotification('error', 'Por favor, insira um nome para a sessão.');
-        nomeSessaoInput.focus();
-        return;
-    }
-    clearChart(); 
-    document.getElementById("tabela").querySelector("tbody").innerHTML = '';
-    isSessionActive = true;
-    showNotification('success', 'Sessão "' + nomeSessaoInput.value + '" iniciada.');
-    document.getElementById('btn-iniciar-sessao').disabled = true;
-    nomeSessaoInput.disabled = true;
-    document.getElementById('btn-encerrar-sessao').disabled = false;
+  const nomeSessaoInput = document.getElementById('nome-sessao');
+  if (!nomeSessaoInput.value.trim()) {
+    showNotification('error', 'Por favor, insira um nome para a sessão.');
+    nomeSessaoInput.focus();
+    return;
+  }
+  clearChart();
+  document.getElementById("tabela").querySelector("tbody").innerHTML = '';
+  isSessionActive = true;
+  showNotification('success', 'Sessão "' + nomeSessaoInput.value + '" iniciada.');
+  document.getElementById('btn-iniciar-sessao').disabled = true;
+  nomeSessaoInput.disabled = true;
+  document.getElementById('btn-encerrar-sessao').disabled = false;
 }
 
 async function encerrarSessao() {
-    if (!isSessionActive) return;
-    const nomeSessao = document.getElementById('nome-sessao').value.trim();
-    const tabela = document.getElementById("tabela").querySelector("tbody");
-    if (tabela.rows.length > 0) {
-        const gravacao = await salvarDadosDaSessao(nomeSessao, tabela); // Modified to await
-        if (gravacao && isMysqlConnected) {
-            showNotification('info', 'Enviando sessão "' + gravacao.nome + '" para o MySQL...');
-            sendCommandToWorker('save_session_to_mysql', gravacao); // Save to DB via worker
-        }
-    } else {
-        showNotification('info', 'Nenhum dado foi gravado. Nada foi salvo.');
+  if (!isSessionActive) return;
+  const nomeSessao = document.getElementById('nome-sessao').value.trim();
+  const tabela = document.getElementById("tabela").querySelector("tbody");
+  if (tabela.rows.length > 0) {
+    const gravacao = await salvarDadosDaSessao(nomeSessao, tabela); // Modified to await
+    if (gravacao && isMysqlConnected) {
+      showNotification('info', 'Enviando sessão "' + gravacao.nome + '" para o MySQL...');
+      sendCommandToWorker('save_session_to_mysql', gravacao); // Save to DB via worker
     }
-    isSessionActive = false;
-    const nomeSessaoInput = document.getElementById('nome-sessao');
-    document.getElementById('btn-iniciar-sessao').disabled = false;
-    nomeSessaoInput.disabled = false;
-    nomeSessaoInput.value = ''; 
-    document.getElementById('btn-encerrar-sessao').disabled = true;
+  } else {
+    showNotification('info', 'Nenhum dado foi gravado. Nada foi salvo.');
+  }
+  isSessionActive = false;
+  const nomeSessaoInput = document.getElementById('nome-sessao');
+  document.getElementById('btn-iniciar-sessao').disabled = false;
+  nomeSessaoInput.disabled = false;
+  nomeSessaoInput.value = '';
+  document.getElementById('btn-encerrar-sessao').disabled = true;
 }
 
 async function salvarDadosDaSessao(nome, tabela) {
-    const dadosTabela = Array.from(tabela.rows).map(linha => ({
-        timestamp: linha.cells[0].innerText,
-        tempo_esp: linha.cells[1].innerText,
-        newtons: linha.cells[2].innerText,
-        grama_forca: linha.cells[3].innerText,
-        quilo_forca: linha.cells[4].innerText
-    })).reverse();
+  const dadosTabela = Array.from(tabela.rows).map(linha => ({
+    timestamp: linha.cells[0].innerText,
+    tempo_esp: linha.cells[1].innerText,
+    newtons: linha.cells[2].innerText,
+    grama_forca: linha.cells[3].innerText,
+    quilo_forca: linha.cells[4].innerText
+  })).reverse();
 
-    const metadadosMotor = {
-        name: document.getElementById('eng-name').value.trim() || nome.replace(/[^a-zA-Z0-9_]/g, '_'),
-        diameter: parseFloat(document.getElementById('eng-diameter').value) || 45,
-        length: parseFloat(document.getElementById('eng-length').value) || 200,
-        delay: parseFloat(document.getElementById('eng-delay').value) || 0,
-        propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
-        totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
-        manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC'
-    };
+  const metadadosMotor = {
+    name: document.getElementById('eng-name').value.trim() || nome.replace(/[^a-zA-Z0-9_]/g, '_'),
+    diameter: parseFloat(document.getElementById('eng-diameter').value) || 45,
+    length: parseFloat(document.getElementById('eng-length').value) || 200,
+    delay: parseFloat(document.getElementById('eng-delay').value) || 0,
+    propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
+    totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
+    manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC'
+  };
 
-    const gravacao = {
-        id: Date.now(), nome, timestamp: new Date().toISOString(),
-        dadosTabela, metadadosMotor,
-        savedToMysql: isMysqlConnected // Mark as saved to MySQL if connected
-    };
+  const gravacao = {
+    id: Date.now(), nome, timestamp: new Date().toISOString(),
+    dadosTabela, metadadosMotor,
+    savedToMysql: isMysqlConnected // Mark as saved to MySQL if connected
+  };
 
-    try {
-        let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-        gravacoes.push(gravacao);
-        localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
-        showNotification('success', 'Sessão "' + nome + '" salva localmente!');
-        return gravacao; // Return the saved session
-    } catch (e) {
-        showNotification('error', 'Erro ao salvar. O Local Storage pode estar cheio.');
-        return null;
-    }
+  try {
+    let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+    gravacoes.push(gravacao);
+    localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+    showNotification('success', 'Sessão "' + nome + '" salva localmente!');
+    return gravacao; // Return the saved session
+  } catch (e) {
+    showNotification('error', 'Erro ao salvar. O Local Storage pode estar cheio.');
+    return null;
+  }
 }
 
 // --- Funções Auxiliares e de UI ---
@@ -775,13 +775,13 @@ function aplicarArredondamentoInteligente(valorGramas) {
 function atualizarStatusFiltros() {
   const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
   casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
-  
+
   const infoZonaMorta = document.getElementById('info-zona-morta');
   if (infoZonaMorta) {
     infoZonaMorta.textContent = filtroZonaMortaAtivo ? '✓ Zona Morta (±' + erroAbsoluto.toFixed(2) + 'g)' : '✗ Zona Morta';
     infoZonaMorta.style.color = filtroZonaMortaAtivo ? '#27ae60' : '#95a5a6';
   }
-  
+
   const infoArredondamento = document.getElementById('info-arredondamento');
   if (infoArredondamento) {
     infoArredondamento.textContent = arredondamentoInteligenteAtivo ? '✓ Arredondamento (' + casasDecimais + ' casas)' : '✗ Arredondamento';
@@ -834,7 +834,7 @@ function calculateNoiseStatistics(forceValue) {
 }
 
 function updateNoiseDisplay() {
-    // This function is intentionally left blank as the controls are not in the main UI anymore
+  // This function is intentionally left blank as the controls are not in the main UI anymore
 }
 
 function startNoiseAnalysis() {
@@ -857,7 +857,7 @@ function setAntiNoisingMultiplier(multiplier) {
 }
 
 function addNoiseControlsToUI() {
-    // This function is intentionally left blank as the controls are not in the main UI anymore
+  // This function is intentionally left blank as the controls are not in the main UI anymore
 }
 
 // --- Funções de Áudio e Alertas ---
@@ -919,12 +919,12 @@ function setupKeyboardShortcuts() {
     }
 
     if (event.shiftKey) {
-        if (key === 't') { event.preventDefault(); tare(); }
-        else if (key === 'c') { event.preventDefault(); calibrar(); }
-        else if (key === 'a') { event.preventDefault(); startNoiseAnalysis(); }
+      if (key === 't') { event.preventDefault(); tare(); }
+      else if (key === 'c') { event.preventDefault(); calibrar(); }
+      else if (key === 'a') { event.preventDefault(); startNoiseAnalysis(); }
     } else if (!event.ctrlKey && !event.metaKey) {
-        if (key === 'l') { event.preventDefault(); clearChart(); }
-        else if (key === 'p') { event.preventDefault(); toggleChartPause(); }
+      if (key === 'l') { event.preventDefault(); clearChart(); }
+      else if (key === 'p') { event.preventDefault(); toggleChartPause(); }
     }
   });
 }
@@ -1026,7 +1026,7 @@ function toggleFullscreen() {
 
     // Move the entire originalChartContainer (now with all relevant buttons) to the modal
     fullscreenModalEl.appendChild(originalChartContainer);
-    
+
     // Hide the original session controls container as its buttons have been moved
     originalChartSessionControlsContainer.style.display = 'none';
 
@@ -1169,21 +1169,42 @@ async function loadAndDisplayAllSessions() {
     return;
   }
 
+  // Para sessões do DB sem dadosTabela, buscar as leituras
+  for (const session of combinedSessions) {
+    if (session.inDb && (!session.dadosTabela || session.dadosTabela.length === 0)) {
+      try {
+        const readingsResp = await apiFetch(`/api/sessoes/${session.id}/leituras`);
+        if (readingsResp.ok) {
+          const dbReadings = await readingsResp.json();
+          session.dadosTabela = dbReadings.map(r => ({
+            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            tempo_esp: r.tempo,
+            newtons: r.forca,
+            grama_forca: (r.forca / 9.80665 * 1000),
+            quilo_forca: (r.forca / 9.80665)
+          }));
+        }
+      } catch (e) {
+        console.warn(`Não foi possível carregar leituras da sessão ${session.id}:`, e);
+      }
+    }
+  }
+
   listaGravacoesDiv.innerHTML = combinedSessions.map(session => {
     const sourceIcons = `${session.inLocal ? '<span title="Salvo Localmente" style="margin-right: 5px;">💾</span>' : ''}${session.inDb ? '<span title="Salvo no Banco de Dados" style="margin-right: 5px;">☁️</span>' : ''}`;
     const dataInicio = new Date(session.data_inicio || session.timestamp).toLocaleString('pt-BR');
-    
+
     let impulsoTotal = 'N/A';
     let motorClass = 'N/A';
     let classColor = '#95a5a6'; // Default gray color
 
     if (session.dadosTabela && session.dadosTabela.length > 0) {
-        const dados = processarDadosSimples(session.dadosTabela);
-        const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
-        const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
-        impulsoTotal = impulsoData.impulsoTotal.toFixed(2);
-        motorClass = metricasPropulsao.classificacaoMotor.classe;
-        classColor = metricasPropulsao.classificacaoMotor.cor; // Get color from classification
+      const dados = processarDadosSimples(session.dadosTabela);
+      const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
+      const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
+      impulsoTotal = impulsoData.impulsoTotal.toFixed(2);
+      motorClass = metricasPropulsao.classificacaoMotor.classe;
+      classColor = metricasPropulsao.classificacaoMotor.cor; // Get color from classification
     }
 
     return `
@@ -1203,26 +1224,26 @@ async function loadAndDisplayAllSessions() {
             <button onclick="exportarEng(${session.id}, '${session.source}')" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso"> ENG</button>
            
               ${session.inLocal && !session.inDb
-          ? `<button class="btn btn-info btn-small"
+        ? `<button class="btn btn-info btn-small" 
                 ${!isMysqlConnected ? 'disabled title="MySQL desconectado"' : ''}
                 onclick="salvarNoDB(${session.id})">
                 Salvar DB
              </button>`
-          : ''}
+        : ''}
 
         ${session.inDb && !session.inLocal
-          ? `<button class="btn btn-info btn-small"
+        ? `<button class="btn btn-info btn-small"
                 onclick="salvarNoLocalStorage(${session.id})">
                 Salvar Local
              </button>`
-          : ''}
+        : ''}
 
         ${session.inLocal ? `<button class="btn btn-perigo btn-small" onclick="deleteLocalSession(${session.id})">Excluir Local</button>` : ''}
         ${session.inDb ? `<button class="btn btn-perigo btn-small" onclick="deleteDbSession(${session.id})">Excluir DB</button>` : ''}
         </div>
       </div>
     `;
-    
+
   }).join('');
 }
 
@@ -1237,66 +1258,66 @@ function salvarNoDB(sessionId) {
 }
 
 async function exportarPNG(sessionId, source) {
-    showNotification('info', 'Gerando imagem do gráfico...');
-    const session = await getSessionDataForExport(sessionId, source);
-    if (!session) {
-        showNotification('error', 'Sessão não encontrada para exportar PNG.');
-        return;
-    }
+  showNotification('info', 'Gerando imagem do gráfico...');
+  const session = await getSessionDataForExport(sessionId, source);
+  if (!session) {
+    showNotification('error', 'Sessão não encontrada para exportar PNG.');
+    return;
+  }
 
-    const chartData = session.dadosTabela.map(d => [d.tempo_esp, d.newtons]);
+  const chartData = session.dadosTabela.map(d => [d.tempo_esp, d.newtons]);
 
-    // Create a temporary, off-screen div to render the chart
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = '800px';
-    tempDiv.style.height = '600px';
-    document.body.appendChild(tempDiv);
+  // Create a temporary, off-screen div to render the chart
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.style.width = '800px';
+  tempDiv.style.height = '600px';
+  document.body.appendChild(tempDiv);
 
-    const tempChartOptions = {
-        series: [{ name: 'Força', data: chartData }],
-        chart: { type: 'line', height: '100%', width: '100%', background: '#fff' },
-        title: { text: 'Gráfico da Sessão: ' + session.nome, align: 'center' },
-        xaxis: { title: { text: 'Tempo (s)' } },
-        yaxis: { title: { text: 'Força (N)' } }
-    };
+  const tempChartOptions = {
+    series: [{ name: 'Força', data: chartData }],
+    chart: { type: 'line', height: '100%', width: '100%', background: '#fff' },
+    title: { text: 'Gráfico da Sessão: ' + session.nome, align: 'center' },
+    xaxis: { title: { text: 'Tempo (s)' } },
+    yaxis: { title: { text: 'Força (N)' } }
+  };
 
-    const tempChart = new ApexCharts(tempDiv, tempChartOptions);
-    
-    tempChart.render().then(() => {
-        tempChart.dataURI().then(({ imgURI }) => {
-            const a = document.createElement('a');
-            a.href = imgURI;
-            a.download = 'grafico_' + session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            tempChart.destroy();
-            document.body.removeChild(tempDiv);
-            showNotification('success', 'Gráfico exportado como PNG!');
-        });
+  const tempChart = new ApexCharts(tempDiv, tempChartOptions);
+
+  tempChart.render().then(() => {
+    tempChart.dataURI().then(({ imgURI }) => {
+      const a = document.createElement('a');
+      a.href = imgURI;
+      a.download = 'grafico_' + session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      tempChart.destroy();
+      document.body.removeChild(tempDiv);
+      showNotification('success', 'Gráfico exportado como PNG!');
     });
+  });
 }
 
 async function exportarJSON(sessionId, source) {
-    const session = await getSessionDataForExport(sessionId, source);
-    if (!session) {
-        showNotification('error', 'Sessão não encontrada para exportar JSON.');
-        return;
-    }
+  const session = await getSessionDataForExport(sessionId, source);
+  if (!session) {
+    showNotification('error', 'Sessão não encontrada para exportar JSON.');
+    return;
+  }
 
-    const jsonContent = JSON.stringify(session, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotification('success', 'Arquivo JSON para "' + session.nome + '" gerado!');
+  const jsonContent = JSON.stringify(session, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showNotification('success', 'Arquivo JSON para "' + session.nome + '" gerado!');
 }
 
 
@@ -1306,7 +1327,7 @@ async function getSessionDataForExport(sessionId, source) {
     const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
     sessionData = localSessions.find(s => s.id === sessionId);
   }
-  
+
   if (!sessionData && (source === 'db' || source === 'both')) { // Try DB if local not found or explicitly DB
     try {
       const dbSessionResponse = await apiFetch('/api/sessoes');
@@ -1324,7 +1345,7 @@ async function getSessionDataForExport(sessionId, source) {
           nome: dbSession.nome,
           timestamp: dbSession.data_inicio,
           dadosTabela: dbReadings.map(r => ({
-            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
+            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
             tempo_esp: r.tempo,
             newtons: r.forca,
             grama_forca: (r.forca / 9.80665 * 1000),
@@ -1367,26 +1388,26 @@ async function visualizarSessao(sessionId) {
     // Se o registro da sessão foi encontrado (local ou DB), mas os dadosTabela estão ausentes ou vazios,
     // E a sessão *pode* estar no DB (checar se tem os campos do DB, ex: data_inicio), buscamos as leituras no DB.
     if (sessao && (!Array.isArray(sessao.dadosTabela) || sessao.dadosTabela.length === 0)) {
-        // Tentativa de buscar leituras do DB, caso o registro da sessão tenha vindo da API.
-        // Assumimos que a sessão é do DB se ela veio da API e não tem dadosTabela.
-        try {
-      const readingsResp = await apiFetch(`/api/sessoes/${sessionId}/leituras`, { cache: 'no-store' });
-            if (readingsResp.ok) {
-                const dbReadings = await readingsResp.json();
-                
-                // Anexa os dados lidos do DB ao objeto 'sessao'
-                sessao.dadosTabela = dbReadings.map(r => ({
-                    timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
-                    tempo_esp: r.tempo,
-                    newtons: r.forca,
-                    grama_forca: (r.forca / 9.80665 * 1000).toFixed(3),
-                    quilo_forca: (r.forca / 9.80665).toFixed(6)
-                }));
-            }
-        } catch (e) {
-            console.error("Erro ao buscar leituras da sessão no DB:", e);
-            // Continua, mas com um alerta
+      // Tentativa de buscar leituras do DB, caso o registro da sessão tenha vindo da API.
+      // Assumimos que a sessão é do DB se ela veio da API e não tem dadosTabela.
+      try {
+        const readingsResp = await apiFetch(`/api/sessoes/${sessionId}/leituras`, { cache: 'no-store' });
+        if (readingsResp.ok) {
+          const dbReadings = await readingsResp.json();
+
+          // Anexa os dados lidos do DB ao objeto 'sessao'
+          sessao.dadosTabela = dbReadings.map(r => ({
+            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            tempo_esp: r.tempo,
+            newtons: r.forca,
+            grama_forca: (r.forca / 9.80665 * 1000).toFixed(3),
+            quilo_forca: (r.forca / 9.80665).toFixed(6)
+          }));
         }
+      } catch (e) {
+        console.error("Erro ao buscar leituras da sessão no DB:", e);
+        // Continua, mas com um alerta
+      }
     }
 
 
@@ -1422,14 +1443,14 @@ async function visualizarSessao(sessionId) {
     const minDisplayForce = convertForce(minForceInN, displayUnit);
 
     const elAtual = document.getElementById('forca-atual');
-    const elEms   = document.getElementById('forca-ems');
-    const elMax   = document.getElementById('forca-maxima');
-    const elMin   = document.getElementById('forca-minima');
+    const elEms = document.getElementById('forca-ems');
+    const elMax = document.getElementById('forca-maxima');
+    const elMin = document.getElementById('forca-minima');
 
     if (elAtual) elAtual.textContent = displayForceNow.toFixed(3);
-    if (elEms)   elEms.textContent   = displayForceNow.toFixed(3); // não recomputa EMA aqui
-    if (elMax)   elMax.textContent   = maxDisplayForce.toFixed(3);
-    if (elMin)   elMin.textContent   = `mín: ${minDisplayForce.toFixed(3)}`;
+    if (elEms) elEms.textContent = displayForceNow.toFixed(3); // não recomputa EMA aqui
+    if (elMax) elMax.textContent = maxDisplayForce.toFixed(3);
+    if (elMin) elMin.textContent = `mín: ${minDisplayForce.toFixed(3)}`;
 
     // 6) Repopular a tabela
     const tbody = document.querySelector('#tabela tbody');
@@ -1448,11 +1469,11 @@ async function visualizarSessao(sessionId) {
           const tr = document.createElement('tr');
           const ts = (sessao.dadosTabela[i] && sessao.dadosTabela[i].timestamp) || '';
 
-          const tdTs   = document.createElement('td'); tdTs.textContent   = ts;
-          const tdT    = document.createElement('td'); tdT.textContent    = t.toFixed(3);
-          const tdN    = document.createElement('td'); tdN.textContent    = N.toFixed(6);
-          const tdGf   = document.createElement('td'); tdGf.textContent   = gf.toFixed(3);
-          const tdKgf  = document.createElement('td'); tdKgf.textContent  = kgf.toFixed(6);
+          const tdTs = document.createElement('td'); tdTs.textContent = ts;
+          const tdT = document.createElement('td'); tdT.textContent = t.toFixed(3);
+          const tdN = document.createElement('td'); tdN.textContent = N.toFixed(6);
+          const tdGf = document.createElement('td'); tdGf.textContent = gf.toFixed(3);
+          const tdKgf = document.createElement('td'); tdKgf.textContent = kgf.toFixed(6);
 
           tr.appendChild(tdTs);
           tr.appendChild(tdT);
@@ -1549,7 +1570,7 @@ async function gerarRelatorioPdf(sessionId, source) {
     printWindow.document.close();
 
     // Aguarda carregamento e abre diálogo de impressão
-    printWindow.onload = function() {
+    printWindow.onload = function () {
       setTimeout(() => {
         printWindow.print();
       }, 500);
@@ -1599,9 +1620,9 @@ async function deleteDbSession(sessionId) {
     return;
   }
   try {
-  const response = await apiFetch(`/api/sessoes/${sessionId}`, { method: 'DELETE' });
+    const response = await apiFetch(`/api/sessoes/${sessionId}`, { method: 'DELETE' });
     if (!response.ok) throw new Error('Falha ao excluir a sessão do DB.');
-    
+
     showNotification('success', 'Sessão ' + sessionId + ' excluída do banco de dados.');
     loadAndDisplayAllSessions(); // Re-render the list
   } catch (error) {
@@ -1613,7 +1634,7 @@ async function deleteDbSession(sessionId) {
 async function saveDbSessionToLocal(sessionId) {
   try {
     // Fetch session details from DB
-  const dbSessionResponse = await apiFetch('/api/sessoes');
+    const dbSessionResponse = await apiFetch('/api/sessoes');
     if (!dbSessionResponse.ok) throw new Error('Falha ao carregar detalhes da sessão do DB para salvar localmente.');
     const allDbSessions = await dbSessionResponse.json();
     const dbSession = allDbSessions.find(s => s.id === sessionId);
@@ -1624,7 +1645,7 @@ async function saveDbSessionToLocal(sessionId) {
     }
 
     // Fetch readings from DB
-  const readingsResponse = await apiFetch('/api/sessoes/' + sessionId + '/leituras');
+    const readingsResponse = await apiFetch('/api/sessoes/' + sessionId + '/leituras');
     if (!readingsResponse.ok) throw new Error('Falha ao carregar leituras do DB para salvar localmente.');
     const dbReadings = await readingsResponse.json();
 
@@ -1633,7 +1654,7 @@ async function saveDbSessionToLocal(sessionId) {
       nome: dbSession.nome,
       timestamp: dbSession.data_inicio,
       dadosTabela: dbReadings.map(r => ({
-        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
+        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
         tempo_esp: r.tempo,
         newtons: r.forca,
         grama_forca: (r.forca / 9.80665 * 1000),
@@ -1697,7 +1718,7 @@ async function importarGravacaoExterna() {
       const partes = linha.trim().split(/\s+/);
       if (partes.length >= 2) {
         return {
-          timestamp: new Date(Date.now() + index).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '), // Unique timestamp
+          timestamp: new Date(Date.now() + index).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '), // Unique timestamp
           tempo_esp: parseFloat(partes[0]),
           newtons: parseFloat(partes[1]),
           grama_forca: parseFloat(partes[1]) / 9.80665 * 1000,
@@ -1728,7 +1749,7 @@ async function importarGravacaoExterna() {
       gravacoes.push(gravacao);
       localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
       showNotification('success', 'Sessão "' + nome + '" importada e salva localmente!');
-      
+
       // Also save to DB if connected
       if (isMysqlConnected) {
         showNotification('info', 'Enviando sessão importada "' + nome + '" para o MySQL...');
