@@ -13,7 +13,7 @@ import struct
 import time
 from typing import Optional, Dict, Any
 import pymysql.cursors
-from datetime import datetime # NEW: Import datetime
+from datetime import datetime
 
 """
 Binary Protocol Server - Balança GFIG (IPv4 + IPv6)
@@ -28,28 +28,28 @@ SERIAL_BAUD = int(os.environ.get("SERIAL_BAUD", "921600"))
 SERIAL_PORT = os.environ.get("SERIAL_PORT", "/dev/ttyUSB0")
 HTTP_PORT   = int(os.environ.get("HTTP_PORT", "80"))
 WS_PORT     = int(os.environ.get("WS_PORT", "81"))
-# Optional overrides
-BIND_HOST   = os.environ.get("BIND_HOST", "0.0.0.0")  # CHANGED: from "::" to "0.0.0.0" for IPv4-only
-V6ONLY_ENV  = os.environ.get("IPV6_V6ONLY", "0") # "0" tries dual-stack, "1" forces IPv6-only
+BIND_HOST   = os.environ.get("BIND_HOST", "0.0.0.0")
+V6ONLY_ENV  = os.environ.get("IPV6_V6ONLY", "0")
 
 # MySQL Config
 MYSQL_HOST = os.environ.get("MYSQL_HOST", "db")
 MYSQL_USER = os.environ.get("MYSQL_USER", "balanca_user")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "balanca_password")
-MYSQL_DB = os.environ.get("MYSQL_DB", "balanca_db")
+MYSQL_DB = os.environ.get("MYSQL_DB", "balanca_gfig")
+MYSQL_ROOT_PASSWORD = os.environ.get("MYSQL_ROOT_PASSWORD", "Hilquias")
 
 # Binary Protocol Constants
 MAGIC = 0xA1B2
 VERSION = 0x01
 
 # Packet Types
-TYPE_DATA        = 0x01  # Força reading (ESP→Host)
-TYPE_CONFIG      = 0x02  # Configuration (ESP→Host)
-TYPE_STATUS      = 0x03  # Status/Info/Error (ESP→Host)
-CMD_TARA         = 0x10  # Tara command (Host→ESP)
-CMD_CALIBRATE    = 0x11  # Calibration command (Host→ESP)
-CMD_GET_CONFIG   = 0x12  # Request config (Host→ESP)
-CMD_SET_PARAM    = 0x13  # Set parameter (Host→ESP)
+TYPE_DATA        = 0x01
+TYPE_CONFIG      = 0x02
+TYPE_STATUS      = 0x03
+CMD_TARA         = 0x10
+CMD_CALIBRATE    = 0x11
+CMD_GET_CONFIG   = 0x12
+CMD_SET_PARAM    = 0x13
 
 # Packet sizes
 SIZE_DATA       = 16
@@ -63,6 +63,8 @@ SIZE_CMD_SETPAR = 18
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logging.info(f"Configuração de BIND_HOST: {BIND_HOST}")
 logging.info(f"Configuração de IPV6_V6ONLY: {V6ONLY_ENV}")
+logging.info(f"MySQL DB: {MYSQL_DB}")
+logging.info(f"MYSQL_DB from env: {os.environ.get('MYSQL_DB')}")
 
 CONNECTED_CLIENTS = set()
 serial_connection: Optional[serial.Serial] = None
@@ -70,355 +72,11 @@ serial_lock = threading.Lock()
 mysql_connection = None
 mysql_connected = False
 
-# ================== HTTP Server ==================
-class SilentHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, format, *args):
-        return
-
-class DualStackTCPServer(socketserver.TCPServer):
-    # Prefer IPv6; attempt dual-stack by disabling IPV6_V6ONLY when possible
-    address_family = socket.AF_INET6
-    allow_reuse_address = True
-
-    def server_bind(self):
-        if self.address_family == socket.AF_INET6:
-            try:
-                v6only = 1 if str(V6ONLY_ENV).strip() == "1" else 0
-                self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, v6only)
-                logging.info(f"HTTP IPv6 socket: IPV6_V6ONLY={v6only}")
-            except OSError as e:
-                logging.warning(f"Não foi possível ajustar IPV6_V6ONLY: {e}")
-        super().server_bind()
-
-
-def start_http_server():
-    try:
-        logging.info("Tentando iniciar o servidor HTTP (IPv6/dual-stack)...")
-        httpd = DualStackTCPServer((BIND_HOST, HTTP_PORT, 0, 0), SilentHandler)
-        logging.info(f"Servidor HTTP criado. Endereço: {httpd.server_address}")
-        t = threading.Thread(target=httpd.serve_forever, daemon=True)
-        t.start()
-        logging.info(f"Servidor HTTP iniciado em background na porta {HTTP_PORT} (host={BIND_HOST})")
-        return httpd
-    except OSError as e:
-        logging.error(f"Falha ao iniciar HTTP IPv6/dual-stack: {e}")
-        # Fallback: IPv4
-        try:
-            logging.info("Fallback para IPv4 somente (0.0.0.0)...")
-            httpd = socketserver.TCPServer(("0.0.0.0", HTTP_PORT), SilentHandler)
-            t = threading.Thread(target=httpd.serve_forever, daemon=True)
-            t.start()
-            logging.info(f"HTTP IPv4 ativo em 0.0.0.0:{HTTP_PORT}")
-            return httpd
-        except Exception as e2:
-            logging.error(f"Falha catastrófica ao iniciar servidor HTTP: {e2}", exc_info=True)
-            return None
-
-# ================== WebSocket ==================
-async def ws_handler(websocket):
-    CONNECTED_CLIENTS.add(websocket)
-    try:
-        async for message in websocket:
-            try:
-                cmd = json.loads(message)
-                cmd_type = cmd.get("cmd")
-
-                if cmd_type == "save_session_to_mysql":
-                    session_data = cmd.get("payload")
-                    if session_data:
-                        success = await save_session_to_mysql_db(session_data)
-                        if success:
-                            await websocket.send(json.dumps({"type": "mysql_save_success", "message": session_data.get("nome"), "sessionId": session_data.get("id")}))
-                        else:
-                            await websocket.send(json.dumps({"type": "mysql_save_error", "message": session_data.get("nome"), "sessionId": session_data.get("id")}))
-                    else:
-                        logging.warning("Received save_session_to_mysql command without payload.")
-                elif cmd_type == "fetch_sessions_from_mysql": # NEW: Handle fetch command
-                    sessions_from_db = await fetch_sessions_from_mysql_db()
-                    await websocket.send(json.dumps({"type": "mysql_sessions_fetched", "payload": sessions_from_db}))
-                else:
-                    binary_packet = json_to_binary_command(cmd)
-                    if binary_packet:
-                        with serial_lock:
-                            if serial_connection and serial_connection.is_open:
-                                serial_connection.write(binary_packet)
-                                serial_connection.flush()
-                                logging.info(f"Comando binário enviado: type={cmd.get('cmd')}")
-                            else:
-                                logging.warning("Serial não disponível")
-                    else:
-                        logging.warning(f"Comando desconhecido: {cmd}")
-
-            except json.JSONDecodeError:
-                logging.error(f"Mensagem WS inválida: {message}")
-            except Exception as e:
-                logging.error(f"Erro ao processar comando: {e}")
-    except websockets.exceptions.ConnectionClosed:
-        pass
-    finally:
-        CONNECTED_CLIENTS.remove(websocket)
-
-async def ws_server_main():
-    # Tenta abrir em IPv6/dual-stack (host "::"); se falhar, faz fallback para IPv4
-    try:
-        logging.info("Iniciando WebSocket em IPv6/dual-stack (::)...")
-        async with websockets.serve(ws_handler, BIND_HOST, WS_PORT, max_size=None):
-            logging.info(f"WebSocket ativo em {BIND_HOST}:{WS_PORT}")
-            await asyncio.Future()
-    except OSError as e:
-        logging.error(f"Falha ao abrir WS em {BIND_HOST}:{WS_PORT}: {e}")
-        logging.info("Fallback para WebSocket IPv4 (0.0.0.0)...")
-        async with websockets.serve(ws_handler, "0.0.0.0", WS_PORT, max_size=None):
-            logging.info(f"WebSocket IPv4 ativo em 0.0.0.0:{WS_PORT}")
-            await asyncio.Future()
-
-
-async def broadcast_json(obj: Dict[str, Any]):
-    if not CONNECTED_CLIENTS:
-        return
-    # Adiciona o status do MySQL ao objeto JSON antes de transmitir
-    obj["mysql_connected"] = mysql_connected
-    data = json.dumps(obj, separators=(",", ":"))
-    await asyncio.gather(*[ws.send(data) for ws in list(CONNECTED_CLIENTS)], return_exceptions=True)
-
-# ================== Binary Protocol Utilities ==================
-def crc16_ccitt(data: bytes) -> int:
-    """Calculate CRC16-CCITT"""
-    crc = 0xFFFF
-    for b in data:
-        crc ^= b << 8
-        for _ in range(8):
-            if crc & 0x8000:
-                crc = ((crc << 1) ^ 0x1021) & 0xFFFF
-            else:
-                crc = (crc << 1) & 0xFFFF
-    return crc
-
-
-def parse_data_packet(data: bytes) -> Optional[Dict[str, Any]]:
-    """Parse TYPE_DATA packet (16 bytes)"""
-    if len(data) != SIZE_DATA:
-        return None
-
-    try:
-        # Format: magic, ver, type, t_ms, forca_N, status, crc (padding is skipped by 'x')
-        magic, ver, pkt_type, t_ms, forca_N, status, crc_rx = struct.unpack("<HBBIfBxH", data)
-
-        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_DATA:
-            return None
-
-        # Verify CRC
-        crc_calc = crc16_ccitt(data[:-2])
-        if crc_calc != crc_rx:
-            logging.warning(f"CRC mismatch in DATA packet: calc={crc_calc:04X}, rx={crc_rx:04X}")
-            return None
-
-        json_obj = {
-            "type": "data",
-            "tempo": t_ms / 1000.0,
-            "forca": float(forca_N),
-            "status": status
-        }
-        
-        # Salva os dados no MySQL
-        save_data_to_mysql(json_obj)
-
-        return json_obj
-    except struct.error as e:
-        logging.error(f"Error unpacking DATA packet: {e}")
-        return None
-
-
-def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
-    """Parse TYPE_CONFIG packet (64 bytes)"""
-    if len(data) != SIZE_CONFIG:
-        logging.warning(f"CONFIG packet size mismatch: expected {SIZE_CONFIG}, got {len(data)}")
-        return None
-
-    try:
-        # Unpack header (4 bytes)
-        magic, ver, pkt_type = struct.unpack_from("<HBB", data, 0)
-
-        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_CONFIG:
-            logging.warning(f"CONFIG packet header invalid: magic={magic:04X}, ver={ver}, type={pkt_type:02X}")
-            return None
-
-        # Verify CRC BEFORE unpacking (more efficient)
-        crc_rx = struct.unpack_from("<H", data, SIZE_CONFIG - 2)[0]
-        crc_calc = crc16_ccitt(data[:-2])
-
-        if crc_calc != crc_rx:
-            logging.warning(f"CRC mismatch in CONFIG packet: calc={crc_calc:04X}, rx={crc_rx:04X}")
-            logging.warning(f"First 20 bytes: {' '.join(f'{b:02X}' for b in data[:20])}")
-            # Tenta fazer o parse mesmo com CRC inválido para depuração
-            try:
-                fmt = "<ffHfHHBBHiffB23x"
-                offset = 4
-                fields = struct.unpack_from(fmt, data, offset)
-                logging.warning(f"DEBUG (unpacked with error): {fields}")
-            except Exception as e:
-                logging.error(f"DEBUG: Falha ao desempacotar mesmo para depuração: {e}")
-            return None
-
-        # Unpack config fields (offset 4, 58 bytes total)
-        fmt = "<ffHfHHBBHiffB23x"  # 23x = skip 23 reserved bytes
-        offset = 4
-        fields = struct.unpack_from(fmt, data, offset)
-
-        return {
-            "type": "config",
-            "conversionFactor": fields[0],
-            "gravity": fields[1],
-            "leiturasEstaveis": fields[2],
-            "toleranciaEstabilidade": fields[3],
-            "numAmostrasMedia": fields[4],
-            "numAmostrasCalibracao": fields[5],
-            "usarMediaMovel": fields[6],
-            "usarEMA": fields[7],
-            "timeoutCalibracao": fields[8],
-            "tareOffset": fields[9],
-            "capacidadeMaximaGramas": fields[10],
-            "percentualAcuracia": fields[11],
-            "mode": fields[12]
-        }
-    except struct.error as e:
-        logging.error(f"Error unpacking CONFIG: {e}")
-        logging.error(f"Data length: {len(data)}")
-        return None
-
-
-def parse_status_packet(data: bytes) -> Optional[Dict[str, Any]]:
-    """Parse TYPE_STATUS packet (12 bytes)"""
-    if len(data) != SIZE_STATUS:
-        return None
-
-    try:
-        magic, ver, pkt_type, status_type, code, value, timestamp, crc_rx = struct.unpack("<HBBBBHIH", data)
-
-        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_STATUS:
-            return None
-
-        crc_calc = crc16_ccitt(data[:-2])
-        if crc_calc != crc_rx:
-            logging.warning(f"CRC mismatch in STATUS packet")
-            return None
-
-        # Map status_type to JSON type
-        type_map = {0: "info", 1: "success", 2: "warning", 3: "error"}
-        msg_type = type_map.get(status_type, "info")
-
-        # Decode message from code
-        messages = {
-            0x00: "Info genérica",
-            0x01: "Comando recebido",
-            0x10: "Tara concluída",
-            0x11: "Calibração concluída",
-            0x12: "Calibração falhou",
-            0x20: "Configuração atualizada",
-            0xF0: "Erro genérico",
-            0xF1: "Buffer overflow"
-        }
-
-        message = messages.get(code, f"Status code: {code:02X}")
-
-        return {
-            "type": msg_type,
-            "message": message,
-            "code": code,
-            "value": value,
-            "timestamp": timestamp / 1000.0
-        }
-    except struct.error:
-        return None
-
-
-def json_to_binary_command(cmd: Dict[str, Any]) -> Optional[bytes]:
-    """Convert JSON command to binary packet"""
-    cmd_type = cmd.get("cmd", "").lower()
-
-    # CMD_TARA (0x10)
-    if cmd_type == "t" or cmd_type == "tara":
-        data = struct.pack("<HBBH", MAGIC, VERSION, CMD_TARA, 0)
-        crc = crc16_ccitt(data)
-        return data + struct.pack("<H", crc)
-
-    # CMD_CALIBRATE (0x11)
-    elif cmd_type == "c" or cmd_type == "calibrate":
-        massa_g = float(cmd.get("massa_g", 0))
-        if massa_g <= 0:
-            return None
-        data = struct.pack("<HBBf", MAGIC, VERSION, CMD_CALIBRATE, massa_g)
-        crc = crc16_ccitt(data)
-        return data + struct.pack("<H", crc)
-
-    # CMD_GET_CONFIG (0x12)
-    elif cmd_type == "get_config":
-        data = struct.pack("<HBBH", MAGIC, VERSION, CMD_GET_CONFIG, 0)
-        crc = crc16_ccitt(data)
-        return data + struct.pack("<H", crc)
-
-    # CMD_SET_PARAM (0x13)
-    elif cmd_type == "set" or cmd_type == "set_param":
-        param_name = cmd.get("param", "")
-        value = cmd.get("value", 0)
-
-        # Map param names to IDs
-        param_map = {
-            "gravity": (0x01, "f"),
-            "conversionFactor": (0x02, "f"),
-            "leiturasEstaveis": (0x03, "I"),
-            "toleranciaEstabilidade": (0x04, "f"),
-            "mode": (0x05, "B"),
-            "usarEMA": (0x06, "B"),
-            "numAmostrasMedia": (0x07, "I"),
-            "tareOffset": (0x08, "I"),
-            "timeoutCalibracao": (0x09, "I"),
-            "capacidadeMaximaGramas": (0x0A, "f"),
-            "percentualAcuracia": (0x0B, "f")
-        }
-
-        if param_name not in param_map:
-            logging.warning(f"Unknown parameter: {param_name}")
-            return None
-
-        param_id, value_type = param_map[param_name]
-
-        # Pack based on type
-        value_f = 0.0
-        value_i = 0
-        if value_type == "f":
-            value_f = float(value)
-        else:
-            value_i = int(value)
-
-        # Correct format for CmdSetParam struct:
-        # <H:magic, B:ver, B:type, B:param_id, 3x:reserved, f:value_f, I:value_i>
-        data = struct.pack("<HBBB3xfI", MAGIC, VERSION, CMD_SET_PARAM, param_id, value_f, value_i)
-        crc = crc16_ccitt(data)
-        return data + struct.pack("<H", crc)
-
-    return None
-
-# ================== Serial Port Utils ==================
-def find_serial_port() -> Optional[str]:
-    global SERIAL_PORT
-    if os.name != "nt" and os.path.exists(SERIAL_PORT):
-        return SERIAL_PORT
-    if os.name == "nt" and SERIAL_PORT.upper().startswith("COM"):
-        return SERIAL_PORT
-
-    ports = list(serial.tools.list_ports.comports())
-    for p in ports:
-        if any(k in p.device for k in ("USB", "ACM", "COM")):
-            SERIAL_PORT = p.device
-            return SERIAL_PORT
-    return None
-
 # ================== MySQL Utils ==================
 def connect_to_mysql():
     global mysql_connection, mysql_connected
     if mysql_connection and mysql_connection.open:
-        return mysql_connection # Already connected
+        return mysql_connection
 
     try:
         mysql_connection = pymysql.connect(
@@ -439,69 +97,62 @@ def connect_to_mysql():
 
 def init_mysql_db():
     global mysql_connection, mysql_connected
-    mysql_connection = connect_to_mysql() # Tenta conectar na inicialização
+    # Connect as root to create the database and grant privileges
+    try:
+        root_conn = pymysql.connect(
+            host=MYSQL_HOST, user="root", password=MYSQL_ROOT_PASSWORD,
+            cursorclass=pymysql.cursors.DictCursor, connect_timeout=5
+        )
+        with root_conn.cursor() as cursor:
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DB}`")
+            cursor.execute(f"GRANT ALL PRIVILEGES ON `{MYSQL_DB}`.* TO '{MYSQL_USER}'@'%'")
+            cursor.execute("FLUSH PRIVILEGES")
+        root_conn.close()
+        logging.info(f"Database '{MYSQL_DB}' created/verified and privileges granted.")
+    except pymysql.Error as e:
+        logging.error(f"Não foi possível criar o banco de dados '{MYSQL_DB}' ou conceder privilégios: {e}")
+        mysql_connected = False
+        return
 
-    if mysql_connection: # Verifica se a conexão foi bem-sucedida
+    # Now connect as balanca_user to the specific database to create tables
+    mysql_connection = connect_to_mysql()
+
+    if mysql_connection:
         try:
             with mysql_connection.cursor() as cursor:
-                # Cria a tabela 'recordings' se não existir
-                sql_recordings_create = """
-                CREATE TABLE IF NOT EXISTS recordings (
+                sql_sessoes_create = """
+                CREATE TABLE IF NOT EXISTS sessoes (
+                    id BIGINT PRIMARY KEY,
+                    nome VARCHAR(255) NOT NULL,
+                    data_inicio DATETIME NOT NULL,
+                    data_fim DATETIME
+                )
+                """
+                cursor.execute(sql_sessoes_create)
+
+                sql_leituras_create = """
+                CREATE TABLE IF NOT EXISTS leituras (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    sessao_id BIGINT NOT NULL,
                     tempo FLOAT,
                     forca FLOAT,
-                    status INT
+                    ema FLOAT,
+                    massaKg FLOAT,
+                    timestamp DATETIME(3),
+                    FOREIGN KEY (sessao_id) REFERENCES sessoes(id) ON DELETE CASCADE
                 )
                 """
-                cursor.execute(sql_recordings_create)
-
-                # NEW: Cria a tabela 'sessions' se não existir
-                sql_sessions_create = """
-                CREATE TABLE IF NOT EXISTS sessions (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    session_id BIGINT UNIQUE NOT NULL,
-                    session_name VARCHAR(255) NOT NULL,
-                    session_timestamp DATETIME NOT NULL,
-                    dados_tabela_json JSON,
-                    metadados_motor_json JSON,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-                """
-                cursor.execute(sql_sessions_create)
+                cursor.execute(sql_leituras_create)
 
             mysql_connection.commit()
-            logging.info("Tabelas 'recordings' e 'sessions' verificadas/criadas no MySQL.")
+            logging.info(f"Banco de dados '{MYSQL_DB}' e tabelas 'sessoes', 'leituras' verificadas/criadas.")
         except pymysql.Error as e:
             logging.error(f"Erro ao inicializar o banco de dados MySQL: {e}")
             mysql_connected = False
     else:
         logging.warning("Não foi possível inicializar o banco de dados MySQL: conexão não estabelecida.")
 
-def save_data_to_mysql(data_packet: Dict[str, Any]):
-    global mysql_connection, mysql_connected
-    if not mysql_connected or not mysql_connection or not mysql_connection.open:
-        logging.warning("Tentando salvar dados no MySQL, mas a conexão não está ativa. Tentando reconectar...")
-        mysql_connection = connect_to_mysql()
-        if not mysql_connected:
-            logging.error("Não foi possível reconectar ao MySQL. Dados não salvos.")
-            return
-
-    try:
-        with mysql_connection.cursor() as cursor:
-            sql = "INSERT INTO recordings (tempo, forca, status) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (data_packet["tempo"], data_packet["forca"], data_packet["status"]))
-        mysql_connection.commit()
-        # logging.info("Dados salvos no MySQL.") # Comentar para evitar log excessivo
-    except pymysql.Error as e:
-        logging.error(f"Erro ao salvar dados no MySQL: {e}")
-        mysql_connected = False # Marca como desconectado em caso de erro de escrita
-        if mysql_connection and mysql_connection.open:
-            mysql_connection.close() # Fecha a conexão para forçar reconexão
-        mysql_connection = None
-
-
-async def save_session_to_mysql_db(session_data: Dict[str, Any]) -> bool:
+async def save_session_to_mysql_db(session_data: Dict[str, Any]):
     global mysql_connection, mysql_connected
     if not mysql_connected or not mysql_connection or not mysql_connection.open:
         logging.warning("Tentando salvar sessão no MySQL, mas a conexão não está ativa. Tentando reconectar...")
@@ -512,175 +163,401 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]) -> bool:
 
     try:
         with mysql_connection.cursor() as cursor:
-            # Prepare data for insertion
-            session_name = session_data.get("nome")
-            session_timestamp = session_data.get("timestamp")
-            session_id = session_data.get("id")
-            dados_tabela_json = json.dumps(session_data.get("dadosTabela"))
-            metadados_motor_json = json.dumps(session_data.get("metadadosMotor"))
+            dados_tabela = session_data.get('dadosTabela', [])
+            data_inicio = datetime.fromisoformat(session_data['timestamp'].replace('Z', '+00:00'))
+            data_fim = None
+            if dados_tabela:
+                try:
+                    # Timestamp format from frontend: '27/10/2025 15:13:06.334'
+                    data_fim = datetime.strptime(dados_tabela[-1]['timestamp'], '%d/%m/%Y %H:%M:%S.%f')
+                except (ValueError, IndexError):
+                    data_fim = data_inicio
 
-            # NEW: Convert timestamp to MySQL DATETIME format
-            raw_session_timestamp = session_data.get("timestamp")
-            logging.info(f"Raw timestamp from frontend: {raw_session_timestamp}")
+            sql_sessoes = """
+            INSERT INTO sessoes (id, nome, data_inicio, data_fim)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                nome = VALUES(nome),
+                data_inicio = VALUES(data_inicio),
+                data_fim = VALUES(data_fim)
+            """
+            cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim))
 
-            # Try to parse with datetime.fromisoformat first, which is more robust
-            try:
-                dt_object = datetime.fromisoformat(raw_session_timestamp.replace('Z', '+00:00'))
-                mysql_formatted_timestamp = dt_object.strftime('%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                # Fallback to string manipulation if parsing fails (e.g., if format is slightly off)
-                logging.warning(f"Failed to parse timestamp '{raw_session_timestamp}' with fromisoformat. Falling back to string manipulation.")
-                mysql_formatted_timestamp = raw_session_timestamp.split('.')[0].replace('T', ' ')
-                if mysql_formatted_timestamp.endswith('Z'):
-                    mysql_formatted_timestamp = mysql_formatted_timestamp[:-1]
+            cursor.execute("DELETE FROM leituras WHERE sessao_id = %s", (session_data['id'],))
 
-            logging.info(f"Formatted timestamp for MySQL: {mysql_formatted_timestamp}")
+            if dados_tabela:
+                sql_leituras = "INSERT INTO leituras (sessao_id, tempo, forca, massaKg, timestamp) VALUES (%s, %s, %s, %s, %s)"
+                leituras_to_insert = []
+                for leitura in dados_tabela:
+                    try:
+                        leitura_timestamp = datetime.strptime(leitura['timestamp'], '%d/%m/%Y %H:%M:%S.%f')
+                    except ValueError:
+                        leitura_timestamp = None
+                    
+                    leituras_to_insert.append((
+                        session_data['id'],
+                        float(leitura.get('tempo_esp', 0)),
+                        float(leitura.get('newtons', 0)),
+                        float(leitura.get('quilo_forca', 0)),
+                        leitura_timestamp
+                    ))
+                if leituras_to_insert:
+                    cursor.executemany(sql_leituras, leituras_to_insert)
 
-            # Check if a session with this ID already exists to prevent duplicates
-            cursor.execute("SELECT id FROM sessions WHERE session_id = %s", (session_id,))
-            if cursor.fetchone():
-                logging.info(f"Sessão com ID {session_id} já existe no MySQL. Atualizando...")
-                sql = """
-                UPDATE sessions SET
-                    session_name = %s,
-                    session_timestamp = %s, # Use mysql_formatted_timestamp here
-                    dados_tabela_json = %s,
-                    metadados_motor_json = %s
-                WHERE session_id = %s
-                """
-                cursor.execute(sql, (session_name, mysql_formatted_timestamp, dados_tabela_json, metadados_motor_json, session_id))
-            else:
-                sql = """
-                INSERT INTO sessions (session_id, session_name, session_timestamp, dados_tabela_json, metadados_motor_json)
-                VALUES (%s, %s, %s, %s, %s) # Use mysql_formatted_timestamp here
-                """
-                cursor.execute(sql, (session_id, session_name, mysql_formatted_timestamp, dados_tabela_json, metadados_motor_json))
         mysql_connection.commit()
-        logging.info(f"Sessão '{session_name}' salva/atualizada no MySQL.")
+        logging.info(f"Sessão '{session_data['nome']}' salva/atualizada no MySQL.")
         return True
-    except pymysql.Error as e:
+    except (pymysql.Error, ValueError, KeyError) as e:
         logging.error(f"Erro ao salvar sessão no MySQL: {e}")
-        mysql_connected = False
-        if mysql_connection and mysql_connection.open:
-            mysql_connection.close()
-        mysql_connection = None
+        if mysql_connection:
+            mysql_connection.rollback()
         return False
 
+# ================== HTTP Server & API ==================
+class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory='/app/data', **kwargs)
 
-# ================== Serial Reader Thread ==================
+    def do_GET(self):
+        if self.path == '/api/sessoes':
+            self.handle_get_sessoes()
+        elif self.path.startswith('/api/sessoes/') and self.path.endswith('/leituras'):
+            self.handle_get_leituras()
+        elif self.path.startswith('/api/sessoes/'):
+            self.handle_get_sessao_by_id()
+        else:
+            super().do_GET()
+
+    def do_POST(self):
+        if self.path == '/api/sessoes':
+            self.handle_post_sessao()
+        else:
+            self.send_error(404, "Not Found")
+
+    def do_DELETE(self):
+        if self.path.startswith('/api/sessoes/'):
+            self.handle_delete_sessao()
+        else:
+            self.send_error(404, "Not Found")
+
+    def handle_get_sessoes(self):
+        if not mysql_connected:
+            self.send_error(503, "MySQL Service Unavailable")
+            return
+        try:
+            with mysql_connection.cursor() as cursor:
+                cursor.execute("SELECT id, nome, data_inicio, data_fim FROM sessoes ORDER BY data_inicio DESC")
+                sessoes = cursor.fetchall()
+                self.send_json_response(200, sessoes)
+        except pymysql.Error as e:
+            logging.error(f"API Error (get_sessoes): {e}")
+            self.send_error(500, "Internal Server Error")
+
+    def handle_get_leituras(self):
+        try:
+            sessao_id = int(self.path.split('/')[-2])
+        except (ValueError, IndexError):
+            self.send_error(400, "Invalid Session ID")
+            return
+        
+        if not mysql_connected:
+            self.send_error(503, "MySQL Service Unavailable")
+            return
+        try:
+            with mysql_connection.cursor() as cursor:
+                cursor.execute("SELECT tempo, forca, ema, massaKg, timestamp FROM leituras WHERE sessao_id = %s ORDER BY tempo ASC", (sessao_id,))
+                leituras = cursor.fetchall()
+                self.send_json_response(200, leituras)
+        except pymysql.Error as e:
+            logging.error(f"API Error (get_leituras): {e}")
+            self.send_error(500, "Internal Server Error")
+
+    def handle_get_sessao_by_id(self):
+        try:
+            sessao_id = int(self.path.split('/')[-1])
+        except (ValueError, IndexError):
+            self.send_error(400, "Invalid Session ID")
+            return
+
+        if not mysql_connected:
+            self.send_error(503, "MySQL Service Unavailable")
+            return
+        try:
+            with mysql_connection.cursor() as cursor:
+                cursor.execute("SELECT id, nome, data_inicio, data_fim FROM sessoes WHERE id = %s", (sessao_id,))
+                sessao = cursor.fetchone()
+                if sessao:
+                    self.send_json_response(200, sessao)
+                else:
+                    self.send_error(404, "Session Not Found")
+        except pymysql.Error as e:
+            logging.error(f"API Error (get_sessao_by_id): {e}")
+            self.send_error(500, "Internal Server Error")
+
+    def handle_post_sessao(self):
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            session_data = json.loads(post_data)
+        except (json.JSONDecodeError, TypeError, KeyError):
+            self.send_error(400, "Invalid JSON")
+            return
+
+        # We need to run the async save function in the main event loop
+        # This is a bit tricky from a synchronous handler in a different thread
+        # A simpler approach for now is to call it directly if it can be made synchronous,
+        # or use a thread-safe call to the loop.
+        # For this implementation, let's assume we can create a new loop to run the async task.
+        # This is not ideal but works for this isolated case.
+        
+        # asyncio.run() cannot be called from a running event loop.
+        # Since the http server runs in its own thread, we can get/create a loop for this thread.
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        success = loop.run_until_complete(save_session_to_mysql_db(session_data))
+
+        if success:
+            self.send_json_response(201, {"message": "Session created/updated successfully"})
+        else:
+            self.send_error(500, "Failed to save session to database")
+
+    def handle_delete_sessao(self):
+        try:
+            sessao_id = int(self.path.split('/')[-1])
+        except (ValueError, IndexError):
+            self.send_error(400, "Invalid Session ID")
+            return
+
+        if not mysql_connected:
+            self.send_error(503, "MySQL Service Unavailable")
+            return
+        try:
+            with mysql_connection.cursor() as cursor:
+                result = cursor.execute("DELETE FROM sessoes WHERE id = %s", (sessao_id,))
+                mysql_connection.commit()
+                if result > 0:
+                    self.send_json_response(200, {"message": f"Sessão {sessao_id} deletada."})
+                else:
+                    self.send_error(404, "Session Not Found")
+        except pymysql.Error as e:
+            logging.error(f"API Error (delete_sessao): {e}")
+            self.send_error(500, "Internal Server Error")
+
+    def send_json_response(self, status_code, data):
+        self.send_response(status_code)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(data, default=str).encode('utf-8'))
+
+class DualStackTCPServer(socketserver.TCPServer):
+    address_family = socket.AF_INET # Force IPv4
+    allow_reuse_address = True
+
+def start_http_server():
+    try:
+        server_address = (BIND_HOST, HTTP_PORT)
+        
+        httpd = DualStackTCPServer(server_address, APIRequestHandler)
+        
+        t = threading.Thread(target=httpd.serve_forever, daemon=True)
+        t.start()
+        logging.info(f"Servidor HTTP/API iniciado em {BIND_HOST}:{HTTP_PORT}")
+        return httpd
+    except OSError as e:
+        logging.error(f"Falha ao iniciar servidor HTTP: {e}", exc_info=True)
+        return None
+
+# ================== WebSocket ==================
+async def ws_handler(websocket):
+    CONNECTED_CLIENTS.add(websocket)
+    try:
+        # Send initial status on connect
+        await websocket.send(json.dumps({"mysql_connected": mysql_connected}))
+        
+        async for message in websocket:
+            try:
+                cmd = json.loads(message)
+                cmd_type = cmd.get("cmd")
+
+                if cmd_type == "save_session_to_mysql":
+                    session_data = cmd.get("payload")
+                    if session_data:
+                        success = await save_session_to_mysql_db(session_data)
+                        response_type = "mysql_save_success" if success else "mysql_save_error"
+                        await websocket.send(json.dumps({
+                            "type": response_type,
+                            "message": session_data.get("nome"),
+                            "sessionId": session_data.get("id")
+                        }))
+                else:
+                    binary_packet = json_to_binary_command(cmd)
+                    if binary_packet:
+                        with serial_lock:
+                            if serial_connection and serial_connection.is_open:
+                                serial_connection.write(binary_packet)
+                                serial_connection.flush()
+                    else:
+                        logging.warning(f"Comando WS desconhecido: {cmd_type}")
+
+            except json.JSONDecodeError:
+                logging.error(f"Mensagem WS inválida: {message}")
+            except Exception as e:
+                logging.error(f"Erro ao processar comando WS: {e}", exc_info=True)
+    except websockets.exceptions.ConnectionClosed:
+        pass
+    finally:
+        CONNECTED_CLIENTS.remove(websocket)
+
+async def ws_server_main():
+    try:
+        async with websockets.serve(ws_handler, BIND_HOST, WS_PORT, max_size=None):
+            logging.info(f"WebSocket ativo em {BIND_HOST}:{WS_PORT}")
+            await asyncio.Future()
+    except OSError as e:
+        logging.error(f"Falha ao iniciar WebSocket: {e}", exc_info=True)
+
+async def broadcast_json(obj: Dict[str, Any]):
+    if not CONNECTED_CLIENTS:
+        return
+    obj["mysql_connected"] = mysql_connected
+    data = json.dumps(obj, separators=(",", ":"))
+    await asyncio.gather(*[ws.send(data) for ws in list(CONNECTED_CLIENTS)], return_exceptions=True)
+
+# ================== Binary Protocol & Serial ==================
+def crc16_ccitt(data: bytes) -> int:
+    crc = 0xFFFF
+    for b in data:
+        crc ^= b << 8
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x1021) if crc & 0x8000 else (crc << 1)
+    return crc & 0xFFFF
+
+def parse_data_packet(data: bytes) -> Optional[Dict[str, Any]]:
+    if len(data) != SIZE_DATA: return None
+    try:
+        magic, ver, pkt_type, t_ms, forca_N, status, crc_rx = struct.unpack("<HBBIfBxH", data)
+        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_DATA: return None
+        if crc16_ccitt(data[:-2]) != crc_rx:
+            logging.warning("CRC mismatch in DATA packet")
+            return None
+        return {"type": "data", "tempo": t_ms / 1000.0, "forca": float(forca_N), "status": status}
+    except struct.error: return None
+
+def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
+    if len(data) != SIZE_CONFIG: return None
+    try:
+        magic, ver, pkt_type = struct.unpack_from("<HBB", data, 0)
+        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_CONFIG: return None
+        if crc16_ccitt(data[:-2]) != struct.unpack_from("<H", data, SIZE_CONFIG - 2)[0]:
+            logging.warning("CRC mismatch in CONFIG packet")
+            return None
+        fields = struct.unpack_from("<ffHfHHBBHiffB23x", data, 4)
+        return {
+            "type": "config", "conversionFactor": fields[0], "gravity": fields[1],
+            "leiturasEstaveis": fields[2], "toleranciaEstabilidade": fields[3],
+            "numAmostrasMedia": fields[4], "numAmostrasCalibracao": fields[5],
+            "usarMediaMovel": fields[6], "usarEMA": fields[7], "timeoutCalibracao": fields[8],
+            "tareOffset": fields[9], "capacidadeMaximaGramas": fields[10],
+            "percentualAcuracia": fields[11], "mode": fields[12]
+        }
+    except struct.error: return None
+
+def parse_status_packet(data: bytes) -> Optional[Dict[str, Any]]:
+    if len(data) != SIZE_STATUS: return None
+    try:
+        magic, ver, pkt_type, status_type, code, value, timestamp, crc_rx = struct.unpack("<HBBBBHIH", data)
+        if magic != MAGIC or ver != VERSION or pkt_type != TYPE_STATUS: return None
+        if crc16_ccitt(data[:-2]) != crc_rx:
+            logging.warning("CRC mismatch in STATUS packet")
+            return None
+        type_map = {0: "info", 1: "success", 2: "warning", 3: "error"}
+        messages = {0x10: "Tara concluída", 0x11: "Calibração concluída", 0x12: "Calibração falhou"}
+        return {
+            "type": "status", "status": type_map.get(status_type, "info"),
+            "message": messages.get(code, f"Status code: {code:02X}"),
+            "code": code, "value": value, "timestamp": timestamp / 1000.0
+        }
+    except struct.error: return None
+
+def json_to_binary_command(cmd: Dict[str, Any]) -> Optional[bytes]:
+    cmd_type = cmd.get("cmd", "").lower()
+    pkt_type, fmt, values = None, None, None
+
+    if cmd_type in ("t", "tara"):
+        pkt_type, fmt, values = CMD_TARA, "<HBBH", (MAGIC, VERSION, CMD_TARA, 0)
+    elif cmd_type in ("c", "calibrate"):
+        massa_g = float(cmd.get("massa_g", 0))
+        if massa_g > 0:
+            pkt_type, fmt, values = CMD_CALIBRATE, "<HBBf", (MAGIC, VERSION, CMD_CALIBRATE, massa_g)
+    elif cmd_type == "get_config":
+        pkt_type, fmt, values = CMD_GET_CONFIG, "<HBBH", (MAGIC, VERSION, CMD_GET_CONFIG, 0)
+    elif cmd_type in ("set", "set_param"):
+        param_map = {"gravity": (0x01, "f"), "conversionFactor": (0x02, "f"), "leiturasEstaveis": (0x03, "I")}
+        param_name = cmd.get("param", "")
+        if param_name in param_map:
+            param_id, value_type = param_map[param_name]
+            value = cmd.get("value", 0)
+            value_f = float(value) if value_type == "f" else 0.0
+            value_i = int(value) if value_type != "f" else 0
+            pkt_type, fmt, values = CMD_SET_PARAM, "<HBBB3xfI", (MAGIC, VERSION, CMD_SET_PARAM, param_id, value_f, value_i)
+
+    if pkt_type and fmt and values:
+        data = struct.pack(fmt, *values)
+        crc = crc16_ccitt(data)
+        return data + struct.pack("<H", crc)
+    return None
+
+def find_serial_port() -> Optional[str]:
+    if os.path.exists(SERIAL_PORT): return SERIAL_PORT
+    ports = [p.device for p in serial.tools.list_ports.comports() if "USB" in p.device or "ACM" in p.device]
+    return ports[0] if ports else None
+
 def serial_reader(loop: asyncio.AbstractEventLoop):
-    """Reads binary packets from serial and broadcasts as JSON"""
     global serial_connection
-
     while True:
         port = find_serial_port()
         if not port:
-            logging.warning("Sem porta serial. Tentando novamente em 3s...")
             time.sleep(3)
             continue
-
         try:
-            logging.info(f"Abrindo serial {port} @ {SERIAL_BAUD}...")
             serial_connection = serial.Serial(port, SERIAL_BAUD, timeout=1.0)
-        except Exception as e:
-            logging.error(f"Falha ao abrir serial: {e}")
-            time.sleep(3)
-            continue
-
-        buf = bytearray()
-
-        try:
+            buf = bytearray()
             while True:
-                with serial_lock:
-                    chunk = serial_connection.read(256)
-
-                if not chunk:
-                    continue
-
+                chunk = serial_connection.read(256)
+                if not chunk: continue
                 buf.extend(chunk)
-                # logging.info(f"Serial buffer received: {chunk.hex()}") # Comentar para evitar log excessivo
-
-                # Try to parse packets
-                while len(buf) >= 8:  # Minimum packet size
-                    # Find MAGIC
-                    magic_idx = -1
-                    for i in range(len(buf) - 1):
-                        if buf[i] == (MAGIC & 0xFF) and buf[i+1] == ((MAGIC >> 8) & 0xFF):
-                            magic_idx = i
-                            break
-
+                while len(buf) >= 8:
+                    magic_idx = buf.find(b'')
                     if magic_idx == -1:
-                        # No magic found, keep last byte
-                        if len(buf) > 1:
-                            buf = buf[-1:]
+                        buf = buf[-1:]
                         break
-
-                    # Remove and LOG data before magic
                     if magic_idx > 0:
-                        discarded_data = bytes(buf[:magic_idx])
                         try:
-                            logging.info(f"Dados não-binários recebidos: {discarded_data.decode('utf-8').strip()}")
+                            logging.info(f"Dados não-binários: {buf[:magic_idx].decode().strip()}")
                         except UnicodeDecodeError:
-                            logging.warning(f"Dados não-binários (não-UTF8) descartados: {discarded_data}")
+                            pass
                         del buf[:magic_idx]
-
-                    # Check if we have enough bytes for header
-                    if len(buf) < 4:
-                        break
-
-                    # Read packet type
+                    
+                    if len(buf) < 4: break
                     pkt_type = buf[3]
-
-                    # Determine packet size
-                    size_map = {
-                        TYPE_DATA: SIZE_DATA,
-                        TYPE_CONFIG: SIZE_CONFIG,
-                        TYPE_STATUS: SIZE_STATUS
-                    }
-
+                    size_map = {TYPE_DATA: SIZE_DATA, TYPE_CONFIG: SIZE_CONFIG, TYPE_STATUS: SIZE_STATUS}
                     expected_size = size_map.get(pkt_type)
-                    if not expected_size:
-                        # Unknown type, skip this magic
-                        del buf[:2]
-                        continue
+                    if not expected_size or len(buf) < expected_size: break
 
-                    # Wait for complete packet
-                    if len(buf) < expected_size:
-                        break
-
-                    # Extract packet
                     packet = bytes(buf[:expected_size])
                     del buf[:expected_size]
 
-                    # Parse packet
-                    json_obj = None
-                    if pkt_type == TYPE_DATA:
-                        json_obj = parse_data_packet(packet)
-                    elif pkt_type == TYPE_CONFIG:
-                        json_obj = parse_config_packet(packet)
-                        if json_obj:
-                            logging.info("CONFIG packet recebido")
-                    elif pkt_type == TYPE_STATUS:
-                        json_obj = parse_status_packet(packet)
-
-                    # Broadcast as JSON
-                    if json_obj:
+                    parsers = {TYPE_DATA: parse_data_packet, TYPE_CONFIG: parse_config_packet, TYPE_STATUS: parse_status_packet}
+                    if pkt_type in parsers and (json_obj := parsers[pkt_type](packet)):
                         asyncio.run_coroutine_threadsafe(broadcast_json(json_obj), loop)
-                    else:
-                        logging.warning(f"Failed to parse packet type {pkt_type:02X}")
-
-                # Prevent buffer overflow
-                if len(buf) > 1024:
-                    logging.warning("Buffer muito grande, limpando...")
-                    buf = buf[-256:]
-
         except Exception as e:
             logging.error(f"Erro de leitura serial: {e}")
         finally:
-            try:
-                serial_connection.close()
-            except:
-                pass
+            if serial_connection: serial_connection.close()
             serial_connection = None
             time.sleep(1)
 
@@ -691,17 +568,13 @@ async def main():
         init_mysql_db()
         httpd = start_http_server()
         loop = asyncio.get_running_loop()
-        t = threading.Thread(target=serial_reader, args=(loop,), daemon=True)
-        t.start()
+        threading.Thread(target=serial_reader, args=(loop,), daemon=True).start()
         await ws_server_main()
     except OSError as e:
-        if e.errno == 98:
-            logging.error(f"Porta {HTTP_PORT} ou {WS_PORT} já está em uso. Encerrando.")
-        else:
-            raise
+        if e.errno == 98: logging.error("Porta já em uso.")
+        else: raise
     finally:
-        if httpd:
-            httpd.shutdown()
+        if httpd: httpd.shutdown()
         if mysql_connection and mysql_connection.open:
             mysql_connection.close()
             logging.info("Conexão MySQL fechada.")

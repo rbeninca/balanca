@@ -243,7 +243,8 @@
 
           <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
           <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
-            Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.</p>
+            Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.
+          </p>
           <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;">
           <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;">
           <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;">
@@ -251,21 +252,6 @@
           </button>
         </div>
         <div id="lista-gravacoes" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-      </div>
-        
-        <hr style="border: 0; border-top: 1px solid var(--cor-borda); margin: 2rem 0;">
-
-        <div id="db-sessions-section">
-          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Sessões Salvas no Banco de Dados</h2>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">
-            Sessões persistidas no banco de dados MySQL.
-          </p>
-          <button onclick="fetchAndDisplayDbSessions()" class="btn btn-info">Buscar Sessões no DB</button>
-          <div id="lista-sessoes-db" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-            <!-- As sessões do DB serão listadas aqui -->
-          </div>
-        </div>
-
       </div>
       <div id="abaConexao" class="tabcontent">
         <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Configurações de Conexão</h2>
@@ -287,7 +273,6 @@
       <h3 style="font-size: 1rem; font-weight: 700; margin: 0; color: #ecf0f1;">GFIG 🚀 - Balança Serial</h3>
       <div class="status-conexao" style="display: flex; align-items: center; gap: .5rem;">
         <div id="ws-indicator" title="Desconectado"></div><span id="ws-text" style="color: #ecf0f1;">Desconectado</span>
-        <div id="mysql-indicator" title="MySQL Desconectado" style="width: 10px; height: 10px; border-radius: 50%; background-color: gray; display: inline-block; margin-left: 5px;"></div>
       </div>
       <div id="balanca-status-line" style="text-align: center; font-weight: 600; color: #ecf0f1; margin: 0;">Status: <span id="balanca-status" style="color: var(--cor-primaria);">...</span></div>
       <span style="font-weight: bold;">⚡ ATALHOS:</span>

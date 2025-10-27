@@ -62,6 +62,7 @@ function connectWebSocket() {
     }
     
     console.log(`[Worker] 🔄 Attempting to connect WebSocket to: ${finalWsURL}`);
+    self.postMessage({ type: 'debug', message: `Attempting WS connect to: ${finalWsURL}` });
 
     try {
         socket = new WebSocket(finalWsURL);
@@ -74,6 +75,7 @@ function connectWebSocket() {
     socket.onopen = () => {
         console.log(`[Worker] ✅ WebSocket CONECTADO! Estado: ${socket.readyState}, URL: ${socket.url}`);
         self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao Gateway Serial (Host)' });
+        self.postMessage({ type: 'debug', message: `WebSocket connected to: ${socket.url}` });
     };
 
     socket.onclose = (event) => {
@@ -336,10 +338,6 @@ self.onmessage = (e) => {
                 commandToSend.param = param;
                 commandToSend.value = paramValue;
                 console.log(`[Worker] ✅ Comando SET_PARAM montado:`, commandToSend);
-            }
-            else if (payload.cmd === 'fetch_sessions_from_mysql') { // NEW: Handle fetch sessions command
-                commandToSend.cmd = 'fetch_sessions_from_mysql';
-                console.log('[Worker] ✅ Comando FETCH_SESSIONS_FROM_MYSQL identificado');
             }
             else {
                 console.warn(`[Worker] ⚠️ Comando desconhecido da UI:`, payload);

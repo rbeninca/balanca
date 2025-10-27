@@ -1,3 +1,4 @@
+
 // --- Variáveis Globais da UI ---
 let chart;
 let dataWorker;
@@ -15,7 +16,6 @@ let originalChartContainer = null; // New global variable to store original pare
 let originalChartSessionControlsContainer = null; // New global variable for session controls
 let originalChartControlsParent = null; // Parent of the specific chart controls
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
-let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -44,8 +44,8 @@ window.onload = () => {
   initializeApexChart(); // NOVA FUNÇÃO DE GRÁFICO
   setDisplayUnit('kgf');
   setChartMode('deslizante');
+  carregarGravacoesComImpulso();
   conectarWorker();
-  setInterval(() => dataWorker.postMessage({ type: 'solicitarDados' }), 200);
   setInterval(updateReadingsPerSecond, 1000);
   addNoiseControlsToUI();
   inicializarAudioContext();
@@ -77,7 +77,7 @@ window.onload = () => {
       const newValue = parseInt(event.target.value);
       if (!isNaN(newValue) && newValue > 0) {
         MAX_DATA_POINTS = newValue;
-        showNotification('info', 'Número máximo de pontos atualizado para ' + MAX_DATA_POINTS + '.');
+        showNotification('info', `Número máximo de pontos atualizado para ${MAX_DATA_POINTS}.`);
         // Optionally, trim existing data if new limit is smaller
         if (rawDataN.length > MAX_DATA_POINTS) {
           rawDataN = rawDataN.slice(rawDataN.length - MAX_DATA_POINTS);
@@ -127,7 +127,7 @@ function setupWebSocketUrl() {
         if (location.port === '5500' || defaultHost === '127.0.0.1') {
             defaultHost = 'localhost';
         }
-        wsUrlInput.value = 'ws://' + defaultHost + ':81';
+        wsUrlInput.value = `ws://${defaultHost}:81`;
     }
 }
 
@@ -268,10 +268,7 @@ function setChartMode(mode) {
   isChartPaused = (mode === 'pausado');
 }
 
-function toggleChartPause(setPaused = null) {
-  if (setPaused !== null) {
-    isChartPaused = false;
-  }
+function toggleChartPause() {
   if (isChartPaused) {
     setChartMode('deslizante');
     showNotification('info', 'Gráfico retomado (Deslizante). (Atalho: P)');
@@ -301,15 +298,6 @@ function conectarWorker() {
 
 function handleWorkerMessage(event) {
   const { type, payload, status, message } = event.data;
-  let currentSessionId = null; // Declare it here
-  let notificationMessage = message; // Use a new variable for notification message
-
-  // Extract sessionId and update notificationMessage for specific cases
-  if (type === 'mysql_save_success' || type === 'mysql_save_error') {
-      currentSessionId = payload.sessionId;
-      notificationMessage = payload.message; // Update message for notification
-  }
-
   switch (type) {
     case 'dadosDisponiveis':
       payload.forEach(updateUIFromData);
@@ -322,41 +310,22 @@ function handleWorkerMessage(event) {
       updateConfigForm(payload);
       break;
     case 'status':
-      document.getElementById('balanca-status').textContent = notificationMessage || status; // Use notificationMessage
+      document.getElementById('balanca-status').textContent = message || status;
+      // Apenas atualiza o indicador de conexão principal para status reais de conexão
       if (status === 'connected' || status === 'disconnected') {
         updateConnectionStatus(status === 'connected');
       }
-      if (notificationMessage) { // Use notificationMessage
+      if (message) {
         const notificationType = (status === 'error' || status === 'disconnected') ? 'error' : 'info';
-        showNotification(notificationType, notificationMessage);
+        showNotification(notificationType, message);
       }
-      verificarStatusEstabilizacao(notificationMessage); // Use notificationMessage
+      verificarStatusEstabilizacao(message);
       break;
-    case 'mysql_status_update': // NEW: Handle MySQL status updates
-      isMysqlConnected = payload;
-      updateMysqlIndicator(isMysqlConnected);
-      break;
-    case 'mysql_save_success':
-      showNotification('success', `Sessão "${notificationMessage}" salva no MySQL!`); // Use notificationMessage
-      loadAndDisplayAllSessions(); // Re-render the list
-      break;
-    case 'mysql_save_error':
-      showNotification('error', `Erro ao salvar sessão "${notificationMessage}" no MySQL.`); // Use notificationMessage
-      break;
-    case 'debug':
-      console.log("[Worker Debug]:", message);
+    case 'error':
+      showNotification("error", message || "Erro desconhecido no worker");
       break;
     default:
       console.warn("Mensagem desconhecida do worker:", event.data);
-  }
-}
-
-// NEW: Function to update the MySQL UI indicator
-function updateMysqlIndicator(connected) {
-  const indicator = document.getElementById('mysql-indicator');
-  if (indicator) {
-    indicator.style.backgroundColor = connected ? '#27ae60' : 'gray'; // Green for connected, gray for disconnected
-    indicator.title = connected ? 'MySQL Conectado' : 'MySQL Desconectado';
   }
 }
 
@@ -365,18 +334,8 @@ function sendCommandToWorker(command, value = null) {
     showNotification("error", "Worker não está conectado.");
     return;
   }
-  // NEW: Always send a JSON object as payload to the worker
-  const messagePayload = { cmd: command };
-  if (value !== null) {
-      // For 'save_session_to_mysql', value is the entire session object
-      if (command === 'save_session_to_mysql') {
-          messagePayload.sessionData = value;
-      } else {
-          // For other commands, value is a simple parameter
-          messagePayload.value = value;
-      }
-  }
-  dataWorker.postMessage({ type: 'sendCommand', payload: messagePayload });
+  const message = value !== null ? `${command}:${value}` : command;
+  dataWorker.postMessage({ type: 'sendCommand', payload: message });
 }
 
 // --- Atualização da UI ---
@@ -407,7 +366,7 @@ function updateUIFromData(dado) {
   document.getElementById('forca-atual').textContent = displayForce.toFixed(3);
   document.getElementById('forca-ems').textContent = emaDisplay.toFixed(3);
   document.getElementById('forca-maxima').textContent = maxDisplayForce.toFixed(3);
-  document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
+  document.getElementById('forca-minima').textContent = `mín: ${minDisplayForce.toFixed(3)}`;
 
   rawDataN.push([tempo, forcaFiltrada]);
   
@@ -427,7 +386,7 @@ function updateUIFromData(dado) {
     const tbody = document.getElementById("tabela").querySelector("tbody");
     const linha = tbody.insertRow(0);
     const agora = new Date();
-    const timestamp = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR') + '.' + String(agora.getMilliseconds()).padStart(3, '0');
+    const timestamp = `${agora.toLocaleDateString('pt-BR')} ${agora.toLocaleTimeString('pt-BR')}.${String(agora.getMilliseconds()).padStart(3, '0')}`;
 
     linha.insertCell(0).innerText = timestamp;
     linha.insertCell(1).innerText = tempo;
@@ -511,7 +470,7 @@ function calibrar() {
   const massa = parseFloat(document.getElementById("massaCalibracao").value);
   if (!isNaN(massa) && massa > 0) {
     sendCommandToWorker("c", massa);
-    showNotification('info', 'Comando de calibração com ' + massa + 'g enviado. (Atalho: Shift + C)');
+    showNotification('info', `Comando de calibração com ${massa}g enviado. (Atalho: Shift + C)`);
     // Request config update after calibration
     setTimeout(() => sendCommandToWorker('get_config'), 1000); 
   } else {
@@ -537,7 +496,7 @@ async function salvarParametros() {
       if (!isNaN(valueNum)) {
         // Envia um comando de cada vez com um pequeno atraso
         await new Promise(resolve => setTimeout(resolve, 100)); 
-        sendCommandToWorker('set_param:' + key + ':' + valueNum);
+        sendCommandToWorker(`set_param:${key}:${valueNum}`);
       }
     }
   }
@@ -570,22 +529,18 @@ function iniciarSessao() {
     clearChart(); 
     document.getElementById("tabela").querySelector("tbody").innerHTML = '';
     isSessionActive = true;
-    showNotification('success', 'Sessão "' + nomeSessaoInput.value + '" iniciada.');
+    showNotification('success', `Sessão "${nomeSessaoInput.value}" iniciada.`);
     document.getElementById('btn-iniciar-sessao').disabled = true;
     nomeSessaoInput.disabled = true;
     document.getElementById('btn-encerrar-sessao').disabled = false;
 }
 
-async function encerrarSessao() {
+function encerrarSessao() {
     if (!isSessionActive) return;
     const nomeSessao = document.getElementById('nome-sessao').value.trim();
     const tabela = document.getElementById("tabela").querySelector("tbody");
     if (tabela.rows.length > 0) {
-        const gravacao = await salvarDadosDaSessao(nomeSessao, tabela); // Modified to await
-        if (gravacao && isMysqlConnected) {
-            showNotification('info', 'Enviando sessão "' + gravacao.nome + '" para o MySQL...');
-            sendCommandToWorker('save_session_to_mysql', gravacao); // Save to DB via worker
-        }
+        salvarDadosDaSessao(nomeSessao, tabela);
     } else {
         showNotification('info', 'Nenhum dado foi gravado. Nada foi salvo.');
     }
@@ -597,7 +552,7 @@ async function encerrarSessao() {
     document.getElementById('btn-encerrar-sessao').disabled = true;
 }
 
-async function salvarDadosDaSessao(nome, tabela) {
+function salvarDadosDaSessao(nome, tabela) {
     const dadosTabela = Array.from(tabela.rows).map(linha => ({
         timestamp: linha.cells[0].innerText,
         tempo_esp: linha.cells[1].innerText,
@@ -618,19 +573,17 @@ async function salvarDadosDaSessao(nome, tabela) {
 
     const gravacao = {
         id: Date.now(), nome, timestamp: new Date().toISOString(),
-        dadosTabela, metadadosMotor,
-        savedToMysql: isMysqlConnected // Mark as saved to MySQL if connected
+        dadosTabela, metadadosMotor
     };
 
     try {
         let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
         gravacoes.push(gravacao);
         localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
-        showNotification('success', 'Sessão "' + nome + '" salva localmente!');
-        return gravacao; // Return the saved session
+        showNotification('success', `Sessão "${nome}" salva!`);
+        carregarGravacoesComImpulso();
     } catch (e) {
         showNotification('error', 'Erro ao salvar. O Local Storage pode estar cheio.');
-        return null;
     }
 }
 
@@ -643,8 +596,6 @@ function abrirAba(element, abaID) {
   if (abaID === 'abaControles') {
     el.classList.add('config-loading'); // Add loading class
     sendCommandToWorker('get_config');
-  } else if (abaID === 'abaGravacoes') {
-    loadAndDisplayAllSessions(); // Load all sessions (local and DB)
   }
   el.style.display = "block";
   el.classList.add('active');
@@ -654,7 +605,7 @@ function abrirAba(element, abaID) {
 function showNotification(type, message, duration = 5000) {
   const area = document.getElementById('notification-area');
   const notification = document.createElement('div');
-  notification.className = 'notification ' + type;
+  notification.className = `notification ${type}`;
   notification.innerHTML = message;
   area.prepend(notification);
   setTimeout(() => {
@@ -676,7 +627,7 @@ function atualizarToleranciaEmGramas() {
   const fatorConversao = parseFloat(document.getElementById("param-conversao").value);
   const el = document.getElementById("tolerancia-em-gramas");
   if (el && !isNaN(toleranciaBruta) && !isNaN(fatorConversao) && fatorConversao !== 0) {
-    el.textContent = '≈ ' + (toleranciaBruta / fatorConversao).toFixed(3) + ' gf';
+    el.textContent = `≈ ${(toleranciaBruta / fatorConversao).toFixed(3)} gf`;
   }
 }
 
@@ -684,7 +635,7 @@ function atualizarCapacidadeEmKg() {
   const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima").value);
   const el = document.getElementById("capacidade-em-kg");
   if (el && !isNaN(capacidadeGramas)) {
-    el.textContent = '≈ ' + (capacidadeGramas / 1000).toFixed(2) + ' kg';
+    el.textContent = `≈ ${(capacidadeGramas / 1000).toFixed(2)} kg`;
   }
 }
 
@@ -693,7 +644,7 @@ function atualizarErroAbsoluto() {
   const percentAcuracia = parseFloat(document.getElementById("param-acuracia").value);
   const el = document.getElementById("erro-absoluto");
   if (el && !isNaN(capacidadeGramas) && !isNaN(percentAcuracia)) {
-    el.textContent = 'Erro: ±' + (capacidadeGramas * percentAcuracia).toFixed(2) + ' g';
+    el.textContent = `Erro: ±${(capacidadeGramas * percentAcuracia).toFixed(2)} g`;
   }
 }
 
@@ -723,13 +674,13 @@ function atualizarStatusFiltros() {
   
   const infoZonaMorta = document.getElementById('info-zona-morta');
   if (infoZonaMorta) {
-    infoZonaMorta.textContent = filtroZonaMortaAtivo ? '✓ Zona Morta (±' + erroAbsoluto.toFixed(2) + 'g)' : '✗ Zona Morta';
+    infoZonaMorta.textContent = filtroZonaMortaAtivo ? `✓ Zona Morta (±${erroAbsoluto.toFixed(2)}g)` : `✗ Zona Morta`;
     infoZonaMorta.style.color = filtroZonaMortaAtivo ? '#27ae60' : '#95a5a6';
   }
   
   const infoArredondamento = document.getElementById('info-arredondamento');
   if (infoArredondamento) {
-    infoArredondamento.textContent = arredondamentoInteligenteAtivo ? '✓ Arredondamento (' + casasDecimais + ' casas)' : '✗ Arredondamento';
+    infoArredondamento.textContent = arredondamentoInteligenteAtivo ? `✓ Arredondamento (${casasDecimais} casas)` : `✗ Arredondamento`;
     infoArredondamento.style.color = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
   }
 }
@@ -737,7 +688,7 @@ function atualizarStatusFiltros() {
 function toggleFiltroZonaMorta() {
   filtroZonaMortaAtivo = !filtroZonaMortaAtivo;
   const btn = document.getElementById('btn-zona-morta');
-  btn.textContent = 'Zona Morta: ' + (filtroZonaMortaAtivo ? 'ON' : 'OFF');
+  btn.textContent = `Zona Morta: ${filtroZonaMortaAtivo ? 'ON' : 'OFF'}`;
   btn.style.background = filtroZonaMortaAtivo ? '#27ae60' : '#95a5a6';
   atualizarStatusFiltros();
 }
@@ -745,7 +696,7 @@ function toggleFiltroZonaMorta() {
 function toggleArredondamentoInteligente() {
   arredondamentoInteligenteAtivo = !arredondamentoInteligenteAtivo;
   const btn = document.getElementById('btn-arredondamento');
-  btn.textContent = 'Arredondar: ' + (arredondamentoInteligenteAtivo ? 'ON' : 'OFF');
+  btn.textContent = `Arredondar: ${arredondamentoInteligenteAtivo ? 'ON' : 'OFF'}`;
   btn.style.background = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
   atualizarStatusFiltros();
 }
@@ -754,7 +705,7 @@ function toggleAntiNoising() {
   antiNoisingAtivo = !antiNoisingAtivo;
   const btn = document.getElementById('btn-anti-noising');
   if (antiNoisingAtivo) {
-    btn.textContent = 'Anti-Noising: ON';
+    btn.textContent = `Anti-Noising: ON`;
     btn.classList.add('btn-sucesso');
   } else {
     btn.textContent = 'Anti-Noising: OFF';
@@ -788,7 +739,7 @@ function startNoiseAnalysis() {
   showNotification('info', 'Analisando ruído... Mantenha a balança VAZIA e ESTÁVEL por 5 segundos!', 5000);
   setTimeout(() => {
     isStabilityMode = false;
-    showNotification('success', '✅ Ruído calibrado!');
+    showNotification('success', `✅ Ruído calibrado!`);
   }, 5000);
 }
 
@@ -816,7 +767,7 @@ function inicializarAudioContext() {
 function toggleAvisosAudio() {
   avisosAudioAtivados = document.getElementById('audio-avisos').checked;
   if (avisosAudioAtivados && audioContext?.state === 'suspended') audioContext.resume();
-  showNotification('info', '🔊 Avisos sonoros ' + (avisosAudioAtivados ? 'ativados' : 'desativados'));
+  showNotification('info', `🔊 Avisos sonoros ${avisosAudioAtivados ? 'ativados' : 'desativados'}`);
 }
 
 function tocarBeep(freq = 800, dur = 100, vol = 0.2) {
@@ -886,7 +837,7 @@ function toggleDataLabels() {
       enabled: isDataLabelsEnabled,
       offsetY: -10, // Move labels slightly above the points
       style: {
-        fontSize: '10px',
+        fontSize: '10px', // Smaller font size
       },
       formatter: function (val) {
         return val.toFixed(6) + ' ' + displayUnit;
@@ -933,7 +884,7 @@ function toggleChartDisplayMode() {
       size: markerSize
     }
   });
-  showNotification('info', 'Modo de exibição do gráfico: ' + btnText.replace('Modo: ', '') + '.');
+  showNotification('info', `Modo de exibição do gráfico: ${btnText.replace('Modo: ', '')}.`);
 }
 
 function setInterpolation(curve) {
@@ -1036,8 +987,8 @@ function toggleGrid() {
     }
   });
   const btn = document.getElementById('btn-toggle-grid');
-  btn.textContent = 'Grade: ' + (isGridEnabled ? 'ON' : 'OFF');
-  showNotification('info', 'Grade do gráfico: ' + (isGridEnabled ? 'ON' : 'OFF') + '.');
+  btn.textContent = `Grade: ${isGridEnabled ? 'ON' : 'OFF'}`;
+  showNotification('info', `Grade do gráfico: ${isGridEnabled ? 'ON' : 'OFF'}.`);
 }
 
 function setYAxisRange(mode) {
@@ -1067,595 +1018,4 @@ function setYAxisRange(mode) {
       }
     });
   }
-}
-
-// --- Funções de Sessão (Local Storage e DB) ---
-
-async function fetchDbSessions() {
-  try {
-    const response = await fetch('/api/sessoes');
-    if (!response.ok) {
-      throw new Error('Erro na rede: ' + response.statusText);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Erro ao buscar sessões do DB:', error);
-    showNotification('error', 'Não foi possível buscar as sessões do banco de dados.');
-    return [];
-  }
-}
-
-async function loadAndDisplayAllSessions() {
-  const listaGravacoesDiv = document.getElementById('lista-gravacoes');
-  listaGravacoesDiv.innerHTML = '<p>Carregando sessões...</p>';
-
-  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  const dbSessions = await fetchDbSessions();
-
-  const allSessionsMap = new Map();
-
-  localSessions.forEach(session => {
-    allSessionsMap.set(session.id, { ...session, source: 'local', inLocal: true });
-  });
-
-  dbSessions.forEach(dbSession => {
-    const existingSession = allSessionsMap.get(dbSession.id);
-    if (existingSession) {
-      allSessionsMap.set(dbSession.id, { ...existingSession, ...dbSession, source: 'both', inDb: true });
-    } else {
-      allSessionsMap.set(dbSession.id, { ...dbSession, source: 'db', inDb: true });
-    }
-  });
-
-  const combinedSessions = Array.from(allSessionsMap.values()).sort((a, b) => b.id - a.id);
-
-  if (combinedSessions.length === 0) {
-    listaGravacoesDiv.innerHTML = '<p>Nenhuma gravação encontrada (local ou no banco de dados).</p>';
-    return;
-  }
-
-  listaGravacoesDiv.innerHTML = combinedSessions.map(session => {
-    const sourceIcons = `${session.inLocal ? '<span title="Salvo Localmente" style="margin-right: 5px;">💾</span>' : ''}${session.inDb ? '<span title="Salvo no Banco de Dados" style="margin-right: 5px;">☁️</span>' : ''}`;
-    const dataInicio = new Date(session.data_inicio || session.timestamp).toLocaleString('pt-BR');
-    
-    let impulsoTotal = 'N/A';
-    let motorClass = 'N/A';
-    let classColor = '#95a5a6'; // Default gray color
-
-    if (session.dadosTabela && session.dadosTabela.length > 0) {
-        const dados = processarDadosSimples(session.dadosTabela);
-        const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
-        const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
-        impulsoTotal = impulsoData.impulsoTotal.toFixed(2);
-        motorClass = metricasPropulsao.classificacaoMotor.classe;
-        classColor = metricasPropulsao.classificacaoMotor.cor; // Get color from classification
-    }
-
-    return `
-      <div class="card-gravacao" style="display: flex; justify-content: space-between; align-items: center; background: var(--cor-fundo-card); padding: 15px; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px; margin-bottom: 10px; border-left: 5px solid ${classColor};" id="session-${session.id}">
-        <div>
-            <p style="font-weight: 600; margin-bottom: 5px;">${sourceIcons}${session.nome} <span style="font-size: 0.75rem; background: ${classColor}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${motorClass}</span></p> 
-            <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
-                ${dataInicio} • Impulso Total: ${impulsoTotal} N⋅s
-            </p>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button onclick="visualizarSessao(${session.id}, '${session.source}')" title="Carregar para Análise/Gráfico" class="btn btn-info">️ Ver</button>
-            <button onclick="exportarPNG(${session.id}, '${session.source}')" title="Exportar Gráfico em PNG" class="btn btn-primario">️ PNG</button>
-            <button onclick="gerarRelatorioPdf(${session.id}, '${session.source}')" title="Exportar Relatório PDF" class="btn btn-secundario"> PDF</button>
-            <button onclick="exportarJSON(${session.id}, '${session.source}')" title="Exportar Dados em JSON" class="btn btn-sucesso"> JSON</button>
-            <button onclick="exportarCSV(${session.id}, '${session.source}')" title="Exportar Dados em CSV" class="btn btn-sucesso"> CSV</button>
-            <button onclick="exportarEng(${session.id}, '${session.source}')" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso"> ENG</button>
-           
-              ${session.inLocal && !session.inDb
-          ? `<button class="btn btn-info btn-small"
-                ${!isMysqlConnected ? 'disabled title="MySQL desconectado"' : ''}
-                onclick="salvarNoDB(${session.id})">
-                Salvar DB
-             </button>`
-          : ''}
-
-        ${session.inDb && !session.inLocal
-          ? `<button class="btn btn-info btn-small"
-                onclick="salvarNoLocalStorage(${session.id})">
-                Salvar Local
-             </button>`
-          : ''}
-
-        ${session.inLocal ? `<button class="btn btn-perigo btn-small" onclick="deleteLocalSession(${session.id})">Excluir Local</button>` : ''}
-        ${session.inDb ? `<button class="btn btn-perigo btn-small" onclick="deleteDbSession(${session.id})">Excluir DB</button>` : ''}
-        </div>
-      </div>
-    `;
-    
-  }).join('');
-}
-
-
-
-function salvarNoLocalStorage(sessionId) {
-  saveDbSessionToLocal(sessionId);
-}
-
-function salvarNoDB(sessionId) {
-  saveLocalSessionToDb(sessionId);
-}
-
-async function exportarPNG(sessionId, source) {
-    showNotification('info', 'Gerando imagem do gráfico...');
-    const session = await getSessionDataForExport(sessionId, source);
-    if (!session) {
-        showNotification('error', 'Sessão não encontrada para exportar PNG.');
-        return;
-    }
-
-    const chartData = session.dadosTabela.map(d => [d.tempo_esp, d.newtons]);
-
-    // Create a temporary, off-screen div to render the chart
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.width = '800px';
-    tempDiv.style.height = '600px';
-    document.body.appendChild(tempDiv);
-
-    const tempChartOptions = {
-        series: [{ name: 'Força', data: chartData }],
-        chart: { type: 'line', height: '100%', width: '100%', background: '#fff' },
-        title: { text: 'Gráfico da Sessão: ' + session.nome, align: 'center' },
-        xaxis: { title: { text: 'Tempo (s)' } },
-        yaxis: { title: { text: 'Força (N)' } }
-    };
-
-    const tempChart = new ApexCharts(tempDiv, tempChartOptions);
-    
-    tempChart.render().then(() => {
-        tempChart.dataURI().then(({ imgURI }) => {
-            const a = document.createElement('a');
-            a.href = imgURI;
-            a.download = 'grafico_' + session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            tempChart.destroy();
-            document.body.removeChild(tempDiv);
-            showNotification('success', 'Gráfico exportado como PNG!');
-        });
-    });
-}
-
-async function exportarJSON(sessionId, source) {
-    const session = await getSessionDataForExport(sessionId, source);
-    if (!session) {
-        showNotification('error', 'Sessão não encontrada para exportar JSON.');
-        return;
-    }
-
-    const jsonContent = JSON.stringify(session, null, 2);
-    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotification('success', 'Arquivo JSON para "' + session.nome + '" gerado!');
-}
-
-
-async function getSessionDataForExport(sessionId, source) {
-  let sessionData = null;
-  if (source === 'local' || source === 'both') {
-    const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-    sessionData = localSessions.find(s => s.id === sessionId);
-  }
-  
-  if (!sessionData && (source === 'db' || source === 'both')) { // Try DB if local not found or explicitly DB
-    try {
-      const dbSessionResponse = await fetch('/api/sessoes');
-      if (!dbSessionResponse.ok) throw new Error('Falha ao carregar detalhes da sessão do DB para exportação.');
-      const allDbSessions = await dbSessionResponse.json();
-      const dbSession = allDbSessions.find(s => s.id === sessionId);
-
-      if (dbSession) {
-        const readingsResponse = await fetch('/api/sessoes/' + sessionId + '/leituras');
-        if (!readingsResponse.ok) throw new Error('Falha ao carregar leituras do DB para exportação.');
-        const dbReadings = await readingsResponse.json();
-
-        sessionData = {
-          id: dbSession.id,
-          nome: dbSession.nome,
-          timestamp: dbSession.data_inicio,
-          dadosTabela: dbReadings.map(r => ({
-            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
-            tempo_esp: r.tempo,
-            newtons: r.forca,
-            grama_forca: (r.forca / 9.80665 * 1000),
-            quilo_forca: (r.forca / 9.80665)
-          })),
-          metadadosMotor: {},
-          savedToMysql: true
-        };
-      }
-    } catch (error) {
-      console.error('Erro ao buscar sessão do DB para exportação:', error);
-      showNotification('error', 'Erro ao carregar sessão ' + sessionId + ' do DB para exportação.');
-      return null;
-    }
-  }
-  return sessionData;
-}
-// Visualiza uma sessão salva (gráfico + tabela) garantindo eixo X numérico e ordenado
-async function visualizarSessao(sessionId) {
-  try {
-    // 1) Obter sessão (LocalStorage → API)
-    const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes') || '[]');
-    let sessao = gravacoes.find(g => String(g.id) === String(sessionId));
-
-    if (!sessao) {
-      // Fallback para backend (se disponível)
-      try {
-        const resp = await fetch(`/api/sessoes/${sessionId}`, { cache: 'no-store' });
-        if (resp.ok) sessao = await resp.json();
-      } catch (e) {
-        /* ignora, será tratado abaixo se sessao ficar undefined */
-      }
-    }
-
-    if (!sessao || !Array.isArray(sessao.dadosTabela) || sessao.dadosTabela.length === 0) {
-      showNotification('error', 'Sessão não encontrada ou sem dados.');
-      return;
-    }
-
-    // 2) Normalizar → [tempo: number, newtons: number], filtrar NaN e ORDENAR por tempo
-    const parsed = sessao.dadosTabela
-      .map(l => [Number(l.tempo_esp), Number(l.newtons)])
-      .filter(([t, f]) => Number.isFinite(t) && Number.isFinite(f))
-      .sort((a, b) => a[0] - b[0]);
-
-    if (parsed.length < 2) {
-      showNotification('error', 'Dados insuficientes para plotagem.');
-      return;
-    }
-
-    // 3) Atualizar buffers internos e estatísticas
-    rawDataN = parsed.map(([t, f]) => [t, f]); // mantém base em Newtons
-    maxForceInN = Math.max(...parsed.map(p => p[1]));
-    minForceInN = Math.min(...parsed.map(p => p[1]));
-
-    // 4) Atualizar gráfico (convertendo para a unidade atual de exibição)
-    const displayData = parsed.map(([t, f]) => [t, convertForce(f, displayUnit)]);
-    chart.updateSeries([{ data: displayData }]);
-
-    // 5) Atualizar textos de métricas no header, se existirem
-    const forceNow = parsed[parsed.length - 1][1];
-    const displayForceNow = convertForce(forceNow, displayUnit);
-    const maxDisplayForce = convertForce(maxForceInN, displayUnit);
-    const minDisplayForce = convertForce(minForceInN, displayUnit);
-
-    const elAtual = document.getElementById('forca-atual');
-    const elEms   = document.getElementById('forca-ems');
-    const elMax   = document.getElementById('forca-maxima');
-    const elMin   = document.getElementById('forca-minima');
-
-    if (elAtual) elAtual.textContent = displayForceNow.toFixed(3);
-    if (elEms)   elEms.textContent   = displayForceNow.toFixed(3); // não recomputa EMA aqui
-    if (elMax)   elMax.textContent   = maxDisplayForce.toFixed(3);
-    if (elMin)   elMin.textContent   = `mín: ${minDisplayForce.toFixed(3)}`;
-
-    // 6) Repopular a tabela
-    const tbody = document.querySelector('#tabela tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      // Evita travar a UI em sessões muito grandes — renderiza em blocos
-      const renderChunk = (startIdx, chunkSize = 1000) => {
-        const end = Math.min(startIdx + chunkSize, parsed.length);
-        const frag = document.createDocumentFragment();
-
-        for (let i = startIdx; i < end; i++) {
-          const [t, N] = parsed[i];
-          const gf = (N / 9.80665) * 1000;
-          const kgf = (N / 9.80665);
-
-          const tr = document.createElement('tr');
-          const ts = (sessao.dadosTabela[i] && sessao.dadosTabela[i].timestamp) || '';
-
-          const tdTs   = document.createElement('td'); tdTs.textContent   = ts;
-          const tdT    = document.createElement('td'); tdT.textContent    = t.toFixed(3);
-          const tdN    = document.createElement('td'); tdN.textContent    = N.toFixed(6);
-          const tdGf   = document.createElement('td'); tdGf.textContent   = gf.toFixed(3);
-          const tdKgf  = document.createElement('td'); tdKgf.textContent  = kgf.toFixed(6);
-
-          tr.appendChild(tdTs);
-          tr.appendChild(tdT);
-          tr.appendChild(tdN);
-          tr.appendChild(tdGf);
-          tr.appendChild(tdKgf);
-          frag.appendChild(tr);
-        }
-
-        tbody.appendChild(frag);
-
-        if (end < parsed.length) {
-          // Próximo bloco na próxima iteração do event loop
-          setTimeout(() => renderChunk(end, chunkSize), 0);
-        }
-      };
-
-      renderChunk(0);
-    }
-
-    // 7) Ajustes visuais/UX
-    // Garantir que a aba do gráfico esteja ativa para o usuário ver o resultado
-    const btnAbaGrafico = document.getElementById('padrao');
-    if (btnAbaGrafico && typeof abrirAba === 'function') {
-      abrirAba(btnAbaGrafico, 'abaGrafico');
-    }
-
-    // Atualiza range do eixo Y para "auto" por padrão ao visualizar sessão
-    if (typeof setYAxisRange === 'function') {
-      setYAxisRange('auto');
-    }
-
-    showNotification('success', `Sessão "${sessao.nome || sessionId}" carregada.`);
-
-  } catch (err) {
-    console.error('Erro em visualizarSessao:', err);
-    showNotification('error', 'Falha ao carregar a sessão: ' + (err && err.message ? err.message : 'erro desconhecido'));
-  }
-  //pausa  
-  toggleChartPause(true);
-}
-
-
-async function exportarEng(sessionId, source) {
-  const session = await getSessionDataForExport(sessionId, source); // Try both sources
-  if (!session) {
-    showNotification('error', 'Sessão não encontrada para exportação .ENG.');
-    return;
-  }
-  // Existing exportEng logic
-  const metadados = session.metadadosMotor || {};
-  const nomeArquivo = (metadados.name || session.nome.replace(/[^a-zA-Z0-9_]/g, '_')) + '.eng';
-  let engContent = 'Motor ' + (metadados.name || session.nome) + '\n';
-  engContent += '  ' + metadados.diameter + ' ' + metadados.length + ' ' + metadados.delay + ' ' + metadados.propweight + ' ' + metadados.totalweight + ' ' + metadados.manufacturer + '\n';
-  session.dadosTabela.forEach(leitura => {
-    engContent += leitura.tempo_esp.toFixed(3) + ' ' + leitura.newtons.toFixed(3) + '\n';
-  });
-  const blob = new Blob([engContent], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = nomeArquivo;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showNotification('success', 'Arquivo .ENG para "' + session.nome + '" gerado!');
-}
-
-
-
-async function gerarRelatorioPdf(sessionId, source) {
-  const session = await getSessionDataForExport(sessionId, source);
-  if (!session) {
-    showNotification('error', 'Sessão não encontrada para relatório PDF.');
-    return;
-  }
-
-  showNotification('info', 'Gerando relatório PDF com gráfico...', 2000);
-
-  // Processa dados
-  const dados = processarDadosSimples(session.dadosTabela);
-  const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
-  const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
-
-  // Gera o gráfico em canvas e converte para imagem
-  gerarGraficoParaPDF(session, dados, impulsoData, metricasPropulsao, (imagemBase64) => {
-    // Cria janela de impressão com o gráfico
-    const printWindow = window.open('', '_blank');
-
-    // Gera HTML do relatório COM a imagem do gráfico
-    const html = gerarHTMLRelatorioCompleto(session, dados, impulsoData, metricasPropulsao, imagemBase64);
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-
-    // Aguarda carregamento e abre diálogo de impressão
-    printWindow.onload = function() {
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    };
-
-    showNotification('success', 'Relatório pronto! Use "Salvar como PDF" no diálogo', 5000);
-  });
-}
-
-async function exportarCSV(sessionId, source) {
-  const session = await getSessionDataForExport(sessionId, source);
-  if (!session) {
-    showNotification('error', 'Sessão não encontrada para exportação CSV.');
-    return;
-  }
-
-  let csvContent = "Timestamp,Tempo ESP (s),Newtons (N),Grama-força (gf),Quilo-força (kgf)\n";
-  session.dadosTabela.forEach(leitura => {
-    csvContent += leitura.timestamp + ',' + leitura.tempo_esp + ',' + leitura.newtons + ',' + leitura.grama_forca + ',' + leitura.quilo_forca + '\n';
-  });
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showNotification('success', 'Arquivo CSV para "' + session.nome + '" gerado!');
-}
-
-function deleteLocalSession(sessionId) {
-  if (!confirm('Tem certeza que deseja excluir a sessão ' + sessionId + ' do Local Storage?')) {
-    return;
-  }
-  let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  gravacoes = gravacoes.filter(s => s.id !== sessionId);
-  localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
-  showNotification('success', 'Sessão ' + sessionId + ' excluída do Local Storage.');
-  loadAndDisplayAllSessions(); // Re-render the list
-}
-
-async function deleteDbSession(sessionId) {
-  if (!confirm('Tem certeza que deseja excluir a sessão ' + sessionId + ' do banco de dados? Esta ação não pode ser desfeita.')) {
-    return;
-  }
-  try {
-    const response = await fetch(`/api/sessoes/${sessionId}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Falha ao excluir a sessão do DB.');
-    
-    showNotification('success', 'Sessão ' + sessionId + ' excluída do banco de dados.');
-    loadAndDisplayAllSessions(); // Re-render the list
-  } catch (error) {
-    console.error('Erro ao excluir sessão do DB:', error);
-    showNotification('error', 'Erro ao excluir a sessão ' + sessionId + ' do DB.');
-  }
-}
-
-async function saveDbSessionToLocal(sessionId) {
-  try {
-    // Fetch session details from DB
-    const dbSessionResponse = await fetch('/api/sessoes');
-    if (!dbSessionResponse.ok) throw new Error('Falha ao carregar detalhes da sessão do DB para salvar localmente.');
-    const allDbSessions = await dbSessionResponse.json();
-    const dbSession = allDbSessions.find(s => s.id === sessionId);
-
-    if (!dbSession) {
-      showNotification('error', 'Sessão do DB não encontrada para salvar localmente.');
-      return;
-    }
-
-    // Fetch readings from DB
-    const readingsResponse = await fetch('/api/sessoes/' + sessionId + '/leituras');
-    if (!readingsResponse.ok) throw new Error('Falha ao carregar leituras do DB para salvar localmente.');
-    const dbReadings = await readingsResponse.json();
-
-    const gravacao = {
-      id: dbSession.id,
-      nome: dbSession.nome,
-      timestamp: dbSession.data_inicio,
-      dadosTabela: dbReadings.map(r => ({
-        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '),
-        tempo_esp: r.tempo,
-        newtons: r.forca,
-        grama_forca: (r.forca / 9.80665 * 1000),
-        quilo_forca: (r.forca / 9.80665)
-      })),
-      metadadosMotor: {},
-      savedToMysql: true // Mark as saved to MySQL since it came from there
-    };
-
-    let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-    // Check if already exists in local storage to avoid duplicates
-    if (!gravacoes.some(s => s.id === sessionId)) {
-      gravacoes.push(gravacao);
-      localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
-      showNotification('success', 'Sessão "' + dbSession.nome + '" salva localmente!');
-      loadAndDisplayAllSessions(); // Re-render to update status
-    } else {
-      showNotification('info', 'Sessão "' + dbSession.nome + '" já existe localmente.');
-    }
-
-  } catch (error) {
-    console.error('Erro ao salvar sessão do DB localmente:', error);
-    showNotification('error', 'Erro ao salvar sessão ' + sessionId + ' localmente.');
-  }
-}
-
-async function saveLocalSessionToDb(sessionId) {
-  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-  const sessionToSave = localSessions.find(s => s.id === sessionId);
-
-  if (!sessionToSave) {
-    showNotification('error', 'Sessão local não encontrada para salvar no DB.');
-    return;
-  }
-
-  if (isMysqlConnected) {
-    showNotification('info', 'Enviando sessão "' + sessionToSave.nome + '" para o MySQL...');
-    sendCommandToWorker('save_session_to_mysql', sessionToSave);
-    // The worker will send back mysql_save_success/error, which will trigger loadAndDisplayAllSessions
-  } else {
-    showNotification('error', 'Não foi possível salvar no MySQL: Banco de dados desconectado.');
-  }
-}
-
-async function importarGravacaoExterna() {
-  const fileInput = document.getElementById('importar-arquivo-motor');
-  const nomeImportacaoInput = document.getElementById('nome-importacao');
-  const file = fileInput.files[0];
-  const nome = nomeImportacaoInput.value.trim();
-
-  if (!file || !nome) {
-    showNotification('error', 'Por favor, selecione um arquivo e insira um nome para a importação.');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const content = e.target.result;
-    const linhas = content.split('\n').filter(line => line.trim() !== '');
-    const dadosTabela = linhas.map((linha, index) => {
-      const partes = linha.trim().split(/\s+/);
-      if (partes.length >= 2) {
-        return {
-          timestamp: new Date(Date.now() + index).toLocaleString('pt-BR', {hour12: false}).replace(', ', ' '), // Unique timestamp
-          tempo_esp: parseFloat(partes[0]),
-          newtons: parseFloat(partes[1]),
-          grama_forca: parseFloat(partes[1]) / 9.80665 * 1000,
-          quilo_forca: parseFloat(partes[1]) / 9.80665
-        };
-      }
-      return null;
-    }).filter(Boolean);
-
-    if (dadosTabela.length === 0) {
-      showNotification('error', 'Nenhum dado válido encontrado no arquivo importado.');
-      return;
-    }
-
-    const gravacao = {
-      id: Date.now(),
-      nome: nome,
-      timestamp: new Date().toISOString(),
-      dadosTabela: dadosTabela,
-      metadadosMotor: {},
-      source: 'local', // Initially local
-      inLocal: true,
-      inDb: false
-    };
-
-    try {
-      let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
-      gravacoes.push(gravacao);
-      localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
-      showNotification('success', 'Sessão "' + nome + '" importada e salva localmente!');
-      
-      // Also save to DB if connected
-      if (isMysqlConnected) {
-        showNotification('info', 'Enviando sessão importada "' + nome + '" para o MySQL...');
-        sendCommandToWorker('save_session_to_mysql', gravacao);
-      }
-
-      loadAndDisplayAllSessions(); // Re-render the list
-      fileInput.value = '';
-      nomeImportacaoInput.value = '';
-    } catch (e) {
-      showNotification('error', 'Erro ao salvar importação. O Local Storage pode estar cheio.');
-    }
-  };
-  reader.readAsText(file);
 }

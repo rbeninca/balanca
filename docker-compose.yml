@@ -27,7 +27,8 @@ services:
       MYSQL_HOST: "db" # Nome do serviço MySQL no Docker Compose
       MYSQL_USER: "balanca_user"
       MYSQL_PASSWORD: "balanca_password"
-      MYSQL_DB: "balanca_db"
+      MYSQL_DB: "balanca_gfig"
+      MYSQL_ROOT_PASSWORD: "Hilquias"
 
     # dns: - 1.1.1.1 removed
 
@@ -55,7 +56,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password"
-      MYSQL_DATABASE: "balanca_db"
+      MYSQL_DATABASE: "balanca_gfig"
       MYSQL_USER: "balanca_user"
       MYSQL_PASSWORD: "balanca_password"
     volumes:
