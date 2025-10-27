@@ -1222,24 +1222,21 @@ async function loadAndDisplayAllSessions() {
             <button onclick="exportarJSON(${session.id}, '${session.source}')" title="Exportar Dados em JSON" class="btn btn-sucesso"> JSON</button>
             <button onclick="exportarCSV(${session.id}, '${session.source}')" title="Exportar Dados em CSV" class="btn btn-sucesso"> CSV</button>
             <button onclick="exportarEng(${session.id}, '${session.source}')" title="Exportar Curva de Empuxo para OpenRocket/RASAero" class="btn btn-aviso"> ENG</button>
-           
-              ${session.inLocal && !session.inDb
+            ${session.inLocal && !session.inDb
         ? `<button class="btn btn-info btn-small" 
                 ${!isMysqlConnected ? 'disabled title="MySQL desconectado"' : ''}
                 onclick="salvarNoDB(${session.id})">
                 Salvar DB
              </button>`
         : ''}
-
-        ${session.inDb && !session.inLocal
+            ${session.inDb && !session.inLocal
         ? `<button class="btn btn-info btn-small"
                 onclick="salvarNoLocalStorage(${session.id})">
                 Salvar Local
              </button>`
         : ''}
-
-        ${session.inLocal ? `<button class="btn btn-perigo btn-small" onclick="deleteLocalSession(${session.id})">Excluir Local</button>` : ''}
-        ${session.inDb ? `<button class="btn btn-perigo btn-small" onclick="deleteDbSession(${session.id})">Excluir DB</button>` : ''}
+            ${session.inDb ? `<button class="btn btn-perigo btn-small" onclick="deleteDbSession(${session.id})">Excluir DB</button>` : ''}
+            ${session.inLocal ? `<button class="btn btn-perigo btn-small" onclick="deleteLocalSession(${session.id})">Excluir Local</button>` : ''}
         </div>
       </div>
     `;
