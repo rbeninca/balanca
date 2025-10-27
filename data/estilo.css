@@ -115,8 +115,14 @@ header h1 {
 }
 
 .nav-abas {
+  position: sticky;
+  top: 130px; /* Altura aproximada do display (ajustar conforme necessário) */
+  z-index: 9;
+  background-color: var(--cor-fundo);
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--cor-borda);
+  padding-top: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-abas nav {
@@ -247,6 +253,9 @@ label {
 .flex-center { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; }
 
 .leituras-display {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center; /* Centraliza os itens horizontalmente */
@@ -255,7 +264,7 @@ label {
   background-color: var(--cor-fundo-card);
   padding: 0.75rem; /* Reduzido */
   border-radius: .5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .leituras-valores {
