@@ -126,6 +126,7 @@ def init_mysql_db():
                     nome VARCHAR(255) NOT NULL,
                     data_inicio DATETIME NOT NULL,
                     data_fim DATETIME,
+                    data_modificacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     motor_name VARCHAR(255),
                     motor_diameter FLOAT,
                     motor_length FLOAT,
@@ -139,6 +140,7 @@ def init_mysql_db():
 
                 # Migrate existing table to add motor metadata columns if they don't exist
                 motor_columns = [
+                    ('data_modificacao', 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
                     ('motor_name', 'VARCHAR(255)'),
                     ('motor_diameter', 'FLOAT'),
                     ('motor_length', 'FLOAT'),
@@ -337,9 +339,9 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             with mysql_connection.cursor() as cursor:
                 cursor.execute("""
-                    SELECT id, nome, data_inicio, data_fim, 
+                    SELECT id, nome, data_inicio, data_fim, data_modificacao,
                            motor_name, motor_diameter, motor_length, motor_delay,
-                           motor_propweight, motor_totalweight, motor_manufacturer 
+                           motor_propweight, motor_totalweight, motor_manufacturer
                     FROM sessoes ORDER BY data_inicio DESC
                 """)
                 sessoes = cursor.fetchall()
@@ -391,9 +393,9 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             with mysql_connection.cursor() as cursor:
                     cursor.execute("""
-                        SELECT id, nome, data_inicio, data_fim,
+                        SELECT id, nome, data_inicio, data_fim, data_modificacao,
                                motor_name, motor_diameter, motor_length, motor_delay,
-                               motor_propweight, motor_totalweight, motor_manufacturer 
+                               motor_propweight, motor_totalweight, motor_manufacturer
                         FROM sessoes WHERE id = %s
                     """, (sessao_id,))
                     sessao = cursor.fetchone()

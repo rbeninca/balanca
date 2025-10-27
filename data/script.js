@@ -672,8 +672,12 @@ async function salvarDadosDaSessao(nome, tabela) {
   };
 
   const gravacao = {
-    id: Date.now(), nome, timestamp: new Date().toISOString(),
-    dadosTabela, metadadosMotor,
+    id: Date.now(),
+    nome,
+    timestamp: new Date().toISOString(),
+    data_modificacao: new Date().toISOString(),
+    dadosTabela,
+    metadadosMotor,
     savedToMysql: isMysqlConnected // Mark as saved to MySQL if connected
   };
 
@@ -1156,7 +1160,21 @@ async function loadAndDisplayAllSessions() {
   dbSessions.forEach(dbSession => {
     const existingSession = allSessionsMap.get(dbSession.id);
     if (existingSession) {
-      allSessionsMap.set(dbSession.id, { ...existingSession, ...dbSession, source: 'both', inDb: true });
+      // Detectar conflito: comparar data_modificacao
+      const localModified = existingSession.data_modificacao ? new Date(existingSession.data_modificacao) : new Date(0);
+      const dbModified = dbSession.data_modificacao ? new Date(dbSession.data_modificacao) : new Date(0);
+
+      const hasConflict = Math.abs(localModified - dbModified) > 1000; // Diferença maior que 1 segundo
+
+      allSessionsMap.set(dbSession.id, {
+        ...existingSession,
+        ...dbSession,
+        source: 'both',
+        inDb: true,
+        hasConflict: hasConflict,
+        localModified: existingSession.data_modificacao,
+        dbModified: dbSession.data_modificacao
+      });
     } else {
       allSessionsMap.set(dbSession.id, { ...dbSession, source: 'db', inDb: true });
     }
@@ -1211,21 +1229,31 @@ async function loadAndDisplayAllSessions() {
     const meta = session.metadadosMotor || {};
     const metadadosDisplay = meta.name ? `
       <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-top: 5px;">
-        🚀 Motor: ${meta.name || 'N/D'} • ⌀${meta.diameter || 'N/D'}mm • L${meta.length || 'N/D'}mm • 
+        🚀 Motor: ${meta.name || 'N/D'} • ⌀${meta.diameter || 'N/D'}mm • L${meta.length || 'N/D'}mm •
         Prop: ${meta.propweight || 'N/D'}kg • Total: ${meta.totalweight || 'N/D'}kg • ${meta.manufacturer || 'N/D'}
       </p>
+    ` : '';
+
+    // Indicador de conflito
+    const conflictIndicator = session.hasConflict ? `
+      <span style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">
+        ⚠️ CONFLITO
+      </span>
     ` : '';
 
     return `
       <div class="card-gravacao" style="display: flex; justify-content: space-between; align-items: center; background: var(--cor-fundo-card); padding: 15px; border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px; margin-bottom: 10px; border-left: 5px solid ${classColor};" id="session-${session.id}">
         <div style="flex: 1;">
-            <p style="font-weight: 600; margin-bottom: 5px;">${sourceIcons}${session.nome} <span style="font-size: 0.75rem; background: ${classColor}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${motorClass}</span></p> 
+            <p style="font-weight: 600; margin-bottom: 5px;">${sourceIcons}${session.nome} <span style="font-size: 0.75rem; background: ${classColor}; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CLASSE ${motorClass}</span>${conflictIndicator}</p>
             <p style="font-size: 0.875rem; color: var(--cor-texto-secundario);">
                 ${dataInicio} • Impulso Total: ${impulsoTotal} N⋅s
             </p>
             ${metadadosDisplay}
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${session.hasConflict
+        ? `<button onclick="resolverConflito(${session.id})" title="Resolver Conflito de Sincronização" class="btn btn-aviso">⚠️ Resolver Conflito</button>`
+        : ''}
             <button onclick="visualizarSessao(${session.id}, '${session.source}')" title="Carregar para Análise/Gráfico" class="btn btn-info">️ Ver</button>
             <button onclick="editarMetadadosMotor(${session.id})" title="Editar Metadados do Motor" class="btn btn-secundario">⚙️ Metadados</button>
             <button onclick="exportarPNG(${session.id}, '${session.source}')" title="Exportar Gráfico em PNG" class="btn btn-primario">️ PNG</button>
@@ -1371,6 +1399,7 @@ async function salvarMetadadosMotor(sessionId) {
   // Se existe localmente, atualiza no local storage
   if (isInLocal) {
     localSessions[sessionIndex].metadadosMotor = metadadosMotor;
+    localSessions[sessionIndex].data_modificacao = new Date().toISOString();
     sessionToUpdate = localSessions[sessionIndex];
 
     try {
@@ -1529,6 +1558,7 @@ async function getSessionDataForExport(sessionId, source) {
           id: dbSession.id,
           nome: dbSession.nome,
           timestamp: dbSession.data_inicio,
+          data_modificacao: dbSession.data_modificacao || new Date().toISOString(),
           dadosTabela: dbReadings.map(r => ({
             timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
             tempo_esp: r.tempo,
@@ -1838,6 +1868,7 @@ async function saveDbSessionToLocal(sessionId) {
       id: dbSession.id,
       nome: dbSession.nome,
       timestamp: dbSession.data_inicio,
+      data_modificacao: dbSession.data_modificacao || new Date().toISOString(),
       dadosTabela: dbReadings.map(r => ({
         timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
         tempo_esp: r.tempo,
@@ -1851,14 +1882,17 @@ async function saveDbSessionToLocal(sessionId) {
 
     let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
     // Check if already exists in local storage to avoid duplicates
-    if (!gravacoes.some(s => s.id === sessionId)) {
+    const existingIndex = gravacoes.findIndex(s => s.id === sessionId);
+    if (existingIndex === -1) {
       gravacoes.push(gravacao);
-      localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
       showNotification('success', 'Sessão "' + dbSession.nome + '" salva localmente!');
-      loadAndDisplayAllSessions(); // Re-render to update status
     } else {
-      showNotification('info', 'Sessão "' + dbSession.nome + '" já existe localmente.');
+      // Atualiza a sessão existente
+      gravacoes[existingIndex] = gravacao;
+      showNotification('success', 'Sessão "' + dbSession.nome + '" atualizada localmente!');
     }
+    localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+    loadAndDisplayAllSessions(); // Re-render to update status
 
   } catch (error) {
     console.error('Erro ao salvar sessão do DB localmente:', error);
@@ -1881,6 +1915,160 @@ async function saveLocalSessionToDb(sessionId) {
     // The worker will send back mysql_save_success/error, which will trigger loadAndDisplayAllSessions
   } else {
     showNotification('error', 'Não foi possível salvar no MySQL: Banco de dados desconectado.');
+  }
+}
+
+async function resolverConflito(sessionId) {
+  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  const localSession = localSessions.find(s => s.id === sessionId);
+
+  let dbSession = null;
+  try {
+    const resp = await apiFetch(`/api/sessoes/${sessionId}`);
+    if (resp.ok) {
+      dbSession = await resp.json();
+    }
+  } catch (e) {
+    console.error('Erro ao buscar sessão do DB:', e);
+    showNotification('error', 'Erro ao buscar dados do banco para comparação.');
+    return;
+  }
+
+  if (!localSession || !dbSession) {
+    showNotification('error', 'Não foi possível carregar ambas as versões para comparação.');
+    return;
+  }
+
+  const localDate = localSession.data_modificacao ? new Date(localSession.data_modificacao).toLocaleString('pt-BR') : 'Desconhecida';
+  const dbDate = dbSession.data_modificacao ? new Date(dbSession.data_modificacao).toLocaleString('pt-BR') : 'Desconhecida';
+
+  const modalHtml = `
+    <div id="modal-conflito" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <h2 style="margin-top: 0; color: #e74c3c;">⚠️ Conflito de Sincronização Detectado</h2>
+        <p style="color: var(--cor-texto); margin-bottom: 20px;">
+          A sessão "<strong>${localSession.nome}</strong>" possui versões diferentes no LocalStorage e no Banco de Dados.
+          Escolha qual versão deseja manter:
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+          <div style="border: 2px solid #3498db; border-radius: 8px; padding: 15px; background: rgba(52, 152, 219, 0.1);">
+            <h3 style="margin-top: 0; color: #3498db; font-size: 1.1rem;">💾 Versão Local</h3>
+            <p style="margin: 5px 0;"><strong>Modificada em:</strong> ${localDate}</p>
+            <p style="margin: 5px 0; font-size: 0.9rem; color: var(--cor-texto-secundario);">
+              Dados salvos no navegador deste dispositivo.
+            </p>
+            <button onclick="resolverConflito_UsarLocal(${sessionId})" class="btn btn-primario" style="width: 100%; margin-top: 10px;">
+              ✓ Usar Versão Local
+            </button>
+          </div>
+
+          <div style="border: 2px solid #9b59b6; border-radius: 8px; padding: 15px; background: rgba(155, 89, 182, 0.1);">
+            <h3 style="margin-top: 0; color: #9b59b6; font-size: 1.1rem;">☁️ Versão do Banco</h3>
+            <p style="margin: 5px 0;"><strong>Modificada em:</strong> ${dbDate}</p>
+            <p style="margin: 5px 0; font-size: 0.9rem; color: var(--cor-texto-secundario);">
+              Dados salvos no banco de dados (sincronizados).
+            </p>
+            <button onclick="resolverConflito_UsarDB(${sessionId})" class="btn btn-secundario" style="width: 100%; margin-top: 10px;">
+              ✓ Usar Versão do Banco
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button onclick="fecharModalConflito()" class="btn btn-perigo">✗ Cancelar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function fecharModalConflito() {
+  const modal = document.getElementById('modal-conflito');
+  if (modal) modal.remove();
+}
+
+async function resolverConflito_UsarLocal(sessionId) {
+  const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+  const localSession = localSessions.find(s => s.id === sessionId);
+
+  if (!localSession) {
+    showNotification('error', 'Sessão local não encontrada.');
+    fecharModalConflito();
+    return;
+  }
+
+  // Atualiza data de modificação e envia para o banco
+  localSession.data_modificacao = new Date().toISOString();
+
+  // Atualiza no localStorage
+  const sessionIndex = localSessions.findIndex(s => s.id === sessionId);
+  localSessions[sessionIndex] = localSession;
+  localStorage.setItem('balancaGravacoes', JSON.stringify(localSessions));
+
+  if (isMysqlConnected) {
+    sendCommandToWorker('save_session_to_mysql', localSession);
+    showNotification('success', 'Versão local enviada para o banco de dados.');
+  } else {
+    showNotification('warning', 'MySQL desconectado. Versão local mantida, mas não sincronizada.');
+  }
+
+  fecharModalConflito();
+  setTimeout(() => loadAndDisplayAllSessions(), 500);
+}
+
+async function resolverConflito_UsarDB(sessionId) {
+  try {
+    const resp = await apiFetch(`/api/sessoes/${sessionId}`);
+    if (!resp.ok) {
+      throw new Error('Erro ao buscar sessão do banco');
+    }
+
+    const dbSession = await resp.json();
+
+    // Busca as leituras
+    const readingsResp = await apiFetch(`/api/sessoes/${sessionId}/leituras`);
+    if (readingsResp.ok) {
+      const dbReadings = await readingsResp.json();
+      dbSession.dadosTabela = dbReadings.map(r => ({
+        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+        tempo_esp: r.tempo,
+        newtons: r.forca,
+        grama_forca: (r.forca / 9.80665 * 1000),
+        quilo_forca: (r.forca / 9.80665)
+      }));
+    }
+
+    // Normaliza os campos
+    if (dbSession.data_inicio && !dbSession.timestamp) {
+      dbSession.timestamp = dbSession.data_inicio;
+    }
+    if (!dbSession.data_modificacao) {
+      dbSession.data_modificacao = new Date().toISOString();
+    }
+
+    // Atualiza no localStorage
+    const localSessions = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+    const sessionIndex = localSessions.findIndex(s => s.id === sessionId);
+
+    if (sessionIndex !== -1) {
+      localSessions[sessionIndex] = dbSession;
+    } else {
+      localSessions.push(dbSession);
+    }
+
+    localStorage.setItem('balancaGravacoes', JSON.stringify(localSessions));
+    showNotification('success', 'Versão do banco baixada para o LocalStorage.');
+
+    fecharModalConflito();
+    setTimeout(() => loadAndDisplayAllSessions(), 500);
+
+  } catch (error) {
+    console.error('Erro ao buscar sessão do DB:', error);
+    showNotification('error', 'Erro ao baixar versão do banco de dados.');
+    fecharModalConflito();
   }
 }
 
@@ -1922,6 +2110,7 @@ async function importarGravacaoExterna() {
       id: Date.now(),
       nome: nome,
       timestamp: new Date().toISOString(),
+      data_modificacao: new Date().toISOString(),
       dadosTabela: dadosTabela,
       metadadosMotor: {},
       source: 'local', // Initially local
