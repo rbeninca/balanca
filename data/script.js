@@ -481,8 +481,16 @@ function updateUIFromData(dado) {
   if (isSessionActive) {
     const tbody = document.getElementById("tabela").querySelector("tbody");
     const linha = tbody.insertRow(0);
-    const agora = new Date();
-    const timestamp = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR') + '.' + String(agora.getMilliseconds()).padStart(3, '0');
+  // Gera timestamp em GMT (UTC) no formato dd/mm/yyyy HH:MM:SS.mmm
+  const agora = new Date();
+  const dd = String(agora.getUTCDate()).padStart(2, '0');
+  const mm = String(agora.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = agora.getUTCFullYear();
+  const HH = String(agora.getUTCHours()).padStart(2, '0');
+  const MM = String(agora.getUTCMinutes()).padStart(2, '0');
+  const SS = String(agora.getUTCSeconds()).padStart(2, '0');
+  const mmm = String(agora.getUTCMilliseconds()).padStart(3, '0');
+  const timestamp = `${dd}/${mm}/${yyyy} ${HH}:${MM}:${SS}.${mmm}`;
 
     linha.insertCell(0).innerText = timestamp;
     linha.insertCell(1).innerText = tempo;
@@ -1131,6 +1139,30 @@ function setYAxisRange(mode) {
 
 // --- Funções de Sessão (Local Storage e DB) ---
 
+// Util: interpreta timestamp vindo do DB como UTC e formata para dd/mm/yyyy HH:MM:SS.mmm (UTC)
+function parseDbTimestampToUTC(ts) {
+  if (!ts) return null;
+  let s = typeof ts === 'string' ? ts : String(ts);
+  // Normaliza: 'YYYY-MM-DD HH:MM:SS(.ffffff)' -> 'YYYY-MM-DDTHH:MM:SS(.mmm)Z'
+  s = s.replace(' ', 'T');
+  // Mantém no máximo 3 casas decimais (milissegundos)
+  s = s.replace(/\.(\d{3})\d+$/, '.$1');
+  if (!/Z$/i.test(s)) s += 'Z';
+  return new Date(s);
+}
+
+function formatUtcDdMm(date) {
+  if (!date) return '';
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = date.getUTCFullYear();
+  const HH = String(date.getUTCHours()).padStart(2, '0');
+  const MM = String(date.getUTCMinutes()).padStart(2, '0');
+  const SS = String(date.getUTCSeconds()).padStart(2, '0');
+  const mmm = String(date.getUTCMilliseconds()).padStart(3, '0');
+  return `${dd}/${mm}/${yyyy} ${HH}:${MM}:${SS}.${mmm}`;
+}
+
 async function fetchDbSessions() {
   try {
     const response = await apiFetch('/api/sessoes');
@@ -1196,7 +1228,7 @@ async function loadAndDisplayAllSessions() {
         if (readingsResp.ok) {
           const dbReadings = await readingsResp.json();
           session.dadosTabela = dbReadings.map(r => ({
-            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            timestamp: formatUtcDdMm(parseDbTimestampToUTC(r.timestamp)),
             tempo_esp: r.tempo,
             newtons: r.forca,
             grama_forca: (r.forca / 9.80665 * 1000),
@@ -1211,7 +1243,8 @@ async function loadAndDisplayAllSessions() {
 
   listaGravacoesDiv.innerHTML = combinedSessions.map(session => {
     const sourceIcons = `${session.inLocal ? '<span title="Salvo Localmente" style="margin-right: 5px;">💾</span>' : ''}${session.inDb ? '<span title="Salvo no Banco de Dados" style="margin-right: 5px;">☁️</span>' : ''}`;
-    const dataInicio = new Date(session.data_inicio || session.timestamp).toLocaleString('pt-BR');
+  const baseStart = session.data_inicio || session.timestamp;
+  const dataInicio = baseStart ? parseDbTimestampToUTC(baseStart).toLocaleString('pt-BR') : 'N/D';
 
     let impulsoTotal = 'N/A';
     let motorClass = 'N/A';
@@ -1446,7 +1479,7 @@ async function salvarMetadadosMotor(sessionId) {
         if (readingsResp.ok) {
           const dbReadings = await readingsResp.json();
           sessionToUpdate.dadosTabela = dbReadings.map(r => ({
-            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            timestamp: formatUtcDdMm(parseDbTimestampToUTC(r.timestamp)),
             tempo_esp: r.tempo,
             newtons: r.forca,
             grama_forca: (r.forca / 9.80665 * 1000),
@@ -1561,7 +1594,7 @@ async function getSessionDataForExport(sessionId, source) {
           timestamp: dbSession.data_inicio,
           data_modificacao: dbSession.data_modificacao || new Date().toISOString(),
           dadosTabela: dbReadings.map(r => ({
-            timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+            timestamp: formatUtcDdMm(parseDbTimestampToUTC(r.timestamp)),
             tempo_esp: r.tempo,
             newtons: r.forca,
             grama_forca: (r.forca / 9.80665 * 1000),
@@ -1871,7 +1904,7 @@ async function saveDbSessionToLocal(sessionId) {
       timestamp: dbSession.data_inicio,
       data_modificacao: dbSession.data_modificacao || new Date().toISOString(),
       dadosTabela: dbReadings.map(r => ({
-        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+        timestamp: formatUtcDdMm(parseDbTimestampToUTC(r.timestamp)),
         tempo_esp: r.tempo,
         newtons: r.forca,
         grama_forca: (r.forca / 9.80665 * 1000),
@@ -2034,7 +2067,7 @@ async function resolverConflito_UsarDB(sessionId) {
     if (readingsResp.ok) {
       const dbReadings = await readingsResp.json();
       dbSession.dadosTabela = dbReadings.map(r => ({
-        timestamp: new Date(r.timestamp).toLocaleString('pt-BR', { hour12: false }).replace(', ', ' '),
+        timestamp: formatUtcDdMm(parseDbTimestampToUTC(r.timestamp)),
         tempo_esp: r.tempo,
         newtons: r.forca,
         grama_forca: (r.forca / 9.80665 * 1000),

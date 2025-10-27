@@ -476,7 +476,8 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def handle_get_time(self):
         """Retorna a hora atual do servidor"""
-        current_time = datetime.now().isoformat()
+        # Envia sempre em UTC (GMT) com sufixo 'Z' para indicar timezone
+        current_time = datetime.utcnow().isoformat() + 'Z'
         self.send_json_response(200, {"time": current_time})
 
     def handle_sync_time(self):
