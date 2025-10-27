@@ -1976,9 +1976,45 @@ async function resolverConflito(sessionId) {
   const localDate = localSession.data_modificacao ? new Date(localSession.data_modificacao).toLocaleString('pt-BR') : 'Desconhecida';
   const dbDate = dbSession.data_modificacao ? new Date(dbSession.data_modificacao).toLocaleString('pt-BR') : 'Desconhecida';
 
+  // Metadados do motor para comparação
+  const localMeta = localSession.metadadosMotor || {};
+  const dbMeta = dbSession.metadadosMotor || {};
+
+  const formatMetaValue = (val) => val !== undefined && val !== null && val !== '' ? val : 'N/D';
+
+  const metadadosLocalHtml = `
+    <div style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.85rem;">
+      <strong style="color: #3498db;">🚀 Metadados do Motor:</strong>
+      <div style="margin-top: 5px; line-height: 1.6;">
+        <div><strong>Nome:</strong> ${formatMetaValue(localMeta.name)}</div>
+        <div><strong>Diâmetro:</strong> ${formatMetaValue(localMeta.diameter)} mm</div>
+        <div><strong>Comprimento:</strong> ${formatMetaValue(localMeta.length)} mm</div>
+        <div><strong>Delay:</strong> ${formatMetaValue(localMeta.delay)} s</div>
+        <div><strong>Peso Propelente:</strong> ${formatMetaValue(localMeta.propweight)} kg</div>
+        <div><strong>Peso Total:</strong> ${formatMetaValue(localMeta.totalweight)} kg</div>
+        <div><strong>Fabricante:</strong> ${formatMetaValue(localMeta.manufacturer)}</div>
+      </div>
+    </div>
+  `;
+
+  const metadadosDbHtml = `
+    <div style="margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.85rem;">
+      <strong style="color: #9b59b6;">🚀 Metadados do Motor:</strong>
+      <div style="margin-top: 5px; line-height: 1.6;">
+        <div><strong>Nome:</strong> ${formatMetaValue(dbMeta.name)}</div>
+        <div><strong>Diâmetro:</strong> ${formatMetaValue(dbMeta.diameter)} mm</div>
+        <div><strong>Comprimento:</strong> ${formatMetaValue(dbMeta.length)} mm</div>
+        <div><strong>Delay:</strong> ${formatMetaValue(dbMeta.delay)} s</div>
+        <div><strong>Peso Propelente:</strong> ${formatMetaValue(dbMeta.propweight)} kg</div>
+        <div><strong>Peso Total:</strong> ${formatMetaValue(dbMeta.totalweight)} kg</div>
+        <div><strong>Fabricante:</strong> ${formatMetaValue(dbMeta.manufacturer)}</div>
+      </div>
+    </div>
+  `;
+
   const modalHtml = `
     <div id="modal-conflito" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
         <h2 style="margin-top: 0; color: #e74c3c;">⚠️ Conflito de Sincronização Detectado</h2>
         <p style="color: var(--cor-texto); margin-bottom: 20px;">
           A sessão "<strong>${localSession.nome}</strong>" possui versões diferentes no LocalStorage e no Banco de Dados.
@@ -1992,6 +2028,7 @@ async function resolverConflito(sessionId) {
             <p style="margin: 5px 0; font-size: 0.9rem; color: var(--cor-texto-secundario);">
               Dados salvos no navegador deste dispositivo.
             </p>
+            ${metadadosLocalHtml}
             <button onclick="resolverConflito_UsarLocal(${sessionId})" class="btn btn-primario" style="width: 100%; margin-top: 10px;">
               ✓ Usar Versão Local
             </button>
@@ -2003,6 +2040,7 @@ async function resolverConflito(sessionId) {
             <p style="margin: 5px 0; font-size: 0.9rem; color: var(--cor-texto-secundario);">
               Dados salvos no banco de dados (sincronizados).
             </p>
+            ${metadadosDbHtml}
             <button onclick="resolverConflito_UsarDB(${sessionId})" class="btn btn-secundario" style="width: 100%; margin-top: 10px;">
               ✓ Usar Versão do Banco
             </button>
