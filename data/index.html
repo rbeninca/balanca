@@ -210,37 +210,9 @@
         </div>
       </div>
       <div id="abaGravacoes" class="tabcontent">
-        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Gravações Salvas</h2>
-        <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">As gravações são salvas
-          apenas neste navegador.</p>
+        
 
         <div style="padding: 1rem; border: 1px dashed var(--cor-borda); border-radius: 0.5rem; margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px;">⚙️ Metadados do Motor (para .ENG)</h3>
-          <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 10px;">
-            Preencha para exportar o arquivo .ENG compatível com simuladores. *O Delay é geralmente 0s*.
-          </p>
-
-          <div class="grid-container"
-            style="gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 1rem;">
-            <div><label for="eng-name">Nome do Motor (Ex: NFB_20)</label><input id="eng-name" type="text" value="">
-            </div>
-            <div><label for="eng-diameter">Diâmetro (mm)</label><input id="eng-diameter" type="number" step="0.1"
-                value="45"></div>
-            <div><label for="eng-length">Comprimento (mm)</label><input id="eng-length" type="number" step="1"
-                value="200"></div>
-            <div><label for="eng-delay">Delay (s)</label><input id="eng-delay" type="number" step="0.1" value="0"></div>
-            <div><label for="eng-propweight">Peso Propelente (kg)</label><input id="eng-propweight" type="number"
-                step="0.001" value="0.100"></div>
-            <div><label for="eng-totalweight">Peso Total (kg)</label><input id="eng-totalweight" type="number"
-                step="0.001" value="0.250"></div>
-            <div><label for="eng-manufacturer">Fabricante</label><input id="eng-manufacturer" type="text"
-                value="GFIG-IFC"></div>
-          </div>
-
-          <div id="metadados-salvar-container" style="margin-top: 10px; display: flex; gap: 10px;">
-          </div>
-          <hr style="border: 0; border-top: 1px solid var(--cor-borda); margin: 10px 0;">
-
           <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
           <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
             Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.</p>
@@ -255,17 +227,7 @@
         
         <hr style="border: 0; border-top: 1px solid var(--cor-borda); margin: 2rem 0;">
 
-        <div id="db-sessions-section">
-          <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Sessões Salvas no Banco de Dados</h2>
-          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">
-            Sessões persistidas no banco de dados MySQL.
-          </p>
-          <button onclick="fetchAndDisplayDbSessions()" class="btn btn-info">Buscar Sessões no DB</button>
-          <div id="lista-sessoes-db" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-            <!-- As sessões do DB serão listadas aqui -->
-          </div>
-        </div>
-
+        
       </div>
       <div id="abaConexao" class="tabcontent">
         <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Configurações de Conexão</h2>
