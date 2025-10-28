@@ -28,3 +28,23 @@ CREATE TABLE IF NOT EXISTS leituras (
     timestamp DATETIME(3),
     FOREIGN KEY (sessao_id) REFERENCES sessoes(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS configuracoes (
+    id INT PRIMARY KEY DEFAULT 1,
+    conversionFactor FLOAT DEFAULT 1.0,
+    gravity FLOAT DEFAULT 9.80665,
+    tareOffset INT DEFAULT 0,
+    leiturasEstaveis INT DEFAULT 5,
+    toleranciaEstabilidade FLOAT DEFAULT 0.05,
+    mode INT DEFAULT 0,
+    usarEMA INT DEFAULT 1,
+    numAmostrasMedia INT DEFAULT 10,
+    timeoutCalibracao INT DEFAULT 30000,
+    capacidadeMaximaGramas FLOAT DEFAULT 5000.0,
+    percentualAcuracia FLOAT DEFAULT 0.05,
+    data_modificacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY single_row (id)
+);
+
+INSERT IGNORE INTO configuracoes (id) VALUES (1);
+
