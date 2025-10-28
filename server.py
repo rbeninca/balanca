@@ -317,12 +317,16 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_get_leituras()
         elif self.path.startswith('/api/sessoes/'):
             self.handle_get_sessao_by_id()
+        elif self.path == '/api/time':
+            self.handle_get_time()
         else:
             super().do_GET()
 
     def do_POST(self):
         if self.path == '/api/sessoes':
             self.handle_post_sessao()
+        elif self.path == '/api/time/sync':
+            self.handle_sync_time()
         else:
             self.send_error(404, "Not Found")
 
@@ -469,6 +473,96 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
         except pymysql.Error as e:
             logging.error(f"API Error (delete_sessao): {e}")
             self.send_error(500, "Internal Server Error")
+
+    def handle_get_time(self):
+        """Retorna a hora atual do servidor"""
+        current_time = datetime.now().isoformat()
+        self.send_json_response(200, {"time": current_time})
+
+    def handle_sync_time(self):
+        """Sincroniza a hora do servidor com a hora recebida do cliente"""
+        logging.info("Requisição de sincronização de hora recebida")
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            logging.info(f"Dados recebidos: {post_data.decode('utf-8')}")
+            data = json.loads(post_data)
+
+            new_time_str = data.get('time')
+            if not new_time_str:
+                logging.error("Campo 'time' não fornecido")
+                self.send_json_response(400, {"error": "Missing 'time' field"})
+                return
+
+            # Parse a nova hora
+            new_time = datetime.fromisoformat(new_time_str.replace('Z', '+00:00'))
+            logging.info(f"Hora a ser sincronizada: {new_time}")
+
+            # Formata para o comando date do Linux
+            # Formato: MMDDhhmmYYYY.ss
+            time_str = new_time.strftime('%m%d%H%M%Y.%S')
+            logging.info(f"Comando date: date {time_str}")
+
+            # Tenta ajustar a hora do sistema (requer privilégios)
+            import subprocess
+            import os
+
+            # Verifica se está rodando como root
+            is_root = os.geteuid() == 0 if hasattr(os, 'geteuid') else False
+
+            try:
+                result = subprocess.run(['date', time_str],
+                                      capture_output=True,
+                                      text=True,
+                                      check=True)
+                logging.info(f"Hora do servidor sincronizada para: {new_time}")
+                logging.info(f"Saída do comando: {result.stdout}")
+                self.send_json_response(200, {
+                    "message": "Hora sincronizada com sucesso!",
+                    "new_time": new_time.isoformat()
+                })
+            except subprocess.CalledProcessError as e:
+                error_msg = e.stderr.strip() if e.stderr else str(e)
+                logging.error(f"Erro ao ajustar hora do sistema: {error_msg}")
+
+                # Mensagem mais detalhada baseada no erro
+                if "Operation not permitted" in error_msg or "Permission denied" in error_msg:
+                    help_msg = (
+                        "O servidor não tem permissões para ajustar a hora do sistema.\n\n"
+                        "Para habilitar a sincronização, você pode:\n\n"
+                        "1. Rodar o servidor com sudo:\n"
+                        "   sudo python3 server.py\n\n"
+                        "2. No Docker, adicionar --privileged ou --cap-add=SYS_TIME:\n"
+                        "   docker run --cap-add=SYS_TIME ...\n\n"
+                        "3. Ajustar a hora manualmente no sistema:\n"
+                        f"   sudo date {time_str}"
+                    )
+                    self.send_json_response(403, {
+                        "error": "Permissão negada",
+                        "message": help_msg,
+                        "requested_time": new_time.isoformat()
+                    })
+                else:
+                    self.send_json_response(500, {
+                        "error": error_msg,
+                        "message": "Falha ao executar comando 'date'.",
+                        "requested_time": new_time.isoformat()
+                    })
+            except FileNotFoundError:
+                # Se o comando 'date' não existir (Windows, etc)
+                logging.warning("Comando 'date' não disponível - sincronização apenas simulada")
+                self.send_json_response(200, {
+                    "message": "Sincronização simulada (comando 'date' não disponível no sistema)",
+                    "new_time": new_time.isoformat(),
+                    "warning": "Sistema operacional não suporta comando 'date'"
+                })
+
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            logging.error(f"Erro ao processar sincronização de hora: {e}", exc_info=True)
+            self.send_json_response(400, {
+                "error": f"Invalid request: {str(e)}",
+                "message": "Erro ao processar dados da requisição"
+            })
 
     def send_json_response(self, status_code, data):
         self.send_response(status_code)

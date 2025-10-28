@@ -290,6 +290,11 @@
         <div id="mysql-indicator" title="MySQL Desconectado" style="width: 10px; height: 10px; border-radius: 50%; background-color: gray; display: inline-block; margin-left: 5px;"></div>
       </div>
       <div id="balanca-status-line" style="text-align: center; font-weight: 600; color: #ecf0f1; margin: 0;">Status: <span id="balanca-status" style="color: var(--cor-primaria);">...</span></div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 4px 8px; background: rgba(52, 152, 219, 0.2); border-radius: 4px; border: 1px solid rgba(52, 152, 219, 0.4);">
+        <span style="font-weight: bold;">🕐 Servidor:</span>
+        <span id="server-clock" style="font-family: monospace; font-size: 0.9rem; color: #3498db;">--:--:--</span>
+        <button onclick="syncServerTime()" class="btn btn-secundario" style="padding: 2px 8px; font-size: 0.7rem; background: #3498db; border: none; color: white; cursor: pointer;" title="Sincronizar com a hora do navegador">🔄 Sync</button>
+      </div>
       <span style="font-weight: bold;">⚡ ATALHOS:</span>
       <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
       <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>

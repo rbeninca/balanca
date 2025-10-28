@@ -16,6 +16,7 @@ let originalChartSessionControlsContainer = null; // New global variable for ses
 let originalChartControlsParent = null; // Parent of the specific chart controls
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
+let serverTimeOffset = 0; // Diferença entre servidor e cliente (ms)
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -2139,3 +2140,136 @@ async function importarGravacaoExterna() {
   };
   reader.readAsText(file);
 }
+
+// --- Funções do Relógio do Servidor ---
+
+async function updateServerClock() {
+  try {
+    const response = await apiFetch('/api/time');
+    if (response.ok) {
+      const data = await response.json();
+      const serverTime = new Date(data.time);
+      const clientTime = new Date();
+
+      // Calcula o offset entre servidor e cliente
+      serverTimeOffset = serverTime.getTime() - clientTime.getTime();
+
+      // Atualiza o display
+      updateClockDisplay();
+    }
+  } catch (error) {
+    console.error('Erro ao buscar hora do servidor:', error);
+    document.getElementById('server-clock').textContent = 'Erro';
+  }
+}
+
+function updateClockDisplay() {
+  const now = new Date(Date.now() + serverTimeOffset);
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  const clockElement = document.getElementById('server-clock');
+  if (clockElement) {
+    clockElement.textContent = `${hours}:${minutes}:${seconds}`;
+  }
+}
+
+async function syncServerTime() {
+  const clientTime = new Date();
+
+  if (!confirm(`Sincronizar hora do servidor com a hora do navegador?\n\nHora do Navegador: ${clientTime.toLocaleString('pt-BR')}\n\nATENÇÃO: Isso irá ajustar a hora do sistema do servidor!`)) {
+    return;
+  }
+
+  try {
+    const response = await apiFetch('/api/time/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ time: clientTime.toISOString() })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      // Verifica se há warning (sincronização simulada)
+      if (data.warning) {
+        showNotification('warning', data.message);
+      } else {
+        showNotification('success', data.message || 'Hora do servidor sincronizada com sucesso!');
+      }
+
+      // Atualiza imediatamente
+      await updateServerClock();
+    } else {
+      // Tenta ler como JSON primeiro, depois como texto
+      try {
+        const errorData = await response.json();
+
+        // Se for erro de permissão, mostra modal com instruções
+        if (response.status === 403 && errorData.message) {
+          showPermissionErrorModal(errorData.message, errorData.requested_time);
+        } else {
+          const errorMsg = errorData.error || errorData.message || JSON.stringify(errorData);
+          console.error('Erro completo:', errorMsg);
+          showNotification('error', `Erro ao sincronizar: ${errorMsg}`);
+        }
+      } catch {
+        const errorText = await response.text();
+        // Extrai a mensagem de erro do HTML se possível
+        const match = errorText.match(/<title>.*?(\d+)\s+([^<]+)<\/title>/);
+        if (match) {
+          showNotification('error', `Erro ao sincronizar: ${match[1]} - ${match[2]}`);
+        } else {
+          showNotification('error', `Erro ao sincronizar: Erro ${response.status}`);
+        }
+        console.error('Erro completo:', errorText);
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao sincronizar hora:', error);
+    showNotification('error', 'Erro de conexão ao sincronizar hora do servidor.');
+  }
+}
+
+function showPermissionErrorModal(message, requestedTime) {
+  const requestedDate = requestedTime ? new Date(requestedTime).toLocaleString('pt-BR') : 'N/D';
+
+  const modalHtml = `
+    <div id="modal-permission-error" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+      <div style="background: var(--cor-fundo); padding: 30px; border-radius: 12px; max-width: 650px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <h2 style="margin-top: 0; color: #e67e22;">🔒 Permissão Necessária</h2>
+        <p style="color: var(--cor-texto); margin-bottom: 15px;">
+          <strong>Hora solicitada:</strong> ${requestedDate}
+        </p>
+
+        <div style="background: #34495e; color: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+${message}
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button onclick="closePermissionErrorModal()" class="btn btn-primario">Entendido</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closePermissionErrorModal() {
+  const modal = document.getElementById('modal-permission-error');
+  if (modal) modal.remove();
+}
+
+// Inicializa o relógio
+window.addEventListener('load', () => {
+  // Busca a hora inicial
+  updateServerClock();
+
+  // Atualiza o display a cada segundo (independente de buscar do servidor)
+  setInterval(updateClockDisplay, 1000);
+
+  // Busca a hora do servidor a cada 5 minutos para corrigir drift
+  setInterval(updateServerClock, 5 * 60 * 1000);
+});
