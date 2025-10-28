@@ -761,14 +761,14 @@ async function salvarDadosDaSessao(nome, tabela) {
   })).reverse();
 
   const metadadosMotor = {
-    name: document.getElementById('eng-name').value.trim() || nome.replace(/[^a-zA-Z0-9_]/g, '_'),
-    diameter: parseFloat(document.getElementById('eng-diameter').value) || 45,
-    length: parseFloat(document.getElementById('eng-length').value) || 200,
-    delay: parseFloat(document.getElementById('eng-delay').value) || 0,
-    propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
-    totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
-    manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC',
-    massaPropelente: parseFloat(document.getElementById('massa-propelente-input').value) || null // Massa em gramas
+    name: (document.getElementById('eng-name')?.value?.trim() || nome.replace(/[^a-zA-Z0-9_]/g, '_')),
+    diameter: parseFloat(document.getElementById('eng-diameter')?.value) || 45,
+    length: parseFloat(document.getElementById('eng-length')?.value) || 200,
+    delay: parseFloat(document.getElementById('eng-delay')?.value) || 0,
+    propweight: parseFloat(document.getElementById('eng-propweight')?.value) || 0.1,
+    totalweight: parseFloat(document.getElementById('eng-totalweight')?.value) || 0.25,
+    manufacturer: (document.getElementById('eng-manufacturer')?.value?.trim() || 'GFIG-IFC'),
+    massaPropelente: parseFloat(document.getElementById('massa-propelente-input')?.value) || null // Massa em gramas
   };
 
   const gravacao = {
