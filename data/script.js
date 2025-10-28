@@ -767,7 +767,8 @@ async function salvarDadosDaSessao(nome, tabela) {
     delay: parseFloat(document.getElementById('eng-delay').value) || 0,
     propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
     totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
-    manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC'
+    manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC',
+    massaPropelente: parseFloat(document.getElementById('massa-propelente-input').value) || null // Massa em gramas
   };
 
   const gravacao = {
@@ -1936,15 +1937,48 @@ async function exportarEng(sessionId, source) {
     showNotification('error', 'Sessão não encontrada para exportação .ENG.');
     return;
   }
-  // Existing exportEng logic
+  
+  // Extrai metadados do motor
   const metadados = session.metadadosMotor || {};
   const nomeArquivo = (metadados.name || session.nome.replace(/[^a-zA-Z0-9_]/g, '_')) + '.eng';
-  let engContent = 'Motor ' + (metadados.name || session.nome) + '\n';
-  engContent += '  ' + metadados.diameter + ' ' + metadados.length + ' ' + metadados.delay + ' ' + metadados.propweight + ' ' + metadados.totalweight + ' ' + metadados.manufacturer + '\n';
+  
+  // Constrói cabeçalho no formato RASP/OpenRocket
+  // Comentário com especificação dos campos
+  let engContent = ';name\tdiameter\tlength\tdelay\tpropweight\ttotalweight\tmanufacturer\n';
+  
+  // Linha de metadados do motor (em mm, s, kg)
+  engContent += (metadados.name || 'Motor').trim() + '\t';
+  engContent += (metadados.diameter || 45).toFixed(1) + '\t';      // mm
+  engContent += (metadados.length || 200).toFixed(1) + '\t';       // mm
+  engContent += (metadados.delay || 0).toFixed(1) + '\t';          // s
+  engContent += (metadados.propweight || 0.1).toFixed(5) + '\t';   // kg
+  engContent += (metadados.totalweight || 0.25).toFixed(5) + '\t'; // kg
+  engContent += (metadados.manufacturer || 'GFIG').trim() + '\n';
+  
+  // Comentários informativos
+  engContent += ';\n';
+  engContent += '; Arquivo gerado pelo sistema GFIG\n';
+  engContent += '; Data: ' + new Date().toLocaleString('pt-BR') + '\n';
+  engContent += '; Sessão: ' + session.nome + '\n';
+  
+  // Se houver massa de propelente, adiciona informação
+  if (metadados.massaPropelente) {
+    engContent += '; Massa de propelente informada: ' + metadados.massaPropelente.toFixed(2) + ' g\n';
+  }
+  
+  engContent += '; Número de leituras: ' + session.dadosTabela.length + '\n';
+  engContent += ';\n';
+  
+  // Dados de impulso (tempo em segundos, força em Newtons)
+  // Formato: tempo(s)  força(N)
   session.dadosTabela.forEach(leitura => {
-    engContent += leitura.tempo_esp.toFixed(3) + ' ' + leitura.newtons.toFixed(3) + '\n';
+    const tempo = parseFloat(leitura.tempo_esp) || 0;
+    const newtons = parseFloat(leitura.newtons) || 0;
+    engContent += tempo.toFixed(5) + '\t' + newtons.toFixed(5) + '\n';
   });
-  const blob = new Blob([engContent], { type: 'text/plain' });
+  
+  // Download do arquivo
+  const blob = new Blob([engContent], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1953,7 +1987,7 @@ async function exportarEng(sessionId, source) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showNotification('success', 'Arquivo .ENG para "' + session.nome + '" gerado!');
+  showNotification('success', 'Arquivo .ENG compatível com OpenRocket gerado!');
 }
 
 
@@ -1970,7 +2004,14 @@ async function gerarRelatorioPdf(sessionId, source) {
   // Processa dados
   const dados = processarDadosSimples(session.dadosTabela);
   const impulsoData = calcularAreaSobCurva(dados.tempos, dados.newtons, false);
-  const metricasPropulsao = calcularMetricasPropulsao(impulsoData);
+  
+  // Obtém massa do propelente em kg (converte de gramas se necessário)
+  let massaPropelente = null;
+  if (session.metadadosMotor && session.metadadosMotor.massaPropelente) {
+    massaPropelente = session.metadadosMotor.massaPropelente / 1000; // Converte de gramas para kg
+  }
+  
+  const metricasPropulsao = calcularMetricasPropulsao(impulsoData, massaPropelente);
 
   // Gera o gráfico em canvas e converte para imagem
   gerarGraficoParaPDF(session, dados, impulsoData, metricasPropulsao, (imagemBase64) => {

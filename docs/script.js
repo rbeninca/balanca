@@ -1153,7 +1153,8 @@ function salvarDadosDaSessao(nome, tabela) {
         delay: parseFloat(document.getElementById('eng-delay').value) || 0,
         propweight: parseFloat(document.getElementById('eng-propweight').value) || 0.1,
         totalweight: parseFloat(document.getElementById('eng-totalweight').value) || 0.25,
-        manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC'
+        manufacturer: document.getElementById('eng-manufacturer').value.trim() || 'GFIG-IFC',
+        massaPropelente: parseFloat(document.getElementById('massa-propelente-input').value) || null // Massa em gramas
     };
     // ------------------------------------------
 

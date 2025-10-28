@@ -63,6 +63,8 @@
         <div class="controles-grafico-sessao" style="margin-bottom: 0.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
             <input type="text" id="nome-sessao" placeholder="Nome da Sessão...">
+            <label for="massa-propelente-input" style="font-size: 0.875rem;">Massa Propelente (g):</label>
+            <input type="number" id="massa-propelente-input" placeholder="Ex: 50.5" min="0" step="0.1" style="width: 100px;">
             <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso">▶ Iniciar</button>
             <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
           </div>

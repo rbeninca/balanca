@@ -330,6 +330,24 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
   const dataSessao = new Date(sessao.timestamp).toLocaleString('pt-BR');
   const classificacao = metricasPropulsao.classificacaoMotor;
   
+  // Tenta obter massa do propelente dos metadados do motor ou campo customizado
+  let massaPropelente = null;
+  let impulsoEspecifico = null;
+  
+  // Procura por massa em diferentes lugares nos metadados
+  if (sessao.metadadosMotor) {
+    if (sessao.metadadosMotor.massaPropelente) {
+      massaPropelente = parseFloat(sessao.metadadosMotor.massaPropelente);
+    } else if (sessao.metadadosMotor.propweight) {
+      massaPropelente = parseFloat(sessao.metadadosMotor.propweight) / 1000; // Converte de gramas para kg
+    }
+  }
+  
+  // Se encontrou massa, calcula impulso específico
+  if (massaPropelente && massaPropelente > 0) {
+    impulsoEspecifico = impulsoData.impulsoTotal / (massaPropelente * 9.81);
+  }
+  
   // 1. Encontra a força máxima para normalização (usada no gradiente da tabela)
   const newtonsValues = sessao.dadosTabela.map(dado => parseFloat(dado.newtons) || 0);
   const maxNewtons = Math.max(...newtonsValues) || 1;
@@ -366,6 +384,23 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
       </tr>
     `;
   });
+  
+  // Cria string de informação sobre Impulso Específico
+  let infoIsp = '<strong>* Impulso Específico (Isp):</strong> Requer a massa do propelente queimado. ';
+  let cardIsp = `<div class="metrica-card">
+        <h3>Impulso Específico (Isp)</h3>
+        <div class="valor">N/A</div>
+        <div class="unidade">s</div>
+      </div>`;
+  
+  if (impulsoEspecifico !== null) {
+    cardIsp = `<div class="metrica-card">
+        <h3>Impulso Específico (Isp)</h3>
+        <div class="valor">${impulsoEspecifico.toFixed(2)}</div>
+        <div class="unidade">segundos</div>
+      </div>`;
+    infoIsp = `<strong>✓ Impulso Específico (Isp):</strong> Calculado usando massa de propelente = ${massaPropelente.toFixed(3)} kg. `;
+  }
   
   return `
 <!DOCTYPE html>
@@ -672,12 +707,7 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
         <div class="valor">${impulsoData.tempoBurnout.toFixed(3)}</div>
         <div class="unidade">segundos</div>
       </div>
-      <!-- CORRIGIDO: Esta métrica foi removida/substituída pois não pode ser calculada sem dados de propelente -->
-      <div class="metrica-card">
-        <h3>Impulso Específico (Isp)</h3>
-        <div class="valor">N/A</div>
-        <div class="unidade">s*</div>
-      </div>
+      ${cardIsp}
       <div class="metrica-card">
         <h3>Impulso Líquido</h3>
         <div class="valor">${impulsoData.impulsoLiquido.toFixed(2)}</div>
@@ -685,7 +715,7 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
       </div>
     </div>
     <div class="info-box">
-      <strong>* Impulso Específico e Eficiência da Queima:</strong> Para calcular essas métricas, é necessário inserir a massa do propelente queimado e o valor teórico do Impulso Específico Ideal (Isp Ideal) no sistema. Sem esses dados, a balança só pode calcular o Impulso Total (área sob a curva).
+      ${infoIsp}Para calcular, insira a massa do propelente queimado nos metadados do motor.
     </div>
   </div>
 
@@ -797,7 +827,7 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
       <tr>
         <td>Impulso Específico (Isp)</td>
         <td>$$I_{sp} = \frac{I}{(\Delta m) g_0} \quad (\text{s})$$Métrica de eficiência do propelente. Requer a Massa Queimada ($\Delta m$).</td>
-        <td>**N/A** - Não pode ser calculado pelo sistema sem a inserção da massa do propelente queimada e do valor teórico de $I_{sp} \text{ Ideal}$.</td>
+        <td>${impulsoEspecifico !== null ? `**${impulsoEspecifico.toFixed(2)} s** - Calculado com massa = ${massaPropelente.toFixed(3)} kg.` : '**N/A** - Não pode ser calculado sem a inserção da massa do propelente queimada.'}</td>
       </tr>
     </table>
   </div>
