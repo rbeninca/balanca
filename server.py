@@ -713,7 +713,10 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
             "percentualAcuracia": fields[11], "mode": fields[12]
         }
         # Sanitize NaN/Infinity to None for valid JSON
-        return sanitize_for_json(config)
+        sanitized = sanitize_for_json(config)
+        # Log dos valores recebidos para debug
+        logging.info(f"[CONFIG_PACKET] capacidadeMaximaGramas={sanitized.get('capacidadeMaximaGramas')}, percentualAcuracia={sanitized.get('percentualAcuracia')}")
+        return sanitized
     except struct.error: return None
 
 def parse_status_packet(data: bytes) -> Optional[Dict[str, Any]]:
@@ -746,19 +749,34 @@ def json_to_binary_command(cmd: Dict[str, Any]) -> Optional[bytes]:
     elif cmd_type == "get_config":
         pkt_type, fmt, values = CMD_GET_CONFIG, "<HBBH", (MAGIC, VERSION, CMD_GET_CONFIG, 0)
     elif cmd_type in ("set", "set_param"):
-        param_map = {"gravity": (0x01, "f"), "conversionFactor": (0x02, "f"), "leiturasEstaveis": (0x03, "I")}
+        param_map = {
+            "gravity": (0x01, "f"),                    # PARAM_GRAVITY
+            "conversionFactor": (0x02, "f"),           # PARAM_CONV_FACTOR
+            "leiturasEstaveis": (0x03, "I"),           # PARAM_LEIT_ESTAV
+            "toleranciaEstabilidade": (0x04, "f"),     # PARAM_TOLERANCIA
+            "mode": (0x05, "I"),                       # PARAM_MODE
+            "usarEMA": (0x06, "I"),                    # PARAM_USE_EMA
+            "numAmostrasMedia": (0x07, "I"),           # PARAM_NUM_AMOSTRAS
+            "tareOffset": (0x08, "i"),                 # PARAM_TARE_OFFSET (signed int)
+            "timeoutCalibracao": (0x09, "I"),          # PARAM_TIMEOUT_CAL
+            "capacidadeMaximaGramas": (0x0A, "f"),     # PARAM_CAPACIDADE
+            "percentualAcuracia": (0x0B, "f")          # PARAM_ACURACIA
+        }
         param_name = cmd.get("param", "")
         if param_name in param_map:
             param_id, value_type = param_map[param_name]
             value = cmd.get("value", 0)
             value_f = float(value) if value_type == "f" else 0.0
-            value_i = int(value) if value_type != "f" else 0
+            value_i = int(value) if value_type in ("I", "i") else 0
             pkt_type, fmt, values = CMD_SET_PARAM, "<HBBB3xfI", (MAGIC, VERSION, CMD_SET_PARAM, param_id, value_f, value_i)
+            logging.info(f"[SET_PARAM] param_name={param_name}, param_id=0x{param_id:02X}, value_type={value_type}, value={value}")
 
     if pkt_type and fmt and values:
         data = struct.pack(fmt, *values)
         crc = crc16_ccitt(data)
-        return data + struct.pack("<H", crc)
+        result = data + struct.pack("<H", crc)
+        logging.debug(f"Binary command gerado: {result.hex()}")
+        return result
     return None
 
 def find_serial_port() -> Optional[str]:

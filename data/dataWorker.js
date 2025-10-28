@@ -222,6 +222,13 @@ function processWebSocketMessage(data) {
                 cfg.capacidadeMaximaGramas = numOr(cfg.capacidadeMaximaGramas, 5000);
                 cfg.percentualAcuracia = numOr(cfg.percentualAcuracia, 0.05);
 
+                console.log("[Worker] Valores sanitizados:");
+                console.log("  capacidadeMaximaGramas:", data.capacidadeMaximaGramas, "→", cfg.capacidadeMaximaGramas);
+                console.log("  percentualAcuracia:", data.percentualAcuracia, "→", cfg.percentualAcuracia);
+                console.log("  toleranciaEstabilidade:", data.toleranciaEstabilidade, "→", cfg.toleranciaEstabilidade);
+                console.log("  timeoutCalibracao:", data.timeoutCalibracao, "→", cfg.timeoutCalibracao);
+                console.log("  Erro Absoluto (Zona Morta):", (cfg.capacidadeMaximaGramas * cfg.percentualAcuracia).toFixed(2), "g");
+
                 if (cfg.gravity) {
                     gravity = cfg.gravity;
                 }

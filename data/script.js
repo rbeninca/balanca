@@ -556,8 +556,21 @@ function updateConfigForm(config) {
   document.getElementById("param-capacidade-maxima").value = getValue(config.capacidadeMaximaGramas);
   document.getElementById("param-acuracia").value = getValue(config.percentualAcuracia);
 
-  capacidadeMaximaGramas = parseFloat(config.capacidadeMaximaGramas) || 5000.0;
-  percentualAcuracia = parseFloat(config.percentualAcuracia) || 0.05;
+  // Validação robusta com logs para debug
+  const novaCapacidade = parseFloat(config.capacidadeMaximaGramas);
+  const novaAcuracia = parseFloat(config.percentualAcuracia);
+  const novaTol = parseFloat(config.toleranciaEstabilidade);
+  const novoTimeout = parseFloat(config.timeoutCalibracao);
+  
+  capacidadeMaximaGramas = (!isNaN(novaCapacidade) && novaCapacidade > 0) ? novaCapacidade : 5000.0;
+  percentualAcuracia = (!isNaN(novaAcuracia) && novaAcuracia > 0) ? novaAcuracia : 0.05;
+
+  console.log('[updateConfigForm] Valores recebidos do ESP:');
+  console.log('  Capacidade:', config.capacidadeMaximaGramas, '→', capacidadeMaximaGramas);
+  console.log('  Acurácia:', config.percentualAcuracia, '→', percentualAcuracia);
+  console.log('  Tolerância:', config.toleranciaEstabilidade, '→', novaTol.toFixed(2));
+  console.log('  Timeout (ms):', config.timeoutCalibracao, '→', novoTimeout.toFixed(0));
+  console.log('  Erro Absoluto calculado:', (capacidadeMaximaGramas * percentualAcuracia).toFixed(2), 'g');
 
   atualizarToleranciaEmGramas();
   atualizarCapacidadeEmKg();
@@ -760,6 +773,12 @@ function atualizarCapacidadeEmKg() {
   const el = document.getElementById("capacidade-em-kg");
   if (el && !isNaN(capacidadeGramas)) {
     el.textContent = '≈ ' + (capacidadeGramas / 1000).toFixed(2) + ' kg';
+    // Atualiza a variável global imediatamente para refletir na Zona Morta
+    if (Number.isFinite(capacidadeGramas) && capacidadeGramas > 0) {
+      capacidadeMaximaGramas = capacidadeGramas;
+      atualizarStatusFiltros();
+      console.log('[UI] capacidadeMaximaGramas atualizada via input →', capacidadeMaximaGramas);
+    }
   }
 }
 
@@ -769,6 +788,12 @@ function atualizarErroAbsoluto() {
   const el = document.getElementById("erro-absoluto");
   if (el && !isNaN(capacidadeGramas) && !isNaN(percentAcuracia)) {
     el.textContent = 'Erro: ±' + (capacidadeGramas * percentAcuracia).toFixed(2) + ' g';
+    // Atualiza a variável global imediatamente para refletir na Zona Morta
+    if (Number.isFinite(percentAcuracia) && percentAcuracia > 0) {
+      percentualAcuracia = percentAcuracia;
+      atualizarStatusFiltros();
+      console.log('[UI] percentualAcuracia atualizado via input →', percentualAcuracia);
+    }
   }
 }
 
@@ -783,7 +808,14 @@ function aplicarFiltrosGramas(valorGramas) {
 
 function aplicarZonaMorta(valorGramas) {
   const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
-  return Math.abs(valorGramas) <= erroAbsoluto ? 0 : valorGramas;
+  const resultado = Math.abs(valorGramas) <= erroAbsoluto ? 0 : valorGramas;
+  
+  // Log apenas quando houver mudança (evita spam no console)
+  if (resultado === 0 && valorGramas !== 0) {
+    console.log('[ZonaMorta] Valor', valorGramas.toFixed(3), 'g → 0 (limite:', erroAbsoluto.toFixed(2), 'g)');
+  }
+  
+  return resultado;
 }
 
 function aplicarArredondamentoInteligente(valorGramas) {
@@ -795,6 +827,10 @@ function aplicarArredondamentoInteligente(valorGramas) {
 function atualizarStatusFiltros() {
   const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
   casasDecimais = (erroAbsoluto >= 1) ? 1 : (erroAbsoluto >= 0.1) ? 2 : 3;
+
+  console.log('[atualizarStatusFiltros] capacidadeMaximaGramas:', capacidadeMaximaGramas);
+  console.log('[atualizarStatusFiltros] percentualAcuracia:', percentualAcuracia);
+  console.log('[atualizarStatusFiltros] Erro Absoluto (Zona Morta):', erroAbsoluto.toFixed(2), 'g');
 
   const infoZonaMorta = document.getElementById('info-zona-morta');
   if (infoZonaMorta) {
@@ -837,6 +873,33 @@ function toggleArredondamentoInteligente() {
   btn.textContent = 'Arredondar: ' + (arredondamentoInteligenteAtivo ? 'ON' : 'OFF');
   btn.style.background = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
   atualizarStatusFiltros();
+}
+
+// --- Função de Debug para Zona Morta ---
+function debugZonaMorta() {
+  const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
+  
+  console.log('═══════════════════════════════════════');
+  console.log('🔍 DEBUG ZONA MORTA');
+  console.log('═══════════════════════════════════════');
+  console.log('📊 Parâmetros Globais:');
+  console.log('  capacidadeMaximaGramas:', capacidadeMaximaGramas);
+  console.log('  percentualAcuracia:', percentualAcuracia);
+  console.log('  Erro Absoluto (Zona Morta):', erroAbsoluto.toFixed(2), 'g');
+  console.log('  Filtro Ativo:', filtroZonaMortaAtivo);
+  console.log('───────────────────────────────────────');
+  console.log('🧪 Testes de Valores:');
+  
+  const testValues = [0, 0.1, 0.5, 1, 2, 5, 10, 50, 100];
+  testValues.forEach(val => {
+    const resultado = aplicarZonaMorta(val);
+    const status = resultado === 0 ? '→ ZERADO' : '→ MANTIDO';
+    console.log(`  ${val.toFixed(1)}g ${status} (resultado: ${resultado.toFixed(3)}g)`);
+  });
+  
+  console.log('═══════════════════════════════════════');
+  
+  showNotification('info', `Debug Zona Morta concluído! Limite atual: ±${erroAbsoluto.toFixed(2)}g. Veja o console.`, 5000);
 }
 
 function toggleAntiNoising() {
@@ -956,6 +1019,7 @@ function setupKeyboardShortcuts() {
       if (key === 't') { event.preventDefault(); tare(); }
       else if (key === 'c') { event.preventDefault(); calibrar(); }
       else if (key === 'a') { event.preventDefault(); startNoiseAnalysis(); }
+      else if (key === 'd') { event.preventDefault(); debugZonaMorta(); } // NOVO: Debug Zona Morta
     } else if (!event.ctrlKey && !event.metaKey) {
       if (key === 'l') { event.preventDefault(); clearChart(); }
       else if (key === 'p') { event.preventDefault(); toggleChartPause(); }
