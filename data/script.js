@@ -518,17 +518,26 @@ function updateUIFromData(dado) {
 
   let { tempo, forca, ema } = dado;
 
-  // Aplica zona morta e arredondamento na força principal
+  // === PIPELINE DE FILTROS ===
+  // Ordem crítica: Zona Morta → Arredondamento → Anti-Noising
+  // Zona morta remove valores dentro da margem de erro da célula (neutralização)
+  
+  // [1] Converter força de Newtons para gramas (base de cálculo de zona morta)
+  // [2] Aplicar zona morta + arredondamento inteligente
+  // [3] Converter de volta para Newtons
   const forcaGramas = (forca / 9.80665) * 1000;
   const forcaGramasFiltrada = aplicarFiltrosGramas(forcaGramas);
   forca = (forcaGramasFiltrada / 1000) * 9.80665;
 
-  // Aplica zona morta e arredondamento no EMA também
+  // Aplicar MESMOS filtros no EMA para manter consistência
+  // O EMA é uma média móvel exponencial que também sofre com a imprecisão da célula
+  // Sem zona morta aqui, o gráfico EMA mostraria oscilações indesejadas
   const emaGramas = (ema / 9.80665) * 1000;
   const emaGramasFiltrada = aplicarFiltrosGramas(emaGramas);
   ema = (emaGramasFiltrada / 1000) * 9.80665;
 
-  // Aplica anti-noising DEPOIS da zona morta (ordem correta)
+  // Anti-noising aplicado POR ÚLTIMO (após zona morta já ter neutralizado o ruído)
+  // Evita amplificar artefatos que já foram filtrados
   let forcaFiltrada = antiNoisingAtivo ? applyAntiNoising(forca) : forca;
 
   if (isStabilityMode) {
@@ -877,6 +886,14 @@ function atualizarErroAbsoluto() {
 
 // --- Funções de Filtros e Análise de Ruído ---
 
+/**
+ * PIPELINE DE FILTROS para normalizar leituras de força
+ * Aplicados na seguinte ordem (critial para resultados corretos):
+ * 1. Zona Morta - Neutraliza ruído dentro da margem de erro da célula
+ * 2. Arredondamento Inteligente - Ajusta casas decimais baseado na precisão
+ * 
+ * NÃO é aplicado aqui: Anti-Noising (aplicado DEPOIS na UI)
+ */
 function aplicarFiltrosGramas(valorGramas) {
   let valor = valorGramas;
   if (filtroZonaMortaAtivo) valor = aplicarZonaMorta(valor);
@@ -885,7 +902,13 @@ function aplicarFiltrosGramas(valorGramas) {
 }
 
 function aplicarZonaMorta(valorGramas) {
+  // Calcula a margem de erro absoluta da célula de carga
+  // Fórmula: erro = capacidade máxima × percentual de acurácia
+  // Exemplo: 20000g × 0.017% = 3.4g
   const erroAbsoluto = capacidadeMaximaGramas * percentualAcuracia;
+  
+  // Se o valor está dentro da margem de erro (+/-), neutraliza para zero
+  // Evita que oscilações de ruído apareçam como leituras reais
   const resultado = Math.abs(valorGramas) <= erroAbsoluto ? 0 : valorGramas;
   
   // Log apenas quando houver mudança (evita spam no console)
