@@ -829,9 +829,44 @@ void loadConfig() {
   EEPROM.get(0, tempConfig);
   if (tempConfig.magic_number == 123456789) {
     config = tempConfig;
+    Serial.println("[LoadConfig] Config carregada da EEPROM:");
+    Serial.printf("  capacidadeMaximaGramas: %.2f\n", config.capacidadeMaximaGramas);
+    Serial.printf("  percentualAcuracia: %.4f\n", config.percentualAcuracia);
     
+    // Valida e corrige valores NaN/Infinity vindos da EEPROM corrompida
+    bool needsFix = false;
+    if (isnan(config.capacidadeMaximaGramas) || isinf(config.capacidadeMaximaGramas) || config.capacidadeMaximaGramas <= 0) {
+      Serial.println("[LoadConfig] AVISO: capacidadeMaximaGramas invalida, aplicando default 5000.0");
+      config.capacidadeMaximaGramas = 5000.0;
+      needsFix = true;
+    }
+    if (isnan(config.percentualAcuracia) || isinf(config.percentualAcuracia) || config.percentualAcuracia < 0 || config.percentualAcuracia > 10.0) {
+      Serial.println("[LoadConfig] AVISO: percentualAcuracia invalida, aplicando default 0.05");
+      config.percentualAcuracia = 0.05;
+      needsFix = true;
+    }
+    if (isnan(config.conversionFactor) || isinf(config.conversionFactor)) {
+      Serial.println("[LoadConfig] AVISO: conversionFactor invalido, aplicando default 21000.0");
+      config.conversionFactor = 21000.0;
+      needsFix = true;
+    }
+    if (isnan(config.gravity) || isinf(config.gravity)) {
+      Serial.println("[LoadConfig] AVISO: gravity invalido, aplicando default 9.80665");
+      config.gravity = 9.80665;
+      needsFix = true;
+    }
+    if (isnan(config.toleranciaEstabilidade) || isinf(config.toleranciaEstabilidade)) {
+      Serial.println("[LoadConfig] AVISO: toleranciaEstabilidade invalido, aplicando default 100.0");
+      config.toleranciaEstabilidade = 100.0;
+      needsFix = true;
+    }
+    
+    if (needsFix) {
+      Serial.println("[LoadConfig] Salvando config corrigida na EEPROM...");
+      saveConfig();
+    }
   } else {
-    
+    Serial.println("[LoadConfig] Magic number invalido, inicializando EEPROM com defaults...");
     saveConfig();
   }
 }

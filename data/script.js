@@ -65,6 +65,13 @@ window.onload = () => {
   btnSetSmoothLine = document.getElementById('btn-set-smooth-line');
   btnSetStraightLine = document.getElementById('btn-set-straight-line');
 
+  // Atualiza o status dos filtros na inicialização
+  atualizarStatusFiltros();
+  // Sincroniza a aparência dos botões de filtros na inicialização
+  if (typeof syncFilterButtonsUI === 'function') {
+    syncFilterButtonsUI();
+  }
+
   // Add event listener for the new exit fullscreen button
   const exitFullscreenButton = document.getElementById('btn-exit-fullscreen');
   if (exitFullscreenButton) {
@@ -492,11 +499,11 @@ function updateUIFromData(dado) {
   const mmm = String(agora.getUTCMilliseconds()).padStart(3, '0');
   const timestamp = `${dd}/${mm}/${yyyy} ${HH}:${MM}:${SS}.${mmm}`;
 
-    linha.insertCell(0).innerText = timestamp;
-    linha.insertCell(1).innerText = tempo;
-    linha.insertCell(2).innerText = forcaFiltrada;
-    linha.insertCell(3).innerText = (forcaFiltrada / 9.80665 * 1000);
-    linha.insertCell(4).innerText = (forcaFiltrada / 9.80665);
+  linha.insertCell(0).innerText = timestamp;
+  linha.insertCell(1).innerText = Number(tempo).toFixed(3);
+  linha.insertCell(2).innerText = Number(forcaFiltrada).toFixed(6);
+  linha.insertCell(3).innerText = Number((forcaFiltrada / 9.80665) * 1000).toFixed(casasDecimais);
+  linha.insertCell(4).innerText = Number(forcaFiltrada / 9.80665).toFixed(6);
 
     if (tbody.rows.length > 5000) {
       tbody.deleteRow(tbody.rows.length - 1);
@@ -799,6 +806,20 @@ function atualizarStatusFiltros() {
   if (infoArredondamento) {
     infoArredondamento.textContent = arredondamentoInteligenteAtivo ? '✓ Arredondamento (' + casasDecimais + ' casas)' : '✗ Arredondamento';
     infoArredondamento.style.color = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
+  }
+}
+
+// Garante que os botões reflitam o estado atual dos filtros
+function syncFilterButtonsUI() {
+  const btnZona = document.getElementById('btn-zona-morta');
+  if (btnZona) {
+    btnZona.textContent = 'Zona Morta: ' + (filtroZonaMortaAtivo ? 'ON' : 'OFF');
+    btnZona.style.background = filtroZonaMortaAtivo ? '#27ae60' : '#95a5a6';
+  }
+  const btnArr = document.getElementById('btn-arredondamento');
+  if (btnArr) {
+    btnArr.textContent = 'Arredondar: ' + (arredondamentoInteligenteAtivo ? 'ON' : 'OFF');
+    btnArr.style.background = arredondamentoInteligenteAtivo ? '#27ae60' : '#95a5a6';
   }
 }
 

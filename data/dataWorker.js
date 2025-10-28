@@ -76,6 +76,19 @@ function connectWebSocket() {
         console.log(`[Worker] ✅ WebSocket CONECTADO! Estado: ${socket.readyState}, URL: ${socket.url}`);
         self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao Gateway Serial (Host)' });
         self.postMessage({ type: 'debug', message: `WebSocket connected to: ${socket.url}` });
+
+        // Solicita a configuração automaticamente após conectar para evitar estado inicial inconsistente
+        try {
+            const cmd = JSON.stringify({ cmd: 'get_config' });
+            setTimeout(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(cmd);
+                    console.log('[Worker] 🔎 get_config enviado automaticamente após conexão');
+                }
+            }, 200);
+        } catch (e) {
+            console.warn('[Worker] Não foi possível enviar get_config automático:', e.message);
+        }
     };
 
     socket.onclose = (event) => {
@@ -131,14 +144,35 @@ function connectWebSocket() {
             }
             if (jsonEndIndex !== -1) {
                 const jsonString = messageBuffer.substring(jsonStartIndex, jsonEndIndex + 1);
+                let parsedOk = false;
+                // 1) Tenta parse direto
                 try {
                     const data = JSON.parse(jsonString);
                     processWebSocketMessage(data);
-                } catch (e) {
-                    console.error("[Worker] ❌ JSON inválido:", e);
-                    console.error("[Worker] String problemática:", jsonString.substring(0, 100));
+                    parsedOk = true;
+                } catch (e1) {
+                    // 2) Sanitiza tokens inválidos (NaN, Infinity) e vírgulas finais
+                    try {
+                        let sanitized = jsonString
+                            // Substitui :NaN, : Infinity, : -Infinity por :null (fora de strings, heurístico)
+                            .replace(/:(\s*)(NaN|Infinity|-Infinity)(\s*)([,}\]])/g, ': null$3$4')
+                            // Remove vírgulas finais antes de } ou ]
+                            .replace(/,(\s*[}\]])/g, '$1');
+                        const data2 = JSON.parse(sanitized);
+                        console.warn('[Worker] ⚠️ JSON corrigido (NaN/Infinity e/ou vírgulas finais)');
+                        processWebSocketMessage(data2);
+                        parsedOk = true;
+                    } catch (e2) {
+                        console.error('[Worker] ❌ JSON inválido (após saneamento):', e2.message);
+                        console.error('[Worker] String problemática (início):', jsonString.substring(0, 200));
+                        // Mensagem completa porém inválida: avançar para evitar travar buffer
+                        jsonStartIndex = jsonEndIndex + 1;
+                        continue;
+                    }
                 }
-                jsonStartIndex = jsonEndIndex + 1;
+                if (parsedOk) {
+                    jsonStartIndex = jsonEndIndex + 1;
+                }
             } else {
                 break;
             }
@@ -173,11 +207,26 @@ function processWebSocketMessage(data) {
                 break;
 
             case "config":
-                if (data.gravity) {
-                    gravity = parseFloat(data.gravity);
+                // Sanitiza configuração e fixa defaults para números inválidos
+                const cfg = { ...data };
+                const numOr = (v, def) => {
+                    const n = parseFloat(v);
+                    return Number.isFinite(n) ? n : def;
+                };
+                cfg.conversionFactor = numOr(cfg.conversionFactor, 1);
+                cfg.gravity = numOr(cfg.gravity, 9.80665);
+                cfg.leiturasEstaveis = numOr(cfg.leiturasEstaveis, 10);
+                cfg.toleranciaEstabilidade = numOr(cfg.toleranciaEstabilidade, 500);
+                cfg.numAmostrasMedia = numOr(cfg.numAmostrasMedia, 10);
+                cfg.timeoutCalibracao = numOr(cfg.timeoutCalibracao, 5000);
+                cfg.capacidadeMaximaGramas = numOr(cfg.capacidadeMaximaGramas, 5000);
+                cfg.percentualAcuracia = numOr(cfg.percentualAcuracia, 0.05);
+
+                if (cfg.gravity) {
+                    gravity = cfg.gravity;
                 }
-                console.log("[Worker] CONFIGURAÇÃO RECEBIDA:", data);
-                self.postMessage({ type: 'config', payload: data });
+                console.log("[Worker] CONFIGURAÇÃO RECEBIDA:", cfg);
+                self.postMessage({ type: 'config', payload: cfg });
                 break;
 
             case "status":

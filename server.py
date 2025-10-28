@@ -654,11 +654,25 @@ async def ws_server_main():
     except OSError as e:
         logging.error(f"Falha ao iniciar WebSocket: {e}", exc_info=True)
 
+def sanitize_for_json(obj):
+    """Recursively replace NaN/Infinity with None for valid JSON serialization."""
+    import math
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    return obj
+
 async def broadcast_json(obj: Dict[str, Any]):
     if not CONNECTED_CLIENTS:
         return
     obj["mysql_connected"] = mysql_connected
-    data = json.dumps(obj, separators=(",", ":"))
+    sanitized = sanitize_for_json(obj)
+    data = json.dumps(sanitized, separators=(",", ":"))
     await asyncio.gather(*[ws.send(data) for ws in list(CONNECTED_CLIENTS)], return_exceptions=True)
 
 # ================== Binary Protocol & Serial ==================
@@ -690,7 +704,7 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
             logging.warning("CRC mismatch in CONFIG packet")
             return None
         fields = struct.unpack_from("<ffHfHHBBHiffB23x", data, 4)
-        return {
+        config = {
             "type": "config", "conversionFactor": fields[0], "gravity": fields[1],
             "leiturasEstaveis": fields[2], "toleranciaEstabilidade": fields[3],
             "numAmostrasMedia": fields[4], "numAmostrasCalibracao": fields[5],
@@ -698,6 +712,8 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
             "tareOffset": fields[9], "capacidadeMaximaGramas": fields[10],
             "percentualAcuracia": fields[11], "mode": fields[12]
         }
+        # Sanitize NaN/Infinity to None for valid JSON
+        return sanitize_for_json(config)
     except struct.error: return None
 
 def parse_status_packet(data: bytes) -> Optional[Dict[str, Any]]:
