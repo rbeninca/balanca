@@ -80,24 +80,24 @@ services:
       timeout: 3s
       retries: 10
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: balanca_phpmyadmin
-    restart: always
-    depends_on:
-      - db
-    environment:
-      PMA_HOST: db # Connects to the 'db' service
-      MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password" # Use the same root password secret
-      TZ: "America/Sao_Paulo" # Timezone GMT-3
-      # PMA_USER: balanca_user # Optional: if you want to log in directly with the app user
-      # PMA_PASSWORD: balanca_password # Optional: if you want to log in directly with the app user
-    ports:
-      - "8080:80" # Access PhpMyAdmin on port 8080
-    secrets:
-      - db_root_password
-    networks:
-      - balanca_network
+  # phpmyadmin: (COMENTADO PARA PRODUÇÃO)
+  #   image: phpmyadmin/phpmyadmin
+  #   container_name: balanca_phpmyadmin
+  #   restart: always
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     PMA_HOST: db # Connects to the 'db' service
+  #     MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password" # Use the same root password secret
+  #     TZ: "America/Sao_Paulo" # Timezone GMT-3
+  #     # PMA_USER: balanca_user # Optional: if you want to log in directly with the app user
+  #     # PMA_PASSWORD: balanca_password # Optional: if you want to log in directly with the app user
+  #   ports:
+  #     - "8080:80" # Access PhpMyAdmin on port 8080
+  #   secrets:
+  #     - db_root_password
+  #   networks:
+  #     - balanca_network
 
 networks:
   balanca_network:
