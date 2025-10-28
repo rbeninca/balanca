@@ -76,9 +76,9 @@ services:
       - balanca_network # Adiciona o serviço 'db' à rede interna
     healthcheck:
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 3s
+      timeout: 5s
+      retries: 20
 
   # phpmyadmin: (COMENTADO PARA PRODUÇÃO)
   #   image: phpmyadmin/phpmyadmin
