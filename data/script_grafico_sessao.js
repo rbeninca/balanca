@@ -112,28 +112,177 @@ function classificarMotor(impulsoNs) {
   };
 }
 
+// ============================================
+// === SISTEMA DE CONFIGURAÇÃO AVANÇADA DE EXPORTAÇÃO PNG ===
+// ============================================
+
+// Modo debug (ativar para logs detalhados)
+const DEBUG_PNG = false;
+
+/**
+ * Obtém a configuração atual de exportação PNG do localStorage
+ * @returns {Object} Objeto com todas as configurações
+ */
+function obterConfiguracaoExportacao() {
+  return {
+    escala: parseInt(localStorage.getItem('png_escala')) || 1,
+    tema: localStorage.getItem('png_tema') || 'profissional',
+    template: localStorage.getItem('png_template') || 'completo',
+    tamanho: localStorage.getItem('png_tamanho') || 'medio',
+    mostrarLogo: localStorage.getItem('png_logo') !== 'false',
+    logoTexto: localStorage.getItem('png_logo_texto') || 'GFIG',
+    logoPos: localStorage.getItem('png_logo_pos') || 'canto-superior-direito',
+    formato: localStorage.getItem('png_formato') || 'png',
+    qualidadeJPEG: parseFloat(localStorage.getItem('png_qualidade')) || 0.95,
+    debug: localStorage.getItem('png_debug') === 'true'
+  };
+}
+
+/**
+ * Salva a configuração de exportação PNG no localStorage
+ * @param {Object} config - Objeto com as configurações a salvar
+ */
+function salvarConfiguracaoExportacao(config) {
+  Object.keys(config).forEach(key => {
+    localStorage.setItem(`png_${key}`, config[key]);
+  });
+}
+
+/**
+ * Obtém a paleta de cores para um tema específico
+ * @param {string} nomeTema - Nome do tema ('profissional', 'cientifico', 'foguete')
+ * @returns {Object} Objeto com as cores do tema
+ */
+function obterTema(nomeTema) {
+  const temas = {
+    profissional: {
+      fundo: '#ffffff',
+      titulo: '#2c3e50',
+      subtitulo: '#7f8c8d',
+      azul: '#3498db',
+      verde: '#27ae60',
+      vermelho: '#e74c3c',
+      cinza: '#95a5a6',
+      fundo2: '#f8f9fa',
+      laranja: '#e67e22'
+    },
+    cientifico: {
+      fundo: '#f5f5f5',
+      titulo: '#1a1a1a',
+      subtitulo: '#666666',
+      azul: '#0066cc',
+      verde: '#006600',
+      vermelho: '#cc0000',
+      cinza: '#888888',
+      fundo2: '#e8e8e8',
+      laranja: '#cc6600'
+    },
+    foguete: {
+      fundo: '#0a0e27',
+      titulo: '#ffffff',
+      subtitulo: '#b0b0b0',
+      azul: '#ff6b35',
+      verde: '#f7931e',
+      vermelho: '#c1121f',
+      cinza: '#7a7a7a',
+      fundo2: '#1a1e37',
+      laranja: '#ffa500'
+    }
+  };
+  return temas[nomeTema] || temas.profissional;
+}
+
+/**
+ * Obtém as dimensões do canvas baseado no tamanho selecionado
+ * @param {string} tamanho - 'pequeno', 'medio', 'grande', 'A4'
+ * @returns {Object} Objeto com w (largura) e h (altura)
+ */
+function obterDimensoesCanvas(tamanho) {
+  const tamanhos = {
+    pequeno: { w: 1200, h: 900 },   // 4:3 pequeno
+    medio: { w: 1600, h: 1200 },    // 4:3 médio (padrão atual)
+    grande: { w: 2400, h: 1800 },   // 4:3 grande para impressão
+    A4: { w: 2480, h: 3508 }        // A4 portrait 300 DPI
+  };
+  return tamanhos[tamanho] || tamanhos.medio;
+}
+
+/**
+ * Valida se as funções externas necessárias estão disponíveis
+ * Adiciona fallbacks básicos se não estiverem
+ */
+function validarDependencias() {
+  if (typeof showNotification !== 'function') {
+    if (DEBUG_PNG) console.warn('[PNG] showNotification não definida, usando console.log como fallback');
+    window.showNotification = function(tipo, msg, duracao) {
+      console.log(`[${tipo.toUpperCase()}] ${msg}`);
+    };
+  }
+}
 
 
-function exportarImagemSessao(sessionId) {
+/**
+ * Exporta imagem da sessão (função wrapper compatível)
+ * @param {number} sessionId - ID da sessão
+ * @param {boolean} abrirModal - Se true, abre modal de configuração (futuro)
+ */
+function exportarImagemSessao(sessionId, abrirModal = false) {
+  // Valida dependências
+  validarDependencias();
+
+  // Se modal solicitado (futuro - Fase 3)
+  if (abrirModal) {
+    // TODO: Implementar modal de configuração na Fase 3
+    if (DEBUG_PNG) console.log('[PNG] Modal de configuração ainda não implementado, usando configuração padrão');
+  }
+
+  // Obtém configuração atual
+  const config = obterConfiguracaoExportacao();
+
+  // Chama versão avançada
+  exportarImagemSessaoAvancada(sessionId, config);
+}
+
+/**
+ * Versão avançada da exportação PNG com todas as melhorias
+ * @param {number} sessionId - ID da sessão
+ * @param {Object} config - Configurações de exportação
+ */
+function exportarImagemSessaoAvancada(sessionId, config) {
+  const startTime = config.debug ? performance.now() : 0;
+
   try {
+    if (config.debug) console.log('[PNG] Iniciando exportação...', { sessionId, config });
+
     const gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
     const sessao = gravacoes.find(g => g.id === sessionId);
-    
+
     if (!sessao || !sessao.dadosTabela || sessao.dadosTabela.length === 0) {
       showNotification('error', 'Sessão não encontrada ou sem dados');
       return;
     }
-    
+
     showNotification('info', `Gerando análise de propulsão de "${sessao.nome}"...`, 2000);
-    
+
     // Processa dados COM cálculos de impulso
     const dados = processarDadosSimples(sessao.dadosTabela);
-    
-    // Gera relatório com análise de impulso
-    criarRelatorioComImpulso(sessao, dados);
-    
+
+    if (config.debug) console.log('[PNG] Dados processados:', {
+      pontos: dados.pontos,
+      impulso: dados.impulso.impulsoTotal,
+      classe: dados.propulsao.classificacaoMotor.classe
+    });
+
+    // Gera relatório com configurações avançadas
+    criarRelatorioComImpulsoAvancado(sessao, dados, config);
+
+    if (config.debug) {
+      const elapsed = performance.now() - startTime;
+      console.log(`[PNG] Exportação concluída em ${elapsed.toFixed(0)}ms`);
+    }
+
   } catch (e) {
-    console.error('Erro:', e);
+    console.error('[PNG] Erro na exportação:', e);
     showNotification('error', 'Erro ao gerar relatório: ' + e.message);
   }
 }
@@ -186,6 +335,202 @@ function processarDadosSimples(dadosTabela) {
     propulsao: metricasPropulsao
   };
 }
+
+/**
+ * Versão avançada de criação de relatório PNG com suporte a temas, escalas e tamanhos
+ * @param {Object} sessao - Dados da sessão
+ * @param {Object} dados - Dados processados
+ * @param {Object} config - Configurações de exportação
+ */
+function criarRelatorioComImpulsoAvancado(sessao, dados, config) {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Obtém dimensões baseadas na configuração
+    const dim = obterDimensoesCanvas(config.tamanho);
+    const w = dim.w;
+    const h = dim.h;
+    const escala = config.escala || 1;
+
+    // Aplica escala ao canvas
+    canvas.width = w * escala;
+    canvas.height = h * escala;
+
+    if (escala > 1) {
+      ctx.scale(escala, escala);
+      if (config.debug) console.log(`[PNG] Canvas escalado ${escala}x: ${canvas.width}x${canvas.height}`);
+    }
+
+    // Obtém tema de cores
+    const cor = obterTema(config.tema);
+
+    if (config.debug) console.log(`[PNG] Usando tema "${config.tema}" e tamanho "${config.tamanho}"`);
+
+    // 1. FUNDO
+    ctx.fillStyle = cor.fundo;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. CABEÇALHO COM IMPULSO
+    ctx.fillStyle = cor.titulo;
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🚀 ANÁLISE DE PROPULSÃO', w/2, 50);
+
+    ctx.fillStyle = cor.azul;
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText(`"${sessao.nome}"`, w/2, 90);
+
+    const dataSessao = new Date(sessao.timestamp).toLocaleString('pt-BR');
+    ctx.fillStyle = cor.subtitulo;
+    ctx.font = '16px Arial';
+    ctx.fillText(`Teste realizado em: ${dataSessao}`, w/2, 120);
+
+    // DESTAQUE DO IMPULSO
+    ctx.fillStyle = cor.verde;
+    ctx.font = 'bold 20px Arial';
+    const impulsoTotal = dados.impulso.impulsoTotal;
+    const classificacao = dados.propulsao.classificacaoMotor;
+    ctx.fillText(`💥 Impulso Total: ${impulsoTotal.toFixed(2)} N⋅s | Motor Classe ${classificacao.classe}`, w/2, 155);
+
+    // Linha
+    ctx.strokeStyle = cor.cinza;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(w*0.1, 180);
+    ctx.lineTo(w*0.9, 180);
+    ctx.stroke();
+
+    // 3. LOGO (se habilitado)
+    if (config.mostrarLogo) {
+      desenharLogoSimples(ctx, config, cor, w, h);
+    }
+
+    // 4. GRÁFICO COM ÁREA PREENCHIDA
+    if (dados.kgf.length > 0) {
+      desenharGraficoComArea(ctx, dados, cor, w, h);
+    }
+
+    // 5. ESTATÍSTICAS + IMPULSO
+    if (dados.stats) {
+      desenharEstatisticasCompletas(ctx, dados, cor, w, h);
+    }
+
+    // 6. TABELA DE MÉTRICAS
+    desenharTabelaImpulso(ctx, dados, cor, w, h);
+
+    // 7. RODAPÉ
+    ctx.fillStyle = cor.subtitulo;
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Sistema de Análise de Propulsão - GFIG', 50, h-20);
+    ctx.textAlign = 'right';
+    ctx.fillText(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, w-50, h-20);
+
+    // 8. DOWNLOAD
+    baixarRelatorioAvancado(canvas, sessao.nome + '_analise_propulsao', config);
+
+  } catch (e) {
+    console.error('[PNG] Erro ao criar relatório:', e);
+    throw e;
+  }
+}
+
+/**
+ * Desenha logo/watermark simples (texto)
+ * @param {CanvasRenderingContext2D} ctx - Contexto do canvas
+ * @param {Object} config - Configurações
+ * @param {Object} cor - Paleta de cores
+ * @param {number} w - Largura do canvas
+ * @param {number} h - Altura do canvas
+ */
+function desenharLogoSimples(ctx, config, cor, w, h) {
+  try {
+    let x, y;
+
+    // Determinar posição
+    switch(config.logoPos) {
+      case 'canto-superior-direito':
+        x = w - 150;
+        y = 30;
+        break;
+      case 'canto-inferior-direito':
+        x = w - 150;
+        y = h - 50;
+        break;
+      case 'centro-cabecalho':
+        x = w/2;
+        y = 30;
+        break;
+      default:
+        x = w - 150;
+        y = 30;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = cor.cinza;
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText(config.logoTexto || 'GFIG', x, y);
+    ctx.restore();
+  } catch (e) {
+    if (config.debug) console.warn('[PNG] Erro ao desenhar logo:', e);
+  }
+}
+
+/**
+ * Versão avançada de download com suporte a múltiplos formatos
+ * @param {HTMLCanvasElement} canvas - Canvas a ser exportado
+ * @param {string} nomeSessao - Nome base do arquivo
+ * @param {Object} config - Configurações de exportação
+ */
+function baixarRelatorioAvancado(canvas, nomeSessao, config) {
+  try {
+    const formato = config.formato || 'png';
+    const qualidade = formato === 'png' ? 1.0 : (config.qualidadeJPEG || 0.95);
+
+    showNotification('info', 'Gerando arquivo...', 1000);
+
+    const mimeTypes = {
+      png: 'image/png',
+      jpeg: 'image/jpeg',
+      webp: 'image/webp'
+    };
+
+    const mimeType = mimeTypes[formato] || mimeTypes.png;
+
+    canvas.toBlob(function(blob) {
+      if (!blob) {
+        showNotification('error', 'Erro ao criar arquivo');
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      // Nome sanitizado
+      const nome = nomeSessao.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      const extensao = formato === 'jpeg' ? 'jpg' : formato;
+      link.download = `relatorio_${nome}_${Date.now()}.${extensao}`;
+      link.href = url;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showNotification('success', `Relatório exportado em ${formato.toUpperCase()}!`);
+
+    }, mimeType, qualidade);
+
+  } catch (e) {
+    console.error('[PNG] Erro no download:', e);
+    showNotification('error', 'Erro ao baixar: ' + e.message);
+  }
+}
+
+// Mantém função original para compatibilidade
 function criarRelatorioComImpulso(sessao, dados) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
