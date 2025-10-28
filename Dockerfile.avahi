@@ -7,8 +7,25 @@ RUN apt-get update && \
 
 COPY avahi-service.xml /etc/avahi/services/gfig.service
 
-# Modificar a configuração padrão do avahi para desabilitar dbus
-RUN sed -i 's/^#enable-dbus=no/enable-dbus=no/' /etc/avahi/avahi-daemon.conf
+# Criar arquivo de configuração customizado
+RUN cat > /etc/avahi/avahi-daemon.conf << 'EOF'\n\
+[Server]\n\
+host-name=gfig\n\
+domain-name=local\n\
+browse-domains=local\n\
+use-ipv4=yes\n\
+use-ipv6=no\n\
+enable-dbus=no\n\
+ratelimit-interval-usec=1000000\n\
+ratelimit-burst=1000\n\
+\n\
+[wide-area]\n\
+enable-wide-area=no\n\
+\n\
+[publish]\n\
+publish-hinfo=no\n\
+publish-workstation=no\n\
+EOF
 
 EXPOSE 5353/udp
 
