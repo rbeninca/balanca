@@ -518,10 +518,17 @@ function updateUIFromData(dado) {
 
   let { tempo, forca, ema } = dado;
 
+  // Aplica zona morta e arredondamento na força principal
   const forcaGramas = (forca / 9.80665) * 1000;
   const forcaGramasFiltrada = aplicarFiltrosGramas(forcaGramas);
   forca = (forcaGramasFiltrada / 1000) * 9.80665;
 
+  // Aplica zona morta e arredondamento no EMA também
+  const emaGramas = (ema / 9.80665) * 1000;
+  const emaGramasFiltrada = aplicarFiltrosGramas(emaGramas);
+  ema = (emaGramasFiltrada / 1000) * 9.80665;
+
+  // Aplica anti-noising DEPOIS da zona morta (ordem correta)
   let forcaFiltrada = antiNoisingAtivo ? applyAntiNoising(forca) : forca;
 
   if (isStabilityMode) {
