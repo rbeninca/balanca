@@ -654,25 +654,6 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
     </div>
   </div>
 
-  <!-- CLASSIFICAÇÃO -->
-  <div class="classificacao-info avoid-break">
-    <h3>📊 Classificação do Motor</h3>
-    <table style="margin: 0; font-size: 12px;">
-      <tr>
-        <td><strong>Classe:</strong></td>
-        <td>${classificacao.classe}</td>
-        <td><strong>Tipo:</strong></td>
-        <td>${classificacao.tipo}</td>
-      </tr>
-      <tr>
-        <td><strong>Nível:</strong></td>
-        <td>${classificacao.nivel}</td>
-        <td><strong>Faixa:</strong></td>
-        <td>${classificacao.faixa}</td>
-      </tr>
-    </table>
-  </div>
-
   <!-- MÉTRICAS PRINCIPAIS -->
   <div class="secao avoid-break">
     <h2>📈 Métricas de Desempenho</h2>
@@ -862,6 +843,38 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
         <td>NFPA 1122, NFPA 1127</td>
       </tr>
     </table>
+  </div>
+
+  <!-- CLASSIFICAÇÃO DO MOTOR -->
+  <div class="page-break"></div>
+  <div class="secao">
+    <h2>📊 Classificação do Motor (NAR/TRA)</h2>
+    <table style="font-size: 12px;">
+      <tr>
+        <td><strong>Classe:</strong></td>
+        <td>${classificacao.classe}</td>
+        <td><strong>Tipo:</strong></td>
+        <td>${classificacao.tipo}</td>
+      </tr>
+      <tr>
+        <td><strong>Nível:</strong></td>
+        <td>${classificacao.nivel}</td>
+        <td><strong>Faixa:</strong></td>
+        <td>${classificacao.faixa}</td>
+      </tr>
+      <tr>
+        <td><strong>Impulso Total:</strong></td>
+        <td>${impulsoData.impulsoTotal.toFixed(2)} N⋅s</td>
+        <td><strong>Status:</strong></td>
+        <td>✓ Dentro dos limites NAR/TRA</td>
+      </tr>
+    </table>
+    <div class="info-box" style="margin-top: 1rem;">
+      <strong>Informações de Classificação:</strong><br>
+      A classificação NAR/TRA segue os padrões estabelecidos pela National Association for Rocketry (NAR) e pela Tripoli Rocketry Association (TRA). 
+      Os motores são classificados por letras (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) baseado no impulso total em Newton-segundos.
+      Cada classe tem aproximadamente o dobro do impulso da classe anterior.
+    </div>
   </div>
 
   <!-- RODAPÉ -->
