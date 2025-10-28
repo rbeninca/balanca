@@ -78,41 +78,59 @@ def connect_to_mysql():
     if mysql_connection and mysql_connection.open:
         return mysql_connection
 
-    try:
-        mysql_connection = pymysql.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=MYSQL_DB,
-            cursorclass=pymysql.cursors.DictCursor,
-            connect_timeout=5
-        )
-        logging.info("Conectado ao MySQL com sucesso!")
-        mysql_connected = True
-        return mysql_connection
-    except pymysql.Error as e:
-        logging.error(f"Erro ao conectar ao MySQL: {e}")
-        mysql_connected = False
-        return None
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            mysql_connection = pymysql.connect(
+                host=MYSQL_HOST,
+                user=MYSQL_USER,
+                password=MYSQL_PASSWORD,
+                database=MYSQL_DB,
+                cursorclass=pymysql.cursors.DictCursor,
+                connect_timeout=5
+            )
+            logging.info("Conectado ao MySQL com sucesso!")
+            mysql_connected = True
+            return mysql_connection
+        except pymysql.Error as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** (attempt + 1)
+                logging.warning(f"Erro ao conectar ao MySQL (tentativa {attempt + 1}/{max_retries}): {e}. Aguardando {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                logging.error(f"Erro ao conectar ao MySQL após {max_retries} tentativas: {e}")
+                mysql_connected = False
+                return None
 
 def init_mysql_db():
     global mysql_connection, mysql_connected
+    max_retries = 5
+    retry_count = 0
+    
     # Connect as root to create the database and grant privileges
-    try:
-        root_conn = pymysql.connect(
-            host=MYSQL_HOST, user="root", password=MYSQL_ROOT_PASSWORD,
-            cursorclass=pymysql.cursors.DictCursor, connect_timeout=5
-        )
-        with root_conn.cursor() as cursor:
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DB}`")
-            cursor.execute(f"GRANT ALL PRIVILEGES ON `{MYSQL_DB}`.* TO '{MYSQL_USER}'@'%'")
-            cursor.execute("FLUSH PRIVILEGES")
-        root_conn.close()
-        logging.info(f"Database '{MYSQL_DB}' created/verified and privileges granted.")
-    except pymysql.Error as e:
-        logging.error(f"Não foi possível criar o banco de dados '{MYSQL_DB}' ou conceder privilégios: {e}")
-        mysql_connected = False
-        return
+    while retry_count < max_retries:
+        try:
+            root_conn = pymysql.connect(
+                host=MYSQL_HOST, user="root", password=MYSQL_ROOT_PASSWORD,
+                cursorclass=pymysql.cursors.DictCursor, connect_timeout=5
+            )
+            with root_conn.cursor() as cursor:
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DB}`")
+                cursor.execute(f"GRANT ALL PRIVILEGES ON `{MYSQL_DB}`.* TO '{MYSQL_USER}'@'%'")
+                cursor.execute("FLUSH PRIVILEGES")
+            root_conn.close()
+            logging.info(f"Database '{MYSQL_DB}' created/verified and privileges granted.")
+            break
+        except pymysql.Error as e:
+            retry_count += 1
+            wait_time = 2 ** retry_count  # exponential backoff: 2, 4, 8, 16, 32 seconds
+            if retry_count < max_retries:
+                logging.warning(f"Erro ao conectar ao MySQL (tentativa {retry_count}/{max_retries}): {e}. Aguardando {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                logging.error(f"Não foi possível criar o banco de dados '{MYSQL_DB}' após {max_retries} tentativas: {e}")
+                mysql_connected = False
+                return
 
     # Now connect as balanca_user to the specific database to create tables
     mysql_connection = connect_to_mysql()
