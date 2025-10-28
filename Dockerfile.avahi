@@ -7,13 +7,9 @@ RUN apt-get update && \
 
 COPY avahi-service.xml /etc/avahi/services/gfig.service
 
-# Criar arquivo de configuração para avahi sem dbus
-RUN mkdir -p /etc/avahi/avahi-daemon.conf.d && \
-    echo "[server]\n\
-enable-dbus=no\n\
-enable-reflector=no\n\
-allow-interfaces=eth0,eth1" > /etc/avahi/avahi-daemon.conf.d/no-dbus.conf
+# Modificar a configuração padrão do avahi para desabilitar dbus
+RUN sed -i 's/^#enable-dbus=no/enable-dbus=no/' /etc/avahi/avahi-daemon.conf
 
 EXPOSE 5353/udp
 
-CMD ["avahi-daemon", "--no-rlimits"]
+CMD ["avahi-daemon", "--no-rlimits", "--no-drop-root"]
