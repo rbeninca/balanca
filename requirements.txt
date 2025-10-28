@@ -1,3 +1,4 @@
 websockets==12.0
 pyserial==3.5
 PyMySQL==1.1.0
+zeroconf==0.132.2

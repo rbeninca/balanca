@@ -58,5 +58,11 @@ fi
 python -m pip install --upgrade pip >/dev/null 2>&1 || true
 python -m pip install --no-cache-dir -r /app/requirements.txt >/dev/null 2>&1 || true
 
+# Iniciar mDNS publisher em background
+echo "[entrypoint] Iniciando mDNS publisher..."
+python /app/mdns_publisher.py >/dev/null 2>&1 &
+MDNS_PID=$!
+sleep 1
+
 cd "${WEB_DIRECTORY}"
 exec python /app/server.py

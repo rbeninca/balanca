@@ -98,19 +98,6 @@ services:
   #   networks:
   #     - balanca_network
 
-  avahi:
-    build:
-      context: .
-      dockerfile: Dockerfile.avahi
-    container_name: balanca_avahi
-    restart: always
-    ports:
-      - "5353:5353/udp"  # mDNS port
-    cap_add:
-      - NET_ADMIN
-    networks:
-      - balanca_network
-
 networks:
   balanca_network:
     driver: bridge
