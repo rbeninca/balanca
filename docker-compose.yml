@@ -10,16 +10,15 @@ services:
     depends_on:
       - db
     mem_limit: 512m # NEW: Add memory limit
-    ports:
-      - "80:80"
-      - "81:81"
-      - "5353:5353/udp"  # Avahi mDNS port
+    
+    # Usar network do host para Avahi funcionar corretamente
+    network_mode: host
 
     # Dispositivo serial (ajuste para ttyACM0 se necessário)
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
 
-    # Capacidade de ajustar hora do sistema e usar network namespace do host para Avahi
+    # Capacidade de ajustar hora do sistema
     cap_add:
       - SYS_TIME
       - NET_ADMIN
@@ -29,7 +28,7 @@ services:
       SERIAL_BAUD: "921600"
       WS_PORT: "81"
       HTTP_PORT: "80"
-      MYSQL_HOST: "db" # Nome do serviço MySQL no Docker Compose
+      MYSQL_HOST: "127.0.0.1" # Usar localhost pois está na rede host
       MYSQL_USER: "balanca_user"
       MYSQL_PASSWORD: "balanca_password"
       MYSQL_DB: "balanca_gfig"
@@ -54,8 +53,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    networks:
-      - balanca_network
 
   db:
     image: mariadb:11
