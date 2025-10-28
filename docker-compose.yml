@@ -8,8 +8,7 @@ services:
     container_name: balanca
     restart: always
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     mem_limit: 512m # NEW: Add memory limit
     ports:
       - "80:80"
@@ -76,9 +75,9 @@ services:
       - balanca_network # Adiciona o serviço 'db' à rede interna
     healthcheck:
       test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root"]
-      interval: 3s
-      timeout: 5s
-      retries: 20
+      interval: 2s
+      timeout: 10s
+      retries: 30
 
   # phpmyadmin: (COMENTADO PARA PRODUÇÃO)
   #   image: phpmyadmin/phpmyadmin

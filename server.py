@@ -280,12 +280,22 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
                 motor_description = VALUES(motor_description),
                 motor_observations = VALUES(motor_observations)
             """
-            cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim,
-                                        motor_name, motor_diameter, motor_length, motor_delay,
-                                        motor_propweight, motor_totalweight, motor_manufacturer,
-                                        motor_description, motor_observations))
+            try:
+                cursor.execute(sql_sessoes, (session_data['id'], session_data['nome'], data_inicio, data_fim,
+                                            motor_name, motor_diameter, motor_length, motor_delay,
+                                            motor_propweight, motor_totalweight, motor_manufacturer,
+                                            motor_description, motor_observations))
+                logging.info(f"Sessão inserida/atualizada: {session_data['nome']}")
+            except pymysql.Error as e:
+                logging.error(f"Erro ao inserir sessão: {type(e).__name__}: {e}")
+                raise
 
-            cursor.execute("DELETE FROM leituras WHERE sessao_id = %s", (session_data['id'],))
+            try:
+                cursor.execute("DELETE FROM leituras WHERE sessao_id = %s", (session_data['id'],))
+                logging.info(f"Leituras antigas deletadas para sessão {session_data['id']}")
+            except pymysql.Error as e:
+                logging.error(f"Erro ao deletar leituras antigas: {type(e).__name__}: {e}")
+                raise
 
             if dados_tabela:
                 sql_leituras = "INSERT INTO leituras (sessao_id, tempo, forca, massaKg, timestamp) VALUES (%s, %s, %s, %s, %s)"
@@ -310,14 +320,19 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
                         continue
 
                 if leituras_to_insert:
-                    cursor.executemany(sql_leituras, leituras_to_insert)
-                    logging.info(f"Inseridas {len(leituras_to_insert)} leituras para sessão {session_data['id']}")
+                    try:
+                        cursor.executemany(sql_leituras, leituras_to_insert)
+                        logging.info(f"Inseridas {len(leituras_to_insert)} leituras para sessão {session_data['id']}")
+                    except pymysql.Error as e:
+                        logging.error(f"Erro ao inserir leituras: {type(e).__name__}: {e}")
+                        raise
 
         mysql_connection.commit()
-        logging.info(f"Sessão '{session_data['nome']}' (ID: {session_data['id']}) salva/atualizada no MySQL.")
+        logging.info(f"Sessão '{session_data['nome']}' (ID: {session_data['id']}) salva/atualizada no MySQL com sucesso!")
         return True
     except pymysql.Error as e:
         logging.error(f"Erro de MySQL ao salvar sessão: {type(e).__name__}: {e}")
+        mysql_connected = False
         if mysql_connection:
             try:
                 mysql_connection.rollback()
