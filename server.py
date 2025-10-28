@@ -373,6 +373,8 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_get_sessao_by_id()
         elif self.path == '/api/time':
             self.handle_get_time()
+        elif self.path == '/api/info':
+            self.handle_get_info()
         else:
             super().do_GET()
 
@@ -539,6 +541,31 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Envia sempre em UTC (GMT) com sufixo 'Z' para indicar timezone
         current_time = datetime.utcnow().isoformat() + 'Z'
         self.send_json_response(200, {"time": current_time})
+
+    def handle_get_info(self):
+        """Retorna informações do servidor: IP, hostname, porta"""
+        try:
+            # Get local IP
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("10.255.255.255", 1))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            local_ip = "127.0.0.1"
+        
+        info = {
+            "ip": local_ip,
+            "hostname": "gfig.local",
+            "port": HTTP_PORT,
+            "mdns_hostname": "gfig",
+            "service_name": "Balança GFIG",
+            "version": "1.0",
+            "access_urls": [
+                f"http://{local_ip}",
+                "http://gfig.local"
+            ]
+        }
+        self.send_json_response(200, info)
 
     def handle_sync_time(self):
         """Sincroniza a hora do servidor com a hora recebida do cliente"""
