@@ -9,7 +9,7 @@ services:
     restart: always
     depends_on:
       db:
-        condition: service_healthy # NEW: Wait until db is healthy
+        condition: service_healthy
     mem_limit: 512m # NEW: Add memory limit
     ports:
       - "80:80"
@@ -19,7 +19,7 @@ services:
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
 
-    # Adiciona capacidade de ajustar hora do sistema
+    # Capacidade de ajustar hora do sistema
     cap_add:
       - SYS_TIME
 
@@ -56,7 +56,7 @@ services:
       - balanca_network
 
   db:
-    image: mysql:8.0
+    image: mariadb:11
     container_name: balanca_mysql
     restart: always
     environment:
@@ -67,6 +67,7 @@ services:
       TZ: "America/Sao_Paulo" # Timezone GMT-3
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     secrets:
       - db_root_password
     ports:
@@ -74,18 +75,17 @@ services:
     networks:
       - balanca_network # Adiciona o serviço 'db' à rede interna
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: balanca_phpmyadmin
     restart: always
     depends_on:
-      db:
-        condition: service_healthy # NEW: Wait until db is healthy
+      - db
     environment:
       PMA_HOST: db # Connects to the 'db' service
       MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password" # Use the same root password secret

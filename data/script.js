@@ -14,6 +14,8 @@ let animationFrameId = null;
 let originalChartContainer = null; // New global variable to store original parent
 let originalChartSessionControlsContainer = null; // New global variable for session controls
 let originalChartControlsParent = null; // Parent of the specific chart controls
+let taxaAtualizacaoMs = 100; // Taxa de atualização em ms (padrão 100ms = 10 Hz)
+let dataRequestIntervalId = null; // ID do intervalo de solicitação de dados
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 let serverTimeOffset = 0; // Diferença entre servidor e cliente (ms)
@@ -46,7 +48,10 @@ window.onload = () => {
   setDisplayUnit('kgf');
   setChartMode('deslizante');
   conectarWorker();
-  setInterval(() => dataWorker.postMessage({ type: 'solicitarDados' }), 200);
+  
+  // Inicia o intervalo dinâmico de solicitação de dados
+  iniciarIntervaloAtualizacao();
+  
   setInterval(updateReadingsPerSecond, 1000);
   addNoiseControlsToUI();
   inicializarAudioContext();
@@ -70,6 +75,42 @@ window.onload = () => {
   // Sincroniza a aparência dos botões de filtros na inicialização
   if (typeof syncFilterButtonsUI === 'function') {
     syncFilterButtonsUI();
+  }
+
+  // Setup para o campo de taxa de atualização
+  const taxaInput = document.getElementById('taxa-atualizacao');
+  if (taxaInput) {
+    taxaInput.value = taxaAtualizacaoMs;
+    console.log('[TAXA] Campo encontrado. Valor atual:', taxaAtualizacaoMs);
+    
+    // Atualiza ao sair do campo
+    taxaInput.addEventListener('change', (e) => {
+      const novaValor = parseInt(e.target.value);
+      if (!isNaN(novaValor) && novaValor >= 10 && novaValor <= 1000) {
+        taxaAtualizacaoMs = novaValor;
+        atualizarIntervaloAtualizacao();
+        atualizarInfoTaxa();
+        console.log('[TAXA] Alterada para:', taxaAtualizacaoMs, 'ms');
+        showNotification('info', `Taxa de atualização alterada para ${taxaAtualizacaoMs}ms (${(1000/taxaAtualizacaoMs).toFixed(1)} Hz)`);
+      } else {
+        e.target.value = taxaAtualizacaoMs;
+        showNotification('error', 'Valor inválido. Use valores entre 10 e 1000 ms.');
+      }
+    });
+    
+    // Atualiza enquanto digita (feedback em tempo real)
+    taxaInput.addEventListener('input', (e) => {
+      const novaValor = parseInt(e.target.value);
+      if (!isNaN(novaValor) && novaValor >= 10 && novaValor <= 1000) {
+        const hz = (1000 / novaValor).toFixed(1);
+        const infoEl = document.getElementById('taxa-info');
+        if (infoEl) {
+          infoEl.textContent = `≈ ${hz} atualizações/seg (prévia)`;
+        }
+      }
+    });
+  } else {
+    console.warn('[TAXA] Campo taxa-atualizacao NÃO encontrado no HTML!');
   }
 
   // Add event listener for the new exit fullscreen button
@@ -137,6 +178,35 @@ function setupWebSocketUrl() {
       defaultHost = 'localhost';
     }
     wsUrlInput.value = 'ws://' + defaultHost + ':81';
+  }
+}
+
+// --- Gerenciamento da Taxa de Atualização Dinâmica ---
+
+function iniciarIntervaloAtualizacao() {
+  if (dataRequestIntervalId) {
+    clearInterval(dataRequestIntervalId);
+  }
+  dataRequestIntervalId = setInterval(() => {
+    if (dataWorker) {
+      dataWorker.postMessage({ type: 'solicitarDados' });
+    }
+  }, taxaAtualizacaoMs);
+  console.log(`[Intervalo] Iniciado com taxa de ${taxaAtualizacaoMs}ms (${(1000/taxaAtualizacaoMs).toFixed(1)} Hz)`);
+}
+
+function atualizarIntervaloAtualizacao() {
+  if (dataRequestIntervalId) {
+    clearInterval(dataRequestIntervalId);
+  }
+  iniciarIntervaloAtualizacao();
+}
+
+function atualizarInfoTaxa() {
+  const infoEl = document.getElementById('taxa-info');
+  if (infoEl) {
+    const hz = (1000 / taxaAtualizacaoMs).toFixed(1);
+    infoEl.textContent = `≈ ${hz} atualizações/seg`;
   }
 }
 

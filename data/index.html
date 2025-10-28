@@ -184,7 +184,11 @@
             </div>
             <div><label for="param-timeout">Timeout de Calibração (ms)</label><input id="param-timeout" type="number">
             </div>
-          </div>
+            <div>
+              <label for="taxa-atualizacao">Taxa de Atualização do Gráfico (ms)</label>
+              <input id="taxa-atualizacao" type="number" min="10" max="1000" step="10" value="100">
+              <small id="taxa-info" style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">≈ 10 atualizações/seg</small>
+            </div>
           <button onclick="salvarParametros()" class="btn btn-sucesso" style="margin-top: 1.5rem;">Salvar Todos os
             Parâmetros</button>
         </section>
