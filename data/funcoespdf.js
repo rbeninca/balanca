@@ -324,6 +324,166 @@ function gerarGraficoParaPDF(sessao, dados, impulsoData, metricasPropulsao, call
 }
 
 /**
+ * Gera as linhas da tabela completa de classificações com destaque no motor testado
+ */
+function gerarLinhasClassificacaoCompleta(impulsoTestado, classeTestada) {
+  const classificacoes = [
+    { min: 0.00,    max: 0.3125,   classe: 'Micro 1/8A', tipo: 'FM (foguetemodelo)', nivel: 'Micro',       cor: '#8e44ad' },
+    { min: 0.3126,  max: 0.625,    classe: '¼A',         tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#9b59b6' },
+    { min: 0.626,   max: 1.25,     classe: '½A',         tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#e74c3c' },
+    { min: 1.26,    max: 2.50,     classe: 'A',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#e67e22' },
+    { min: 2.51,    max: 5.00,     classe: 'B',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#f39c12' },
+    { min: 5.01,    max: 10.00,    classe: 'C',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#f1c40f' },
+    { min: 10.01,   max: 20.00,    classe: 'D',          tipo: 'FM (foguetemodelo)', nivel: 'Baixa potência', cor: '#2ecc71' },
+    { min: 20.01,   max: 40.00,    classe: 'E',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#1abc9c' },
+    { min: 40.01,   max: 80.00,    classe: 'F',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#3498db' },
+    { min: 80.01,   max: 160.00,   classe: 'G',          tipo: 'FM (foguetemodelo)', nivel: 'Média potência', cor: '#9b59b6' },
+    { min: 160.01,  max: 320.00,   classe: 'H',          tipo: 'MFE (experimental)', nivel: 'Nível 1',        cor: '#e74c3c' },
+    { min: 320.01,  max: 640.00,   classe: 'I',          tipo: 'MFE (experimental)', nivel: 'Nível 1',        cor: '#e67e22' },
+    { min: 640.01,  max: 1280.00,  classe: 'J',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#f39c12' },
+    { min: 1280.01, max: 2560.00,  classe: 'K',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#2ecc71' },
+    { min: 2560.01, max: 5120.00,  classe: 'L',          tipo: 'MFE (experimental)', nivel: 'Nível 2',        cor: '#3498db' },
+    { min: 5120.01, max: 10240.00, classe: 'M',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#9b59b6' },
+    { min: 10240.01,max: 20480.00, classe: 'N',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#e74c3c' },
+    { min: 20480.01,max: 40960.00, classe: 'O',          tipo: 'MFE (experimental)', nivel: 'Nível 3',        cor: '#c0392b' },
+  ];
+
+  let linhas = '';
+  classificacoes.forEach((c) => {
+    const isMotorTestado = c.classe === classeTestada;
+    const impulsoAtual = isMotorTestado ? impulsoTestado : null;
+
+    // Estilo da linha: destaque forte para o motor testado
+    let rowStyle = '';
+    let markerHTML = '';
+
+    if (isMotorTestado) {
+      rowStyle = `background: linear-gradient(90deg, ${c.cor}40 0%, ${c.cor}20 100%);
+                  border-left: 6px solid ${c.cor};
+                  border-right: 6px solid ${c.cor};
+                  font-weight: bold;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.15);`;
+      markerHTML = '<span style="font-size: 16px; margin-right: 5px;">🎯</span>';
+    }
+
+    linhas += `
+      <tr style="${rowStyle}">
+        <td style="text-align: center; padding: 10px;">
+          <div style="display: flex; align-items: center; justify-content: center;">
+            ${markerHTML}
+            <span style="font-size: ${isMotorTestado ? '14px' : '11px'};">${c.classe}</span>
+          </div>
+          ${isMotorTestado ? `<div style="font-size: 9px; color: #666; margin-top: 3px;">(Seu motor)</div>` : ''}
+        </td>
+        <td style="text-align: center; padding: 10px;">
+          ${c.min.toFixed(4)}
+          ${isMotorTestado && impulsoAtual < (c.min + c.max) / 2 ? '<br><span style="color: #e67e22; font-size: 18px;">▼</span>' : ''}
+        </td>
+        <td style="text-align: center; padding: 10px;">
+          ${c.max.toFixed(4)}
+          ${isMotorTestado && impulsoAtual >= (c.min + c.max) / 2 ? '<br><span style="color: #e67e22; font-size: 18px;">▼</span>' : ''}
+        </td>
+        <td style="text-align: center; padding: 10px;">${c.tipo}</td>
+        <td style="text-align: center; padding: 10px;">${c.nivel}</td>
+        <td style="text-align: center; padding: 10px;">
+          <div style="width: 100%; height: 25px; background: ${c.cor}; border-radius: 4px; border: 1px solid #ccc;"></div>
+        </td>
+      </tr>
+    `;
+  });
+
+  return linhas;
+}
+
+/**
+ * Gera uma barra visual mostrando graficamente onde o motor se enquadra
+ */
+function gerarBarraVisualClassificacao(impulsoTestado, classificacao) {
+  const classificacoes = [
+    { min: 0.00,    max: 0.3125,   classe: 'Micro 1/8A', cor: '#8e44ad' },
+    { min: 0.3126,  max: 0.625,    classe: '¼A',         cor: '#9b59b6' },
+    { min: 0.626,   max: 1.25,     classe: '½A',         cor: '#e74c3c' },
+    { min: 1.26,    max: 2.50,     classe: 'A',          cor: '#e67e22' },
+    { min: 2.51,    max: 5.00,     classe: 'B',          cor: '#f39c12' },
+    { min: 5.01,    max: 10.00,    classe: 'C',          cor: '#f1c40f' },
+    { min: 10.01,   max: 20.00,    classe: 'D',          cor: '#2ecc71' },
+    { min: 20.01,   max: 40.00,    classe: 'E',          cor: '#1abc9c' },
+    { min: 40.01,   max: 80.00,    classe: 'F',          cor: '#3498db' },
+    { min: 80.01,   max: 160.00,   classe: 'G',          cor: '#9b59b6' },
+    { min: 160.01,  max: 320.00,   classe: 'H',          cor: '#e74c3c' },
+    { min: 320.01,  max: 640.00,   classe: 'I',          cor: '#e67e22' },
+    { min: 640.01,  max: 1280.00,  classe: 'J',          cor: '#f39c12' },
+    { min: 1280.01, max: 2560.00,  classe: 'K',          cor: '#2ecc71' },
+    { min: 2560.01, max: 5120.00,  classe: 'L',          cor: '#3498db' },
+    { min: 5120.01, max: 10240.00, classe: 'M',          cor: '#9b59b6' },
+    { min: 10240.01,max: 20480.00, classe: 'N',          cor: '#e74c3c' },
+    { min: 20480.01,max: 40960.00, classe: 'O',          cor: '#c0392b' },
+  ];
+
+  // Encontra o índice da classe testada
+  const indiceTestado = classificacoes.findIndex(c => c.classe === classificacao.classe);
+
+  // Gera as barras
+  let barrasHTML = '<div style="display: flex; gap: 2px; align-items: flex-end; height: 120px;">';
+
+  classificacoes.forEach((c, index) => {
+    const isMotorTestado = index === indiceTestado;
+    const altura = isMotorTestado ? '100%' : '60%';
+    const largura = `${100 / classificacoes.length}%`;
+
+    barrasHTML += `
+      <div style="
+        width: ${largura};
+        height: ${altura};
+        background: ${c.cor};
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        border-radius: 4px 4px 0 0;
+        position: relative;
+        transition: all 0.3s ease;
+        ${isMotorTestado ? 'box-shadow: 0 -4px 12px rgba(0,0,0,0.3); border: 3px solid #2c3e50;' : 'opacity: 0.6;'}
+      ">
+        ${isMotorTestado ? `
+          <div style="
+            position: absolute;
+            top: -35px;
+            font-size: 24px;
+            animation: bounce 1s infinite;
+          ">🎯</div>
+        ` : ''}
+        <div style="
+          writing-mode: vertical-rl;
+          text-orientation: mixed;
+          padding: 5px;
+          font-size: ${isMotorTestado ? '11px' : '8px'};
+          font-weight: ${isMotorTestado ? 'bold' : 'normal'};
+          color: white;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        ">${c.classe}</div>
+      </div>
+    `;
+  });
+
+  barrasHTML += '</div>';
+
+  // Adiciona legenda
+  barrasHTML += `
+    <div style="margin-top: 15px; text-align: center; font-size: 12px; color: #2c3e50;">
+      <strong>Impulso medido:</strong> ${impulsoTestado.toFixed(2)} N⋅s &nbsp;|&nbsp;
+      <strong>Classe:</strong> ${classificacao.classe} &nbsp;|&nbsp;
+      <strong>Faixa:</strong> ${classificacao.faixa}
+    </div>
+    <div style="margin-top: 8px; text-align: center; font-size: 11px; color: #7f8c8d;">
+      Cada barra representa uma classe de motor. A barra destacada indica a classe do seu motor testado.
+    </div>
+  `;
+
+  return barrasHTML;
+}
+
+/**
  * Gera HTML completo do relatório com gráfico embutido e todos os dados
  */
 function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsao, imagemGrafico) {
@@ -871,10 +1031,42 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
     </table>
     <div class="info-box" style="margin-top: 1rem;">
       <strong>Informações de Classificação:</strong><br>
-      A classificação NAR/TRA segue os padrões estabelecidos pela National Association for Rocketry (NAR) e pela Tripoli Rocketry Association (TRA). 
+      A classificação NAR/TRA segue os padrões estabelecidos pela National Association for Rocketry (NAR) e pela Tripoli Rocketry Association (TRA).
       Os motores são classificados por letras (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) baseado no impulso total em Newton-segundos.
       Cada classe tem aproximadamente o dobro do impulso da classe anterior.
     </div>
+  </div>
+
+  <!-- TABELA COMPLETA DE CLASSIFICAÇÕES COM DESTAQUE -->
+  <div class="page-break"></div>
+  <div class="secao">
+    <h2>📋 Tabela Completa de Classificações NAR/TRA</h2>
+    <div class="info-box" style="margin-bottom: 15px;">
+      <strong>🎯 Motor Testado:</strong> A linha em destaque abaixo indica onde seu motor se enquadra na tabela de classificações.
+      O impulso medido (${impulsoData.impulsoTotal.toFixed(2)} N⋅s) está dentro da faixa da classe <strong>${classificacao.classe}</strong>.
+    </div>
+
+    <!-- Representação Gráfica Visual -->
+    <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+      <h3 style="margin-top: 0; font-size: 14px; color: #2c3e50;">Posição Visual do Motor Testado:</h3>
+      ${gerarBarraVisualClassificacao(impulsoData.impulsoTotal, classificacao)}
+    </div>
+
+    <table style="font-size: 10px; width: 100%;">
+      <thead>
+        <tr>
+          <th style="width: 12%; text-align: center;">Classe</th>
+          <th style="width: 18%; text-align: center;">Impulso Mínimo (N⋅s)</th>
+          <th style="width: 18%; text-align: center;">Impulso Máximo (N⋅s)</th>
+          <th style="width: 22%; text-align: center;">Tipo</th>
+          <th style="width: 20%; text-align: center;">Nível</th>
+          <th style="width: 10%; text-align: center;">Cor</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${gerarLinhasClassificacaoCompleta(impulsoData.impulsoTotal, classificacao.classe)}
+      </tbody>
+    </table>
   </div>
 
   <!-- RODAPÉ -->
