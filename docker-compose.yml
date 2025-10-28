@@ -74,7 +74,7 @@ services:
     networks:
       - balanca_network # Adiciona o serviço 'db' à rede interna
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "balanca_user", "-p", "balanca_password"]
       interval: 2s
       timeout: 10s
       retries: 30
