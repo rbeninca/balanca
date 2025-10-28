@@ -99,19 +99,15 @@ services:
   #     - balanca_network
 
   avahi:
-    image: fluent/avahi:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.avahi
     container_name: balanca_avahi
     restart: always
     ports:
       - "5353:5353/udp"  # mDNS port
     cap_add:
       - NET_ADMIN
-    environment:
-      AVAHI_HOSTNAME: "gfig"
-      AVAHI_SERVICE_NAME: "Balança GFIG"
-      AVAHI_SERVICE_TYPE: "_http._tcp"
-      AVAHI_SERVICE_PORT: "80"
-      AVAHI_DOMAIN: "local"
     networks:
       - balanca_network
 
