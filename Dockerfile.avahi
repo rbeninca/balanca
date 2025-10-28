@@ -8,24 +8,7 @@ RUN apt-get update && \
 COPY avahi-service.xml /etc/avahi/services/gfig.service
 
 # Criar arquivo de configuração customizado
-RUN cat > /etc/avahi/avahi-daemon.conf << 'EOF'\n\
-[Server]\n\
-host-name=gfig\n\
-domain-name=local\n\
-browse-domains=local\n\
-use-ipv4=yes\n\
-use-ipv6=no\n\
-enable-dbus=no\n\
-ratelimit-interval-usec=1000000\n\
-ratelimit-burst=1000\n\
-\n\
-[wide-area]\n\
-enable-wide-area=no\n\
-\n\
-[publish]\n\
-publish-hinfo=no\n\
-publish-workstation=no\n\
-EOF
+RUN printf '[Server]\nhost-name=gfig\ndomain-name=local\nbrowse-domains=local\nuse-ipv4=yes\nuse-ipv6=no\nenable-dbus=no\n\n[wide-area]\nenable-wide-area=no\n\n[publish]\npublish-hinfo=no\npublish-workstation=no\n' > /etc/avahi/avahi-daemon.conf
 
 EXPOSE 5353/udp
 
