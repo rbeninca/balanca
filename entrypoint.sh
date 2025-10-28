@@ -59,31 +59,29 @@ python -m pip install --upgrade pip >/dev/null 2>&1 || true
 python -m pip install --no-cache-dir -r /app/requirements.txt >/dev/null 2>&1 || true
 
 # Iniciar Avahi daemon para mDNS
-echo "[entrypoint] Configurando Avahi daemon..." | tee /proc/1/fd/1
+echo "[entrypoint] Configurando Avahi daemon..."
 if [ ! -d /var/run/dbus ]; then
   mkdir -p /var/run/dbus
 fi
 
 # Iniciar dbus (necessário para Avahi)
-echo "[entrypoint] Iniciando dbus..." | tee /proc/1/fd/1
-dbus-daemon --system --nofork >/tmp/dbus.log 2>&1 &
+echo "[entrypoint] Iniciando dbus..."
+dbus-daemon --system >/tmp/dbus.log 2>&1 &
 DBUS_PID=$!
-
-# Aguardar um pouco para o dbus iniciar
 sleep 2
-echo "[entrypoint] dbus iniciado (PID: $DBUS_PID)" | tee /proc/1/fd/1
+echo "[entrypoint] dbus iniciado (PID: $DBUS_PID)"
 
 # Iniciar Avahi daemon
-echo "[entrypoint] Iniciando Avahi daemon..." | tee /proc/1/fd/1
-avahi-daemon --syslog >/tmp/avahi.log 2>&1 &
+echo "[entrypoint] Iniciando Avahi daemon..."
+avahi-daemon >/tmp/avahi.log 2>&1 &
 AVAHI_PID=$!
-
-# Aguardar Avahi iniciar
 sleep 2
-echo "[entrypoint] Avahi iniciado (PID: $AVAHI_PID)" | tee /proc/1/fd/1
+echo "[entrypoint] Avahi iniciado (PID: $AVAHI_PID)"
+echo "[entrypoint] Registrando serviço gfig.local..."
 
 cd "${WEB_DIRECTORY}"
-python /app/server.py
+echo "[entrypoint] Iniciando servidor Python..."
+exec python /app/server.py
 SH
 
 chmod +x balancaDocker/entrypoint.sh
