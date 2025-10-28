@@ -60,9 +60,9 @@ python -m pip install --no-cache-dir -r /app/requirements.txt >/dev/null 2>&1 ||
 
 # Iniciar mDNS publisher em background
 echo "[entrypoint] Iniciando mDNS publisher..."
-python /app/mdns_publisher.py >/dev/null 2>&1 &
+python /app/mdns_publisher.py 2>&1 &
 MDNS_PID=$!
-sleep 1
+sleep 2
 
 cd "${WEB_DIRECTORY}"
 exec python /app/server.py
