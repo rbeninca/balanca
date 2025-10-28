@@ -11,11 +11,13 @@ COPY avahi-service.xml /etc/avahi/services/gfig.service
 # Script para iniciar dbus e avahi
 RUN echo '#!/bin/bash\n\
 mkdir -p /run/dbus\n\
+mkdir -p /var/run/avahi-daemon\n\
 dbus-daemon --system --nofork &\n\
-sleep 1\n\
+DBUS_PID=$!\n\
+sleep 2\n\
 exec avahi-daemon --no-rlimits\n\
 ' > /start.sh && chmod +x /start.sh
 
 EXPOSE 5353/udp
 
-CMD ["/start.sh"]
+CMD ["/bin/bash", "/start.sh"]
