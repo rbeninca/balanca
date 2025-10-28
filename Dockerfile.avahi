@@ -3,13 +3,10 @@ FROM debian:bookworm-slim
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         avahi-daemon \
+    && apt-get remove -y dbus dbus-bin dbus-daemon libdbus-1-3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY avahi-service.xml /etc/avahi/services/gfig.service
-
-# Remover a diretiva enable-dbus e deixar como comentário foi, removendo o dbus completamente
-# Criar arquivo de configuração customizado sem dbus
-RUN rm /etc/avahi/avahi-daemon.conf && printf '[Server]\nhost-name=gfig\nlocal-service-only=no\nallow-point-to-point=no\nuse-ipv6=no\nenable-wide-area=no\nenable-reflection=no\n' > /etc/avahi/avahi-daemon.conf
 
 EXPOSE 5353/udp
 
