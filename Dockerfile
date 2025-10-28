@@ -10,14 +10,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Update apt and install necessary system packages
 # python:3.11-slim-bookworm already has python and pip
-# Install libmariadb-dev, ca-certificates, tzdata, avahi and dbus
+# Only install libmariadb-dev, ca-certificates, tzdata
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libmariadb-dev \
         ca-certificates \
         tzdata \
-        avahi-daemon \
-        dbus \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

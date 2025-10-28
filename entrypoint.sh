@@ -58,27 +58,5 @@ fi
 python -m pip install --upgrade pip >/dev/null 2>&1 || true
 python -m pip install --no-cache-dir -r /app/requirements.txt >/dev/null 2>&1 || true
 
-# Iniciar Avahi daemon para mDNS
-echo "[entrypoint] Configurando Avahi daemon..."
-if [ ! -d /var/run/dbus ]; then
-  mkdir -p /var/run/dbus
-fi
-
-# Iniciar dbus (necessário para Avahi)
-echo "[entrypoint] Iniciando dbus..."
-dbus-daemon --system >/tmp/dbus.log 2>&1 &
-DBUS_PID=$!
-sleep 2
-echo "[entrypoint] dbus iniciado (PID: $DBUS_PID)"
-
-# Iniciar Avahi daemon
-echo "[entrypoint] Iniciando Avahi daemon..."
-avahi-daemon >/tmp/avahi.log 2>&1 &
-AVAHI_PID=$!
-sleep 2
-echo "[entrypoint] Avahi iniciado (PID: $AVAHI_PID)"
-echo "[entrypoint] Registrando serviço gfig.local..."
-
 cd "${WEB_DIRECTORY}"
-echo "[entrypoint] Iniciando servidor Python..."
 exec python /app/server.py

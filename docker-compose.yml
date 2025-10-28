@@ -13,7 +13,6 @@ services:
     ports:
       - "80:80"
       - "81:81"
-      - "5353:5353/udp"  # Avahi mDNS port
 
     # Dispositivo serial (ajuste para ttyACM0 se necessário)
     devices:
@@ -22,7 +21,6 @@ services:
     # Capacidade de ajustar hora do sistema
     cap_add:
       - SYS_TIME
-      - NET_ADMIN
 
     environment:
       SERIAL_PORT: "/dev/ttyUSB0"
@@ -41,7 +39,6 @@ services:
     # Monta o repositório em /app (read-only)
     volumes:
       - ./:/app
-      - ./avahi-service.xml:/etc/avahi/services/gfig.service
 
     # Define /app/data como diretório de trabalho (onde estão os arquivos web)
     working_dir: /app/data
@@ -100,6 +97,23 @@ services:
   #     - db_root_password
   #   networks:
   #     - balanca_network
+
+  avahi:
+    image: fluent/avahi:latest
+    container_name: balanca_avahi
+    restart: always
+    ports:
+      - "5353:5353/udp"  # mDNS port
+    cap_add:
+      - NET_ADMIN
+    environment:
+      AVAHI_HOSTNAME: "gfig"
+      AVAHI_SERVICE_NAME: "Balança GFIG"
+      AVAHI_SERVICE_TYPE: "_http._tcp"
+      AVAHI_SERVICE_PORT: "80"
+      AVAHI_DOMAIN: "local"
+    networks:
+      - balanca_network
 
 networks:
   balanca_network:
