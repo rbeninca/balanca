@@ -4,6 +4,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         avahi-daemon \
         dbus \
+        netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY avahi-service.xml /etc/avahi/services/gfig.service
@@ -12,12 +13,12 @@ COPY avahi-service.xml /etc/avahi/services/gfig.service
 RUN echo '#!/bin/bash\n\
 mkdir -p /run/dbus\n\
 mkdir -p /var/run/avahi-daemon\n\
-dbus-daemon --system --nofork &\n\
+dbus-daemon --system --nofork --nopidfile &\n\
 DBUS_PID=$!\n\
-sleep 2\n\
+sleep 3\n\
 exec avahi-daemon --no-rlimits\n\
 ' > /start.sh && chmod +x /start.sh
 
 EXPOSE 5353/udp
 
-CMD ["/bin/bash", "/start.sh"]
+CMD ["/bin/bash", "-c", "/start.sh"]
