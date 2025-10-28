@@ -3,22 +3,17 @@ FROM debian:bookworm-slim
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         avahi-daemon \
-        dbus \
-        netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY avahi-service.xml /etc/avahi/services/gfig.service
 
-# Script para iniciar dbus e avahi
-RUN echo '#!/bin/bash\n\
-mkdir -p /run/dbus\n\
-mkdir -p /var/run/avahi-daemon\n\
-dbus-daemon --system --nofork --nopidfile &\n\
-DBUS_PID=$!\n\
-sleep 3\n\
-exec avahi-daemon --no-rlimits\n\
-' > /start.sh && chmod +x /start.sh
+# Criar arquivo de configuração para avahi sem dbus
+RUN mkdir -p /etc/avahi/avahi-daemon.conf.d && \
+    echo "[server]\n\
+enable-dbus=no\n\
+enable-reflector=no\n\
+allow-interfaces=eth0,eth1" > /etc/avahi/avahi-daemon.conf.d/no-dbus.conf
 
 EXPOSE 5353/udp
 
-CMD ["/bin/bash", "-c", "/start.sh"]
+CMD ["avahi-daemon", "--no-rlimits"]
