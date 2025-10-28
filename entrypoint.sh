@@ -82,6 +82,3 @@ echo "[entrypoint] Registrando serviço gfig.local..."
 cd "${WEB_DIRECTORY}"
 echo "[entrypoint] Iniciando servidor Python..."
 exec python /app/server.py
-SH
-
-chmod +x balancaDocker/entrypoint.sh
