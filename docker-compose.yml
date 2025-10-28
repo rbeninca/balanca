@@ -13,14 +13,16 @@ services:
     ports:
       - "80:80"
       - "81:81"
+      - "5353:5353/udp"  # Avahi mDNS port
 
     # Dispositivo serial (ajuste para ttyACM0 se necessário)
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
 
-    # Capacidade de ajustar hora do sistema
+    # Capacidade de ajustar hora do sistema e usar network namespace do host para Avahi
     cap_add:
       - SYS_TIME
+      - NET_ADMIN
 
     environment:
       SERIAL_PORT: "/dev/ttyUSB0"
@@ -39,6 +41,7 @@ services:
     # Monta o repositório em /app (read-only)
     volumes:
       - ./:/app
+      - ./avahi-service.xml:/etc/avahi/services/gfig.service
 
     # Define /app/data como diretório de trabalho (onde estão os arquivos web)
     working_dir: /app/data
