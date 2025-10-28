@@ -703,10 +703,14 @@ async def ws_handler(websocket):
                     if binary_packet:
                         with serial_lock:
                             if serial_connection and serial_connection.is_open:
-                                serial_connection.write(binary_packet)
-                                serial_connection.flush()
+                                try:
+                                    serial_connection.write(binary_packet)
+                                    serial_connection.flush()
+                                    logging.debug(f"Comando serial enviado: {cmd_type}")
+                                except Exception as e:
+                                    logging.error(f"Erro ao enviar comando serial: {e}")
                     else:
-                        logging.warning(f"Comando WS desconhecido: {cmd_type}")
+                        logging.debug(f"Comando desconhecido ou inválido: {cmd_type}")
 
             except json.JSONDecodeError:
                 logging.error(f"Mensagem WS inválida: {message}")
@@ -772,7 +776,7 @@ def parse_config_packet(data: bytes) -> Optional[Dict[str, Any]]:
         magic, ver, pkt_type = struct.unpack_from("<HBB", data, 0)
         if magic != MAGIC or ver != VERSION or pkt_type != TYPE_CONFIG: return None
         if crc16_ccitt(data[:-2]) != struct.unpack_from("<H", data, SIZE_CONFIG - 2)[0]:
-            logging.warning("CRC mismatch in CONFIG packet")
+            logging.debug("CRC mismatch in CONFIG packet - descartando pacote")
             return None
         fields = struct.unpack_from("<ffHfHHBBHiffB23x", data, 4)
         config = {
@@ -865,38 +869,78 @@ def serial_reader(loop: asyncio.AbstractEventLoop):
         try:
             serial_connection = serial.Serial(port, SERIAL_BAUD, timeout=1.0)
             buf = bytearray()
+            invalid_packet_count = 0
+            max_invalid_packets = 10  # Limite para evitar travamento com dados corrompidos
+            
             while True:
                 chunk = serial_connection.read(256)
                 if not chunk: continue
                 buf.extend(chunk)
+                
                 while len(buf) >= 8:
-                    magic_idx = buf.find(b'')
+                    magic_idx = buf.find(b'\xB2\xA1')  # Procura pelo magic 0xA1B2 em little-endian
                     if magic_idx == -1:
-                        buf = buf[-1:]
+                        # Nenhum magic encontrado, descarta buffer antigo
+                        if len(buf) > 256:
+                            buf = buf[-256:]
                         break
+                    
                     if magic_idx > 0:
                         try:
-                            logging.info(f"Dados não-binários: {buf[:magic_idx].decode().strip()}")
-                        except UnicodeDecodeError:
+                            # Log de dados não-binários encontrados antes do magic
+                            text_data = buf[:magic_idx].decode('utf-8', errors='ignore').strip()
+                            if text_data:
+                                logging.debug(f"Dados não-binários recebidos: {text_data}")
+                        except Exception:
                             pass
                         del buf[:magic_idx]
                     
-                    if len(buf) < 4: break
+                    if len(buf) < 4:
+                        break
+                    
                     pkt_type = buf[3]
                     size_map = {TYPE_DATA: SIZE_DATA, TYPE_CONFIG: SIZE_CONFIG, TYPE_STATUS: SIZE_STATUS}
                     expected_size = size_map.get(pkt_type)
-                    if not expected_size or len(buf) < expected_size: break
-
+                    
+                    if not expected_size:
+                        # Tipo de pacote desconhecido, descarta este byte e continua
+                        del buf[0]
+                        invalid_packet_count += 1
+                        if invalid_packet_count > max_invalid_packets:
+                            logging.warning(f"Muitos pacotes inválidos detectados. Resincronizando buffer.")
+                            buf.clear()
+                            invalid_packet_count = 0
+                        continue
+                    
+                    if len(buf) < expected_size:
+                        break  # Aguarda mais dados
+                    
                     packet = bytes(buf[:expected_size])
                     del buf[:expected_size]
-
+                    
+                    # Tenta parsear o pacote
                     parsers = {TYPE_DATA: parse_data_packet, TYPE_CONFIG: parse_config_packet, TYPE_STATUS: parse_status_packet}
-                    if pkt_type in parsers and (json_obj := parsers[pkt_type](packet)):
+                    json_obj = parsers.get(pkt_type)(packet) if pkt_type in parsers else None
+                    
+                    if json_obj:
+                        invalid_packet_count = 0  # Reset contador se pacote válido
                         asyncio.run_coroutine_threadsafe(broadcast_json(json_obj), loop)
+                    else:
+                        # Pacote inválido (CRC falhou, etc), descarta silenciosamente
+                        invalid_packet_count += 1
+                        if invalid_packet_count > max_invalid_packets:
+                            logging.warning(f"Muitos pacotes inválidos ({invalid_packet_count}). Possível problema de sincronização.")
+                            buf.clear()
+                            invalid_packet_count = 0
+                            
         except Exception as e:
-            logging.error(f"Erro de leitura serial: {e}")
+            logging.error(f"Erro de leitura serial: {e}", exc_info=False)
         finally:
-            if serial_connection: serial_connection.close()
+            if serial_connection:
+                try:
+                    serial_connection.close()
+                except:
+                    pass
             serial_connection = None
             time.sleep(1)
 
