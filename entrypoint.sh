@@ -66,11 +66,11 @@ fi
 
 # Iniciar dbus (necessário para Avahi)
 echo "[entrypoint] Iniciando dbus..."
-dbus-daemon --system --nofork --nopidfile &
+dbus-daemon --system --nofork &
 DBUS_PID=$!
 
 # Aguardar um pouco para o dbus iniciar
-sleep 1
+sleep 2
 
 # Iniciar Avahi daemon
 echo "[entrypoint] Iniciando Avahi daemon..."
@@ -81,7 +81,7 @@ AVAHI_PID=$!
 sleep 2
 
 cd "${WEB_DIRECTORY}"
-exec python /app/server.py
+python /app/server.py
 SH
 
 chmod +x balancaDocker/entrypoint.sh
