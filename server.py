@@ -301,22 +301,33 @@ async def save_session_to_mysql_db(session_data: Dict[str, Any]):
                 sql_leituras = "INSERT INTO leituras (sessao_id, tempo, forca, massaKg, timestamp) VALUES (%s, %s, %s, %s, %s)"
                 leituras_to_insert = []
                 for i, leitura in enumerate(dados_tabela):
+                    leitura_timestamp = None
                     try:
+                        # Tenta primeiro com milissegundos
                         leitura_timestamp = datetime.strptime(leitura['timestamp'], '%d/%m/%Y %H:%M:%S.%f')
                     except (ValueError, KeyError) as e:
-                        logging.warning(f"Erro ao converter timestamp da leitura {i}: {e}")
-                        leitura_timestamp = None
+                        try:
+                            # Se falhar, tenta sem milissegundos
+                            leitura_timestamp = datetime.strptime(leitura.get('timestamp', ''), '%d/%m/%Y %H:%M:%S')
+                        except (ValueError, KeyError) as e2:
+                            logging.warning(f"Erro ao converter timestamp da leitura {i}: {leitura.get('timestamp')}, usando None")
+                            leitura_timestamp = None
 
                     try:
+                        # Safely convert to float, handling None values
+                        tempo_esp = float(leitura.get('tempo_esp') or 0)
+                        newtons = float(leitura.get('newtons') or 0)
+                        quilo_forca = float(leitura.get('quilo_forca') or 0)
+                        
                         leituras_to_insert.append((
                             session_data['id'],
-                            float(leitura.get('tempo_esp', 0)),
-                            float(leitura.get('newtons', 0)),
-                            float(leitura.get('quilo_forca', 0)),
+                            tempo_esp,
+                            newtons,
+                            quilo_forca,
                             leitura_timestamp
                         ))
-                    except (ValueError, KeyError) as e:
-                        logging.warning(f"Erro ao processar leitura {i}: {e}, pulando...")
+                    except (ValueError, TypeError, KeyError) as e:
+                        logging.warning(f"Erro ao processar leitura {i}: {type(e).__name__}: {e}, pulando...")
                         continue
 
                 if leituras_to_insert:
