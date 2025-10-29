@@ -9,7 +9,7 @@ services:
     restart: always
     depends_on:
       - db
-    mem_limit: 512m # NEW: Add memory limit
+    mem_limit: 512m
     ports:
       - "80:80"
       - "81:81"
@@ -27,23 +27,18 @@ services:
       SERIAL_BAUD: "921600"
       WS_PORT: "81"
       HTTP_PORT: "80"
-      MYSQL_HOST: "db" # Nome do serviço MySQL no Docker Compose
+      MYSQL_HOST: "db"
       MYSQL_USER: "balanca_user"
       MYSQL_PASSWORD: "balanca_password"
       MYSQL_DB: "balanca_gfig"
       MYSQL_ROOT_PASSWORD: "Hilquias"
-      TZ: "America/Sao_Paulo" # Timezone GMT-3
+      TZ: "America/Sao_Paulo"
 
-    # dns: - 1.1.1.1 removed
-
-    # Monta o repositório em /app (read-only)
     volumes:
       - ./:/app
 
-    # Define /app/data como diretório de trabalho (onde estão os arquivos web)
     working_dir: /app/data
 
-    # Executa o servidor Python
     command: ["python", "/app/server.py"]
 
     logging:
@@ -58,45 +53,29 @@ services:
     image: mariadb:11
     container_name: balanca_mysql
     restart: always
+    mem_limit: 256m  # Limite de memória para o MySQL
+    mem_reservation: 128m  # Memória reservada mínima
     environment:
       MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password"
       MYSQL_DATABASE: "balanca_gfig"
       MYSQL_USER: "balanca_user"
       MYSQL_PASSWORD: "balanca_password"
-      TZ: "America/Sao_Paulo" # Timezone GMT-3
+      TZ: "America/Sao_Paulo"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     secrets:
       - db_root_password
     ports:
-      - "3306:3306" # Expor a porta do MySQL para acesso externo, se necessário
+      - "3306:3306"
     networks:
-      - balanca_network # Adiciona o serviço 'db' à rede interna
+      - balanca_network
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u balanca_user -p'balanca_password'"]
-      interval: 2s
-      timeout: 10s
-      retries: 30
-
-  # phpmyadmin: (COMENTADO PARA PRODUÇÃO)
-  #   image: phpmyadmin/phpmyadmin
-  #   container_name: balanca_phpmyadmin
-  #   restart: always
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     PMA_HOST: db # Connects to the 'db' service
-  #     MYSQL_ROOT_PASSWORD_FILE: "/run/secrets/db_root_password" # Use the same root password secret
-  #     TZ: "America/Sao_Paulo" # Timezone GMT-3
-  #     # PMA_USER: balanca_user # Optional: if you want to log in directly with the app user
-  #     # PMA_PASSWORD: balanca_password # Optional: if you want to log in directly with the app user
-  #   ports:
-  #     - "8080:80" # Access PhpMyAdmin on port 8080
-  #   secrets:
-  #     - db_root_password
-  #   networks:
-  #     - balanca_network
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u balanca_user -p'balanca_password' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 networks:
   balanca_network:
