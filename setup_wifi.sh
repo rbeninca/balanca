@@ -511,14 +511,13 @@ setup_with_hostapd() {
     systemctl stop hostapd 2>/dev/null || true
     systemctl stop dnsmasq 2>/dev/null || true
 
-    # Configurar NetworkManager para não gerenciar a interface WiFi
+    # NOTA: NÃO configurar NetworkManager para ignorar a interface
+    # Isso causaria problemas ao tentar usar nmcli novamente no futuro
+    # A interface será gerenciada manualmente via ip commands
+    log_info "Configurando interface $WIFI_IFACE manualmente (sem modificar NetworkManager)..."
+    # Garantir que a interface não está sendo gerenciada no momento
     if systemctl is-active --quiet NetworkManager; then
-        log_info "Configurando NetworkManager para ignorar $WIFI_IFACE..."
-        cat > /etc/NetworkManager/conf.d/unmanage-wifi.conf <<EOF
-[keyfile]
-unmanaged-devices=interface-name:$WIFI_IFACE
-EOF
-        systemctl reload NetworkManager || log_warn "Falha ao recarregar NetworkManager"
+        nmcli dev set "$WIFI_IFACE" managed no 2>/dev/null || true
         sleep 2
     fi
 
