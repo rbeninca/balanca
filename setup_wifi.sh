@@ -343,6 +343,31 @@ EOF
 setup_with_nmcli() {
     log_step "Configurando hotspot com NetworkManager..."
 
+    # FORÇAR NetworkManager a gerenciar a interface wlan0
+    log_info "Forçando NetworkManager a gerenciar $WIFI_IFACE..."
+    nmcli dev set "$WIFI_IFACE" managed yes 2>/dev/null || log_warn "Não foi possível forçar gerenciamento"
+    sleep 2
+    
+    # Verificar se o NetworkManager está gerenciando a interface agora
+    if nmcli dev status | grep -q "$WIFI_IFACE.*unmanaged"; then
+        log_error "Interface $WIFI_IFACE ainda está como 'unmanaged'. Tentando resolver..."
+        # Remover configurações que impedem o gerenciamento
+        rm -f /etc/NetworkManager/conf.d/*unmanage*.conf 2>/dev/null
+        rm -f /etc/NetworkManager/conf.d/*unmanaged*.conf 2>/dev/null
+        systemctl reload NetworkManager
+        sleep 3
+        nmcli dev set "$WIFI_IFACE" managed yes
+        sleep 2
+    fi
+    
+    # Última verificação
+    if nmcli dev status | grep -q "$WIFI_IFACE.*unmanaged"; then
+        log_error "Impossível fazer NetworkManager gerenciar $WIFI_IFACE"
+        return 1
+    fi
+    
+    log_success "NetworkManager agora gerencia $WIFI_IFACE"
+
     # Verificar se já existe uma conexão com este nome
     if nmcli -t -f NAME con show | grep -q "^${AP_CONNECTION_NAME}$"; then
         log_info "Conexão existente '${AP_CONNECTION_NAME}' encontrada"
@@ -399,20 +424,42 @@ setup_with_nmcli() {
         sleep 3
         
         nmcli con down "$AP_CONNECTION_NAME" 2>/dev/null || true
-        sleep 1
+        sleep 2
         
         # Configurar IP manualmente
-        nmcli con modify "$AP_CONNECTION_NAME" ipv4.method manual 2>/dev/null || true
-        nmcli con modify "$AP_CONNECTION_NAME" ipv4.addresses "${AP_IPV4_ADDRESS}/24" 2>/dev/null || true
-        nmcli con modify "$AP_CONNECTION_NAME" ipv4.gateway "${AP_IPV4_ADDRESS}" 2>/dev/null || true
-        nmcli con modify "$AP_CONNECTION_NAME" ipv4.dns "8.8.8.8 8.8.4.4" 2>/dev/null || true
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.method manual
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.addresses "${AP_IPV4_ADDRESS}/24"
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.gateway "${AP_IPV4_ADDRESS}"
+        
+        # Configurar o DHCP range para o dnsmasq interno do NetworkManager
+        # A sintaxe é: <start-ip>,<end-ip>,<lease-time>
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.dhcp-range-start "${AP_IPV4_SUBNET}.10"
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.dhcp-range-end "${AP_IPV4_SUBNET}.254"
+        
+        nmcli con modify "$AP_CONNECTION_NAME" ipv4.dns "8.8.8.8,8.8.4.4"
         
         # Recarregar conexão para aplicar mudanças
-        nmcli con up "$AP_CONNECTION_NAME" || log_warn "Falha ao ativar conexão"
+        log_info "Ativando conexão com IP manual e DHCP..."
+        if ! nmcli con up "$AP_CONNECTION_NAME"; then
+            log_error "Falha crítica ao ativar conexão com IP manual. Verifique os logs do NetworkManager."
+            log_error "journalctl -u NetworkManager"
+            return 1
+        fi
         
         # Aguardar estabilização
         log_info "Aguardando interface estabilizar (10 segundos)..."
         sleep 10
+
+        # Verificar se o IP foi aplicado corretamente
+        CURRENT_IP=$(ip -4 addr show dev "$WIFI_IFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+        if [ "$CURRENT_IP" != "$AP_IPV4_ADDRESS" ]; then
+            log_error "O IP da interface ($CURRENT_IP) não corresponde ao IP esperado ($AP_IPV4_ADDRESS)."
+            log_warn "O DHCP pode não funcionar. Tentando forçar a reativação..."
+            nmcli con down "$AP_CONNECTION_NAME" && sleep 2 && nmcli con up "$AP_CONNECTION_NAME"
+            sleep 5
+        else
+            log_success "IP $CURRENT_IP aplicado com sucesso em $WIFI_IFACE."
+        fi
 
         log_success "Hotspot configurado com NetworkManager (IP: ${AP_IPV4_ADDRESS})"
 
