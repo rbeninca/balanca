@@ -43,11 +43,13 @@ let contadorFalhasEstabilizacao = 0;
 
 // --- Funções de Inicialização ---
 window.onload = () => {
+  // Conectar ao worker IMEDIATAMENTE (antes de aguardar o onload completo)
+  conectarWorkerRapido();
+  
   abrirAba(document.getElementById("padrao"), 'abaGrafico');
   initializeApexChart(); // NOVA FUNÇÃO DE GRÁFICO
   setDisplayUnit('kgf');
   setChartMode('deslizante');
-  conectarWorker();
   
   // Inicia o intervalo dinâmico de solicitação de dados
   iniciarIntervaloAtualizacao();
@@ -414,6 +416,42 @@ function toggleChartPause(setPaused = null) {
 }
 
 // --- Comunicação com o Web Worker ---
+
+/**
+ * Conexão rápida do worker - chamada assim que o DOM começa a carregar
+ * Não aguarda window.onload para iniciar a conexão WebSocket
+ */
+function conectarWorkerRapido() {
+  if (window.Worker) {
+    if (!dataWorker) {
+      dataWorker = new Worker('dataWorker.js');
+      dataWorker.onmessage = handleWorkerMessage;
+      
+      // Envia a URL do WebSocket IMEDIATAMENTE
+      const savedWsUrl = localStorage.getItem('wsUrl');
+      if (savedWsUrl) {
+        dataWorker.postMessage({ type: 'set_ws_url', payload: { url: savedWsUrl } });
+      } else {
+        // Construir URL padrão mesmo sem localStorage (acelera primeira conexão)
+        let defaultHost = location.hostname;
+        if (location.port === '5500' || defaultHost === '127.0.0.1') {
+          defaultHost = 'localhost';
+        }
+        const defaultUrl = 'ws://' + defaultHost + ':81';
+        dataWorker.postMessage({ type: 'set_ws_url', payload: { url: defaultUrl } });
+      }
+      
+      // OTIMIZAÇÃO: Taxa de atualização mais rápida e agressiva na inicialização
+      // Começa com 50ms para melhor responsividade inicial
+      taxaAtualizacaoMs = 50;
+      setInterval(() => dataWorker.postMessage({ type: 'solicitarDados' }), taxaAtualizacaoMs);
+      
+      console.log('[Worker] Conectado com taxa inicial de 50ms para responsividade');
+    }
+  } else {
+    showNotification('error', 'Seu navegador não suporta Web Workers.');
+  }
+}
 
 function conectarWorker() {
   if (window.Worker) {

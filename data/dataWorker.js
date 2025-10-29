@@ -17,6 +17,20 @@ let lastTempoMCU = null;
 let totalLeiturasMCU = 0;
 let rpsCalculadoMCU = 0;
 
+// OTIMIZAÇÃO: Tentar conexão imediatamente com URL padrão
+// Não espera por set_ws_url, o que acelera muito a primeira conexão
+(() => {
+    console.log("[Worker] 🚀 Tentando conexão rápida com URL padrão...");
+    let host = location.hostname;
+    if (location.port === '5500' || host === 'localhost' || host === '127.0.0.1') {
+        host = 'localhost';
+    }
+    wsURL = `ws://${host}:81`;
+    console.log(`[Worker] URL padrão definida: ${wsURL}`);
+    // Agenda a conexão para o próximo tick (permite que o worker.onmessage esteja pronto)
+    setTimeout(() => connectWebSocket(), 10);
+})();
+
 /**
  * Conecta ao servidor WebSocket do Host (Raspberry Pi/PC).
  */
@@ -77,7 +91,7 @@ function connectWebSocket() {
         self.postMessage({ type: 'status', status: 'connected', message: 'Conectado ao Gateway Serial (Host)' });
         self.postMessage({ type: 'debug', message: `WebSocket connected to: ${socket.url}` });
 
-        // Solicita a configuração automaticamente após conectar para evitar estado inicial inconsistente
+        // Solicita a configuração muito mais rápido - apenas 100ms após conectar
         try {
             const cmd = JSON.stringify({ cmd: 'get_config' });
             setTimeout(() => {
@@ -85,7 +99,7 @@ function connectWebSocket() {
                     socket.send(cmd);
                     console.log('[Worker] 🔎 get_config enviado automaticamente após conexão');
                 }
-            }, 200);
+            }, 100);
         } catch (e) {
             console.warn('[Worker] Não foi possível enviar get_config automático:', e.message);
         }
@@ -436,11 +450,12 @@ self.onmessage = (e) => {
 
 /**
  * Inicia o Gerenciador de Conexão.
- * Este loop verifica o estado da conexão a cada 5 segundos e tenta conectar se necessário.
+ * Este loop verifica o estado da conexão a cada 1 segundo e tenta conectar se necessário.
+ * OTIMIZADO: Reduzido de 5s para 1s para conexão mais rápida e responsiva.
  */
 setInterval(() => {
     if (socket == null || socket.readyState === WebSocket.CLOSED) {
-        console.log("Tentando reconectar ao WebSocket do Host...");
+        console.log("[Worker] 🔄 Tentando reconectar ao WebSocket do Host...");
         connectWebSocket();
     }
-}, 5000);
+}, 1000);
