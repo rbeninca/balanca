@@ -1476,7 +1476,7 @@ async function loadAndDisplayAllSessions() {
         : ''}
             <button onclick="visualizarSessao(${session.id}, '${session.source}')" title="Carregar para Análise/Gráfico" class="btn btn-info">️ Ver</button>
             <button onclick="editarMetadadosMotor(${session.id})" title="Editar Metadados do Motor" class="btn btn-secundario">⚙️ Metadados</button>
-            <button onclick="exportarPNG(${session.id}, '${session.source}')" title="Exportar Gráfico em PNG" class="btn btn-primario">️ PNG</button>
+            <button onclick="exportarImagemSessao(${session.id}, '${session.source}')" title="Exportar Gráfico em PNG" class="btn btn-primario">️ PNG</button>
             <button onclick="gerarRelatorioPdf(${session.id}, '${session.source}')" title="Exportar Relatório PDF" class="btn btn-secundario"> PDF</button>
             <button onclick="exportarJSON(${session.id}, '${session.source}')" title="Exportar Dados em JSON" class="btn btn-sucesso"> JSON</button>
             <button onclick="exportarCSV(${session.id}, '${session.source}')" title="Exportar Dados em CSV" class="btn btn-sucesso"> CSV</button>
@@ -1702,46 +1702,55 @@ async function salvarMetadadosMotor(sessionId) {
 
 
 async function exportarPNG(sessionId, source) {
-  showNotification('info', 'Gerando imagem do gráfico...');
+  // NOVA VERSÃO: Usa o sistema avançado de exportação PNG com configurações
+  showNotification('info', 'Gerando relatório PNG com análise de propulsão...');
+
   const session = await getSessionDataForExport(sessionId, source);
   if (!session) {
     showNotification('error', 'Sessão não encontrada para exportar PNG.');
     return;
   }
 
-  const chartData = session.dadosTabela.map(d => [d.tempo_esp, d.newtons]);
+  // Chama a função avançada de exportação PNG (de script_grafico_sessao.js)
+  if (typeof exportarImagemSessao === 'function') {
+    exportarImagemSessao(session.id);
+  } else {
+    // Fallback para versão antiga caso a função nova não esteja carregada
+    console.warn('[PNG] Função exportarImagemSessao não encontrada, usando método legado');
 
-  // Create a temporary, off-screen div to render the chart
-  const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px';
-  tempDiv.style.width = '800px';
-  tempDiv.style.height = '600px';
-  document.body.appendChild(tempDiv);
+    const chartData = session.dadosTabela.map(d => [d.tempo_esp, d.newtons]);
 
-  const tempChartOptions = {
-    series: [{ name: 'Força', data: chartData }],
-    chart: { type: 'line', height: '100%', width: '100%', background: '#fff' },
-    title: { text: 'Gráfico da Sessão: ' + session.nome, align: 'center' },
-    xaxis: { title: { text: 'Tempo (s)' } },
-    yaxis: { title: { text: 'Força (N)' } }
-  };
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.width = '800px';
+    tempDiv.style.height = '600px';
+    document.body.appendChild(tempDiv);
 
-  const tempChart = new ApexCharts(tempDiv, tempChartOptions);
+    const tempChartOptions = {
+      series: [{ name: 'Força', data: chartData }],
+      chart: { type: 'line', height: '100%', width: '100%', background: '#fff' },
+      title: { text: 'Gráfico da Sessão: ' + session.nome, align: 'center' },
+      xaxis: { title: { text: 'Tempo (s)' } },
+      yaxis: { title: { text: 'Força (N)' } }
+    };
 
-  tempChart.render().then(() => {
-    tempChart.dataURI().then(({ imgURI }) => {
-      const a = document.createElement('a');
-      a.href = imgURI;
-      a.download = 'grafico_' + session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      tempChart.destroy();
-      document.body.removeChild(tempDiv);
-      showNotification('success', 'Gráfico exportado como PNG!');
+    const tempChart = new ApexCharts(tempDiv, tempChartOptions);
+
+    tempChart.render().then(() => {
+      tempChart.dataURI().then(({ imgURI }) => {
+        const a = document.createElement('a');
+        a.href = imgURI;
+        a.download = 'grafico_' + session.nome.replace(/[^a-zA-Z0-9_]/g, '_') + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        tempChart.destroy();
+        document.body.removeChild(tempDiv);
+        showNotification('success', 'Gráfico exportado como PNG!');
+      });
     });
-  });
+  }
 }
 
 async function exportarJSON(sessionId, source) {

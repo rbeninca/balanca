@@ -220,6 +220,132 @@ function validarDependencias() {
   }
 }
 
+// ============================================
+// === FUNÇÕES DE INTERFACE PARA CONFIGURAÇÃO PNG ===
+// ============================================
+
+/**
+ * Carrega as configurações salvas nos campos da interface
+ * Chama automaticamente quando a página carrega
+ */
+function carregarConfigPNGInterface() {
+  try {
+    const config = obterConfiguracaoExportacao();
+
+    // Preenche os campos
+    const temaSelect = document.getElementById('config-png-tema');
+    const escalaSelect = document.getElementById('config-png-escala');
+    const tamanhoSelect = document.getElementById('config-png-tamanho');
+    const formatoSelect = document.getElementById('config-png-formato');
+    const logoCheckbox = document.getElementById('config-png-logo');
+    const logoTexto = document.getElementById('config-png-logo-texto');
+    const logoPos = document.getElementById('config-png-logo-pos');
+
+    if (temaSelect) temaSelect.value = config.tema;
+    if (escalaSelect) escalaSelect.value = config.escala;
+    if (tamanhoSelect) tamanhoSelect.value = config.tamanho;
+    if (formatoSelect) formatoSelect.value = config.formato;
+    if (logoCheckbox) logoCheckbox.checked = config.mostrarLogo;
+    if (logoTexto) logoTexto.value = config.logoTexto;
+    if (logoPos) logoPos.value = config.logoPos;
+
+    if (DEBUG_PNG) console.log('[PNG] Configurações carregadas na interface:', config);
+  } catch (e) {
+    console.error('[PNG] Erro ao carregar configurações na interface:', e);
+  }
+}
+
+/**
+ * Salva as configurações dos campos da interface para o localStorage
+ */
+function salvarConfigPNG() {
+  try {
+    const config = {
+      tema: document.getElementById('config-png-tema').value,
+      escala: document.getElementById('config-png-escala').value,
+      tamanho: document.getElementById('config-png-tamanho').value,
+      formato: document.getElementById('config-png-formato').value,
+      logo: document.getElementById('config-png-logo').checked ? 'true' : 'false',
+      logo_texto: document.getElementById('config-png-logo-texto').value,
+      logo_pos: document.getElementById('config-png-logo-pos').value
+    };
+
+    salvarConfiguracaoExportacao(config);
+    showNotification('success', '✅ Configurações PNG salvas com sucesso!');
+
+    if (DEBUG_PNG) console.log('[PNG] Configurações salvas:', config);
+  } catch (e) {
+    console.error('[PNG] Erro ao salvar configurações:', e);
+    showNotification('error', 'Erro ao salvar configurações: ' + e.message);
+  }
+}
+
+/**
+ * Reseta as configurações para os valores padrão
+ */
+function resetarConfigPNG() {
+  try {
+    // Limpa localStorage
+    localStorage.removeItem('png_tema');
+    localStorage.removeItem('png_escala');
+    localStorage.removeItem('png_tamanho');
+    localStorage.removeItem('png_formato');
+    localStorage.removeItem('png_logo');
+    localStorage.removeItem('png_logo_texto');
+    localStorage.removeItem('png_logo_pos');
+
+    // Recarrega interface com padrões
+    carregarConfigPNGInterface();
+
+    showNotification('info', '🔄 Configurações resetadas para o padrão');
+    if (DEBUG_PNG) console.log('[PNG] Configurações resetadas');
+  } catch (e) {
+    console.error('[PNG] Erro ao resetar configurações:', e);
+  }
+}
+
+/**
+ * Mostra preview visual das configurações atuais
+ */
+function previewConfigPNG() {
+  try {
+    const config = {
+      tema: document.getElementById('config-png-tema').value,
+      escala: document.getElementById('config-png-escala').value,
+      tamanho: document.getElementById('config-png-tamanho').value,
+      formato: document.getElementById('config-png-formato').value
+    };
+
+    const dim = obterDimensoesCanvas(config.tamanho);
+    const resolucao = dim.w * config.escala;
+
+    const msg = `
+📊 Preview das Configurações PNG:
+
+🎨 Tema: ${config.tema.charAt(0).toUpperCase() + config.tema.slice(1)}
+📐 Resolução: ${config.escala}x (${resolucao}x${dim.h * config.escala} pixels)
+📏 Tamanho Base: ${config.tamanho} (${dim.w}x${dim.h})
+💾 Formato: ${config.formato.toUpperCase()}
+
+💡 Tamanho aproximado do arquivo:
+- 1x: ~200-500 KB
+- 2x: ~800 KB - 2 MB
+- 4x: ~3-8 MB
+    `.trim();
+
+    showNotification('info', msg, 8000);
+  } catch (e) {
+    console.error('[PNG] Erro no preview:', e);
+  }
+}
+
+// Carrega configurações quando a página carrega
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', function() {
+    carregarConfigPNGInterface();
+  });
+}
+
 
 /**
  * Exporta imagem da sessão (função wrapper compatível)
@@ -227,6 +353,8 @@ function validarDependencias() {
  * @param {boolean} abrirModal - Se true, abre modal de configuração (futuro)
  */
 function exportarImagemSessao(sessionId, abrirModal = false) {
+  console.log('[PNG] exportarImagemSessao chamada! SessionID:', sessionId);
+
   // Valida dependências
   validarDependencias();
 
@@ -238,6 +366,7 @@ function exportarImagemSessao(sessionId, abrirModal = false) {
 
   // Obtém configuração atual
   const config = obterConfiguracaoExportacao();
+  console.log('[PNG] Configuração obtida:', config);
 
   // Chama versão avançada
   exportarImagemSessaoAvancada(sessionId, config);
