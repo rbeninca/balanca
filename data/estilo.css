@@ -191,6 +191,7 @@ header h1 {
   display: none;
   background: var(--cor-fundo-card);
   padding: 0.5rem;
+  margin-bottom: 1rem;
   border-radius: 0.75rem;
   box-shadow: var(--sombra-md);
   animation: fadeIn .3s ease-out;
@@ -215,6 +216,7 @@ header h1 {
 @media (max-width: 768px) {
   .tabcontent {
     padding: 0.5rem;
+    margin-bottom: 1.5rem;
   }
 }
 
@@ -445,6 +447,7 @@ label {
   box-shadow: var(--sombra-md);
   background: var(--cor-fundo-card);
   border: 1px solid var(--cor-borda);
+  margin-bottom: 1rem;
 }
 
 table { 
@@ -486,10 +489,24 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Lista de gravações - espaço para não ser tampada pelo rodapé */
+#lista-gravacoes {
+  padding-bottom: 1rem;
+}
+
+/* Seções dentro das abas - garantir espaço para rodapé */
+.tabcontent > div:last-child {
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 768px) {
   th, td {
     padding: 0.75rem;
     font-size: 0.75rem;
+  }
+  
+  #lista-gravacoes {
+    padding-bottom: 1.5rem;
   }
 }
 
