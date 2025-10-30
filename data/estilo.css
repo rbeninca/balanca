@@ -325,6 +325,105 @@ header h1 {
   }
 }
 
+/* Controles de gráfico e sessão - COMPACTOS */
+.controles-grafico-sessao {
+  margin-bottom: 0.5rem !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.375rem !important;
+  align-items: center !important;
+}
+
+.controles-grafico-sessao > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border: 1px solid var(--cor-borda) !important;
+  border-radius: 0.375rem !important;
+  background: var(--cor-fundo-card) !important;
+  margin: 0 !important;
+}
+
+.controles-grafico-sessao input[type="text"],
+.controles-grafico-sessao input[type="number"] {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+.controles-grafico-sessao input#nome-sessao {
+  width: 150px !important;
+}
+
+.controles-grafico-sessao input#max-data-points-input {
+  width: 60px !important;
+}
+
+.controles-grafico-sessao label {
+  margin: 0 !important;
+  font-size: 0.7rem !important;
+  white-space: nowrap !important;
+}
+
+.controles-grafico-sessao .btn {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  white-space: nowrap !important;
+}
+
+.controles-grafico-sessao .btn-grupo {
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+.controles-grafico-sessao .btn-grupo .btn {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+/* Status filtros - compacto */
+#status-filtros {
+  margin-top: 0.375rem !important;
+  padding: 0.375rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  border-radius: 0.375rem !important;
+}
+
+#status-filtros span {
+  margin-left: 0.5rem !important;
+  font-size: 0.65rem !important;
+}
+
+@media (max-width: 768px) {
+  .controles-grafico-sessao {
+    gap: 0.25rem !important;
+  }
+  
+  .controles-grafico-sessao > div {
+    padding: 0.25rem 0.375rem !important;
+  }
+  
+  .controles-grafico-sessao input#nome-sessao {
+    width: 120px !important;
+  }
+  
+  .controles-grafico-sessao .btn {
+    padding: 0.25rem 0.375rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  #status-filtros {
+    font-size: 0.65rem !important;
+  }
+  
+  #status-filtros span {
+    margin-left: 0.25rem !important;
+    font-size: 0.6rem !important;
+  }
+}
+
 input[type=text],
 input[type=number],
 input[type=password],
