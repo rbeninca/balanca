@@ -63,11 +63,6 @@
     <main>
       <div id="abaGrafico" class="tabcontent">
         <div class="controles-grafico-sessao" style="margin-bottom: 0.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
-            <input type="text" id="nome-sessao" placeholder="Nome da Sessão...">
-            <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso">▶ Iniciar</button>
-            <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled>⏹ Encerrar e Salvar</button>
-          </div>
           
           <!-- New input for MAX_DATA_POINTS -->
           <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem;">
@@ -102,11 +97,20 @@
 
         <div class="grafico-e-controles" style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: nowrap;">
           <div id="grafico" class="ct-chart" style="flex-grow: 1;"></div>
-          <div class="btn-grupo" style="flex-direction: column;">
-            <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
-            <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
-            <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
-            <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+          <div class="controles-laterais" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div class="btn-grupo" style="flex-direction: column;">
+              <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
+              <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
+              <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
+              <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+            </div>
+            
+            <!-- Controles de gravação movidos para cá -->
+            <div class="controle-gravacao" style="display: flex; flex-direction: column; gap: 0.375rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem; background: var(--cor-fundo-card);">
+              <input type="text" id="nome-sessao" placeholder="Nome da Sessão..." style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">
+              <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso" style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">▶ Iniciar</button>
+              <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">⏹ Encerrar</button>
+            </div>
           </div>
         </div>
       </div>
