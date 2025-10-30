@@ -933,44 +933,124 @@ function gerarHTMLRelatorioCompleto(sessao, dados, impulsoData, metricasPropulsa
   <!-- EXPLICAÇÃO TÉCNICA (NOVA SEÇÃO) -->
   <div class="page-break"></div>
   <div class="secao">
-    <h2>📚 Explicação Técnica das Métricas</h2>
-    <table style="font-size: 11px;">
+    <h2>📚 Fundamentação Teórica e Metodologia de Cálculo</h2>
+    
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">1. Integração Numérica - Método dos Trapézios</h3>
+    <div class="info-box" style="background: #f8f9fa; border-left: 4px solid #3498db;">
+      <p><strong>Referência:</strong> MARCHI, C. H. et al. "Verificação de Soluções Numéricas". UFPR, 2015.</p>
+      <p>O <strong>Impulso Total</strong> é calculado pela integração numérica da curva força-tempo usando o <strong>Método dos Trapézios Composto</strong>:</p>
+      <p style="text-align: center; font-family: 'Courier New', monospace; background: white; padding: 0.5rem; border-radius: 4px;">
+        I = ∫<sub>t₀</sub><sup>tₙ</sup> F(t) dt ≈ Σ<sub>i=1</sub><sup>n-1</sup> [(F<sub>i</sub> + F<sub>i+1</sub>)/2] × Δt<sub>i</sub>
+      </p>
+      <p><strong>Erro de Truncamento:</strong> O(h²), onde h = Δt é o espaçamento entre pontos.</p>
+      <p><strong>Justificativa:</strong> Com taxa de amostragem típica de 80-100 Hz, o erro de discretização é desprezível comparado à incerteza de medição da célula de carga (±0.05% F.S.).</p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">2. Detecção de Eventos Críticos</h3>
+    <div class="info-box" style="background: #f8f9fa; border-left: 4px solid #e67e22;">
+      <p><strong>2.1 Threshold Adaptativo (Anti-Noising)</strong></p>
+      <p>A detecção de ignição e burnout utiliza um limiar dinâmico baseado em análise estatística do ruído de fundo:</p>
+      <p style="text-align: center; font-family: 'Courier New', monospace; background: white; padding: 0.5rem; border-radius: 4px;">
+        F<sub>threshold</sub> = F<sub>média_ruído</sub> + k × σ<sub>ruído</sub>
+      </p>
+      <p>onde <strong>k</strong> é o multiplicador configurável (padrão: 2.0σ) e <strong>σ</strong> é o desvio padrão amostral.</p>
+      
+      <p><strong>2.2 Desvio Padrão Amostral</strong></p>
+      <p><strong>Referência:</strong> MARCHI, C. H. "Análise de Incertezas em Medições". Cap. 3, UFPR.</p>
+      <p style="text-align: center; font-family: 'Courier New', monospace; background: white; padding: 0.5rem; border-radius: 4px;">
+        σ = √[Σ(x<sub>i</sub> - x̄)² / (n-1)]
+      </p>
+      <p><strong>Ignição:</strong> Detectada quando F(t) > F<sub>threshold</sub> por tempo mínimo configurável.</p>
+      <p><strong>Burnout:</strong> Detectado quando F(t) < F<sub>threshold</sub> após a ignição ter ocorrido.</p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">3. Métricas Estatísticas</h3>
+    <table style="font-size: 10px; width: 100%;">
       <tr>
         <th style="width: 25%;">Métrica</th>
-        <th style="width: 40%;">Fórmula / Definição</th>
-        <th style="width: 35%;">Como é Obtida (Sistema GFIG)</th>
+        <th style="width: 35%;">Fórmula Matemática</th>
+        <th style="width: 40%;">Interpretação Física</th>
       </tr>
       <tr>
-        <td>Impulso Total</td>
-        <td>$$I = \int F(t) dt \quad (\text{N} \cdot \text{s})$$A área total sob a curva de força (empuxo) em relação ao tempo.</td>
-        <td>Calculado pela soma das áreas de trapézios formados entre pontos de leitura (Método da Integração Trapezoidal) da força em Newtons ao longo do tempo.</td>
+        <td><strong>Impulso Total</strong></td>
+        <td>I = ∫ F(t) dt [N⋅s]</td>
+        <td>Quantidade total de movimento transferida pelo motor. Área sob a curva força-tempo.</td>
       </tr>
       <tr>
-        <td>Força Máxima</td>
-        <td>$$F_{max} \quad (\text{N})$$O maior valor de empuxo registrado durante o teste.</td>
-        <td>Obtido diretamente ao encontrar o valor máximo na série de dados de Força (N) coletados.</td>
+        <td><strong>Força Máxima</strong></td>
+        <td>F<sub>max</sub> = max{F(t)} [N]</td>
+        <td>Pico de empuxo. Crítico para dimensionamento estrutural do foguete.</td>
       </tr>
       <tr>
-        <td>Duração da Queima</td>
-        <td>$$\Delta t_{queima} = t_{burnout} - t_{ignição} \quad (\text{s})$$O intervalo de tempo entre o início e o fim da queima significativa.</td>
-        <td>Determinado automaticamente pela identificação do momento de Ignição (quando o empuxo ultrapassa um *threshold* de ruído) e o momento de Burnout (quando o empuxo cai abaixo desse *threshold*).</td>
+        <td><strong>Força Média (Queima)</strong></td>
+        <td>F̄<sub>queima</sub> = I / Δt<sub>queima</sub> [N]</td>
+        <td>Empuxo constante equivalente durante a fase de propulsão efetiva.</td>
       </tr>
       <tr>
-        <td>Força Média (Queima)</td>
-        <td>$$F_{média} = \frac{I}{\Delta t_{queima}} \quad (\text{N})$$A força constante que teria produzido o mesmo Impulso Total durante a Duração da Queima.</td>
-        <td>Calculada dividindo o Impulso Total medido pela Duração da Queima.</td>
+        <td><strong>Força Média (Amostral)</strong></td>
+        <td>F̄ = (1/n) Σ F<sub>i</sub> [N]</td>
+        <td>Média aritmética de todas as leituras, incluindo valores negativos (arrasto).</td>
       </tr>
       <tr>
-        <td>Impulso Líquido</td>
-        <td>$$I_{líquido} = I_{positivo} - |I_{negativo}| \quad (\text{N} \cdot \text{s})$$Impulso que realmente contribui para a propulsão.</td>
-        <td>Resultado da subtração do Impulso Negativo (área abaixo de zero, que representa o arrasto do motor ou erro de tara) do Impulso Positivo total.</td>
+        <td><strong>Impulso Líquido</strong></td>
+        <td>I<sub>líq</sub> = I<sub>pos</sub> - |I<sub>neg</sub>| [N⋅s]</td>
+        <td>Impulso útil para propulsão, descontando arrasto e forças resistivas.</td>
       </tr>
       <tr>
-        <td>Impulso Específico (Isp)</td>
-        <td>$$I_{sp} = \frac{I}{(\Delta m) g_0} \quad (\text{s})$$Métrica de eficiência do propelente. Requer a Massa Queimada ($\Delta m$).</td>
-        <td>${impulsoEspecifico !== null ? `**${impulsoEspecifico.toFixed(2)} s** - Calculado com massa = ${massaPropelente.toFixed(3)} kg.` : '**N/A** - Não pode ser calculado sem a inserção da massa do propelente queimada.'}</td>
+        <td><strong>Impulso Específico</strong></td>
+        <td>I<sub>sp</sub> = I / (m<sub>prop</sub> × g₀) [s]</td>
+        <td>Eficiência do propelente. Tempo que 1kg de propelente fornece 1kgf de empuxo.</td>
       </tr>
     </table>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">4. Incertezas de Medição</h3>
+    <div class="info-box" style="background: #fff3cd; border-left: 4px solid #f39c12;">
+      <p><strong>Referência:</strong> MARCHI, C. H. "Propagação de Incertezas". UFPR, 2015.</p>
+      <p><strong>Incerteza Tipo A (Estatística):</strong> Obtida pelo desvio padrão das medições repetidas.</p>
+      <p><strong>Incerteza Tipo B (Sistemática):</strong> Especificação do fabricante da célula de carga (típico: ±0.05% F.S.).</p>
+      <p><strong>Incerteza Combinada do Impulso:</strong></p>
+      <p style="text-align: center; font-family: 'Courier New', monospace; background: white; padding: 0.5rem; border-radius: 4px;">
+        u<sub>c</sub>(I) = √[(∂I/∂F)² u²(F) + (∂I/∂t)² u²(t)]
+      </p>
+      <p>Para taxa de amostragem constante e alta (>80 Hz), a incerteza temporal é desprezível, dominando a incerteza na medição de força.</p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">5. Classificação NAR/TRA</h3>
+    <div class="info-box" style="background: #f8f9fa; border-left: 4px solid #27ae60;">
+      <p><strong>Referências Normativas:</strong></p>
+      <ul style="margin: 0.5rem 0;">
+        <li><strong>NFPA 1122</strong> - Code for Model Rocketry</li>
+        <li><strong>NFPA 1127</strong> - Code for High Power Rocketry</li>
+        <li><strong>NAR/TRA Standards</strong> - Motor Classification System</li>
+      </ul>
+      <p>A classificação por letras (A, B, C, ..., O) segue progressão logarítmica base 2:</p>
+      <p style="text-align: center; font-family: 'Courier New', monospace; background: white; padding: 0.5rem; border-radius: 4px;">
+        Classe N: 2<sup>N-1</sup> < I<sub>total</sub> ≤ 2<sup>N</sup> [N⋅s]
+      </p>
+      <p>Exemplo: Classe D → 5 < I ≤ 10 N⋅s</p>
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">6. Limitações e Observações</h3>
+    <div class="info-box" style="background: #f8d7da; border-left: 4px solid #e74c3c;">
+      <ul style="margin: 0.5rem 0;">
+        <li>O método dos trapézios assume variação linear entre pontos. Curvas com alta não-linearidade requerem maior taxa de amostragem.</li>
+        <li>A detecção de ignição/burnout depende da correta calibração do threshold de ruído.</li>
+        <li>O cálculo de I<sub>sp</sub> requer pesagem precisa do propelente antes e depois do teste.</li>
+        <li>Vibrações externas e oscilações mecânicas podem introduzir ruído que afeta a precisão.</li>
+        <li>A tara deve ser verificada antes de cada teste para eliminar offset sistemático.</li>
+      </ul>
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: #2c3e50;">7. Referências Bibliográficas</h3>
+    <div style="font-size: 10px; line-height: 1.6; background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+      <p><strong>[1]</strong> MARCHI, Carlos Henrique. <em>"Verificação de Soluções Numéricas"</em>. Departamento de Engenharia Mecânica, UFPR, 2015.</p>
+      <p><strong>[2]</strong> MARCHI, Carlos Henrique. <em>"Análise de Incertezas em Medições"</em>. Notas de aula, UFPR.</p>
+      <p><strong>[3]</strong> NFPA 1122: <em>Code for Model Rocketry</em>. National Fire Protection Association, 2018.</p>
+      <p><strong>[4]</strong> NFPA 1127: <em>Code for High Power Rocketry</em>. National Fire Protection Association, 2018.</p>
+      <p><strong>[5]</strong> NAR Standards and Testing Committee. <em>"Model Rocket Motor Classification"</em>.</p>
+      <p><strong>[6]</strong> SUTTON, George P.; BIBLARZ, Oscar. <em>"Rocket Propulsion Elements"</em>. 9th Edition, Wiley, 2017.</p>
+      <p><strong>[7]</strong> JCGM 100:2008. <em>"Evaluation of measurement data - Guide to the expression of uncertainty in measurement"</em> (GUM).</p>
+    </div>
   </div>
   <!-- FIM EXPLICAÇÃO TÉCNICA -->
 
