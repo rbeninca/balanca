@@ -649,6 +649,9 @@ function updateUIFromData(dado) {
   document.getElementById('forca-maxima').textContent = maxDisplayForce.toFixed(3);
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
 
+  // Aplica alertas graduais de limite da célula
+  aplicarAlertasLimite(forcaFiltrada);
+
   rawDataN.push([tempo, forcaFiltrada]);
 
   // No modo deslizante, mantém apenas os últimos MAX_DATA_POINTS
@@ -961,6 +964,43 @@ function convertForce(valueN, unit) {
   if (unit === 'gf') return valueN * g_force_conversion;
   if (unit === 'kgf') return valueN * (g_force_conversion / 1000);
   return valueN;
+}
+
+/**
+ * Aplica classes de alerta gradual nos cards do display baseado na proximidade do limite
+ * @param {number} forcaAtualN - Força atual em Newtons
+ */
+function aplicarAlertasLimite(forcaAtualN) {
+  // Obtém a capacidade máxima em gramas e converte para Newtons
+  const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima")?.value) || 5000;
+  const capacidadeN = (capacidadeGramas / 1000) * 9.80665; // Converte kg para N
+  
+  // Calcula o percentual em relação à capacidade máxima (usa valor absoluto)
+  const percentual = Math.abs((forcaAtualN / capacidadeN) * 100);
+  
+  // Seleciona todos os cards de leitura
+  const cards = document.querySelectorAll('.leituras-valores > div');
+  
+  // Remove todas as classes de alerta existentes
+  cards.forEach(card => {
+    card.classList.remove('alerta-70', 'alerta-80', 'alerta-90', 'alerta-limite');
+  });
+  
+  // Aplica a classe apropriada baseada no percentual
+  if (percentual >= 100) {
+    // Limite excedido - vermelho intenso com pulsação rápida
+    cards.forEach(card => card.classList.add('alerta-limite'));
+  } else if (percentual >= 90) {
+    // 90-99% - vermelho com pulsação suave
+    cards.forEach(card => card.classList.add('alerta-90'));
+  } else if (percentual >= 80) {
+    // 80-89% - laranja
+    cards.forEach(card => card.classList.add('alerta-80'));
+  } else if (percentual >= 70) {
+    // 70-79% - amarelo
+    cards.forEach(card => card.classList.add('alerta-70'));
+  }
+  // Abaixo de 70% não aplica nenhuma classe (mantém estilo normal)
 }
 
 function atualizarToleranciaEmGramas() {
