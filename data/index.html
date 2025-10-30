@@ -23,29 +23,29 @@
     <div class="sticky-header-group">
       <div class="leituras-display">
         <div class="leituras-valores">
-          <div>
+          <div title="Força atual sendo medida pela célula de carga em tempo real">
             <h4>Força Atual</h4>
             <p id="forca-atual">---</p>
           </div>
-          <div>
+          <div title="Média Móvel Exponencial (EMS) - suaviza flutuações e reduz ruído">
             <h4>Força EMS</h4>
             <p id="forca-ems">---</p>
           </div>
-          <div>
+          <div title="Maior força registrada desde que o gráfico foi limpo ou iniciado">
             <h4>Força Máxima</h4>
             <p id="forca-maxima">---</p>
             <small id="forca-minima" style="display: block; font-size: 0.75rem; color: var(--cor-texto-secundario);">mín: ---</small>
           </div>
-          <div>
+          <div title="Taxa de atualização: quantas leituras a balança está enviando por segundo">
             <h4>Leituras/Seg</h4>
             <p id="leituras-por-segundo">---</p>
           </div>
         </div>
         <div class="unidade-selecao">
           <div class="btn-grupo" role="group">
-            <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons (N)</button>
-            <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força (gf)</button>
-            <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')">Quilo-força (kgf)</button>
+            <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')" title="Exibir força em Newtons (unidade SI de força)">Newtons (N)</button>
+            <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')" title="Exibir força em grama-força (peso de 1 grama na Terra)">Grama-força (gf)</button>
+            <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')" title="Exibir força em quilograma-força (peso de 1 kg na Terra)">Quilo-força (kgf)</button>
           </div>
         </div>
       </div>
@@ -71,21 +71,21 @@
           </div>
 
           <div class="btn-grupo">
-            <button id="btn-toggle-labels" class="btn" onclick="toggleDataLabels()">Mostrar/Ocultar Labels</button>
-            <button id="btn-toggle-display-mode" class="btn" onclick="toggleChartDisplayMode()">Modo: Somente Pontos</button>
-            <button id="btn-toggle-grid" class="btn" onclick="toggleGrid()">Grade: ON</button>
-            <button id="btn-set-smooth-line" class="btn" onclick="setInterpolation('smooth')">Linha Suave</button>
-            <button id="btn-set-straight-line" class="btn" onclick="setInterpolation('straight')">Linha Reta</button>
+            <button id="btn-toggle-labels" class="btn" onclick="toggleDataLabels()" title="Mostrar ou ocultar os valores numéricos nos pontos do gráfico">Mostrar/Ocultar Labels</button>
+            <button id="btn-toggle-display-mode" class="btn" onclick="toggleChartDisplayMode()" title="Alternar entre: somente pontos, somente linha ou pontos + linha">Modo: Somente Pontos</button>
+            <button id="btn-toggle-grid" class="btn" onclick="toggleGrid()" title="Mostrar ou ocultar a grade de referência do gráfico">Grade: ON</button>
+            <button id="btn-set-smooth-line" class="btn" onclick="setInterpolation('smooth')" title="Linha suavizada (interpolação cardinal) - melhor visualização">Linha Suave</button>
+            <button id="btn-set-straight-line" class="btn" onclick="setInterpolation('straight')" title="Linha reta entre pontos (interpolação linear) - dados brutos">Linha Reta</button>
           </div>
           <div class="btn-grupo">
-            <button id="btn-toggle-fullscreen" class="btn" onclick="toggleFullscreen()">Tela Cheia</button>
-            <button class="btn" onclick="setYAxisRange('auto')">Range Automático</button>
-            <button class="btn" onclick="setYAxisRange('fixed')">Range Fixo (Célula)</button>
+            <button id="btn-toggle-fullscreen" class="btn" onclick="toggleFullscreen()" title="Expandir gráfico para tela cheia (melhor visualização)">Tela Cheia</button>
+            <button class="btn" onclick="setYAxisRange('auto')" title="Eixo Y ajusta automaticamente aos valores exibidos">Range Automático</button>
+            <button class="btn" onclick="setYAxisRange('fixed')" title="Eixo Y fixo de 0 até a capacidade máxima da célula">Range Fixo (Célula)</button>
           </div>
           <div class="btn-grupo">
-            <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()">Anti-Noising: Off</button>
-            <button id="btn-zona-morta" class="btn" onclick="toggleFiltroZonaMorta()" style="background: #27ae60;">Zona Morta: ON</button>
-            <button id="btn-arredondamento" class="btn" onclick="toggleArredondamentoInteligente()" style="background: #27ae60;">Arredondar: ON</button>
+            <button id="btn-anti-noising" class="btn" onclick="toggleAntiNoising()" title="Filtro que remove ruído através de média móvel exponencial">Anti-Noising: Off</button>
+            <button id="btn-zona-morta" class="btn" onclick="toggleFiltroZonaMorta()" style="background: #27ae60;" title="Ignora variações pequenas próximas a zero (elimina deriva)">Zona Morta: ON</button>
+            <button id="btn-arredondamento" class="btn" onclick="toggleArredondamentoInteligente()" style="background: #27ae60;" title="Arredonda valores conforme a acurácia da célula (reduz ruído)">Arredondar: ON</button>
           </div>
           
           <div id="status-filtros" style="margin-top: 0.5rem; padding: 0.5rem; background: #ecf0f1; border-radius: 0.5rem; font-size: 0.875rem;">
@@ -99,17 +99,17 @@
           <div id="grafico" class="ct-chart" style="flex-grow: 1;"></div>
           <div class="controles-laterais" style="display: flex; flex-direction: column; gap: 0.5rem;">
             <div class="btn-grupo" style="flex-direction: column;">
-              <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')">Deslizante</button>
-              <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')">Acumulado</button>
-              <button id="btn-pausado" class="btn" onclick="toggleChartPause()">Pausar/Retomar</button>
-              <button onclick="clearChart()" class="btn btn-secundario">Limpar Gráfico</button>
+              <button id="btn-deslizante" class="btn" onclick="setChartMode('deslizante')" title="Modo deslizante: mantém apenas os últimos N pontos (janela móvel)">Deslizante</button>
+              <button id="btn-acumulado" class="btn" onclick="setChartMode('acumulado')" title="Modo acumulado: armazena todos os pontos sem limite">Acumulado</button>
+              <button id="btn-pausado" class="btn" onclick="toggleChartPause()" title="Pausar atualização do gráfico (dados continuam sendo recebidos)">Pausar/Retomar</button>
+              <button onclick="clearChart()" class="btn btn-secundario" title="Limpar todos os dados do gráfico e resetar valores máximo/mínimo">Limpar Gráfico</button>
             </div>
             
             <!-- Controles de gravação movidos para cá -->
             <div class="controle-gravacao" style="display: flex; flex-direction: column; gap: 0.375rem; padding: 0.5rem; border: 1px solid var(--cor-borda); border-radius: 0.5rem; background: var(--cor-fundo-card);">
-              <input type="text" id="nome-sessao" placeholder="Nome da Sessão..." style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">
-              <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso" style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">▶ Iniciar</button>
-              <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;">⏹ Encerrar</button>
+              <input type="text" id="nome-sessao" placeholder="Nome da Sessão..." style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;" title="Nome identificador para esta sessão de testes (ex: Teste Motor 01)">
+              <button id="btn-iniciar-sessao" onclick="iniciarSessao()" class="btn btn-sucesso" style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;" title="Iniciar gravação de uma nova sessão com o nome especificado">▶ Iniciar</button>
+              <button id="btn-encerrar-sessao" onclick="encerrarSessao()" class="btn btn-perigo" disabled style="width: 100%; padding: 0.375rem 0.5rem; font-size: 0.7rem;" title="Encerrar sessão atual e salvar os dados no banco MySQL">⏹ Encerrar</button>
             </div>
           </div>
         </div>
@@ -265,9 +265,9 @@
           <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📥 Importar Teste Estático (.txt)</h3>
           <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
             Importe arquivos de texto (ex: saídas de simulação FxT) no formato *tempo [s] força [N]*.</p>
-          <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;">
-          <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;">
-          <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;">
+          <input type="file" id="importar-arquivo-motor" accept=".txt,.log" style="width: auto; margin-right: 10px;" title="Selecione um arquivo .txt ou .log com dados de força ao longo do tempo">
+          <input type="text" id="nome-importacao" placeholder="Nome da sessão importada" style="max-width: 200px;" title="Nome identificador para a sessão importada">
+          <button onclick="importarGravacaoExterna()" class="btn btn-info" style="margin-top: 10px;" title="Processar e salvar o arquivo importado no banco de dados">
             Salvar Importação
           </button>
         </div>
@@ -276,8 +276,8 @@
           <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📤 Importar Gravação Exportada (.json)</h3>
           <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
             Restaure gravações previamente exportadas em formato JSON. Todas as informações da sessão serão recuperadas.</p>
-          <input type="file" id="importar-json" accept=".json,application/json" style="width: auto; margin-right: 10px;">
-          <button onclick="importarGravacaoJSON()" class="btn btn-sucesso" style="margin-top: 10px;">
+          <input type="file" id="importar-json" accept=".json,application/json" style="width: auto; margin-right: 10px;" title="Selecione um arquivo JSON exportado anteriormente desta aplicação">
+          <button onclick="importarGravacaoJSON()" class="btn btn-sucesso" style="margin-top: 10px;" title="Restaurar sessão completa a partir do arquivo JSON">
             📥 Importar JSON
           </button>
         </div>
@@ -296,14 +296,14 @@
         </p>
         <div>
           <label for="ws-url">URL do Servidor WebSocket</label>
-          <input type="text" id="ws-url" placeholder="ws://[2804:4950:1:803e:78c5:d2ff:fe30:2650]:81">
+          <input type="text" id="ws-url" placeholder="ws://[2804:4950:1:803e:78c5:d2ff:fe30:2650]:81" title="URL completa do servidor WebSocket (ws:// para IPv4 ou IPv6 entre colchetes)">
           <span class="info-text" style="font-size: 0.85em; color: var(--cor-texto-secundario); margin-top: 0.5rem; display: block;">
             Ex: ws://seu_endereco_ipv4:81 ou ws://[seu_endereco_ipv6]:81
           </span>
         </div>
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <button onclick="salvarWsUrl()" class="btn btn-sucesso">Salvar e Reconectar</button>
-          <button onclick="resetarWsUrl()" class="btn btn-secundario">🔄 Restaurar Padrão</button>
+          <button onclick="salvarWsUrl()" class="btn btn-sucesso" title="Salvar URL e reconectar imediatamente ao servidor WebSocket">Salvar e Reconectar</button>
+          <button onclick="resetarWsUrl()" class="btn btn-secundario" title="Restaurar URL padrão do servidor WebSocket (auto-detecta)">🔄 Restaurar Padrão</button>
         </div>
       </div>
     </main>
@@ -314,26 +314,26 @@
       </div>
       
       <div class="footer-section footer-status">
-        <div class="status-item">
+        <div class="status-item" title="Conexão WebSocket com o servidor Python - transmite dados da balança em tempo real">
           <span class="status-label">WebSocket:</span>
           <div id="ws-indicator" class="status-indicator" title="Desconectado"></div>
           <span id="ws-text">Desconectado</span>
         </div>
-        <div class="status-item">
+        <div class="status-item" title="Conexão com banco de dados MySQL - necessária para salvar gravações">
           <span class="status-label">MySQL:</span>
           <div id="mysql-indicator" class="status-indicator" title="MySQL Desconectado"></div>
           <span id="mysql-text">Desconectado</span>
         </div>
-        <div class="status-item">
+        <div class="status-item" title="Status de comunicação da balança com o ESP32">
           <span class="status-label">⚖️ Balança:</span>
           <span id="balanca-status">...</span>
         </div>
       </div>
       
       <div class="footer-section footer-time">
-        <span class="time-label">🕐 Servidor:</span>
+        <span class="time-label" title="Horário atual do servidor (UTC-3 - America/Sao_Paulo)">🕐 Servidor:</span>
         <span id="server-clock">--:--:--</span>
-        <button onclick="syncServerTime()" class="btn btn-sync" title="Sincronizar com a hora do navegador">🔄</button>
+        <button onclick="syncServerTime()" class="btn btn-sync" title="Sincronizar relógio do servidor com a hora do seu navegador">🔄</button>
       </div>
       
       <div class="footer-section footer-shortcuts">
