@@ -400,6 +400,42 @@ function setChartMode(mode) {
   document.querySelectorAll('#btn-deslizante, #btn-acumulado, #btn-pausado').forEach(b => b.classList.remove('ativo'));
   document.getElementById(`btn-${mode}`).classList.add('ativo');
   isChartPaused = (mode === 'pausado');
+  
+  const maxPointsInput = document.getElementById('max-data-points-input');
+  const maxPointsLabel = document.getElementById('max-data-points-label');
+  
+  if (mode === 'acumulado') {
+    // No modo acumulado, desabilita o input e mostra a contagem atual
+    maxPointsInput.disabled = true;
+    maxPointsInput.style.fontWeight = 'bold';
+    maxPointsInput.style.color = 'var(--cor-info)';
+    if (maxPointsLabel) {
+      maxPointsLabel.textContent = '📊 Pontos Acumulados:';
+      maxPointsLabel.style.color = 'var(--cor-info)';
+      maxPointsLabel.style.fontWeight = 'bold';
+    }
+    updateAccumulatedPointsDisplay();
+  } else {
+    // Nos outros modos, habilita o input normalmente
+    maxPointsInput.disabled = false;
+    maxPointsInput.style.fontWeight = 'normal';
+    maxPointsInput.style.color = '';
+    maxPointsInput.value = MAX_DATA_POINTS;
+    if (maxPointsLabel) {
+      maxPointsLabel.textContent = 'Max Pontos:';
+      maxPointsLabel.style.color = '';
+      maxPointsLabel.style.fontWeight = 'normal';
+    }
+  }
+}
+
+function updateAccumulatedPointsDisplay() {
+  if (chartMode === 'acumulado') {
+    const maxPointsInput = document.getElementById('max-data-points-input');
+    if (maxPointsInput) {
+      maxPointsInput.value = rawDataN.length;
+    }
+  }
 }
 
 function toggleChartPause(setPaused = null) {
@@ -652,6 +688,9 @@ function processChartUpdates() {
 
   // Atualiza o gráfico uma única vez com todos os dados acumulados
   chart.updateSeries([{ data: displayData }]);
+  
+  // Atualiza o contador de pontos se estiver no modo acumulado
+  updateAccumulatedPointsDisplay();
 
   // Limpa o buffer e redefine o ID do quadro de animação
   chartUpdateBuffer = [];
