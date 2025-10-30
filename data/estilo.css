@@ -870,6 +870,7 @@ kbd:hover {
     bottom: 0.5rem;
     left: 0.5rem;
     padding: 0.375rem 0.75rem;
+    opacity: 0.7;
   }
   
   .footer-brand h3 {
