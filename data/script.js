@@ -657,8 +657,8 @@ function updateUIFromData(dado) {
   // Aplica alertas graduais de limite da célula
   aplicarAlertasLimite(forcaFiltrada);
   
-  // Atualiza barra de progresso do esforço no display
-  atualizarBarraEsforcoDisplay(percentual);
+  // Atualiza barra de progresso do esforço no display (passa força e percentual)
+  atualizarBarraEsforcoDisplay(percentual, forcaFiltrada);
   
   // Verifica e atualiza modal de sobrecarga (80%+)
   verificarModalSobrecarga(forcaFiltrada, percentual);
@@ -1111,38 +1111,41 @@ function fecharModalSobrecarga() {
 /**
  * Atualiza a barra de progresso do esforço da célula no display
  * @param {number} percentual - Percentual da capacidade
+ * @param {number} forcaAtualN - Força atual em Newtons
  */
-function atualizarBarraEsforcoDisplay(percentual) {
+function atualizarBarraEsforcoDisplay(percentual, forcaAtualN) {
   const barraFill = document.getElementById('barra-esforco-fill');
-  const percentualTexto = document.getElementById('barra-esforco-percentual');
+  const barraTexto = document.getElementById('barra-esforco-texto');
   
-  if (!barraFill || !percentualTexto) return;
+  if (!barraFill || !barraTexto) return;
+  
+  // Converte para a unidade atual do display
+  const valorDisplay = convertForce(Math.abs(forcaAtualN), displayUnit);
   
   // Atualiza largura da barra
   barraFill.style.width = Math.min(percentual, 100) + '%';
   
-  // Atualiza texto do percentual
-  percentualTexto.textContent = percentual.toFixed(1) + '%';
+  // Atualiza texto dentro da barra (valor | percentual)
+  barraTexto.textContent = `${valorDisplay.toFixed(2)} ${displayUnit} | ${percentual.toFixed(1)}%`;
   
-  // Remove classes anteriores
-  barraFill.classList.remove('nivel-70', 'nivel-80', 'nivel-90', 'nivel-100');
+  // Remove todas as classes anteriores
+  barraFill.classList.remove('nivel-50', 'nivel-60', 'nivel-70', 'nivel-80', 'nivel-90', 'nivel-100');
   
-  // Aplica classe conforme o nível
+  // Aplica classe conforme o nível (iniciando em 50%)
   if (percentual >= 100) {
     barraFill.classList.add('nivel-100');
-    percentualTexto.style.color = '#dc2626';
   } else if (percentual >= 90) {
     barraFill.classList.add('nivel-90');
-    percentualTexto.style.color = '#ef4444';
   } else if (percentual >= 80) {
     barraFill.classList.add('nivel-80');
-    percentualTexto.style.color = '#f97316';
   } else if (percentual >= 70) {
     barraFill.classList.add('nivel-70');
-    percentualTexto.style.color = '#f59e0b';
-  } else {
-    percentualTexto.style.color = '#10b981';
+  } else if (percentual >= 60) {
+    barraFill.classList.add('nivel-60');
+  } else if (percentual >= 50) {
+    barraFill.classList.add('nivel-50');
   }
+  // Abaixo de 50% mantém o verde padrão
 }
 
 function atualizarToleranciaEmGramas() {
