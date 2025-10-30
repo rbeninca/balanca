@@ -3,7 +3,7 @@ FROM python:3.11-slim-bookworm
 
 # Set environment variables for non-interactive apt and Python
 ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=UTC \
+    TZ=America/Sao_Paulo \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
