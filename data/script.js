@@ -766,6 +766,26 @@ function salvarWsUrl() {
   showNotification('success', 'URL do WebSocket salva. A conexão será reiniciada.');
 }
 
+function resetarWsUrl() {
+  // Remove a URL salva do localStorage
+  localStorage.removeItem('wsUrl');
+  
+  // Obtém o host padrão (hostname atual da página)
+  const defaultHost = window.location.hostname || 'localhost';
+  const defaultWsUrl = 'ws://' + defaultHost + ':81';
+  
+  // Atualiza o campo de input
+  const wsUrlInput = document.getElementById('ws-url');
+  wsUrlInput.value = defaultWsUrl;
+  
+  // Reinicia a conexão com o padrão
+  if (dataWorker) {
+    dataWorker.postMessage({ type: 'set_ws_url', payload: { url: defaultWsUrl } });
+  }
+  
+  showNotification('success', 'URL do WebSocket restaurada para o padrão: ' + defaultWsUrl);
+}
+
 // --- Funções de Sessão ---
 
 function iniciarSessao() {

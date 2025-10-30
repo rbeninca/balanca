@@ -256,7 +256,10 @@
             Ex: ws://seu_endereco_ipv4:81 ou ws://[seu_endereco_ipv6]:81
           </span>
         </div>
-        <button onclick="salvarWsUrl()" class="btn btn-sucesso" style="margin-top: 1rem;">Salvar e Reconectar</button>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <button onclick="salvarWsUrl()" class="btn btn-sucesso">Salvar e Reconectar</button>
+          <button onclick="resetarWsUrl()" class="btn btn-secundario">🔄 Restaurar Padrão</button>
+        </div>
       </div>
     </main>
 
