@@ -2599,7 +2599,12 @@ async function updateServerClock() {
 }
 
 function updateClockDisplay() {
+  // Cria um Date object com a hora do servidor ajustada
   const now = new Date(Date.now() + serverTimeOffset);
+  
+  // getHours(), getMinutes(), getSeconds() já retornam no timezone LOCAL do navegador
+  // Isso está correto! Se o servidor está em UTC e retorna 10:00, e o navegador
+  // está em GMT-3, o Date object automaticamente mostra 07:00 localmente
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');

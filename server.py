@@ -537,9 +537,10 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(500, "Internal Server Error")
 
     def handle_get_time(self):
-        """Retorna a hora atual do servidor"""
-        # Envia sempre em UTC (GMT) com sufixo 'Z' para indicar timezone
-        current_time = datetime.utcnow().isoformat() + 'Z'
+        """Retorna a hora atual do servidor no seu timezone local"""
+        # Retorna a hora LOCAL do servidor (não UTC)
+        # O navegador receberá e exibirá considerando o timezone do cliente
+        current_time = datetime.now().isoformat()
         self.send_json_response(200, {"time": current_time})
 
     def handle_get_info(self):
