@@ -17,6 +17,11 @@ let lastTempoMCU = null;
 let totalLeiturasMCU = 0;
 let rpsCalculadoMCU = 0;
 
+// Contador preciso de RPS
+let contadorLeituras = 0;
+let ultimaAtualizacaoRPS = Date.now();
+let rpsAtual = 0;
+
 // OTIMIZAÇÃO: Tentar conexão imediatamente com URL padrão
 // Não espera por set_ws_url, o que acelera muito a primeira conexão
 (() => {
@@ -295,7 +300,20 @@ function processDataPoint(data) {
 
     //console.log(`[Worker] 📦 Buffer agora tem ${dataBuffer.length} pontos`);
 
-    // --- RPS USANDO TEMPO DO MICROCONTROLADOR ---
+    // Incrementa contador de leituras
+    contadorLeituras++;
+
+    // Calcula RPS a cada segundo
+    const agora = Date.now();
+    const tempoDecorrido = (agora - ultimaAtualizacaoRPS) / 1000; // em segundos
+    
+    if (tempoDecorrido >= 1.0) {
+        rpsAtual = contadorLeituras / tempoDecorrido;
+        contadorLeituras = 0;
+        ultimaAtualizacaoRPS = agora;
+    }
+
+    // --- RPS USANDO TEMPO DO MICROCONTROLADOR (média móvel - mantido para referência) ---
     if (lastTempoMCU !== null) {
         const deltaTempo = data.tempo - lastTempoMCU;
         if (deltaTempo > 0) {
@@ -349,7 +367,8 @@ self.onmessage = (e) => {
             break;
 
         case 'getRPS':
-            self.postMessage({ type: 'rps', payload: rpsCalculadoMCU.toFixed(1) });
+            // Usa o contador real de leituras por segundo
+            self.postMessage({ type: 'rps', payload: rpsAtual.toFixed(1) });
             break;
             
         case 'sendCommand':
