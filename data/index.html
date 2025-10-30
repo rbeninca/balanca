@@ -15,48 +15,50 @@
 
 <body>
   <div class="container">
-    <div id="alerta-estabilizacao">
+        <div id="alerta-estabilizacao">
       ⚠️ A balança não está estabilizando! A tolerância pode estar muito baixa.
       Vá em Parâmetros → Tolerância de Estabilidade e aumente o valor.
     </div>
 
-    <div class="leituras-display">
-      <div class="leituras-valores">
-        <div>
-          <h4>Força Atual</h4>
-          <p id="forca-atual">---</p>
+    <div class="sticky-header-group">
+      <div class="leituras-display">
+        <div class="leituras-valores">
+          <div>
+            <h4>Força Atual</h4>
+            <p id="forca-atual">---</p>
+          </div>
+          <div>
+            <h4>Força EMS</h4>
+            <p id="forca-ems">---</p>
+          </div>
+          <div>
+            <h4>Força Máxima</h4>
+            <p id="forca-maxima">---</p>
+            <small id="forca-minima" style="display: block; font-size: 0.75rem; color: var(--cor-texto-secundario);">mín: ---</small>
+          </div>
+          <div>
+            <h4>Leituras/Seg</h4>
+            <p id="leituras-por-segundo">---</p>
+          </div>
         </div>
-        <div>
-          <h4>Força EMS</h4>
-          <p id="forca-ems">---</p>
-        </div>
-        <div>
-          <h4>Força Máxima</h4>
-          <p id="forca-maxima">---</p>
-          <small id="forca-minima" style="display: block; font-size: 0.75rem; color: var(--cor-texto-secundario);">mín: ---</small>
-        </div>
-        <div>
-          <h4>Leituras/Seg</h4>
-          <p id="leituras-por-segundo">---</p>
+        <div class="unidade-selecao">
+          <div class="btn-grupo" role="group">
+            <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons (N)</button>
+            <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força (gf)</button>
+            <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')">Quilo-força (kgf)</button>
+          </div>
         </div>
       </div>
-      <div class="unidade-selecao">
-        <div class="btn-grupo" role="group">
-          <button id="btn-unit-n" class="btn" onclick="setDisplayUnit('N')">Newtons (N)</button>
-          <button id="btn-unit-gf" class="btn" onclick="setDisplayUnit('gf')">Grama-força (gf)</button>
-          <button id="btn-unit-kgf" class="btn" onclick="setDisplayUnit('kgf')">Quilo-força (kgf)</button>
-        </div>
-      </div>
-    </div>
 
-    <div class="nav-abas">
-      <nav>
-        <button class="tablink" onclick="abrirAba(this, 'abaGrafico')" id="padrao">📈 Gráfico</button>
-        <button class="tablink" onclick="abrirAba(this, 'abaTabela')">📋 Tabela</button>
-        <button class="tablink" onclick="abrirAba(this, 'abaGravacoes')">💾 Gravações</button>
-        <button class="tablink" onclick="abrirAba(this, 'abaControles')">⚙️ Parâmetros</button>
-        <button class="tablink" onclick="abrirAba(this, 'abaConexao')">🔌 Conexão</button>
-      </nav>
+      <div class="nav-abas">
+        <nav>
+          <button class="tablink" onclick="abrirAba(this, 'abaGrafico')" id="padrao">📈 Gráfico</button>
+          <button class="tablink" onclick="abrirAba(this, 'abaTabela')">📋 Tabela</button>
+          <button class="tablink" onclick="abrirAba(this, 'abaGravacoes')">💾 Gravações</button>
+          <button class="tablink" onclick="abrirAba(this, 'abaControles')">⚙️ Parâmetros</button>
+          <button class="tablink" onclick="abrirAba(this, 'abaConexao')">🔌 Conexão</button>
+        </nav>
+      </div>
     </div>
     <main>
       <div id="abaGrafico" class="tabcontent">

@@ -135,16 +135,26 @@ header h1 {
   display: block;
 }
 
-.nav-abas {
+/* Grupo sticky para display de leituras + menu */
+.sticky-header-group {
   position: sticky;
   top: 0;
-  z-index: 9;
+  z-index: 100;
+  background: transparent;
+}
+
+.nav-abas {
+  position: relative;
+  top: auto;
+  z-index: 10;
   background: var(--cor-fundo-card);
+  backdrop-filter: blur(10px);
   margin-bottom: 1.5rem;
-  border-radius: 0.75rem;
+  border-radius: 0 0 0.75rem 0.75rem;
   padding: 0.5rem;
   box-shadow: var(--sombra-md);
   border: 1px solid var(--cor-borda);
+  border-top: none;
 }
 
 .nav-abas nav {
@@ -362,19 +372,21 @@ label {
 .flex-center { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; }
 
 .leituras-display {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: relative;
+  top: auto;
+  z-index: 11;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   background: linear-gradient(135deg, var(--cor-fundo-card) 0%, var(--cor-primaria-light) 100%);
+  backdrop-filter: blur(10px);
   padding: 1.5rem;
-  border-radius: 1rem;
+  border-radius: 1rem 1rem 0 0;
   box-shadow: var(--sombra-lg);
   border: 1px solid var(--cor-borda);
+  border-bottom: none;
 }
 
 .leituras-valores {
