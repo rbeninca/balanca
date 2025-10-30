@@ -3,6 +3,7 @@ let chart;
 let dataWorker;
 let MAX_DATA_POINTS = 100; // Changed from const to let
 let chartMode = 'deslizante';
+let wasAccumulating = false; // Track if we were in accumulated mode before pausing
 let displayUnit = 'kgf';
 let maxForceInN = -Infinity;
 let minForceInN = Infinity;
@@ -369,6 +370,7 @@ function clearChart() {
   minForceInN = Infinity;
   rawDataN = [];
   chart.updateSeries([{ data: [] }]);
+  updateAccumulatedPointsDisplay(); // Atualiza o contador para 0
   showNotification("info", "Gráfico limpo. (Atalho: L)", 3000);
 }
 
@@ -396,6 +398,14 @@ function setDisplayUnit(unit) {
 }
 
 function setChartMode(mode) {
+  // Salva se estava no modo acumulado antes de mudar
+  if (chartMode === 'acumulado') {
+    wasAccumulating = true;
+  } else if (mode === 'deslizante') {
+    // Se voltar para deslizante, reseta o flag
+    wasAccumulating = false;
+  }
+  
   chartMode = mode;
   document.querySelectorAll('#btn-deslizante, #btn-acumulado, #btn-pausado').forEach(b => b.classList.remove('ativo'));
   document.getElementById(`btn-${mode}`).classList.add('ativo');
@@ -404,13 +414,17 @@ function setChartMode(mode) {
   const maxPointsInput = document.getElementById('max-data-points-input');
   const maxPointsLabel = document.getElementById('max-data-points-label');
   
-  if (mode === 'acumulado') {
-    // No modo acumulado, desabilita o input e mostra a contagem atual
+  if (mode === 'acumulado' || (mode === 'pausado' && wasAccumulating)) {
+    // No modo acumulado ou pausado após acumular, desabilita o input e mostra a contagem atual
     maxPointsInput.disabled = true;
     maxPointsInput.style.fontWeight = 'bold';
     maxPointsInput.style.color = 'var(--cor-info)';
     if (maxPointsLabel) {
-      maxPointsLabel.textContent = '📊 Pontos Acumulados:';
+      if (mode === 'pausado') {
+        maxPointsLabel.textContent = '⏸️ Pontos Acumulados (Pausado):';
+      } else {
+        maxPointsLabel.textContent = '📊 Pontos Acumulados:';
+      }
       maxPointsLabel.style.color = 'var(--cor-info)';
       maxPointsLabel.style.fontWeight = 'bold';
     }
@@ -430,7 +444,7 @@ function setChartMode(mode) {
 }
 
 function updateAccumulatedPointsDisplay() {
-  if (chartMode === 'acumulado') {
+  if (chartMode === 'acumulado' || (chartMode === 'pausado' && wasAccumulating)) {
     const maxPointsInput = document.getElementById('max-data-points-input');
     if (maxPointsInput) {
       maxPointsInput.value = rawDataN.length;
