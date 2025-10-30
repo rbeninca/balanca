@@ -657,6 +657,9 @@ function updateUIFromData(dado) {
   // Aplica alertas graduais de limite da célula
   aplicarAlertasLimite(forcaFiltrada);
   
+  // Atualiza barra de progresso do esforço no display
+  atualizarBarraEsforcoDisplay(percentual);
+  
   // Verifica e atualiza modal de sobrecarga (80%+)
   verificarModalSobrecarga(forcaFiltrada, percentual);
 
@@ -1103,6 +1106,43 @@ function fecharModalSobrecarga() {
   modal.classList.remove('ativo');
   modalSobrecargaAberto = false;
   ultimoNivelAlerta = 0;
+}
+
+/**
+ * Atualiza a barra de progresso do esforço da célula no display
+ * @param {number} percentual - Percentual da capacidade
+ */
+function atualizarBarraEsforcoDisplay(percentual) {
+  const barraFill = document.getElementById('barra-esforco-fill');
+  const percentualTexto = document.getElementById('barra-esforco-percentual');
+  
+  if (!barraFill || !percentualTexto) return;
+  
+  // Atualiza largura da barra
+  barraFill.style.width = Math.min(percentual, 100) + '%';
+  
+  // Atualiza texto do percentual
+  percentualTexto.textContent = percentual.toFixed(1) + '%';
+  
+  // Remove classes anteriores
+  barraFill.classList.remove('nivel-70', 'nivel-80', 'nivel-90', 'nivel-100');
+  
+  // Aplica classe conforme o nível
+  if (percentual >= 100) {
+    barraFill.classList.add('nivel-100');
+    percentualTexto.style.color = '#dc2626';
+  } else if (percentual >= 90) {
+    barraFill.classList.add('nivel-90');
+    percentualTexto.style.color = '#ef4444';
+  } else if (percentual >= 80) {
+    barraFill.classList.add('nivel-80');
+    percentualTexto.style.color = '#f97316';
+  } else if (percentual >= 70) {
+    barraFill.classList.add('nivel-70');
+    percentualTexto.style.color = '#f59e0b';
+  } else {
+    percentualTexto.style.color = '#10b981';
+  }
 }
 
 function atualizarToleranciaEmGramas() {
