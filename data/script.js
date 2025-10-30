@@ -524,9 +524,13 @@ function handleWorkerMessage(event) {
 // NEW: Function to update the MySQL UI indicator
 function updateMysqlIndicator(connected) {
   const indicator = document.getElementById('mysql-indicator');
+  const textElement = document.getElementById('mysql-text');
   if (indicator) {
-    indicator.style.backgroundColor = connected ? '#27ae60' : 'gray'; // Green for connected, gray for disconnected
+    indicator.className = 'status-indicator ' + (connected ? 'conectado' : 'desconectado');
     indicator.title = connected ? 'MySQL Conectado' : 'MySQL Desconectado';
+  }
+  if (textElement) {
+    textElement.textContent = connected ? 'Conectado' : 'Desconectado';
   }
 }
 

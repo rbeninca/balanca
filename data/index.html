@@ -304,27 +304,49 @@
       </div>
     </main>
 
-    <footer id="footer-atalhos" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 8px 15px; font-size: 0.75rem; background-color: #2c3e50; color: #ecf0f1; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); z-index: 100; position: fixed; bottom: 0; left: 0; width: 100%;">
-      <h3 style="font-size: 1rem; font-weight: 700; margin: 0; color: #ecf0f1;">GFIG 🚀 - Balança Serial</h3>
-      <div class="status-conexao" style="display: flex; align-items: center; gap: .5rem;">
-        <div id="ws-indicator" title="Desconectado"></div><span id="ws-text" style="color: #ecf0f1;">Desconectado</span>
-        <div id="mysql-indicator" title="MySQL Desconectado" style="width: 10px; height: 10px; border-radius: 50%; background-color: gray; display: inline-block; margin-left: 5px;"></div>
+    <footer id="footer-atalhos">
+      <div class="footer-section footer-brand">
+        <h3>🚀 GFIG - Balança Serial</h3>
       </div>
-      <div id="balanca-status-line" style="text-align: center; font-weight: 600; color: #ecf0f1; margin: 0;">Status: <span id="balanca-status" style="color: var(--cor-primaria);">...</span></div>
-      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 4px 8px; background: rgba(52, 152, 219, 0.2); border-radius: 4px; border: 1px solid rgba(52, 152, 219, 0.4);">
-        <span style="font-weight: bold;">🕐 Servidor:</span>
-        <span id="server-clock" style="font-family: monospace; font-size: 0.9rem; color: #3498db;">--:--:--</span>
-        <button onclick="syncServerTime()" class="btn btn-secundario" style="padding: 2px 8px; font-size: 0.7rem; background: #3498db; border: none; color: white; cursor: pointer;" title="Sincronizar com a hora do navegador">🔄 Sync</button>
+      
+      <div class="footer-section footer-status">
+        <div class="status-item">
+          <span class="status-label">WebSocket:</span>
+          <div id="ws-indicator" class="status-indicator" title="Desconectado"></div>
+          <span id="ws-text">Desconectado</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">MySQL:</span>
+          <div id="mysql-indicator" class="status-indicator" title="MySQL Desconectado"></div>
+          <span id="mysql-text">Desconectado</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">⚖️ Balança:</span>
+          <span id="balanca-status">...</span>
+        </div>
       </div>
-      <span style="font-weight: bold;">⚡ ATALHOS:</span>
-      <span>Tara: <kbd>Shift</kbd>+<kbd>T</kbd></span>
-      <span>Calibração: <kbd>Shift</kbd>+<kbd>C</kbd></span>
-      <span>Análise Ruído: <kbd>Shift</kbd>+<kbd>A</kbd></span>
-      <span>Debug Zona Morta: <kbd>Shift</kbd>+<kbd>D</kbd></span>
-      <span style="margin-left: 10px; opacity: 0.8;">|</span>
-      <span>Pausar Gráfico: <kbd>P</kbd></span>
-      <span>Limpar Gráfico: <kbd>L</kbd></span>
-      <button id="theme-toggle" class="btn btn-secundario" style="background: none; border: none; color: #ecf0f1; font-size: 1.2rem; padding: 0;">🌙</button>
+      
+      <div class="footer-section footer-time">
+        <span class="time-label">🕐 Servidor:</span>
+        <span id="server-clock">--:--:--</span>
+        <button onclick="syncServerTime()" class="btn btn-sync" title="Sincronizar com a hora do navegador">🔄</button>
+      </div>
+      
+      <div class="footer-section footer-shortcuts">
+        <span class="shortcuts-title">⚡ ATALHOS:</span>
+        <div class="shortcuts-grid">
+          <span class="shortcut-item"><span class="shortcut-label">Tara:</span> <kbd>Shift</kbd>+<kbd>T</kbd></span>
+          <span class="shortcut-item"><span class="shortcut-label">Calibração:</span> <kbd>Shift</kbd>+<kbd>C</kbd></span>
+          <span class="shortcut-item"><span class="shortcut-label">Ruído:</span> <kbd>Shift</kbd>+<kbd>A</kbd></span>
+          <span class="shortcut-item"><span class="shortcut-label">Debug:</span> <kbd>Shift</kbd>+<kbd>D</kbd></span>
+          <span class="shortcut-item"><span class="shortcut-label">Pausar:</span> <kbd>P</kbd></span>
+          <span class="shortcut-item"><span class="shortcut-label">Limpar:</span> <kbd>L</kbd></span>
+        </div>
+      </div>
+      
+      <div class="footer-section footer-theme">
+        <button id="theme-toggle" class="btn-theme-toggle" title="Alternar tema">🌙</button>
+      </div>
     </footer>
 
     <div id="notification-area"></div>
