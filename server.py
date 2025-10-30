@@ -14,6 +14,7 @@ import time
 from typing import Optional, Dict, Any
 import pymysql.cursors
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 """
 Binary Protocol Server - Balança GFIG (IPv4 + IPv6)
@@ -537,10 +538,15 @@ class APIRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(500, "Internal Server Error")
 
     def handle_get_time(self):
-        """Retorna a hora atual do servidor no seu timezone local"""
-        # Retorna a hora LOCAL do servidor (não UTC)
-        # O navegador receberá e exibirá considerando o timezone do cliente
-        current_time = datetime.now().isoformat()
+        """Retorna a hora atual do servidor no timezone local do sistema"""
+        # Obtém o timezone do sistema (TZ env var ou timezone do sistema)
+        tz_name = os.getenv('TZ', 'America/Sao_Paulo')
+        try:
+            tz = ZoneInfo(tz_name)
+            current_time = datetime.now(tz).isoformat()
+        except Exception as e:
+            logging.warning(f"Erro ao carregar timezone {tz_name}: {e}, usando datetime.now()")
+            current_time = datetime.now().isoformat()
         self.send_json_response(200, {"time": current_time})
 
     def handle_get_info(self):
