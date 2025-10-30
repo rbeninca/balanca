@@ -755,6 +755,140 @@ EOFREMOVE
 }
 
 # ============================================================
+# INSTALAÇÃO DO SERVIÇO DE AUTOSTART
+# ============================================================
+install_autostart_service() {
+    log_step "Instalando serviço de autostart do hotspot WiFi..."
+    
+    local script_path="/usr/local/bin/wifi-hotspot-autostart.sh"
+    local service_path="/etc/systemd/system/wifi-hotspot-autostart.service"
+    
+    # Criar script de autostart
+    log_info "Criando script de autostart em $script_path..."
+    cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Script de autostart para garantir que o hotspot WiFi inicie em modo AP
+# Criado automaticamente por setup_wifi.sh
+
+WIFI_IFACE="__WIFI_IFACE__"
+HOTSPOT_NAME="__AP_CONNECTION_NAME__"
+LOG_TAG="wifi-hotspot-autostart"
+
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$LOG_TAG] $1"
+    logger -t "$LOG_TAG" "$1"
+}
+
+# Aguardar NetworkManager inicializar completamente
+log_message "Aguardando NetworkManager inicializar..."
+sleep 10
+
+# Verificar se a interface existe
+if ! ip link show "$WIFI_IFACE" &>/dev/null; then
+    log_message "ERRO: Interface $WIFI_IFACE não encontrada"
+    exit 1
+fi
+
+# Verificar se wlan0 está em modo AP
+if ! iw dev "$WIFI_IFACE" info | grep -q "type AP"; then
+    log_message "WiFi não está em modo AP, reativando hotspot $HOTSPOT_NAME..."
+    
+    # Desativar conexão
+    nmcli con down "$HOTSPOT_NAME" 2>/dev/null
+    sleep 2
+    
+    # Reativar conexão
+    if nmcli con up "$HOTSPOT_NAME"; then
+        sleep 3
+        
+        # Verificar se funcionou
+        if iw dev "$WIFI_IFACE" info | grep -q "type AP"; then
+            log_message "✓ Hotspot ativado com sucesso em modo AP!"
+            exit 0
+        else
+            log_message "✗ ERRO: Hotspot ativado mas não está em modo AP"
+            exit 1
+        fi
+    else
+        log_message "✗ ERRO: Falha ao ativar hotspot $HOTSPOT_NAME"
+        exit 1
+    fi
+else
+    log_message "✓ Hotspot já está em modo AP - nenhuma ação necessária"
+    exit 0
+fi
+EOF
+
+    # Substituir variáveis no script
+    sed -i "s|__WIFI_IFACE__|$WIFI_IFACE|g" "$script_path"
+    sed -i "s|__AP_CONNECTION_NAME__|$AP_CONNECTION_NAME|g" "$script_path"
+    chmod +x "$script_path"
+    
+    log_success "Script de autostart criado: $script_path"
+    
+    # Criar serviço systemd
+    log_info "Criando serviço systemd em $service_path..."
+    cat > "$service_path" << 'EOF'
+[Unit]
+Description=WiFi Hotspot Autostart - Ensure AP mode after boot
+Documentation=man:nmcli(1)
+After=NetworkManager.service network.target
+Wants=NetworkManager.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/wifi-hotspot-autostart.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=60
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    log_success "Serviço systemd criado: $service_path"
+    
+    # Recarregar systemd e habilitar serviço
+    log_info "Habilitando serviço de autostart..."
+    systemctl daemon-reload
+    
+    if systemctl enable wifi-hotspot-autostart.service; then
+        log_success "✓ Serviço habilitado para iniciar no boot"
+    else
+        log_error "✗ Falha ao habilitar serviço"
+        return 1
+    fi
+    
+    # Testar o serviço
+    log_info "Testando serviço de autostart..."
+    if systemctl start wifi-hotspot-autostart.service; then
+        sleep 3
+        if systemctl is-active --quiet wifi-hotspot-autostart.service; then
+            log_success "✓ Serviço está ativo e funcionando"
+            
+            # Mostrar status
+            echo ""
+            log_info "Status do serviço:"
+            systemctl status wifi-hotspot-autostart.service --no-pager -l | head -15
+            echo ""
+        else
+            log_warn "Serviço não está ativo - verifique os logs com: journalctl -u wifi-hotspot-autostart.service"
+        fi
+    else
+        log_warn "Falha ao iniciar serviço - ele tentará iniciar no próximo boot"
+    fi
+    
+    echo ""
+    log_success "Serviço de autostart instalado com sucesso!"
+    log_info "O hotspot será ativado automaticamente após cada reinicialização"
+    echo ""
+}
+
+# ============================================================
 # MAIN
 # ============================================================
 main() {
@@ -787,6 +921,17 @@ main() {
 
     # Criar script de remoção
     create_removal_script
+
+    # Instalar serviço de autostart (apenas se usou NetworkManager)
+    if [ "$OPERATION_MODE" = "nmcli" ] || [ "$OPERATION_MODE" = "auto" ]; then
+        echo ""
+        log_step "Configurando autostart do hotspot..."
+        if install_autostart_service; then
+            log_success "✓ Autostart configurado - hotspot iniciará automaticamente após reboot"
+        else
+            log_warn "✗ Falha ao configurar autostart - você pode configurar manualmente depois"
+        fi
+    fi
 
     # Exibir informações
     show_hotspot_info
