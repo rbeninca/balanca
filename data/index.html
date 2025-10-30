@@ -227,6 +227,16 @@
           </button>
         </div>
 
+        <div style="padding: 1rem; border: 1px dashed var(--cor-primaria); border-radius: 0.5rem; margin-bottom: 1.5rem; background: rgba(52, 152, 219, 0.05);">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">📤 Importar Gravação Exportada (.json)</h3>
+          <p style="font-size: 0.75rem; color: var(--cor-texto-secundario); margin-bottom: 0.75rem;">
+            Restaure gravações previamente exportadas em formato JSON. Todas as informações da sessão serão recuperadas.</p>
+          <input type="file" id="importar-json" accept=".json,application/json" style="width: auto; margin-right: 10px;">
+          <button onclick="importarGravacaoJSON()" class="btn btn-sucesso" style="margin-top: 10px;">
+            📥 Importar JSON
+          </button>
+        </div>
+
         <!-- SEÇÃO DE CONFIGURAÇÕES PNG -->
         <div style="padding: 1rem; border: 2px solid var(--cor-primaria); border-radius: 0.5rem; margin-bottom: 1.5rem; background: var(--cor-fundo-card);">
           <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--cor-primaria);">🎨 Configurações de Exportação PNG</h3>

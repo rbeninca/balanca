@@ -2499,6 +2499,83 @@ async function importarGravacaoExterna() {
   reader.readAsText(file);
 }
 
+// --- Função para Importar Gravação JSON Exportada ---
+async function importarGravacaoJSON() {
+  const fileInput = document.getElementById('importar-json');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    showNotification('error', 'Por favor, selecione um arquivo JSON para importar.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const content = e.target.result;
+      const gravacaoImportada = JSON.parse(content);
+
+      // Validar estrutura básica do JSON
+      if (!gravacaoImportada.nome || !gravacaoImportada.dadosTabela || !Array.isArray(gravacaoImportada.dadosTabela)) {
+        showNotification('error', 'Arquivo JSON inválido. Certifique-se de que é uma exportação válida.');
+        return;
+      }
+
+      // Gerar novo ID e atualizar timestamps
+      const novaGravacao = {
+        ...gravacaoImportada,
+        id: Date.now(), // Novo ID único
+        data_modificacao: new Date().toISOString(),
+        source: 'local', // Marcar como local
+        inLocal: true,
+        inDb: false
+      };
+
+      // Se não tiver timestamp, adicionar
+      if (!novaGravacao.timestamp) {
+        novaGravacao.timestamp = new Date().toISOString();
+      }
+
+      // Salvar no localStorage
+      let gravacoes = JSON.parse(localStorage.getItem('balancaGravacoes')) || [];
+      
+      // Verificar se já existe uma gravação com o mesmo nome
+      const nomeExistente = gravacoes.some(g => g.nome === novaGravacao.nome);
+      if (nomeExistente) {
+        const confirmar = confirm(`Já existe uma gravação com o nome "${novaGravacao.nome}". Deseja importar mesmo assim com um nome diferente?`);
+        if (confirmar) {
+          novaGravacao.nome = `${novaGravacao.nome} (importada ${new Date().toLocaleTimeString('pt-BR')})`;
+        } else {
+          fileInput.value = '';
+          return;
+        }
+      }
+
+      gravacoes.push(novaGravacao);
+      localStorage.setItem('balancaGravacoes', JSON.stringify(gravacoes));
+      
+      showNotification('success', `Gravação "${novaGravacao.nome}" importada com sucesso! (${novaGravacao.dadosTabela.length} pontos)`);
+
+      // Também salvar no MySQL se conectado
+      if (isMysqlConnected) {
+        showNotification('info', `Enviando gravação "${novaGravacao.nome}" para o MySQL...`);
+        sendCommandToWorker('save_session_to_mysql', novaGravacao);
+      }
+
+      // Recarregar lista de gravações
+      loadAndDisplayAllSessions();
+      fileInput.value = '';
+
+    } catch (error) {
+      console.error('Erro ao importar JSON:', error);
+      showNotification('error', `Erro ao importar arquivo JSON: ${error.message}`);
+      fileInput.value = '';
+    }
+  };
+  
+  reader.readAsText(file);
+}
+
 // --- Funções do Relógio do Servidor ---
 
 async function updateServerClock() {
