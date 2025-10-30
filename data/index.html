@@ -379,6 +379,46 @@
 
     <div id="notification-area"></div>
 
+    <!-- Modal de Alerta de Sobrecarga da Célula -->
+    <div id="modal-alerta-sobrecarga" class="modal-sobrecarga">
+      <div class="modal-sobrecarga-content">
+        <div class="modal-sobrecarga-header">
+          <span class="modal-sobrecarga-icone">⚠️</span>
+          <h2 id="modal-sobrecarga-titulo">ATENÇÃO: APROXIMANDO DO LIMITE!</h2>
+        </div>
+        <div class="modal-sobrecarga-body">
+          <div class="modal-sobrecarga-display">
+            <div class="modal-sobrecarga-valor">
+              <span class="modal-sobrecarga-label">Carga Atual:</span>
+              <span id="modal-sobrecarga-valor-atual" class="modal-sobrecarga-numero">---</span>
+            </div>
+            <div class="modal-sobrecarga-barra">
+              <div id="modal-sobrecarga-barra-progresso" class="modal-sobrecarga-barra-fill"></div>
+              <span id="modal-sobrecarga-percentual" class="modal-sobrecarga-percentual-texto">0%</span>
+            </div>
+            <div class="modal-sobrecarga-limite">
+              <span class="modal-sobrecarga-label">Limite Máximo:</span>
+              <span id="modal-sobrecarga-valor-limite" class="modal-sobrecarga-numero">---</span>
+            </div>
+          </div>
+          <div class="modal-sobrecarga-aviso">
+            <p id="modal-sobrecarga-mensagem">
+              ⚠️ Você está próximo do limite da célula de carga!<br>
+              <strong>RISCO DE DANOS PERMANENTES AO EQUIPAMENTO!</strong>
+            </p>
+            <p class="modal-sobrecarga-instrucao">
+              Reduza a carga imediatamente para evitar a destruição da célula.
+            </p>
+          </div>
+        </div>
+        <div class="modal-sobrecarga-footer">
+          <button onclick="fecharModalSobrecarga()" class="btn-modal-sobrecarga-ok">
+            Entendi - Fechar Alerta
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="fullscreen-chart-modal" class="fullscreen-modal-overlay">
       <button id="btn-exit-fullscreen" class="btn btn-perigo" style="position: absolute; top: 30px; right: 20px; z-index: 1001;">✖ Sair da Tela Cheia</button>
       <!-- Chart and controls will be moved here by JavaScript -->

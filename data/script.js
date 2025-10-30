@@ -649,8 +649,16 @@ function updateUIFromData(dado) {
   document.getElementById('forca-maxima').textContent = maxDisplayForce.toFixed(3);
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
 
+  // Calcula percentual para alertas
+  const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima")?.value) || 5000;
+  const capacidadeN = (capacidadeGramas / 1000) * 9.80665;
+  const percentual = Math.abs((forcaFiltrada / capacidadeN) * 100);
+
   // Aplica alertas graduais de limite da célula
   aplicarAlertasLimite(forcaFiltrada);
+  
+  // Verifica e atualiza modal de sobrecarga (80%+)
+  verificarModalSobrecarga(forcaFiltrada, percentual);
 
   rawDataN.push([tempo, forcaFiltrada]);
 
@@ -1001,6 +1009,100 @@ function aplicarAlertasLimite(forcaAtualN) {
     cards.forEach(card => card.classList.add('alerta-70'));
   }
   // Abaixo de 70% não aplica nenhuma classe (mantém estilo normal)
+}
+
+/**
+ * Controla a exibição do modal de alerta de sobrecarga
+ * @param {number} forcaAtualN - Força atual em Newtons
+ * @param {number} percentual - Percentual da capacidade
+ */
+let modalSobrecargaAberto = false;
+let ultimoNivelAlerta = 0;
+
+function verificarModalSobrecarga(forcaAtualN, percentual) {
+  const modal = document.getElementById('modal-alerta-sobrecarga');
+  const modalContent = modal.querySelector('.modal-sobrecarga-content');
+  const titulo = document.getElementById('modal-sobrecarga-titulo');
+  const mensagem = document.getElementById('modal-sobrecarga-mensagem');
+  
+  // Obtém a capacidade máxima em gramas e converte para Newtons
+  const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima")?.value) || 5000;
+  const capacidadeN = (capacidadeGramas / 1000) * 9.80665;
+  
+  // Converte valores para a unidade atual do display
+  const valorAtual = convertForce(Math.abs(forcaAtualN), displayUnit);
+  const valorLimite = convertForce(capacidadeN, displayUnit);
+  
+  // Atualiza os valores no modal
+  document.getElementById('modal-sobrecarga-valor-atual').textContent = 
+    valorAtual.toFixed(3) + ' ' + displayUnit;
+  document.getElementById('modal-sobrecarga-valor-limite').textContent = 
+    valorLimite.toFixed(3) + ' ' + displayUnit;
+  document.getElementById('modal-sobrecarga-percentual').textContent = 
+    percentual.toFixed(1) + '%';
+  
+  // Atualiza a barra de progresso
+  const barra = document.getElementById('modal-sobrecarga-barra-progresso');
+  barra.style.width = Math.min(percentual, 100) + '%';
+  
+  // Define o nível de alerta atual
+  let nivelAtual = 0;
+  if (percentual >= 100) nivelAtual = 100;
+  else if (percentual >= 90) nivelAtual = 90;
+  else if (percentual >= 80) nivelAtual = 80;
+  
+  // Abre o modal se passar de 80% e não estiver aberto
+  if (percentual >= 80 && !modalSobrecargaAberto) {
+    modal.classList.add('ativo');
+    modalSobrecargaAberto = true;
+    ultimoNivelAlerta = nivelAtual;
+    
+    // Toca som de alerta se disponível
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFA==');
+      audio.play().catch(() => {});
+    } catch (e) {}
+  }
+  
+  // Atualiza as classes visuais do modal conforme o nível
+  if (modalSobrecargaAberto) {
+    modalContent.classList.remove('alerta-80', 'alerta-90', 'alerta-100');
+    
+    if (percentual >= 100) {
+      modalContent.classList.add('alerta-100');
+      titulo.textContent = '🚨 LIMITE EXCEDIDO! PARE IMEDIATAMENTE! 🚨';
+      mensagem.innerHTML = `
+        ⛔ <strong>LIMITE DA CÉLULA ULTRAPASSADO!</strong><br>
+        <strong style="font-size: 1.4rem; color: #7f1d1d;">RISCO CRÍTICO DE DESTRUIÇÃO DO EQUIPAMENTO!</strong>
+      `;
+    } else if (percentual >= 90) {
+      modalContent.classList.add('alerta-90');
+      titulo.textContent = '🚨 PERIGO: MUITO PRÓXIMO DO LIMITE! 🚨';
+      mensagem.innerHTML = `
+        ⚠️ Você está em zona crítica!<br>
+        <strong>RISCO IMINENTE DE DANOS PERMANENTES!</strong>
+      `;
+    } else if (percentual >= 80) {
+      modalContent.classList.add('alerta-80');
+      titulo.textContent = '⚠️ ATENÇÃO: APROXIMANDO DO LIMITE! ⚠️';
+      mensagem.innerHTML = `
+        ⚠️ Você está próximo do limite da célula de carga!<br>
+        <strong>RISCO DE DANOS PERMANENTES AO EQUIPAMENTO!</strong>
+      `;
+    }
+    
+    // Fecha automaticamente se cair abaixo de 75%
+    if (percentual < 75) {
+      fecharModalSobrecarga();
+    }
+  }
+}
+
+function fecharModalSobrecarga() {
+  const modal = document.getElementById('modal-alerta-sobrecarga');
+  modal.classList.remove('ativo');
+  modalSobrecargaAberto = false;
+  ultimoNivelAlerta = 0;
 }
 
 function atualizarToleranciaEmGramas() {
@@ -2846,6 +2948,16 @@ window.addEventListener('load', () => {
 
   // Atualiza o display a cada segundo (independente de buscar do servidor)
   setInterval(updateClockDisplay, 1000);
+  
+  // Listener para fechar modal ao clicar fora dele
+  const modalSobrecarga = document.getElementById('modal-alerta-sobrecarga');
+  if (modalSobrecarga) {
+    modalSobrecarga.addEventListener('click', (e) => {
+      if (e.target === modalSobrecarga) {
+        fecharModalSobrecarga();
+      }
+    });
+  }
 
   // Busca a hora do servidor a cada 5 minutos para corrigir drift
   setInterval(updateServerClock, 5 * 60 * 1000);
