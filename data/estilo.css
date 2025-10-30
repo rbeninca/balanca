@@ -43,7 +43,7 @@ body {
   color: var(--cor-texto);
   line-height: 1.4;
   transition: background-color 0.3s ease, color 0.3s ease;
-  padding-bottom: 50px;
+  padding-bottom: 80px;
   min-height: 100vh;
 }
 
@@ -59,7 +59,7 @@ body {
   }
   
   body {
-    padding-bottom: 80px;
+    padding-bottom: 140px;
   }
 }
 
@@ -191,7 +191,7 @@ header h1 {
   display: none;
   background: var(--cor-fundo-card);
   padding: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
   border-radius: 0.75rem;
   box-shadow: var(--sombra-md);
   animation: fadeIn .3s ease-out;
@@ -216,7 +216,7 @@ header h1 {
 @media (max-width: 768px) {
   .tabcontent {
     padding: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 3rem;
   }
 }
 
@@ -447,7 +447,7 @@ label {
   box-shadow: var(--sombra-md);
   background: var(--cor-fundo-card);
   border: 1px solid var(--cor-borda);
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 
 table { 
@@ -491,12 +491,12 @@ tbody tr:last-child td {
 
 /* Lista de gravações - espaço para não ser tampada pelo rodapé */
 #lista-gravacoes {
-  padding-bottom: 1rem;
+  padding-bottom: 2rem;
 }
 
 /* Seções dentro das abas - garantir espaço para rodapé */
 .tabcontent > div:last-child {
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -506,7 +506,11 @@ tbody tr:last-child td {
   }
   
   #lista-gravacoes {
-    padding-bottom: 1.5rem;
+    padding-bottom: 3rem;
+  }
+  
+  .tabcontent > div:last-child {
+    margin-bottom: 3rem;
   }
 }
 
