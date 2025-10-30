@@ -1112,6 +1112,15 @@ function setAntiNoisingMultiplier(multiplier) {
   antiNoisingMultiplier = parseFloat(multiplier);
 }
 
+function atualizarInfoMultiplier() {
+  const multiplierInput = document.getElementById('anti-noising-multiplier');
+  const infoMultiplier = document.getElementById('info-multiplier');
+  if (multiplierInput && infoMultiplier) {
+    const valor = parseFloat(multiplierInput.value);
+    infoMultiplier.textContent = `Valor atual: ${valor.toFixed(1)}x desvio padrão`;
+  }
+}
+
 function addNoiseControlsToUI() {
   // This function is intentionally left blank as the controls are not in the main UI anymore
 }

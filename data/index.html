@@ -192,6 +192,45 @@
           <button onclick="salvarParametros()" class="btn btn-sucesso" style="margin-top: 1.5rem;">Salvar Todos os
             Parâmetros</button>
         </section>
+
+        <section style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--cor-borda);">
+          <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">
+            🔊 Configurações de Anti-Noising
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--cor-texto-secundario); margin-bottom: 1rem;">
+            Configure a análise e redução de ruído da balança. Use <kbd>Shift+A</kbd> para iniciar análise de ruído.
+          </p>
+          
+          <div class="grid-container" style="gap: 1rem;">
+            <div>
+              <label for="anti-noising-multiplier">Multiplicador de Threshold</label>
+              <input id="anti-noising-multiplier" type="number" step="0.1" min="0.5" max="10" value="2.0" 
+                     oninput="setAntiNoisingMultiplier(this.value); atualizarInfoMultiplier()">
+              <small id="info-multiplier" style="color: var(--cor-texto-secundario); display: block; margin-top: 0.25rem;">
+                Valor atual: 2.0x desvio padrão
+              </small>
+              <small style="color: var(--cor-info); display: block; margin-top: 0.25rem;">
+                💡 Valores maiores = mais agressivo na remoção de ruído
+              </small>
+            </div>
+            
+            <div>
+              <label>Ações de Análise de Ruído</label>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                <button onclick="startNoiseAnalysis()" class="btn btn-info">
+                  🔍 Analisar Ruído (Shift+A)
+                </button>
+                <button onclick="resetNoiseAnalysis()" class="btn btn-secundario">
+                  🔄 Resetar Análise
+                </button>
+              </div>
+              <small style="color: var(--cor-texto-secundario); display: block; margin-top: 0.5rem;">
+                A análise leva 5 segundos com a balança vazia e estável
+              </small>
+            </div>
+          </div>
+        </section>
+
         <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--cor-borda);">
           <div class="grid-container">
             <div>
