@@ -601,7 +601,9 @@ function updateUIFromData(dado) {
 
   rawDataN.push([tempo, forcaFiltrada]);
 
-  if (rawDataN.length > MAX_DATA_POINTS) {
+  // No modo deslizante, mantém apenas os últimos MAX_DATA_POINTS
+  // No modo acumulado, mantém todos os dados
+  if (chartMode === 'deslizante' && rawDataN.length > MAX_DATA_POINTS) {
     rawDataN.shift();
   }
 
