@@ -16,7 +16,9 @@ RUN apt-get update && \
         libmariadb-dev \
         ca-certificates \
         tzdata \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime \
+    && echo "America/Sao_Paulo" > /etc/timezone
 
 WORKDIR /app
 
