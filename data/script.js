@@ -1021,6 +1021,8 @@ function aplicarAlertasLimite(forcaAtualN) {
  */
 let modalSobrecargaAberto = false;
 let ultimoNivelAlerta = 0;
+let modalFechadoPeloUsuario = false; // Flag para controlar se usuário fechou manualmente
+let timestampFechamentoManual = 0; // Timestamp do fechamento manual
 
 function verificarModalSobrecarga(forcaAtualN, percentual) {
   const modal = document.getElementById('modal-alerta-sobrecarga');
@@ -1054,15 +1056,27 @@ function verificarModalSobrecarga(forcaAtualN, percentual) {
   else if (percentual >= 90) nivelAtual = 90;
   else if (percentual >= 80) nivelAtual = 80;
   
+  // Se o modal foi fechado manualmente, só reabre após 10 segundos OU se a carga cair abaixo de 70%
+  const tempoDesdeFechar = Date.now() - timestampFechamentoManual;
+  if (modalFechadoPeloUsuario && percentual < 70) {
+    // Reset da flag se a carga caiu significativamente
+    modalFechadoPeloUsuario = false;
+    timestampFechamentoManual = 0;
+  } else if (modalFechadoPeloUsuario && tempoDesdeFechar < 10000) {
+    // Não reabre se ainda não passou 10 segundos
+    return;
+  }
+  
   // Abre o modal se passar de 80% e não estiver aberto
   if (percentual >= 80 && !modalSobrecargaAberto) {
     modal.classList.add('ativo');
     modalSobrecargaAberto = true;
+    modalFechadoPeloUsuario = false; // Reset ao abrir automaticamente
     ultimoNivelAlerta = nivelAtual;
     
     // Toca som de alerta se disponível
     try {
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFA==');
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFApGn+DyvmwhBjeR1/LMeSwFJHfH8N2RQAoUXrTp66hVFA==');
       audio.play().catch(() => {});
     } catch (e) {}
   }
@@ -1076,7 +1090,7 @@ function verificarModalSobrecarga(forcaAtualN, percentual) {
       titulo.textContent = '🚨 LIMITE EXCEDIDO! PARE IMEDIATAMENTE! 🚨';
       mensagem.innerHTML = `
         ⛔ <strong>LIMITE DA CÉLULA ULTRAPASSADO!</strong><br>
-        <strong style="font-size: 1.4rem; color: #7f1d1d;">RISCO CRÍTICO DE DESTRUIÇÃO DO EQUIPAMENTO!</strong>
+        <strong style="font-size: 1.15rem; color: #7f1d1d;">RISCO CRÍTICO DE DESTRUIÇÃO DO EQUIPAMENTO!</strong>
       `;
     } else if (percentual >= 90) {
       modalContent.classList.add('alerta-90');
@@ -1094,18 +1108,25 @@ function verificarModalSobrecarga(forcaAtualN, percentual) {
       `;
     }
     
-    // Fecha automaticamente se cair abaixo de 75%
+    // Fecha automaticamente se cair abaixo de 75% (mas não marca como fechado pelo usuário)
     if (percentual < 75) {
-      fecharModalSobrecarga();
+      fecharModalSobrecarga(false); // false = fechamento automático
     }
   }
 }
 
-function fecharModalSobrecarga() {
+function fecharModalSobrecarga(fechadoPeloUsuario = true) {
   const modal = document.getElementById('modal-alerta-sobrecarga');
   modal.classList.remove('ativo');
   modalSobrecargaAberto = false;
   ultimoNivelAlerta = 0;
+  
+  // Se foi fechado pelo usuário (clique no botão), marca a flag
+  if (fechadoPeloUsuario) {
+    modalFechadoPeloUsuario = true;
+    timestampFechamentoManual = Date.now();
+    console.log('[MODAL] Fechado pelo usuário - não reabrirá por 10 segundos ou até carga cair abaixo de 70%');
+  }
 }
 
 /**
