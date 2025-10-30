@@ -2611,17 +2611,24 @@ function updateClockDisplay() {
 }
 
 async function syncServerTime() {
+  // Pega a hora EXATA que está sendo exibida no relógio do servidor (já em GMT/UTC)
+  const serverClockElement = document.getElementById('server-clock');
+  const displayedTime = serverClockElement ? serverClockElement.textContent : null;
+  
+  // Usa a hora atual do navegador em GMT/UTC
   const clientTime = new Date();
+  const clientTimeGMT = new Date(clientTime.getTime() + serverTimeOffset);
 
-  if (!confirm(`Sincronizar hora do servidor com a hora do navegador?\n\nHora do Navegador: ${clientTime.toLocaleString('pt-BR')}\n\nATENÇÃO: Isso irá ajustar a hora do sistema do servidor!`)) {
+  if (!confirm(`Sincronizar hora do servidor com a hora exibida no navegador?\n\nHora exibida (GMT): ${displayedTime || clientTimeGMT.toISOString().substring(11, 19)}\n\nATENÇÃO: Isso irá ajustar a hora do sistema do servidor!`)) {
     return;
   }
 
   try {
+    // Envia a hora em GMT/UTC que o usuário está visualizando
     const response = await apiFetch('/api/time/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ time: clientTime.toISOString() })
+      body: JSON.stringify({ time: clientTimeGMT.toISOString() })
     });
 
     if (response.ok) {
