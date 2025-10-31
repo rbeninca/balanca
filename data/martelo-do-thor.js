@@ -112,35 +112,12 @@ function iniciarTesteMarelo() {
     return;
   }
   
+  // Salvar nome para fullscreen
+  localStorage.setItem('martelo_nome_jogador', nome);
   marteloEstado.nomeJogador = nome;
-  marteloEstado.testando = true;
-  marteloEstado.forcaMaximaAtual = 0;
-  marteloEstado.leiturasContinuas = [];
   
-  // Desabilitar controles
-  document.getElementById('martelo-btn-testar').disabled = true;
-  document.getElementById('martelo-nome-jogador').disabled = true;
-  document.getElementById('martelo-status-teste').textContent = '⏳ Teste em andamento... APERTE COM FORÇA!';
-  
-  // Reproduzir som (opcional)
-  reproduzirSomInicio();
-  
-  // Animar barra de tempo
-  let tempoRestante = MARTELO_DURACAO_TESTE / 1000;
-  const intervalo = setInterval(() => {
-    tempoRestante -= 0.1;
-    if (tempoRestante > 0) {
-      document.getElementById('martelo-status-teste').textContent = 
-        `⏳ ${tempoRestante.toFixed(1)}s - APERTE FORTE!`;
-    } else {
-      clearInterval(intervalo);
-    }
-  }, 100);
-  
-  // Finalizar teste após o tempo
-  setTimeout(() => {
-    finalizarTesteMarelo();
-  }, MARTELO_DURACAO_TESTE);
+  // 🎯 ABRIR FULLSCREEN
+  abrirMarteloFullscreen();
 }
 
 function atualizarForcaMarelo(forcaN) {
@@ -538,6 +515,38 @@ styleElement.textContent = `
   }
 `;
 document.head.appendChild(styleElement);
+
+// ============================================
+// FULLSCREEN MODE
+// ============================================
+
+function abrirMarteloFullscreen() {
+  // Abrir nova janela com fullscreen
+  const janelaFullscreen = window.open('martelo-fullscreen.html', 'marteloThorFullscreen', 
+    'width=1200,height=800,fullscreen=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no');
+  
+  // Se não conseguir abrir fullscreen, abrirá em nova janela
+  if (!janelaFullscreen) {
+    alert('⚠️ Pop-up bloqueado! Permita pop-ups para jogar em tela cheia.');
+    return;
+  }
+  
+  // Tentar fullscreen (alguns navegadores)
+  if (janelaFullscreen.document.documentElement.requestFullscreen) {
+    janelaFullscreen.document.documentElement.requestFullscreen().catch(err => {
+      console.log('Fullscreen não disponível:', err);
+    });
+  }
+  
+  // Listener para mensagens da janela fullscreen
+  window.addEventListener('message', (event) => {
+    if (event.data.acao === 'voltarMarteloDeThor') {
+      atualizarExibicaoMarelo();
+    } else if (event.data.acao === 'voltarMarteloSemFechar') {
+      atualizarExibicaoMarelo();
+    }
+  });
+}
 
 // ============================================
 // Inicializar ao carregar
