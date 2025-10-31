@@ -1054,7 +1054,7 @@
         }
 
         const tentativa = {
-          forca: forca,
+          forca: forca, // Salvar em Newtons (mesmo formato do martelo-do-thor.js)
           data: new Date().toLocaleString('pt-BR'),
           timestamp: Date.now()
         };
@@ -1067,8 +1067,9 @@
         dados.jogadores[nomeJogadorFS].media = soma / tentativas.length;
 
         localStorage.setItem('martelo_do_thor_data', JSON.stringify(dados));
+        console.log('✓ Resultado registrado para', nomeJogadorFS, ':', forca.toFixed(0), 'N');
       } catch (e) {
-        console.error('Erro ao registrar:', e);
+        console.error('❌ Erro ao registrar:', e);
       }
     }
 
@@ -1099,8 +1100,14 @@
         titulo = '👑 LENDÁRIO 👑';
       }
 
+      // Obter posição no ranking
+      const posicaoMsg = obterPosicaoRankingFS(nomeJogadorFS);
+
       document.getElementById('titulo-mensagem').textContent = titulo;
-      document.getElementById('texto-mensagem').textContent = `${emoji} ${texto}`;
+      document.getElementById('texto-mensagem').innerHTML = `
+        <div>${emoji} ${texto}</div>
+        <div style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.9;">${posicaoMsg}</div>
+      `;
       document.getElementById('valor-final').textContent = `${kg} kg`;
 
       const msg = document.getElementById('mensagemFinal');
@@ -1109,6 +1116,26 @@
 
       dispararRaios(20);
       reproduzirSomVitoriaFS();
+    }
+
+    function obterPosicaoRankingFS(nome) {
+      try {
+        const dados = JSON.parse(localStorage.getItem('martelo_do_thor_data') || '{"jogadores":{}}');
+        const ranking = Object.entries(dados.jogadores)
+          .map(([n, d]) => ({ nome: n, forca: d.melhor }))
+          .sort((a, b) => b.forca - a.forca)
+          .slice(0, 10);
+
+        const posicao = ranking.findIndex(r => r.nome === nome);
+        if (posicao >= 0) {
+          const medalhas = ['🥇', '🥈', '🥉'];
+          const medalha = medalhas[posicao] || `#${posicao + 1}`;
+          return `${medalha} Posição: ${posicao + 1}º no ranking`;
+        }
+        return '📊 Fora do top 10';
+      } catch (e) {
+        return '📊 Ranking';
+      }
     }
 
     function fecharMensagemFinal() {
