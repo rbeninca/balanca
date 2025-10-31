@@ -45,6 +45,9 @@ let contadorFalhasEstabilizacao = 0;
 
 // --- Funções de Inicialização ---
 window.onload = () => {
+  // Expor forcaAtual como propriedade do window para acesso de janelas filhas
+  window.forcaAtual = forcaAtual;
+  
   // Conectar ao worker IMEDIATAMENTE (antes de aguardar o onload completo)
   conectarWorkerRapido();
   
@@ -657,6 +660,7 @@ function updateUIFromData(dado) {
 
   // NOVO: Atualizar força global para janelas filhas (Martelo do Thor)
   forcaAtual = forcaFiltrada;
+  window.forcaAtual = forcaFiltrada; // Sincronizar com window para acesso de janelas filhas
 
   // Disparar evento customizado para o jogo Martelo do Thor
   document.dispatchEvent(new CustomEvent('forca-atualizada', {
