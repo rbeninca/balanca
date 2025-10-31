@@ -466,10 +466,19 @@ function drawForceGraph() {
     if (!data || data.length === 0) continue;
     
     ctx.strokeStyle = colors[attemptIndex];
-    ctx.lineWidth = 3;
-    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 5; // Aumentado para 5px
+    ctx.globalAlpha = 0.9;
+    
+    // Adicionar glow/brilho à linha
+    ctx.shadowColor = colors[attemptIndex];
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     
     ctx.beginPath();
+    
+    let maxForce = 0;
+    let maxX = 0, maxY = 0;
     
     // Desenhar cada ponto
     for (let i = 0; i < data.length; i++) {
@@ -480,6 +489,13 @@ function drawForceGraph() {
       const x = paddingLeft + timePercent * graphWidth;
       const y = canvas.height - paddingBottom - forcePercent * graphHeight;
       
+      // Encontrar o máximo
+      if (point.force > maxForce) {
+        maxForce = point.force;
+        maxX = x;
+        maxY = y;
+      }
+      
       if (i === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -488,7 +504,30 @@ function drawForceGraph() {
     }
     
     ctx.stroke();
+    
+    // Desenhar ponto de máximo (círculo destacado)
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = colors[attemptIndex];
+    ctx.fillStyle = colors[attemptIndex];
+    ctx.beginPath();
+    ctx.arc(maxX, maxY, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Círculo externo (anel)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(maxX, maxY, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Label do máximo perto do ponto
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = colors[attemptIndex];
+    ctx.textAlign = 'center';
+    ctx.fillText(`${maxForce.toFixed(0)}kg`, maxX, maxY - 18);
+    
     ctx.globalAlpha = 1.0;
+    ctx.shadowBlur = 0;
   }
   
   // Desenhar eixos
