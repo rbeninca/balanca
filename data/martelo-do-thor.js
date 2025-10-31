@@ -418,14 +418,18 @@ function drawForceGraph() {
   const canvas = elements.forceGraphCanvas;
   const rect = canvas.parentElement.getBoundingClientRect();
   
-  // Configurar canvas
+  // Configurar canvas - deixar mais espaço para os eixos
   canvas.width = rect.width;
   canvas.height = rect.height;
   
   const ctx = canvas.getContext('2d');
-  const padding = 40;
-  const graphWidth = canvas.width - padding * 2;
-  const graphHeight = canvas.height - padding * 2;
+  const paddingLeft = 60;   // Espaço para labels da esquerda
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 40;  // Espaço para labels do tempo
+  
+  const graphWidth = canvas.width - paddingLeft - paddingRight;
+  const graphHeight = canvas.height - paddingTop - paddingBottom;
   
   // Limpar canvas
   ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
@@ -437,19 +441,19 @@ function drawForceGraph() {
   
   // Linhas verticais (tempo)
   for (let i = 0; i <= 10; i++) {
-    const x = padding + (graphWidth / 10) * i;
+    const x = paddingLeft + (graphWidth / 10) * i;
     ctx.beginPath();
-    ctx.moveTo(x, padding);
-    ctx.lineTo(x, canvas.height - padding);
+    ctx.moveTo(x, paddingTop);
+    ctx.lineTo(x, canvas.height - paddingBottom);
     ctx.stroke();
   }
   
   // Linhas horizontais (força)
   for (let i = 0; i <= 5; i++) {
-    const y = canvas.height - padding - (graphHeight / 5) * i;
+    const y = canvas.height - paddingBottom - (graphHeight / 5) * i;
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(canvas.width - padding, y);
+    ctx.moveTo(paddingLeft, y);
+    ctx.lineTo(canvas.width - paddingRight, y);
     ctx.stroke();
   }
   
@@ -473,8 +477,8 @@ function drawForceGraph() {
       const timePercent = Math.min(point.time / (ATTEMPT_DURATION / 1000), 1);
       const forcePercent = Math.min(point.force / MAX_FORCE_DISPLAY, 1);
       
-      const x = padding + timePercent * graphWidth;
-      const y = canvas.height - padding - forcePercent * graphHeight;
+      const x = paddingLeft + timePercent * graphWidth;
+      const y = canvas.height - paddingBottom - forcePercent * graphHeight;
       
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -493,58 +497,50 @@ function drawForceGraph() {
   
   // Eixo X (tempo)
   ctx.beginPath();
-  ctx.moveTo(padding, canvas.height - padding);
-  ctx.lineTo(canvas.width - padding, canvas.height - padding);
+  ctx.moveTo(paddingLeft, canvas.height - paddingBottom);
+  ctx.lineTo(canvas.width - paddingRight, canvas.height - paddingBottom);
   ctx.stroke();
   
   // Eixo Y (força)
   ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, canvas.height - padding);
+  ctx.moveTo(paddingLeft, paddingTop);
+  ctx.lineTo(paddingLeft, canvas.height - paddingBottom);
   ctx.stroke();
   
-  // Labels dos eixos
-  ctx.fillStyle = 'rgba(0, 217, 255, 0.7)';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'center';
-  
-  // Labels do tempo (0, 2, 4, 6, 8, 10 segundos)
-  for (let i = 0; i <= 10; i += 2) {
-    const x = padding + (graphWidth / 10) * i;
-    ctx.fillText(`${i}s`, x, canvas.height - padding + 20);
-  }
-  
-  // Labels da força
+  // Labels da força (colocar sobre o gráfico no início/fim quando necessário)
+  ctx.font = 'bold 12px Arial';
   ctx.textAlign = 'right';
+  
   for (let i = 0; i <= 5; i++) {
     const force = (MAX_FORCE_DISPLAY / 5) * i;
-    const y = canvas.height - padding - (graphHeight / 5) * i;
-    ctx.fillText(`${force.toFixed(0)}kg`, padding - 10, y + 5);
+    const y = canvas.height - paddingBottom - (graphHeight / 5) * i;
+    
+    // Label sobre o gráfico (direita do eixo Y)
+    ctx.fillStyle = 'rgba(0, 217, 255, 0.9)';
+    ctx.fillText(`${force.toFixed(0)}kg`, paddingLeft - 10, y + 4);
   }
   
-  // Label dos eixos
-  ctx.fillStyle = 'rgba(0, 217, 255, 0.7)';
-  ctx.font = 'bold 14px Arial';
+  // Labels do tempo (colocar sobre o gráfico)
+  ctx.font = 'bold 12px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('Tempo (s)', canvas.width / 2, canvas.height - 5);
   
-  ctx.save();
-  ctx.translate(15, canvas.height / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText('Força (kg)', 0, 0);
-  ctx.restore();
+  for (let i = 0; i <= 10; i += 2) {
+    const x = paddingLeft + (graphWidth / 10) * i;
+    ctx.fillStyle = 'rgba(0, 217, 255, 0.9)';
+    ctx.fillText(`${i}s`, x, canvas.height - paddingBottom + 20);
+  }
   
   // Legenda
-  ctx.font = '12px Arial';
+  ctx.font = 'bold 12px Arial';
   ctx.textAlign = 'left';
-  const legendX = canvas.width - 200;
-  const legendY = padding + 10;
+  const legendX = canvas.width - 210;
+  const legendY = paddingTop + 10;
   
   for (let i = 0; i < marteloState.currentAttempt; i++) {
     ctx.fillStyle = colors[i];
-    ctx.fillRect(legendX, legendY + i * 20, 15, 15);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.fillText(`Tentativa ${i + 1}`, legendX + 20, legendY + i * 20 + 12);
+    ctx.fillRect(legendX, legendY + i * 22, 15, 15);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillText(`Tentativa ${i + 1}`, legendX + 22, legendY + i * 22 + 12);
   }
 }
 

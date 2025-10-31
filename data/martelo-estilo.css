@@ -409,14 +409,15 @@ body {
 /* Force Graph */
 #graphContainer {
     width: 90%;
-    height: 250px;
+    height: 450px;
     margin-top: 2rem;
     margin-bottom: 1rem;
     background: rgba(0, 0, 0, 0.4);
     border: 2px solid var(--color-secondary);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 0;
     box-shadow: 0 0 20px rgba(255, 0, 224, 0.3);
+    position: relative;
 }
 
 #forceGraphCanvas {
