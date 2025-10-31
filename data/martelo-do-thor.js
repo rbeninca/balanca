@@ -73,6 +73,13 @@ function setupEventListeners() {
   elements.playAgainButton.addEventListener('click', resetGame);
   elements.showRankingButton.addEventListener('click', showRankingScreen);
   elements.backToStartButton.addEventListener('click', () => showScreen('start'));
+  
+  // Adicionar atalho para debug (tecla D)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'd' || e.key === 'D') {
+      debugForceReading();
+    }
+  });
 }
 
 // ==========================================
@@ -80,18 +87,48 @@ function setupEventListeners() {
 // ==========================================
 
 let currentForceValue = 0;
+let forcePollingActive = false;
+let forcePollingError = null;
 
 function startForcePolling() {
-  setInterval(() => {
+  // Primeiro, tentar acessar imediatamente para detectar erros
+  try {
+    if (window.opener && window.opener.forcaAtual !== undefined) {
+      console.log('✓ Acesso ao window.opener.forcaAtual disponível!');
+      forcePollingActive = true;
+    } else if (window.opener) {
+      console.warn('⚠️ window.opener encontrado mas forcaAtual não está definido');
+      forcePollingError = 'forcaAtual não disponível na janela pai';
+    } else {
+      console.warn('⚠️ window.opener é null - página pode ter sido aberta em fullscreen');
+      forcePollingError = 'window.opener indisponível';
+    }
+  } catch (e) {
+    console.error('❌ Erro ao acessar window.opener:', e.message);
+    forcePollingError = e.message;
+  }
+
+  // Inicia o polling de qualquer forma
+  const pollingInterval = setInterval(() => {
     try {
-      // Tentar pegar do window.opener (janela pai)
-      if (window.opener && window.opener.forcaAtual !== undefined) {
+      if (window.opener && typeof window.opener.forcaAtual === 'number') {
         currentForceValue = window.opener.forcaAtual;
+        forcePollingActive = true;
+        forcePollingError = null;
       }
     } catch (e) {
-      // Acesso denegado ao opener em fullscreen
+      // Continua tentando mesmo com erro
+      if (!forcePollingError) {
+        console.warn('Erro recorrente ao acessar forcaAtual:', e.message);
+        forcePollingError = e.message;
+      }
     }
   }, 50);
+
+  // Log do status de polling para debug
+  setTimeout(() => {
+    console.log(`[POLLING] Status: ${forcePollingActive ? '✓ ATIVO' : '✗ INATIVO'} | Valor: ${currentForceValue} N | Erro: ${forcePollingError || 'nenhum'}`);
+  }, 1000);
 }
 
 // ==========================================
@@ -410,6 +447,64 @@ if (document.readyState === 'loading') {
 } else {
   startForcePolling();
   console.log('✓ Martelo do Thor - Polling de força iniciado');
+}
+
+// ==========================================
+// DEBUG
+// ==========================================
+
+function debugForceReading() {
+  console.log('═══════════════════════════════════════');
+  console.log('🔍 DEBUG - LEITURA DE FORÇA');
+  console.log('═══════════════════════════════════════');
+  console.log('Status do Polling:', forcePollingActive ? '✓ ATIVO' : '✗ INATIVO');
+  console.log('Valor Atual (N):', currentForceValue);
+  console.log('Valor Atual (kg):', (currentForceValue / 9.80665).toFixed(3));
+  console.log('Erro de Polling:', forcePollingError || 'nenhum');
+  console.log('window.opener disponível:', !!window.opener);
+  if (window.opener) {
+    console.log('window.opener.forcaAtual:', window.opener.forcaAtual);
+  }
+  console.log('═══════════════════════════════════════');
+  
+  // Mostrar alerta visual
+  const debugDiv = document.createElement('div');
+  debugDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a1a1a;
+    color: #0f0;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 10000;
+    border: 2px solid #0f0;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  `;
+  debugDiv.innerHTML = `
+    <strong>⚡ DEBUG - FORÇA</strong><br>
+    Status: ${forcePollingActive ? '✓ ATIVO' : '✗ INATIVO'}<br>
+    Valor: ${currentForceValue.toFixed(2)} N<br>
+    Valor: ${(currentForceValue / 9.80665).toFixed(3)} kg<br>
+    Erro: ${forcePollingError || 'nenhum'}<br>
+    <small>(pressione D novamente para fechar)</small>
+  `;
+  
+  document.body.appendChild(debugDiv);
+  
+  // Remove after 5 seconds or on next D press
+  setTimeout(() => debugDiv.remove(), 5000);
+  
+  // Ou remove ao pressionar D novamente
+  const handleKeyPress = (e) => {
+    if (e.key === 'd' || e.key === 'D') {
+      debugDiv.remove();
+      document.removeEventListener('keydown', handleKeyPress);
+    }
+  };
+  document.addEventListener('keydown', handleKeyPress);
 }
 
 console.log('✓ Martelo do Thor - Script carregado com sucesso!');
