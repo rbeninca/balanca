@@ -31,15 +31,100 @@ body {
 
 /* Adicionado para a barra de força vertical de fundo */
 #vertical-force-bar {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
-    width: 30px; /* Largura da barra */
-    background: linear-gradient(to top, rgba(255, 255, 0, 0.8), rgba(255, 0, 224, 0.6), rgba(0, 217, 255, 0.5));
-    height: 0%; /* Controlado por JS */
-    transition: height 0.1s linear;
-    z-index: -1; /* Fica atrás de todo o conteúdo */
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    right: 0;
+    width: 100%;
+    background: linear-gradient(to top, 
+        rgba(255, 255, 0, 0.15),      /* Amarelo no topo (max) */
+        rgba(255, 102, 0, 0.12),      /* Laranja */
+        rgba(255, 0, 0, 0.10),         /* Vermelho */
+        rgba(100, 0, 255, 0.08),       /* Roxo */
+        rgba(0, 217, 255, 0.05)        /* Ciano no fundo */
+    );
+    height: 0%; /* Controlado por JS - altura dinâmica */
+    transition: height 0.05s linear;
+    z-index: 0; /* Fica atrás de todo o conteúdo */
+    box-shadow: 
+        inset 0 -2px 15px rgba(255, 255, 255, 0.3),
+        inset 0 2px 15px rgba(0, 0, 0, 0.5);
+    border-top: 3px solid rgba(255, 255, 0, 0.4);
+}
+
+/* Marcador visual de força máxima (linha horizontal) */
+#vertical-force-bar::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 0, 0, 0.8), transparent);
+    height: 3px;
+    top: 0;
+    left: 0;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+}
+
+/* Indicadores na barra de força */
+.force-indicator {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+}
+
+.force-marker-current {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(0, 255, 0, 0.8), transparent);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.9), inset 0 0 10px rgba(0, 255, 0, 0.6);
+}
+
+.force-marker-max {
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, transparent, rgba(255, 0, 0, 0.9), transparent);
+    box-shadow: 0 0 20px rgba(255, 0, 0, 1), inset 0 0 10px rgba(255, 0, 0, 0.7);
+}
+
+.force-label-current {
+    position: absolute;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #0f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    border: 2px solid #0f0;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+    white-space: nowrap;
+}
+
+.force-label-max {
+    position: absolute;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.95);
+    color: #f00;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    border: 2px solid #f00;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
+    white-space: nowrap;
 }
 
 /* Modificação para a aba do martelo se comportar como fullscreen */
@@ -68,6 +153,8 @@ body {
     justify-content: center;
     align-items: center;
     position: relative;
+    z-index: 10; /* Fica acima da barra de progresso */
+    background: radial-gradient(ellipse at center, rgba(12, 10, 29, 0.95) 0%, rgba(6, 5, 15, 0.95) 70%);
 }
 
 /* Screens */

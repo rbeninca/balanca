@@ -31,6 +31,10 @@ const elements = {
   newtonDisplay: document.getElementById('newtonDisplay'),
   progressBar: document.getElementById('progressBar'),
   verticalForceBar: document.getElementById('vertical-force-bar'),
+  forceMarkerCurrent: document.getElementById('force-marker-current'),
+  forceMarkerMax: document.getElementById('force-marker-max'),
+  labelForceCurrent: document.getElementById('label-force-current'),
+  labelForceMax: document.getElementById('label-force-max'),
   resultForce: document.getElementById('resultForce'),
   motivationalMessage: document.getElementById('motivationalMessage'),
   playAgainButton: document.getElementById('playAgainButton'),
@@ -263,15 +267,49 @@ function updateForceDisplay(forceKg) {
   elements.forceDisplay.textContent = `${forceKg.toFixed(1)} kg`;
   elements.newtonDisplay.textContent = `(≈ ${forceN.toFixed(1)} N)`;
 
-  // Barra de progresso
+  // Barra de progresso horizontal
   const percentage = Math.min((forceKg / MAX_FORCE_DISPLAY) * 100, 100);
   elements.progressBar.style.width = percentage + '%';
   elements.progressBar.style.background = getForceColor(forceKg);
 
-  // Barra vertical
+  // Barra vertical de fundo - mostra a força atual
   const height = Math.min((forceKg / MAX_FORCE_DISPLAY) * 100, 100);
   elements.verticalForceBar.style.height = height + '%';
-  elements.verticalForceBar.style.background = getForceColor(forceKg);
+  
+  // Usar gradiente com cores mais sutis para background
+  if (forceKg < 10) {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(52, 152, 219, 0.15), rgba(0, 217, 255, 0.05))';
+  } else if (forceKg < 30) {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(46, 204, 113, 0.15), rgba(0, 217, 255, 0.05))';
+  } else if (forceKg < 60) {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(243, 156, 18, 0.15), rgba(255, 102, 0, 0.08))';
+  } else if (forceKg < 100) {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(231, 76, 60, 0.15), rgba(255, 0, 0, 0.10))';
+  } else if (forceKg < 200) {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(155, 89, 182, 0.15), rgba(255, 0, 0, 0.12))';
+  } else {
+    elements.verticalForceBar.style.background = 'linear-gradient(to top, rgba(255, 20, 147, 0.20), rgba(255, 0, 0, 0.15))';
+  }
+  
+  // Atualizar label de força atual
+  if (elements.labelForceCurrent) {
+    elements.labelForceCurrent.textContent = `${forceKg.toFixed(1)} kg`;
+  }
+  
+  // Posicionar marcador de força atual
+  if (elements.forceMarkerCurrent) {
+    elements.forceMarkerCurrent.style.bottom = height + '%';
+  }
+  
+  // Atualizar label e posição de força máxima
+  if (elements.labelForceMax) {
+    elements.labelForceMax.textContent = `${marteloState.totalMaxForce.toFixed(1)} kg`;
+  }
+  
+  if (elements.forceMarkerMax) {
+    const maxPercentage = Math.min((marteloState.totalMaxForce / MAX_FORCE_DISPLAY) * 100, 100);
+    elements.forceMarkerMax.style.bottom = maxPercentage + '%';
+  }
 }
 
 function getForceColor(forceKg) {
