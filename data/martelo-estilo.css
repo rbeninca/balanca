@@ -318,12 +318,45 @@ body {
     position: absolute;
     z-index: 10;
     text-shadow: 0 0 20px #fff, 0 0 40px var(--color-secondary);
-    animation: countdown-zoom 1s ease-out;
 }
 
-@keyframes countdown-zoom {
-    from { transform: scale(0.5); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+/* Animação cinematográfica para números da contagem */
+@keyframes countdown-cinema {
+    0% {
+        transform: scale(0.1) rotateZ(-180deg);
+        opacity: 0;
+        filter: blur(20px);
+    }
+    40% {
+        transform: scale(1.3);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        filter: blur(0px);
+    }
+}
+
+/* Animação cinematográfica para "AGORA!" */
+@keyframes countdown-go-cinema {
+    0% {
+        transform: scale(0) rotateZ(360deg);
+        opacity: 0;
+        filter: blur(30px) brightness(0.5);
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        filter: blur(0px) brightness(1);
+    }
 }
 
 #game-ui {

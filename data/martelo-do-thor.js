@@ -57,7 +57,7 @@ const sounds = {
 };
 
 // Constantes
-const ATTEMPT_DURATION = 3000; // 3 segundos
+const ATTEMPT_DURATION = 10000; // 10 segundos (aumentado de 3)
 const COUNTDOWN_DURATION = 3000; // 3 segundos de contagem regressiva
 const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 
@@ -183,7 +183,15 @@ async function startCountdown() {
   
   for (let i = 0; i < counts.length; i++) {
     const count = counts[i];
-    elements.countdown.innerHTML = `<div class="countdown-number">${count}</div>`;
+    // Efeito cinematográfico com zoom e glow
+    elements.countdown.innerHTML = `
+      <div class="countdown-number" style="
+        animation: countdown-cinema 1s ease-out;
+        font-size: 20rem;
+        font-weight: 900;
+        text-shadow: 0 0 40px ${getForceColor(100)}, 0 0 80px ${getForceColor(100)};
+      ">${count}</div>
+    `;
     
     if (sounds.countdown) {
       try {
@@ -195,8 +203,20 @@ async function startCountdown() {
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  // "AGORA!"
-  elements.countdown.innerHTML = '<div class="countdown-go">⚡ AGORA! ⚡</div>';
+  // "AGORA!" com efeito espetacular
+  elements.countdown.innerHTML = `
+    <div class="countdown-go" style="
+      animation: countdown-go-cinema 0.8s ease-out;
+      font-size: 15rem;
+      font-weight: 900;
+      background: linear-gradient(45deg, #00d9ff, #ff00e0, #fff300);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 50px rgba(255, 255, 0, 1);
+      letter-spacing: 10px;
+    ">⚡ AGORA! ⚡</div>
+  `;
   
   if (sounds.go) {
     try {
@@ -205,7 +225,7 @@ async function startCountdown() {
     } catch (e) {}
   }
 
-  await new Promise(resolve => setTimeout(resolve, 800));
+  await new Promise(resolve => setTimeout(resolve, 1000));
   elements.countdown.innerHTML = '';
   
   marteloState.countdownActive = false;
@@ -233,6 +253,7 @@ function startAttempt() {
   const interval = setInterval(() => {
     const elapsed = Date.now() - startTime;
     const remainingMs = Math.max(0, ATTEMPT_DURATION - elapsed);
+    const remainingSec = (remainingMs / 1000).toFixed(1);
 
     // Atualizar força em tempo real (usar a variável global)
     const forceN = currentForceValue;
@@ -250,8 +271,8 @@ function startAttempt() {
       triggerLevelEffect(forceKg);
     }
 
-    // Atualizar display
-    updateForceDisplay(forceKg);
+    // Atualizar display com timer
+    updateForceDisplay(forceKg, remainingSec);
 
     // Verificar se acabou
     if (remainingMs <= 0) {
@@ -261,7 +282,7 @@ function startAttempt() {
   }, 50);
 }
 
-function updateForceDisplay(forceKg) {
+function updateForceDisplay(forceKg, remainingSec = null) {
   const forceN = forceKg * 9.80665;
   
   // Tamanho muito grande
@@ -271,7 +292,14 @@ function updateForceDisplay(forceKg) {
   elements.forceDisplay.style.color = getForceColor(forceKg);
   elements.forceDisplay.style.textShadow = `0 0 20px ${getForceColor(forceKg)}, 0 0 40px ${getForceColor(forceKg)}`;
   
-  elements.newtonDisplay.textContent = `(≈ ${forceN.toFixed(1)} N)`;
+  // Mostrar timer se estiver em tentativa
+  let newtonText = `(≈ ${forceN.toFixed(1)} N)`;
+  if (remainingSec !== null && remainingSec !== undefined) {
+    const timerColor = remainingSec <= 2 ? '#ff0000' : '#ffd700';
+    newtonText += ` <span style="color: ${timerColor}; font-weight: bold; margin-left: 20px;">⏱️ ${remainingSec}s</span>`;
+  }
+  
+  elements.newtonDisplay.innerHTML = newtonText;
   elements.newtonDisplay.style.fontSize = '2.5rem';
   elements.newtonDisplay.style.fontWeight = 'bold';
   elements.newtonDisplay.style.color = '#aaa';
