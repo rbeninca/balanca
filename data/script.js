@@ -20,6 +20,7 @@ let dataRequestIntervalId = null; // ID do intervalo de solicitação de dados
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 let serverTimeOffset = 0; // Diferença entre servidor e cliente (ms)
+let forcaAtual = 0; // NOVO: Expor força atual para janelas filhas (Martelo do Thor)
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -653,6 +654,9 @@ function updateUIFromData(dado) {
   document.getElementById('forca-ems').textContent = emaDisplay.toFixed(3);
   document.getElementById('forca-maxima').textContent = maxDisplayForce.toFixed(3);
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
+
+  // NOVO: Atualizar força global para janelas filhas (Martelo do Thor)
+  forcaAtual = forcaFiltrada;
 
   // Disparar evento customizado para o jogo Martelo do Thor
   document.dispatchEvent(new CustomEvent('forca-atualizada', {

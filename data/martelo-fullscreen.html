@@ -576,19 +576,30 @@
       nomeJogadorFS = localStorage.getItem('martelo_nome_jogador') || 'Jogador';
       document.getElementById('nomeJogadorDisplay').textContent = `👤 ${nomeJogadorFS}`;
 
-      // Listener para força
-      document.addEventListener('forca-atualizada', (e) => {
-        if (testeEmAndamento) {
-          forcaAtualFS = e.detail.forcaN;
-          atualizarDisplayForça();
+      // TENTAR CONECTAR À JANELA PAI
+      try {
+        if (window.opener && window.opener.document) {
+          console.log('✓ Conectado à janela pai');
+          
+          // Listener para força da janela pai
+          window.opener.document.addEventListener('forca-atualizada', (e) => {
+            if (testeEmAndamento) {
+              forcaAtualFS = e.detail.forcaN;
+              atualizarDisplayForça();
+            }
+          });
+          
+          // Listener para unidade da janela pai
+          window.opener.document.addEventListener('unidade-alterada', (e) => {
+            unidadeAtualFS = e.detail.unidade;
+            atualizarFatorConversao();
+          });
+        } else {
+          console.warn('⚠ Janela pai não acessível');
         }
-      });
-
-      // Listener para unidade
-      document.addEventListener('unidade-alterada', (e) => {
-        unidadeAtualFS = e.detail.unidade;
-        atualizarFatorConversao();
-      });
+      } catch (e) {
+        console.warn('⚠ Erro ao conectar à janela pai:', e);
+      }
     }
 
     function atualizarFatorConversao() {
@@ -617,12 +628,25 @@
       // Limpar banners
       document.getElementById('bannersContainer').innerHTML = '';
 
+      // INICIAR POLLING DA FORÇA (fallback se eventos não funcionarem)
+      const pollingInterval = setInterval(() => {
+        try {
+          if (window.opener && window.opener.forcaAtual !== undefined) {
+            forcaAtualFS = window.opener.forcaAtual;
+            atualizarDisplayForça();
+          }
+        } catch (e) {
+          // Silenciosamente falhar - eventos devem estar funcionando
+        }
+      }, 50); // Poll a cada 50ms para 20 Hz
+
       const intervalo = setInterval(() => {
         tempoRestante--;
         document.getElementById('contadorTempo').textContent = tempoRestante;
 
         if (tempoRestante <= 0) {
           clearInterval(intervalo);
+          clearInterval(pollingInterval);
           encerrarTesteFullscreen();
         }
       }, 1000);
