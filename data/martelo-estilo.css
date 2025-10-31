@@ -409,7 +409,7 @@ body {
 /* Force Graph */
 #graphContainer {
     width: 90%;
-    height: 450px;
+    height: 600px;
     margin-top: 2rem;
     margin-bottom: 1rem;
     background: rgba(0, 0, 0, 0.4);
