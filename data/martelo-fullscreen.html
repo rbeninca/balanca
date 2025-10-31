@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⚡ Martelo do Thor - Teste de Força</title>
+  <title>⚡ MARTELO DO THOR - TESTE DE FORÇA ÉPICO</title>
   <style>
     * {
       margin: 0;
@@ -13,8 +13,8 @@
     }
 
     body {
-      font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Arial Black', sans-serif;
+      background: #0a0a0a;
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -32,6 +32,91 @@
       align-items: center;
       padding: 2rem;
       position: relative;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%);
+    }
+
+    /* ============= RAIOS MASSIVOS ============= */
+    .raios-fundo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .raio {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, #00d4ff, #0099ff, transparent);
+      opacity: 0;
+      filter: blur(2px);
+      box-shadow: 0 0 20px #00d4ff, 0 0 40px #0099ff;
+    }
+
+    .raio.ativo {
+      animation: raio-strike 0.3s ease-out;
+    }
+
+    @keyframes raio-strike {
+      0% {
+        opacity: 0;
+        filter: blur(5px);
+      }
+      20% {
+        opacity: 1;
+        filter: blur(1px);
+      }
+      50% {
+        opacity: 0.8;
+        filter: blur(0.5px);
+      }
+      100% {
+        opacity: 0;
+        filter: blur(3px);
+      }
+    }
+
+    /* ============= LOGOS DINÂMICAS ============= */
+    .logos-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .logo-dynamic {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      opacity: 0.3;
+      filter: brightness(1.5) drop-shadow(0 0 30px #00d4ff);
+    }
+
+    .logo-dynamic.ativo {
+      animation: logo-rotate-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes logo-rotate-pulse {
+      0% {
+        transform: rotate(0deg) scale(1);
+        opacity: 0.2;
+        filter: brightness(1) drop-shadow(0 0 20px #00d4ff);
+      }
+      50% {
+        transform: rotate(180deg) scale(1.2);
+        opacity: 0.5;
+        filter: brightness(2) drop-shadow(0 0 50px #00ffff);
+      }
+      100% {
+        transform: rotate(360deg) scale(1);
+        opacity: 0.2;
+        filter: brightness(1) drop-shadow(0 0 20px #00d4ff);
+      }
     }
 
     /* ============= HEADER ============= */
@@ -41,34 +126,52 @@
       align-items: center;
       width: 100%;
       z-index: 10;
+      position: relative;
     }
 
     .btn-voltar {
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid white;
-      color: white;
+      background: rgba(0, 212, 255, 0.2);
+      border: 2px solid #00d4ff;
+      color: #00d4ff;
       padding: 0.75rem 1.5rem;
       font-size: 1rem;
       border-radius: 0.5rem;
       cursor: pointer;
       transition: all 0.3s ease;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
 
     .btn-voltar:hover {
-      background: rgba(255, 255, 255, 0.4);
+      background: rgba(0, 212, 255, 0.4);
       transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
     }
 
     .martelo-titulo {
-      font-size: 3rem;
+      font-size: 3.5rem;
       font-weight: bold;
-      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      animation: slideInDown 0.6s ease-out;
+      text-shadow: 0 0 20px #00d4ff, 0 0 40px #0099ff;
+      animation: slideInDown 0.8s ease-out, pulse-title 2s infinite 0.8s;
+      color: #00ffff;
+      letter-spacing: 3px;
+    }
+
+    @keyframes pulse-title {
+      0%, 100% {
+        text-shadow: 0 0 20px #00d4ff, 0 0 40px #0099ff;
+      }
+      50% {
+        text-shadow: 0 0 30px #00ffff, 0 0 60px #00d4ff, 0 0 90px #0099ff;
+      }
     }
 
     .martelo-info {
-      font-size: 1.2rem;
-      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.3rem;
+      color: #00ffff;
+      font-weight: bold;
+      letter-spacing: 2px;
     }
 
     /* ============= AREA CENTRAL ============= */
@@ -78,17 +181,69 @@
       align-items: center;
       justify-content: center;
       flex: 1;
-      gap: 3rem;
+      gap: 2rem;
       width: 100%;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* ============= MARCAS DE FAIXA ============= */
+    .marcas-container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: space-around;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .marca {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(0, 212, 255, 0.2);
+      border: 2px solid rgba(0, 212, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #00d4ff;
+      transition: all 0.3s ease;
+    }
+
+    .marca.desbloqueado {
+      background: #00ffff;
+      border-color: #00ff00;
+      box-shadow: 0 0 20px #00ffff, 0 0 40px #00ff00;
+      animation: marca-pisca 0.5s ease-out;
+    }
+
+    @keyframes marca-pisca {
+      0% {
+        transform: scale(0.3);
+        opacity: 0;
+        box-shadow: 0 0 10px #00ffff;
+      }
+      40% {
+        transform: scale(1.4);
+        box-shadow: 0 0 40px #ffff00, 0 0 80px #ff00ff;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 20px #00ffff, 0 0 40px #00ff00;
+      }
     }
 
     /* ============= BARRA DE FORÇA ============= */
     .martelo-barra-container {
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 2rem;
       align-items: center;
     }
 
@@ -96,58 +251,69 @@
       display: flex;
       justify-content: space-around;
       width: 100%;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       gap: 1rem;
       flex-wrap: wrap;
     }
 
     .martelo-stat-item {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 1rem;
-      border-radius: 0.5rem;
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(0, 212, 255, 0.1);
+      padding: 1.2rem;
+      border-radius: 0.75rem;
+      border: 2px solid #00d4ff;
       text-align: center;
-      min-width: 120px;
+      min-width: 130px;
       backdrop-filter: blur(10px);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
     }
 
     .martelo-stat-label {
-      font-size: 0.8rem;
-      opacity: 0.7;
+      font-size: 0.85rem;
+      opacity: 0.8;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
+      color: #00ffff;
     }
 
     .martelo-stat-valor {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: bold;
       margin-top: 0.5rem;
+      color: #00ff00;
+      text-shadow: 0 0 10px #00ff00;
     }
 
     .martelo-barra-forca {
       width: 100%;
-      height: 100px;
-      background: rgba(0, 0, 0, 0.3);
+      height: 120px;
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 1rem;
       overflow: hidden;
-      border: 3px solid white;
+      border: 3px solid #00d4ff;
       position: relative;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.5), inset 0 0 20px rgba(0, 212, 255, 0.1);
     }
 
     .martelo-barra-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+      background: linear-gradient(90deg, 
+        #ff0000 0%, 
+        #ff5500 20%, 
+        #ffaa00 40%, 
+        #ffff00 60%, 
+        #00ff00 80%, 
+        #00ffff 100%);
       transition: width 0.05s linear;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: bold;
-      color: black;
-      text-shadow: 0 2px 5px rgba(255, 255, 255, 0.5);
+      color: #000;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
       position: relative;
+      box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.3);
     }
 
     .martelo-barra-fill::after {
@@ -157,8 +323,8 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-      animation: shine 1s infinite;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: shine 0.8s infinite;
     }
 
     .martelo-barra-percentual {
@@ -166,69 +332,140 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2rem;
+      font-size: 3rem;
       font-weight: bold;
       color: white;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 0 20px #00d4ff, 2px 2px 8px rgba(0, 0, 0, 0.9);
       z-index: 2;
     }
 
-    /* ============= BANNERS DE ETAPAS ============= */
+    /* ============= BANNERS DE FAIXAS ============= */
     .martelo-banners {
       display: flex;
       gap: 1rem;
       flex-wrap: wrap;
       justify-content: center;
+      min-height: 60px;
     }
 
     .martelo-banner {
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
+      padding: 1rem 1.5rem;
+      border-radius: 0.75rem;
       font-weight: bold;
-      font-size: 1rem;
+      font-size: 1.1rem;
       opacity: 0;
-      transform: scale(0);
-      transition: all 0.4s ease-out;
+      transform: scale(0) rotateY(90deg);
+      transition: all 0.3s ease-out;
       backdrop-filter: blur(10px);
+      border: 2px solid;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: none;
     }
 
     .martelo-banner.ativo {
       opacity: 1;
-      transform: scale(1);
-      animation: pulse-banner 0.6s ease-out;
+      transform: scale(1) rotateY(0deg);
+      animation: pulse-banner-epic 0.5s ease-out;
     }
 
-    .banner-leve {
-      background: rgba(52, 152, 219, 0.8);
-      border: 2px solid #3498db;
+    @keyframes pulse-banner-epic {
+      0% {
+        transform: scale(0.3) rotateY(90deg);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.1) rotateY(0deg);
+      }
+      100% {
+        transform: scale(1) rotateY(0deg);
+        opacity: 1;
+      }
     }
 
-    .banner-moderado {
-      background: rgba(241, 196, 15, 0.8);
-      border: 2px solid #f39c12;
+    .banner-5kg {
+      background: rgba(0, 150, 255, 0.8);
+      border-color: #0096ff;
+      box-shadow: 0 0 15px rgba(0, 150, 255, 0.6);
+      animation: banner-pulse-5kg 0.6s ease infinite;
     }
 
-    .banner-forte {
-      background: rgba(230, 126, 34, 0.8);
-      border: 2px solid #e67e22;
+    .banner-10kg {
+      background: rgba(100, 200, 255, 0.8);
+      border-color: #64c8ff;
+      box-shadow: 0 0 15px rgba(100, 200, 255, 0.6);
+      animation: banner-pulse-10kg 0.6s ease infinite;
     }
 
-    .banner-muito-forte {
-      background: rgba(231, 76, 60, 0.8);
-      border: 2px solid #e74c3c;
+    .banner-15kg {
+      background: rgba(0, 255, 150, 0.8);
+      border-color: #00ff96;
+      box-shadow: 0 0 15px rgba(0, 255, 150, 0.6);
+      animation: banner-pulse-15kg 0.6s ease infinite;
     }
 
-    .banner-epico {
-      background: rgba(155, 89, 182, 0.9);
-      border: 2px solid #9b59b6;
-      animation: pulse-banner 0.3s ease-out infinite;
+    .banner-20kg {
+      background: rgba(255, 255, 0, 0.8);
+      border-color: #ffff00;
+      box-shadow: 0 0 15px rgba(255, 255, 0, 0.6);
+      color: #000;
+      animation: banner-pulse-20kg 0.6s ease infinite;
     }
 
-    .banner-lendario {
-      background: linear-gradient(90deg, #f39c12, #e74c3c);
-      border: 3px solid #fff;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-      animation: pulse-banner 0.2s ease-out infinite;
+    .banner-30kg {
+      background: rgba(255, 150, 0, 0.8);
+      border-color: #ff9600;
+      box-shadow: 0 0 15px rgba(255, 150, 0, 0.6);
+      animation: banner-pulse-30kg 0.6s ease infinite;
+    }
+
+    .banner-40kg {
+      background: rgba(255, 0, 0, 0.8);
+      border-color: #ff0000;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+      animation: banner-pulse-40kg 0.5s ease infinite;
+    }
+
+    .banner-50kg {
+      background: linear-gradient(135deg, #ff0000, #ff00ff);
+      border-color: #ff00ff;
+      box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+      animation: banner-pulse-50kg 0.3s ease infinite;
+    }
+
+    @keyframes banner-pulse-5kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 150, 255, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(0, 150, 255, 1); }
+    }
+
+    @keyframes banner-pulse-10kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(100, 200, 255, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(100, 200, 255, 1); }
+    }
+
+    @keyframes banner-pulse-15kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 150, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(0, 255, 150, 1); }
+    }
+
+    @keyframes banner-pulse-20kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(255, 255, 0, 1); }
+    }
+
+    @keyframes banner-pulse-30kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 150, 0, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(255, 150, 0, 1); }
+    }
+
+    @keyframes banner-pulse-40kg {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); }
+      50% { box-shadow: 0 0 40px rgba(255, 0, 0, 1); }
+    }
+
+    @keyframes banner-pulse-50kg {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 255, 0.8); }
+      50% { box-shadow: 0 0 50px rgba(255, 0, 255, 1); }
     }
 
     /* ============= BOTÃO PRINCIPAL ============= */
@@ -237,42 +474,43 @@
       flex-direction: column;
       align-items: center;
       gap: 2rem;
+      position: relative;
+      z-index: 10;
     }
 
     .martelo-botao {
-      padding: 2rem 3rem;
-      font-size: 1.5rem;
+      padding: 2.5rem 4rem;
+      font-size: 1.8rem;
       font-weight: bold;
-      border: none;
+      border: 3px solid #00ffff;
       border-radius: 1rem;
       cursor: pointer;
-      background: linear-gradient(135deg, #f39c12, #e74c3c);
-      color: white;
+      background: linear-gradient(135deg, #0099ff, #00d4ff);
+      color: black;
       transition: all 0.3s ease;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
       text-transform: uppercase;
       letter-spacing: 2px;
     }
 
     .martelo-botao:hover:not(:disabled) {
-      transform: scale(1.1);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+      transform: scale(1.15);
+      box-shadow: 0 0 50px rgba(0, 212, 255, 1);
+      border-color: #00ff00;
     }
 
     .martelo-botao:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     .martelo-contador {
-      font-size: 4rem;
+      font-size: 5rem;
       font-weight: bold;
-      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      text-shadow: 0 0 30px #00d4ff, 0 0 60px #0099ff;
       animation: slideInUp 0.5s ease-out;
-    }
-
-    .martelo-contador.pulsando {
-      animation: pulse-contador 0.5s ease-out;
+      color: #00ffff;
+      letter-spacing: 2px;
     }
 
     /* ============= MENSAGEM FINAL ============= */
@@ -281,76 +519,61 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0);
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #0099ff, #00d4ff);
       padding: 3rem;
       border-radius: 2rem;
       text-align: center;
       z-index: 1000;
       max-width: 500px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      border: 3px solid white;
+      box-shadow: 0 0 50px rgba(0, 212, 255, 0.8);
+      border: 3px solid #00ffff;
       animation: showMensagem 0.6s ease-out forwards;
     }
 
     .martelo-mensagem h2 {
-      font-size: 2.5rem;
+      font-size: 3rem;
       margin-bottom: 1rem;
+      text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .martelo-mensagem p {
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
     }
 
     .martelo-mensagem .valor-final {
-      font-size: 3rem;
+      font-size: 3.5rem;
       font-weight: bold;
-      color: #f39c12;
+      color: #ffff00;
       animation: slideInUp 0.6s ease-out 0.3s both;
+      text-shadow: 0 0 20px #ffff00;
     }
 
     .martelo-mensagem .btn-fechar {
       margin-top: 1.5rem;
-      padding: 0.75rem 2rem;
-      font-size: 1rem;
-      background: white;
-      color: #764ba2;
+      padding: 1rem 2.5rem;
+      font-size: 1.2rem;
+      background: #00ff00;
+      color: #000;
       border: none;
-      border-radius: 0.5rem;
+      border-radius: 0.75rem;
       cursor: pointer;
       font-weight: bold;
       animation: slideInUp 0.6s ease-out 0.6s both;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .martelo-mensagem .btn-fechar:hover {
-      transform: scale(1.05);
-    }
-
-    /* ============= FUNDO ANIMADO ============= */
-    .martelo-fundo-animado {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .martelo-particula {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 50%;
-      animation: float-particula 3s infinite ease-in-out;
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
     }
 
     /* ============= ANIMAÇÕES ============= */
     @keyframes slideInDown {
       from {
         opacity: 0;
-        transform: translateY(-30px);
+        transform: translateY(-50px);
       }
       to {
         opacity: 1;
@@ -361,35 +584,11 @@
     @keyframes slideInUp {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(50px);
       }
       to {
         opacity: 1;
         transform: translateY(0);
-      }
-    }
-
-    @keyframes pulse-banner {
-      0% {
-        transform: scale(0.8);
-      }
-      50% {
-        transform: scale(1.1);
-      }
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    @keyframes pulse-contador {
-      0% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.2);
-      }
-      100% {
-        transform: scale(1);
       }
     }
 
@@ -413,29 +612,20 @@
       }
     }
 
-    @keyframes float-particula {
-      0%, 100% {
-        transform: translateY(0) translateX(0) opacity(1);
-      }
-      50% {
-        transform: translateY(-30px) translateX(10px) opacity(0.5);
-      }
-    }
-
     @keyframes vibrar {
       0%, 100% {
         transform: translateX(0);
       }
       25% {
-        transform: translateX(-5px);
+        transform: translateX(-10px);
       }
       75% {
-        transform: translateX(5px);
+        transform: translateX(10px);
       }
     }
 
     .vibrar {
-      animation: vibrar 0.3s ease;
+      animation: vibrar 0.4s ease;
     }
 
     /* ============= RESPONSIVIDADE ============= */
@@ -445,35 +635,41 @@
       }
 
       .martelo-titulo {
-        font-size: 2rem;
+        font-size: 2.2rem;
       }
 
       .martelo-botao {
-        padding: 1.5rem 2rem;
-        font-size: 1.2rem;
+        padding: 1.5rem 2.5rem;
+        font-size: 1.3rem;
       }
 
       .martelo-contador {
-        font-size: 3rem;
+        font-size: 3.5rem;
       }
 
       .martelo-barra-forca {
-        height: 80px;
+        height: 90px;
       }
 
       .martelo-stat-item {
-        min-width: 100px;
-        padding: 0.75rem;
+        min-width: 110px;
+        padding: 0.8rem;
       }
 
       .martelo-stat-valor {
         font-size: 1.5rem;
       }
+
+      .marca {
+        width: 40px;
+        height: 40px;
+        font-size: 0.6rem;
+      }
     }
 
     @media (max-width: 480px) {
       .martelo-titulo {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
       }
 
       .martelo-botao {
@@ -482,49 +678,60 @@
       }
 
       .martelo-contador {
-        font-size: 2rem;
+        font-size: 2.5rem;
       }
 
       .martelo-barra-forca {
-        height: 60px;
+        height: 70px;
       }
 
       .martelo-stat-item {
-        min-width: 80px;
-        padding: 0.5rem;
+        min-width: 90px;
+        padding: 0.6rem;
         font-size: 0.9rem;
+      }
+
+      .marca {
+        width: 35px;
+        height: 35px;
+        font-size: 0.5rem;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="martelo-fundo-animado" id="fundoAnimado"></div>
+  <div class="raios-fundo" id="raiosFundo"></div>
+
+  <div class="logos-container" id="logosContainer"></div>
 
   <div class="container-fullscreen">
     <!-- HEADER -->
     <div class="martelo-header">
       <button class="btn-voltar" onclick="voltarAbaMartelo()">← Voltar</button>
-      <div class="martelo-info" id="nomeJogadorDisplay">---</div>
+      <div class="martelo-info" id="nomeJogadorDisplay">⚡ THOR</div>
     </div>
 
     <!-- CONTEÚDO CENTRAL -->
     <div class="martelo-content">
       <h1 class="martelo-titulo">⚡ MARTELO DO THOR ⚡</h1>
 
+      <!-- MARCAS DE FAIXA -->
+      <div class="marcas-container" id="marcasContainer"></div>
+
       <!-- STATS -->
       <div class="martelo-barra-container">
         <div class="martelo-stats">
           <div class="martelo-stat-item">
-            <div class="martelo-stat-label">Força Atual</div>
-            <div class="martelo-stat-valor" id="forcaAtualFS">0 N</div>
+            <div class="martelo-stat-label">💪 Força</div>
+            <div class="martelo-stat-valor" id="forcaAtualFS">0 kg</div>
           </div>
           <div class="martelo-stat-item">
-            <div class="martelo-stat-label">Força Máxima</div>
-            <div class="martelo-stat-valor" id="forcaMaximaFS">0 N</div>
+            <div class="martelo-stat-label">⚡ Máxima</div>
+            <div class="martelo-stat-valor" id="forcaMaximaFS">0 kg</div>
           </div>
           <div class="martelo-stat-item">
-            <div class="martelo-stat-label">Tempo</div>
+            <div class="martelo-stat-label">⏱️ Tempo</div>
             <div class="martelo-stat-valor" id="tempoFS">5s</div>
           </div>
         </div>
@@ -542,70 +749,95 @@
 
     <!-- FOOTER -->
     <div class="martelo-botao-area">
-      <div class="martelo-contador" id="contadorTempo">5</div>
-      <button class="martelo-botao" id="botaoTeste" onclick="iniciarTesteFullscreen()">🎯 APERTE AGORA!</button>
+      <div class="martelo-contador" id="contadorTempo">🎯</div>
+      <button class="martelo-botao" id="botaoTeste" onclick="iniciarTesteFullscreen()">⚡ APERTE AGORA! ⚡</button>
     </div>
   </div>
 
   <!-- MENSAGEM FINAL -->
   <div class="martelo-mensagem" id="mensagemFinal">
-    <h2 id="titulo-mensagem">🏆 RESULTADO FINAL</h2>
+    <h2 id="titulo-mensagem">🏆 RESULTADO</h2>
     <p id="texto-mensagem">---</p>
-    <div class="valor-final" id="valor-final">0 N</div>
-    <button class="btn-fechar" onclick="fecharMensagemFinal()">CONCLUIR</button>
+    <div class="valor-final" id="valor-final">0 kg</div>
+    <button class="btn-fechar" onclick="fecharMensagemFinal()">⚡ CONCLUIR ⚡</button>
   </div>
 
   <script>
-    // ============= VARIÁVEIS GLOBAIS =============
     let testeEmAndamento = false;
     let forcaAtualFS = 0;
     let forcaMaximaAtualFS = 0;
     let tempoRestante = 5;
-    let unidadeAtualFS = 'N';
+    let unidadeAtualFS = 'kgf';
     let nomeJogadorFS = '';
-    let fatorConversao = 1;
+    let fatorConversao = 101.972;
 
-    // ============= INICIALIZAÇÃO =============
+    const FAIXAS_PESO = [5, 10, 15, 20, 30, 40, 50];
+    let faixasAcionadas = new Set();
+    let marcasDesbloquedas = new Set();
+
     window.addEventListener('load', () => {
       inicializarFullscreen();
-      criarParticulas();
+      criarMarcas();
+      criarLogos();
+      requestAnimationFrame(criarRaiosContinuos);
     });
 
     function inicializarFullscreen() {
-      // Obter dados da aba anterior
       nomeJogadorFS = localStorage.getItem('martelo_nome_jogador') || 'Jogador';
-      document.getElementById('nomeJogadorDisplay').textContent = `👤 ${nomeJogadorFS}`;
+      document.getElementById('nomeJogadorDisplay').textContent = `⚡ ${nomeJogadorFS.toUpperCase()} ⚡`;
 
-      // TENTAR CONECTAR À JANELA PAI
       try {
         if (window.opener && window.opener.document) {
-          console.log('✓ Conectado à janela pai');
-          
-          // Listener para força da janela pai
           window.opener.document.addEventListener('forca-atualizada', (e) => {
             if (testeEmAndamento) {
               forcaAtualFS = e.detail.forcaN;
               atualizarDisplayForça();
             }
           });
-          
-          // Listener para unidade da janela pai
+
           window.opener.document.addEventListener('unidade-alterada', (e) => {
             unidadeAtualFS = e.detail.unidade;
             atualizarFatorConversao();
           });
-        } else {
-          console.warn('⚠ Janela pai não acessível');
         }
       } catch (e) {
-        console.warn('⚠ Erro ao conectar à janela pai:', e);
+        console.warn('⚠ Conexão com janela pai limitada');
       }
+    }
+
+    function criarMarcas() {
+      const container = document.getElementById('marcasContainer');
+      FAIXAS_PESO.forEach(faixa => {
+        const marca = document.createElement('div');
+        marca.className = 'marca';
+        marca.id = `marca-${faixa}`;
+        marca.textContent = `${faixa}kg`;
+        container.appendChild(marca);
+      });
+    }
+
+    function criarLogos() {
+      const container = document.getElementById('logosContainer');
+      const logos = [
+        'logo_compSteam.png',
+        'logo_receita.png'
+      ];
+
+      logos.forEach((logo, i) => {
+        const img = document.createElement('img');
+        img.src = logo;
+        img.className = 'logo-dynamic';
+        img.style.left = (i % 2 === 0 ? '-80px' : '80px');
+        img.style.top = (i < 1 ? '-80px' : '80px');
+        img.onerror = () => console.warn(`Logo não carregada: ${logo}`);
+        container.appendChild(img);
+      });
     }
 
     function atualizarFatorConversao() {
       switch (unidadeAtualFS) {
         case 'gf': fatorConversao = 101.972; break;
-        case 'kgf': fatorConversao = 101972; break;
+        case 'kgf': fatorConversao = 101.972; break;
         default: fatorConversao = 1;
       }
     }
@@ -615,30 +847,31 @@
       return valor.toFixed(1);
     }
 
-    // ============= TESTE =============
     function iniciarTesteFullscreen() {
       if (testeEmAndamento) return;
 
       testeEmAndamento = true;
       forcaMaximaAtualFS = 0;
       tempoRestante = 5;
+      faixasAcionadas.clear();
+      marcasDesbloquedas.clear();
       document.getElementById('botaoTeste').disabled = true;
       document.getElementById('contadorTempo').textContent = '5';
-
-      // Limpar banners
       document.getElementById('bannersContainer').innerHTML = '';
 
-      // INICIAR POLLING DA FORÇA (fallback se eventos não funcionarem)
+      // Ativar logos
+      document.querySelectorAll('.logo-dynamic').forEach(logo => {
+        logo.classList.add('ativo');
+      });
+
       const pollingInterval = setInterval(() => {
         try {
           if (window.opener && window.opener.forcaAtual !== undefined) {
             forcaAtualFS = window.opener.forcaAtual;
             atualizarDisplayForça();
           }
-        } catch (e) {
-          // Silenciosamente falhar - eventos devem estar funcionando
-        }
-      }, 50); // Poll a cada 50ms para 20 Hz
+        } catch (e) { }
+      }, 50);
 
       const intervalo = setInterval(() => {
         tempoRestante--;
@@ -653,72 +886,149 @@
     }
 
     function atualizarDisplayForça() {
-      // Atualizar máxima
       if (forcaAtualFS > forcaMaximaAtualFS) {
         forcaMaximaAtualFS = forcaAtualFS;
-        document.getElementById('forcaMaximaFS').textContent = 
-          `${obterValorForçaExibido(forcaMaximaAtualFS)} ${unidadeAtualFS}`;
+        const kg = obterValorForçaExibido(forcaMaximaAtualFS);
+        document.getElementById('forcaMaximaFS').textContent = `${kg} kg`;
       }
 
-      // Atualizar atual
-      document.getElementById('forcaAtualFS').textContent = 
-        `${obterValorForçaExibido(forcaAtualFS)} ${unidadeAtualFS}`;
+      const kg = obterValorForçaExibido(forcaAtualFS);
+      document.getElementById('forcaAtualFS').textContent = `${kg} kg`;
 
-      // Atualizar barra
       const percentual = Math.min((forcaAtualFS / 5000) * 100, 100);
       document.getElementById('barraForçaFill').style.width = percentual + '%';
       document.getElementById('percentualFS').textContent = Math.round(percentual) + '%';
 
-      // Atualizar banners
       atualizarBannersEtapas(forcaMaximaAtualFS);
+      verificarMarcasEDesbloquear(forcaMaximaAtualFS);
+      verificarEDispararRaios(forcaMaximaAtualFS);
 
-      // Vibrar se muito forte
       if (forcaMaximaAtualFS > 4000) {
         document.querySelector('.container-fullscreen').classList.add('vibrar');
         setTimeout(() => {
           document.querySelector('.container-fullscreen').classList.remove('vibrar');
-        }, 300);
+        }, 400);
       }
     }
 
-    function atualizarBannersEtapas(forca) {
-      const container = document.getElementById('bannersContainer');
-      container.innerHTML = ''; // Limpar
+    function verificarMarcasEDesbloquear(forcaKg) {
+      FAIXAS_PESO.forEach(faixa => {
+        if (forcaKg >= faixa && !marcasDesbloquedas.has(faixa)) {
+          marcasDesbloquedas.add(faixa);
+          desbloquearMarca(faixa);
+        }
+      });
+    }
 
-      const etapas = [
-        { limite: 500, texto: '💪 Começando...', classe: 'banner-leve' },
-        { limite: 1000, texto: '⚡ Força Moderada!', classe: 'banner-moderado' },
-        { limite: 2000, texto: '🔥 Muito Forte!', classe: 'banner-forte' },
-        { limite: 3500, texto: '💥 EXTREMO!', classe: 'banner-muito-forte' },
-        { limite: 4500, texto: '🌟 ÉPICO!', classe: 'banner-epico' },
-        { limite: Infinity, texto: '👑 LENDÁRIO!', classe: 'banner-lendario' }
+    function desbloquearMarca(faixa) {
+      const marca = document.getElementById(`marca-${faixa}`);
+      if (marca) {
+        marca.classList.add('desbloqueado');
+        setTimeout(() => {
+          marca.classList.remove('desbloqueado');
+        }, 700);
+      }
+    }
+
+    function atualizarBannersEtapas(forcaKg) {
+      const container = document.getElementById('bannersContainer');
+      container.innerHTML = '';
+
+      const faixas = [
+        { kg: 5, texto: '💪 5kg', classe: 'banner-5kg' },
+        { kg: 10, texto: '⚡ 10kg', classe: 'banner-10kg' },
+        { kg: 15, texto: '🔥 15kg', classe: 'banner-15kg' },
+        { kg: 20, texto: '💛 20kg', classe: 'banner-20kg' },
+        { kg: 30, texto: '🔥 30kg', classe: 'banner-30kg' },
+        { kg: 40, texto: '🌪️ 40kg', classe: 'banner-40kg' },
+        { kg: 50, texto: '👑 50kg+', classe: 'banner-50kg' }
       ];
 
-      for (let etapa of etapas) {
-        if (forca >= etapa.limite - 500) {
+      for (let faixa of faixas) {
+        if (forcaKg >= faixa.kg) {
           const banner = document.createElement('div');
-          banner.className = `martelo-banner ${etapa.classe} ativo`;
-          banner.textContent = etapa.texto;
+          banner.className = `martelo-banner ${faixa.classe} ativo`;
+          banner.textContent = faixa.texto;
           container.appendChild(banner);
         }
       }
+    }
+
+    function verificarEDispararRaios(forcaKg) {
+      FAIXAS_PESO.forEach(faixa => {
+        if (forcaKg >= faixa && !faixasAcionadas.has(faixa)) {
+          faixasAcionadas.add(faixa);
+          // MUITO MAIS raios: baseado na força da faixa
+          const quantidade = 8 + Math.floor(faixa / 5);
+          dispararRaios(quantidade);
+        }
+      });
+    }
+
+    function dispararRaios(quantidade) {
+      for (let i = 0; i < quantidade; i++) {
+        setTimeout(() => {
+          criarRaioAnimado();
+        }, i * 30);
+      }
+    }
+
+    function criarRaioAnimado() {
+      const container = document.getElementById('raiosFundo');
+      const raio = document.createElement('div');
+      raio.className = 'raio';
+
+      const startX = Math.random() * window.innerWidth;
+      const startY = Math.random() * window.innerHeight * 0.3;
+      const endX = startX + (Math.random() - 0.5) * 400;
+      const endY = startY + window.innerHeight * 0.5;
+
+      raio.style.left = startX + 'px';
+      raio.style.top = startY + 'px';
+      raio.style.width = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)) + 'px';
+      raio.style.height = (2 + Math.random() * 8) + 'px';
+      raio.style.transform = `rotate(${Math.atan2(endY - startY, endX - startX) * 180 / Math.PI}deg)`;
+
+      container.appendChild(raio);
+      raio.classList.add('ativo');
+
+      setTimeout(() => raio.remove(), 500);
+    }
+
+    function criarRaiosContinuos() {
+      if (!testeEmAndamento) {
+        // Raios aleatórios lentos no fundo
+        if (Math.random() < 0.05) {
+          criarRaioAnimado();
+        }
+      } else {
+        // Raios MASSIVOS contínuos durante o teste
+        if (Math.random() < 0.4) {
+          for (let i = 0; i < (Math.random() > 0.5 ? 3 : 1); i++) {
+            setTimeout(() => criarRaioAnimado(), i * 15);
+          }
+        }
+      }
+      requestAnimationFrame(criarRaiosContinuos);
     }
 
     function encerrarTesteFullscreen() {
       testeEmAndamento = false;
       document.getElementById('botaoTeste').disabled = false;
 
-      // Registrar resultado
-      registrarResultadoMarteloFS(forcaMaximaAtualFS);
+      // Desativar logos
+      document.querySelectorAll('.logo-dynamic').forEach(logo => {
+        logo.classList.remove('ativo');
+      });
 
-      // Mostrar mensagem
+      registrarResultadoMarteloFS(forcaMaximaAtualFS);
       mostrarMensagemFinal(forcaMaximaAtualFS);
     }
 
     function registrarResultadoMarteloFS(forca) {
       try {
         const dados = JSON.parse(localStorage.getItem('martelo_do_thor_data') || '{"jogadores":{}}');
-        
+
         if (!dados.jogadores[nomeJogadorFS]) {
           dados.jogadores[nomeJogadorFS] = { tentativas: [], melhor: 0, media: 0 };
         }
@@ -730,14 +1040,8 @@
         };
 
         dados.jogadores[nomeJogadorFS].tentativas.push(tentativa);
+        dados.jogadores[nomeJogadorFS].melhor = Math.max(dados.jogadores[nomeJogadorFS].melhor, forca);
 
-        // Atualizar melhor
-        dados.jogadores[nomeJogadorFS].melhor = Math.max(
-          dados.jogadores[nomeJogadorFS].melhor,
-          forca
-        );
-
-        // Atualizar média
         const tentativas = dados.jogadores[nomeJogadorFS].tentativas;
         const soma = tentativas.reduce((acc, t) => acc + t.forca, 0);
         dados.jogadores[nomeJogadorFS].media = soma / tentativas.length;
@@ -749,43 +1053,41 @@
     }
 
     function mostrarMensagemFinal(forca) {
-      const forcaExibida = obterValorForçaExibido(forca);
+      const kg = obterValorForçaExibido(forca);
       let titulo = '🏆 RESULTADO';
       let texto = '';
       let emoji = '';
 
       if (forca < 500) {
-        texto = 'Comece devagar, isso é apenas aquecimento!';
+        texto = 'Comece devagar!';
         emoji = '🤔';
       } else if (forca < 1000) {
-        texto = 'Bom começo! Você tem potencial!';
+        texto = 'Bom começo!';
         emoji = '👍';
       } else if (forca < 2000) {
-        texto = 'Muito bem! Força impressionante!';
+        texto = 'Muito bem!';
         emoji = '💪';
       } else if (forca < 3500) {
-        texto = 'INCRÍVEL! Você é muito forte!';
+        texto = 'INCRÍVEL!';
         emoji = '🔥';
       } else if (forca < 4500) {
-        texto = 'ÉPICO! Força de DEUS!';
+        texto = 'ÉPICO!';
         emoji = '⚡';
       } else {
-        texto = 'LENDÁRIO! Você é INVENCÍVEL!';
+        texto = 'LENDÁRIO!';
         emoji = '👑';
-        titulo = '👑 RESULTADO LENDÁRIO 👑';
+        titulo = '👑 LENDÁRIO 👑';
       }
 
       document.getElementById('titulo-mensagem').textContent = titulo;
       document.getElementById('texto-mensagem').textContent = `${emoji} ${texto}`;
-      document.getElementById('valor-final').textContent = `${forcaExibida} ${unidadeAtualFS}`;
+      document.getElementById('valor-final').textContent = `${kg} kg`;
 
-      document.getElementById('mensagemFinal').style.display = 'flex';
-      document.getElementById('mensagemFinal').style.flexDirection = 'column';
-      document.getElementById('mensagemFinal').style.justifyContent = 'center';
-      document.getElementById('mensagemFinal').style.alignItems = 'center';
-      document.getElementById('mensagemFinal').style.animation = 'showMensagem 0.6s ease-out';
+      const msg = document.getElementById('mensagemFinal');
+      msg.style.display = 'flex';
+      msg.style.animation = 'showMensagem 0.6s ease-out';
 
-      // Reproduzir som de vitória
+      dispararRaios(20);
       reproduzirSomVitoriaFS();
     }
 
@@ -794,54 +1096,31 @@
       voltarAbaMarteloSemReset();
     }
 
-    // ============= NAVEGAÇÃO =============
     function voltarAbaMartelo() {
       window.parent.postMessage({ acao: 'voltarMarteloDeThor' }, '*');
-      setTimeout(() => {
-        window.close();
-      }, 100);
+      setTimeout(() => window.close(), 100);
     }
 
     function voltarAbaMarteloSemReset() {
       window.parent.postMessage({ acao: 'voltarMarteloSemFechar' }, '*');
     }
 
-    // ============= SONS =============
     function reproduzirSomVitoriaFS() {
       try {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const frequencias = [523.25, 659.25, 783.99]; // Dó, Mi, Sol
+        const frequencias = [523.25, 659.25, 783.99];
         frequencias.forEach((freq, i) => {
           const osc = audioContext.createOscillator();
           const gain = audioContext.createGain();
-          
           osc.connect(gain);
           gain.connect(audioContext.destination);
-          
           osc.frequency.value = freq;
           gain.gain.setValueAtTime(0.3, audioContext.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-          
           osc.start(audioContext.currentTime + i * 0.1);
           osc.stop(audioContext.currentTime + i * 0.1 + 0.3);
         });
-      } catch (e) {
-        console.log('Web Audio não disponível');
-      }
-    }
-
-    // ============= PARTÍCULAS =============
-    function criarParticulas() {
-      const fundo = document.getElementById('fundoAnimado');
-      for (let i = 0; i < 20; i++) {
-        const particula = document.createElement('div');
-        particula.className = 'martelo-particula';
-        particula.style.left = Math.random() * 100 + '%';
-        particula.style.top = Math.random() * 100 + '%';
-        particula.style.animationDelay = Math.random() * 3 + 's';
-        fundo.appendChild(particula);
-      }
+      } catch (e) { }
     }
   </script>
 </body>
