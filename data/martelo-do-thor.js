@@ -442,14 +442,67 @@ function showResultsScreen() {
       sounds.result.play().catch(e => console.log('Som result:', e));
     } catch (e) {}
   }
+
+  // Exibir ranking automaticamente após 4 segundos
+  setTimeout(() => {
+    showRankingScreen();
+  }, 4000);
 }
 
 function getMotivationalMessage(forceKg) {
-  if (forceKg < 10) return '🤔 Fraquinho, mas corajoso!';
-  if (forceKg < 50) return '💪 Está ficando forte!';
-  if (forceKg < 100) return '🔥 Excelente! Quase digno do martelo!';
-  if (forceKg < 200) return '⚡ Poder de Asgard flui em você!';
-  return '👑 ⚡ Digno de empunhar Mjölnir! ⚡';
+  // Frases de "zueira" baseadas na força 💪🎮
+  const messagesWeak = [
+    '🤔 Fraquinho, mas corajoso!',
+    '😅 Deixa eu adivinhar... academia não é sua?',
+    '🐜 Força de formiguinha! Volta quando crescer!',
+    '💨 Vento forte derrubava mais que você!'
+  ];
+  
+  const messagesNormal = [
+    '💪 Está ficando forte!',
+    '👍 Conseguiu sair do sofá, parabéns!',
+    '🎯 Nada mal para um iniciante!',
+    '⭐ Tá indo bem, guerreiro!'
+  ];
+  
+  const messagesGood = [
+    '🔥 Excelente! Quase digno do martelo!',
+    '⚡ Isso sim é força de verdade!',
+    '🚀 Lendário demais!',
+    '💥 Quebrou alguma coisa aí?'
+  ];
+  
+  const messagesGreat = [
+    '⚡ Poder de Asgard flui em você!',
+    '🌩️ Thor ficaria impressionado!',
+    '🏆 Esse é o caminho do herói!',
+    '👊 DEVASTADOR! Quem é você?!'
+  ];
+  
+  const messagesLegendary = [
+    '👑 ⚡ Digno de empunhar Mjölnir! ⚡',
+    '🔱 LENDÁRIO! A terra tremeu!',
+    '⚔️ VOCÊ É UM DEUS! Asgard chora!',
+    '🌟 IMORTAL! Seu nome viverá para sempre!',
+    '💎 PERFEIÇÃO! Essa é a resposta para tudo!',
+    '🎆 IMPOSSÍVEL! Você quebrou a escala!!'
+  ];
+
+  let messageList;
+  
+  if (forceKg < 10) {
+    messageList = messagesWeak;
+  } else if (forceKg < 30) {
+    messageList = messagesNormal;
+  } else if (forceKg < 60) {
+    messageList = messagesGood;
+  } else if (forceKg < 150) {
+    messageList = messagesGreat;
+  } else {
+    messageList = messagesLegendary;
+  }
+  
+  return messageList[Math.floor(Math.random() * messageList.length)];
 }
 
 // ==========================================
