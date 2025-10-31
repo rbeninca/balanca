@@ -64,6 +64,7 @@ const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   showScreen('start');
+  startForcePolling(); // Inicia polling de força
   console.log('✓ Martelo do Thor carregado');
 });
 
@@ -72,6 +73,25 @@ function setupEventListeners() {
   elements.playAgainButton.addEventListener('click', resetGame);
   elements.showRankingButton.addEventListener('click', showRankingScreen);
   elements.backToStartButton.addEventListener('click', () => showScreen('start'));
+}
+
+// ==========================================
+// POLLING DE FORÇA
+// ==========================================
+
+let currentForceValue = 0;
+
+function startForcePolling() {
+  setInterval(() => {
+    try {
+      // Tentar pegar do window.opener (janela pai)
+      if (window.opener && window.opener.forcaAtual !== undefined) {
+        currentForceValue = window.opener.forcaAtual;
+      }
+    } catch (e) {
+      // Acesso denegado ao opener em fullscreen
+    }
+  }, 50);
 }
 
 // ==========================================
@@ -164,15 +184,13 @@ function startAttempt() {
   `;
 
   const startTime = Date.now();
-  const startForce = window.forcaAtual || 0;
 
   const interval = setInterval(() => {
     const elapsed = Date.now() - startTime;
     const remainingMs = Math.max(0, ATTEMPT_DURATION - elapsed);
-    const remainingSec = (remainingMs / 1000).toFixed(1);
 
-    // Atualizar força em tempo real
-    const forceN = window.forcaAtual || 0;
+    // Atualizar força em tempo real (usar a variável global)
+    const forceN = currentForceValue;
     const forceKg = forceN / 9.80665; // Newton para kgf
 
     // Atualizar máximo desta tentativa
@@ -377,6 +395,21 @@ function resetGame() {
   elements.verticalForceBar.style.height = '0%';
   
   showScreen('start');
+}
+
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
+
+// Iniciar polling de força quando página carrega
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    startForcePolling();
+    console.log('✓ Martelo do Thor - Polling de força iniciado');
+  });
+} else {
+  startForcePolling();
+  console.log('✓ Martelo do Thor - Polling de força iniciado');
 }
 
 console.log('✓ Martelo do Thor - Script carregado com sucesso!');
