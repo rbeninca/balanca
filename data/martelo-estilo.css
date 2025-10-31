@@ -100,31 +100,115 @@ body {
 .force-label-current {
     position: absolute;
     left: 10px;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     color: #0f0;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 28px;
+    font-weight: 900;
     font-family: 'Courier New', monospace;
-    border: 2px solid #0f0;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+    border: 3px solid #0f0;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 0, 0.9),
+        0 0 40px rgba(0, 255, 0, 0.6),
+        inset 0 0 10px rgba(0, 255, 0, 0.3);
     white-space: nowrap;
+    animation: pulse-current 0.5s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
 }
 
 .force-label-max {
     position: absolute;
     left: 10px;
-    background: rgba(0, 0, 0, 0.95);
+    background: rgba(0, 0, 0, 0.97);
     color: #f00;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 28px;
+    font-weight: 900;
     font-family: 'Courier New', monospace;
-    border: 2px solid #f00;
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
+    border: 3px solid #f00;
+    box-shadow: 
+        0 0 25px rgba(255, 0, 0, 0.95),
+        0 0 50px rgba(255, 0, 0, 0.7),
+        inset 0 0 10px rgba(255, 0, 0, 0.3);
     white-space: nowrap;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.9);
+}
+
+/* Animação de pulso para força atual */
+@keyframes pulse-current {
+    0% { 
+        transform: scale(1);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 0, 0.9),
+            0 0 40px rgba(0, 255, 0, 0.6),
+            inset 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    50% { 
+        transform: scale(1.08);
+        box-shadow: 
+            0 0 30px rgba(0, 255, 0, 1),
+            0 0 60px rgba(0, 255, 0, 0.8),
+            inset 0 0 15px rgba(0, 255, 0, 0.5);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 0, 0.9),
+            0 0 40px rgba(0, 255, 0, 0.6),
+            inset 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+}
+
+/* Animação de brilho para força máxima */
+@keyframes glow-max {
+    0% { 
+        box-shadow: 
+            0 0 25px rgba(255, 0, 0, 0.95),
+            0 0 50px rgba(255, 0, 0, 0.7),
+            inset 0 0 10px rgba(255, 0, 0, 0.3);
+    }
+    50% { 
+        box-shadow: 
+            0 0 35px rgba(255, 0, 0, 1),
+            0 0 70px rgba(255, 0, 0, 0.9),
+            inset 0 0 15px rgba(255, 0, 0, 0.5);
+    }
+    100% { 
+        box-shadow: 
+            0 0 25px rgba(255, 0, 0, 0.95),
+            0 0 50px rgba(255, 0, 0, 0.7),
+            inset 0 0 10px rgba(255, 0, 0, 0.3);
+    }
+}
+
+/* Animação de novo recorde - impacto visual */
+@keyframes record-shock {
+    0% {
+        transform: scale(1) translateX(0);
+        filter: brightness(2) drop-shadow(0 0 30px rgba(255, 255, 0, 1));
+    }
+    25% {
+        transform: scale(1.15) translateX(10px);
+        filter: brightness(2.5) drop-shadow(0 0 50px rgba(255, 255, 0, 1));
+    }
+    50% {
+        transform: scale(1.2) translateX(-10px);
+        filter: brightness(3) drop-shadow(0 0 70px rgba(255, 255, 0, 1));
+    }
+    75% {
+        transform: scale(1.12) translateX(5px);
+        filter: brightness(2) drop-shadow(0 0 40px rgba(255, 255, 0, 0.8));
+    }
+    100% {
+        transform: scale(1) translateX(0);
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 255, 0, 0));
+    }
+}
+
+.force-label-max {
+    animation: glow-max 1.5s ease-in-out infinite;
 }
 
 /* Modificação para a aba do martelo se comportar como fullscreen */

@@ -264,8 +264,17 @@ function startAttempt() {
 function updateForceDisplay(forceKg) {
   const forceN = forceKg * 9.80665;
   
+  // Tamanho muito grande
   elements.forceDisplay.textContent = `${forceKg.toFixed(1)} kg`;
+  elements.forceDisplay.style.fontSize = '12rem';
+  elements.forceDisplay.style.fontWeight = '900';
+  elements.forceDisplay.style.color = getForceColor(forceKg);
+  elements.forceDisplay.style.textShadow = `0 0 20px ${getForceColor(forceKg)}, 0 0 40px ${getForceColor(forceKg)}`;
+  
   elements.newtonDisplay.textContent = `(≈ ${forceN.toFixed(1)} N)`;
+  elements.newtonDisplay.style.fontSize = '2.5rem';
+  elements.newtonDisplay.style.fontWeight = 'bold';
+  elements.newtonDisplay.style.color = '#aaa';
 
   // Barra de progresso horizontal
   const percentage = Math.min((forceKg / MAX_FORCE_DISPLAY) * 100, 100);
@@ -301,9 +310,20 @@ function updateForceDisplay(forceKg) {
     elements.forceMarkerCurrent.style.bottom = height + '%';
   }
   
+  // Verificar se há novo recorde (força máxima aumentou)
+  const forceMaxAnterior = parseFloat(elements.labelForceMax?.textContent?.split(':')[1]?.trim()) || 0;
+  
   // Atualizar label e posição de força máxima
   if (elements.labelForceMax) {
     elements.labelForceMax.textContent = `${marteloState.totalMaxForce.toFixed(1)} kg`;
+    
+    // Efeito de novo recorde
+    if (marteloState.totalMaxForce > forceMaxAnterior) {
+      elements.forceMarkerMax.style.animation = 'none';
+      setTimeout(() => {
+        elements.forceMarkerMax.style.animation = 'record-shock 0.6s ease-out';
+      }, 10);
+    }
   }
   
   if (elements.forceMarkerMax) {
