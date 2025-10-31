@@ -80,42 +80,48 @@
     /* ============= LOGOS DINÂMICAS ============= */
     .logos-container {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       z-index: 2;
     }
 
     .logo-dynamic {
       position: absolute;
-      width: 150px;
-      height: 150px;
-      opacity: 0.3;
+      width: 140px;
+      height: 140px;
+      opacity: 0.4;
       filter: brightness(1.5) drop-shadow(0 0 30px #00d4ff);
     }
 
-    .logo-dynamic.ativo {
-      animation: logo-rotate-pulse 2s ease-in-out infinite;
+    .logo-dynamic.topo-esquerdo {
+      top: 10px;
+      left: 10px;
     }
 
-    @keyframes logo-rotate-pulse {
+    .logo-dynamic.topo-direito {
+      top: 10px;
+      right: 10px;
+    }
+
+    .logo-dynamic.ativo {
+      animation: logo-fade-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes logo-fade-pulse {
       0% {
-        transform: rotate(0deg) scale(1);
         opacity: 0.2;
-        filter: brightness(1) drop-shadow(0 0 20px #00d4ff);
+        filter: brightness(1) drop-shadow(0 0 15px #00d4ff);
       }
       50% {
-        transform: rotate(180deg) scale(1.2);
-        opacity: 0.5;
-        filter: brightness(2) drop-shadow(0 0 50px #00ffff);
+        opacity: 0.6;
+        filter: brightness(2) drop-shadow(0 0 40px #00ffff);
       }
       100% {
-        transform: rotate(360deg) scale(1);
         opacity: 0.2;
-        filter: brightness(1) drop-shadow(0 0 20px #00d4ff);
+        filter: brightness(1) drop-shadow(0 0 15px #00d4ff);
       }
     }
 
@@ -789,8 +795,12 @@
       try {
         if (window.opener && window.opener.document) {
           window.opener.document.addEventListener('forca-atualizada', (e) => {
+            // Atualizar SEMPRE, não apenas durante teste
+            forcaAtualFS = e.detail.forcaN;
+            atualizarDisplayForçaSempre();
+            
+            // Se teste em andamento, fazer updates adicionais
             if (testeEmAndamento) {
-              forcaAtualFS = e.detail.forcaN;
               atualizarDisplayForça();
             }
           });
@@ -803,6 +813,25 @@
       } catch (e) {
         console.warn('⚠ Conexão com janela pai limitada');
       }
+
+      // Polling contínuo também
+      const pollingInterval = setInterval(() => {
+        try {
+          if (window.opener && window.opener.forcaAtual !== undefined) {
+            forcaAtualFS = window.opener.forcaAtual;
+            atualizarDisplayForçaSempre();
+            
+            if (testeEmAndamento) {
+              atualizarDisplayForça();
+            }
+          }
+        } catch (e) { }
+      }, 50);
+    }
+
+    function atualizarDisplayForçaSempre() {
+      const kg = obterValorForçaExibido(forcaAtualFS);
+      document.getElementById('forcaAtualFS').textContent = `${kg} kg`;
     }
 
     function criarMarcas() {
@@ -819,32 +848,33 @@
     function criarLogos() {
       const container = document.getElementById('logosContainer');
       const logos = [
-        'logo_compSteam.png',
-        'logo_receita.png'
+        { src: 'logo_compSteam.png', classe: 'topo-esquerdo' },
+        { src: 'logo_receita.png', classe: 'topo-direito' }
       ];
 
-      logos.forEach((logo, i) => {
+      logos.forEach((logo) => {
         const img = document.createElement('img');
-        img.src = logo;
-        img.className = 'logo-dynamic';
-        img.style.left = (i % 2 === 0 ? '-80px' : '80px');
-        img.style.top = (i < 1 ? '-80px' : '80px');
-        img.onerror = () => console.warn(`Logo não carregada: ${logo}`);
+        img.src = logo.src;
+        img.className = `logo-dynamic ${logo.classe}`;
+        img.onerror = () => console.warn(`Logo não carregada: ${logo.src}`);
         container.appendChild(img);
       });
     }
 
     function atualizarFatorConversao() {
       switch (unidadeAtualFS) {
-        case 'gf': fatorConversao = 101.972; break;
-        case 'kgf': fatorConversao = 101.972; break;
+        case 'gf': fatorConversao = 101.9716; break;
+        case 'kgf': fatorConversao = 101.9716; break;
         default: fatorConversao = 1;
       }
     }
 
     function obterValorForçaExibido(valorN) {
-      const valor = valorN / fatorConversao;
-      return valor.toFixed(1);
+      // Converte N para kgf: N * (9.80665 / 9.80665) = N / 9.80665 ≈ kgf
+      // Ou: N / 101.9716 * 101.9716 = N
+      // Correto: kgf = N / 9.80665
+      const valor = valorN / 9.80665; // Conversão correta de Newton para kgf
+      return valor.toFixed(2);
     }
 
     function iniciarTesteFullscreen() {
@@ -864,22 +894,12 @@
         logo.classList.add('ativo');
       });
 
-      const pollingInterval = setInterval(() => {
-        try {
-          if (window.opener && window.opener.forcaAtual !== undefined) {
-            forcaAtualFS = window.opener.forcaAtual;
-            atualizarDisplayForça();
-          }
-        } catch (e) { }
-      }, 50);
-
       const intervalo = setInterval(() => {
         tempoRestante--;
         document.getElementById('contadorTempo').textContent = tempoRestante;
 
         if (tempoRestante <= 0) {
           clearInterval(intervalo);
-          clearInterval(pollingInterval);
           encerrarTesteFullscreen();
         }
       }, 1000);
