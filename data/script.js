@@ -971,6 +971,13 @@ function abrirAba(element, abaID) {
   element.classList.add('active');
 }
 
+// ==========================================
+// MARTELO DO THOR - Abrir Fullscreen
+// ==========================================
+function abrirMarteloFullscreen() {
+  window.open('martelo-fullscreen.html', 'martelo', 'width=1200,height=800,fullscreen=yes');
+}
+
 function showNotification(type, message, duration = 5000) {
   const area = document.getElementById('notification-area');
   const notification = document.createElement('div');

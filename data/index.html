@@ -335,134 +335,35 @@
         
       </div>
       <div id="abaMartelo" class="tabcontent">
-        <div style="text-align: center; padding: 1rem;">
-          <h1 style="font-size: 2.5rem; margin-bottom: 0;">⚡ MARTELO DO THOR ⚡</h1>
+        <div style="text-align: center; padding: 2rem;">
+          <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">⚡ MARTELO DO THOR ⚡</h1>
           <p style="font-size: 1.25rem; color: var(--cor-texto-secundario); margin-bottom: 2rem;">
-            Quem tem mais FORÇA?
+            Teste sua força e vire um DEUS! 🔨
+          </p>
+          <button onclick="abrirMarteloFullscreen()" style="
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+          " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            🎮 INICIAR JOGO EM TELA CHEIA
+          </button>
+          <p style="margin-top: 2rem; color: var(--cor-texto-secundario);">
+            Clique acima para começar o desafio!
           </p>
         </div>
-
-        <div id="martelo-game-container" style="display: flex; flex-direction: column; gap: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1rem; color: white; margin-bottom: 2rem;">
-          
-          <!-- Input de Jogador -->
-          <div style="text-align: center;">
-            <input id="martelo-nome-jogador" type="text" placeholder="Digite seu nome..." style="
-              padding: 0.75rem 1rem;
-              font-size: 1.125rem;
-              border: 2px solid white;
-              border-radius: 0.5rem;
-              width: 90%;
-              max-width: 300px;
-              text-align: center;
-              background: rgba(255, 255, 255, 0.1);
-              color: white;
-            " />
-            <small style="display: block; margin-top: 0.5rem; color: rgba(255, 255, 255, 0.8);">Seu nome será salvo no ranking!</small>
-          </div>
-
-          <!-- Display de Força Atual -->
-          <div style="text-align: center;">
-            <div style="font-size: 3rem; font-weight: bold; margin: 1rem 0; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-              <span id="martelo-forca-display">0</span> <span id="martelo-unidade">N</span>
-            </div>
+      </div>
             <small style="display: block; color: rgba(255, 255, 255, 0.8);">Força em tempo real</small>
           </div>
 
-          <!-- Barra de Força Animada -->
-          <div style="width: 100%; height: 60px; background: rgba(255,255,255,0.2); border-radius: 0.5rem; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);">
-            <div id="martelo-barra-forca" style="
-              height: 100%;
-              background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f);
-              width: 0%;
-              transition: width 0.1s ease-out;
-              display: flex;
-              align-items: center;
-              justify-content: flex-end;
-              padding: 0 1rem;
-              font-weight: bold;
-              color: white;
-              text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-              font-size: 0.875rem;
-            ">
-              <span id="martelo-barra-percentual">0%</span>
-            </div>
-          </div>
-
-          <!-- Botão de Teste -->
-          <div style="text-align: center;">
-            <button id="martelo-btn-testar" onclick="iniciarTesteMarelo()" style="
-              padding: 1rem 2rem;
-              font-size: 1.25rem;
-              font-weight: bold;
-              background: linear-gradient(135deg, #ffd93d, #ff6b6b);
-              color: black;
-              border: none;
-              border-radius: 0.5rem;
-              cursor: pointer;
-              box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-              transition: all 0.3s ease;
-            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-              🎯 APERTE AGORA!
-            </button>
-            <small id="martelo-status-teste" style="display: block; margin-top: 0.5rem; color: rgba(255, 255, 255, 0.8); min-height: 20px;"></small>
-          </div>
-        </div>
-
-        <!-- Abas de Visualização -->
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
-          <button onclick="mostrarAbaMarelo('ranking')" id="btn-aba-ranking" class="btn" style="background: #667eea; color: white;">🏆 Ranking</button>
-          <button onclick="mostrarAbaMarelo('minhas-tentativas')" id="btn-aba-minhas" class="btn">📊 Minhas Tentativas</button>
-          <button onclick="mostrarAbaMarelo('stats')" id="btn-aba-stats" class="btn">📈 Estatísticas</button>
-          <button onclick="limparMarelo()" id="btn-limpar-martelo" class="btn btn-perigo">🗑️ Limpar Tudo</button>
-        </div>
-
-        <!-- Ranking -->
-        <div id="martelo-ranking-container" style="display: none;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 1rem; margin-bottom: 1rem;">
-            <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">🏆 TOP 10 - Guerreiros mais Fortes</h2>
-            <div id="martelo-ranking-list" style="display: grid; gap: 0.75rem;">
-              <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 0.5rem;">
-                Nenhum teste ainda. Seja o primeiro! ⚡
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Minhas Tentativas -->
-        <div id="martelo-minhas-container" style="display: none;">
-          <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 1rem;">
-            <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">📊 Minhas Tentativas</h2>
-            <div id="martelo-minhas-list" style="display: grid; gap: 0.75rem;">
-              <div style="text-align: center; padding: 1rem;">
-                Faça seu primeiro teste!
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Estatísticas -->
-        <div id="martelo-stats-container" style="display: none;">
-          <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 1rem;">
-            <h2 style="margin: 0 0 1.5rem 0; font-size: 1.5rem;">📈 Estatísticas</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-              <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #f39c12;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #7f8c8d;">Meu Melhor</h3>
-                <p id="martelo-stats-melhor" style="margin: 0; font-size: 1.75rem; font-weight: bold; color: #27ae60;">--- N</p>
-              </div>
-              <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3498db;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #7f8c8d;">Média</h3>
-                <p id="martelo-stats-media" style="margin: 0; font-size: 1.75rem; font-weight: bold; color: #3498db;">--- N</p>
-              </div>
-              <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #e74c3c;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #7f8c8d;">Total de Testes</h3>
-                <p id="martelo-stats-testes" style="margin: 0; font-size: 1.75rem; font-weight: bold; color: #e74c3c;">0</p>
-              </div>
-              <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #9b59b6;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #7f8c8d;">Ranking Global</h3>
-                <p id="martelo-stats-posicao" style="margin: 0; font-size: 1.75rem; font-weight: bold; color: #9b59b6;">---</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       <div id="abaConexao" class="tabcontent">

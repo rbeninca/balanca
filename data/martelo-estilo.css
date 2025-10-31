@@ -1,0 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+
+:root {
+    --color-bg: #0c0a1d;
+    --color-primary: #00d9ff;
+    --color-secondary: #ff00e0;
+    --color-accent: #fff300;
+    --color-text: #ffffff;
+    --font-main: 'Russo One', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #1a143a 0%, #0c0a1d 70%);
+    text-align: center;
+}
+
+/* Adicionado para a barra de força vertical de fundo */
+#vertical-force-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 30px; /* Largura da barra */
+    background: linear-gradient(to top, rgba(255, 255, 0, 0.8), rgba(255, 0, 224, 0.6), rgba(0, 217, 255, 0.5));
+    height: 0%; /* Controlado por JS */
+    transition: height 0.1s linear;
+    z-index: -1; /* Fica atrás de todo o conteúdo */
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+/* Modificação para a aba do martelo se comportar como fullscreen */
+#abaMartelo.tabcontent.active {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    background-color: var(--color-bg);
+    background: radial-gradient(ellipse at center, #1a143a 0%, #0c0a1d 70%);
+}
+
+.container {
+    width: 95%;
+    max-width: 1200px;
+    height: 95%;
+    border: 2px solid var(--color-primary);
+    border-radius: 15px;
+    box-shadow: 0 0 25px var(--color-primary), inset 0 0 15px var(--color-primary);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Screens */
+.screen {
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.screen.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Start Screen */
+#title {
+    font-size: 4rem;
+    color: var(--color-accent);
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--color-accent), 0 0 30px var(--color-accent), 0 0 40px var(--color-accent);
+    margin-bottom: 2rem;
+}
+
+#playerName {
+    font-family: var(--font-main);
+    background: transparent;
+    border: 2px solid var(--color-secondary);
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
+    font-size: 1.5rem;
+    color: var(--color-text);
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 0 10px var(--color-secondary);
+}
+
+#playerName::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+#startButton {
+    font-family: var(--font-main);
+    font-size: 2rem;
+    padding: 1rem 3rem;
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 0 15px var(--color-accent);
+    animation: pulse 2s infinite;
+    transition: all 0.3s ease;
+}
+
+#startButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--color-accent);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 15px var(--color-accent); }
+    50% { transform: scale(1.02); box-shadow: 0 0 25px var(--color-accent); }
+    100% { transform: scale(1); box-shadow: 0 0 15px var(--color-accent); }
+}
+
+/* Game Screen */
+#countdown {
+    font-size: 15rem;
+    position: absolute;
+    z-index: 10;
+    text-shadow: 0 0 20px #fff, 0 0 40px var(--color-secondary);
+    animation: countdown-zoom 1s ease-out;
+}
+
+@keyframes countdown-zoom {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+#game-ui {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#currentPlayer {
+    font-size: 2rem;
+    color: var(--color-primary);
+    text-shadow: 0 0 10px var(--color-primary);
+}
+
+#forceContainer {
+    margin: 1rem 0;
+}
+
+#forceDisplay {
+    font-size: 8rem;
+    font-weight: bold;
+}
+
+#newtonDisplay {
+    font-size: 2rem;
+    color: #aaa;
+}
+
+#progressBarContainer {
+    width: 80%;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--color-primary);
+    border-radius: 10px;
+    margin-top: auto;
+}
+
+#progressBar {
+    width: 0%;
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #00d9ff, #5f00ff, #ff00e0, #ff8c00, #fff300);
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px var(--color-accent);
+}
+
+/* Results Screen */
+#results-screen h2 {
+    font-size: 3rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+}
+
+#resultForce {
+    font-size: 6rem;
+    color: var(--color-accent);
+    text-shadow: 0 0 20px var(--color-accent);
+    margin-bottom: 1rem;
+}
+
+#motivationalMessage {
+    font-size: 2rem;
+    font-style: italic;
+}
+
+.action-buttons {
+    margin-top: 3rem;
+}
+
+.action-buttons button {
+    font-family: var(--font-main);
+    font-size: 1.5rem;
+    padding: 0.8rem 2rem;
+    margin: 0 1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 2px solid var(--color-primary);
+    background: transparent;
+    color: var(--color-primary);
+    transition: all 0.3s ease;
+}
+
+.action-buttons button:hover {
+    background: var(--color-primary);
+    color: var(--color-bg);
+    box-shadow: 0 0 15px var(--color-primary);
+}
+
+
+/* Ranking Screen */
+#ranking-screen h2 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+}
+
+#rankingTable {
+    width: 80%;
+    border-collapse: collapse;
+    font-size: 1.5rem;
+}
+
+#rankingTable th, #rankingTable td {
+    padding: 0.8rem;
+    border-bottom: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+#rankingTable th {
+    color: var(--color-accent);
+}
+
+#rankingTable tr:first-child td {
+    color: var(--color-accent);
+    font-size: 1.8rem;
+}
+
+/* Visual Effects */
+.flash-effect {
+    animation: flash 0.3s ease-out;
+}
+
+@keyframes flash {
+    0%, 100% { background-color: var(--color-bg); }
+    50% { background-color: #fff; }
+}
+
+.shake-effect {
+    animation: shake 0.5s linear;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
