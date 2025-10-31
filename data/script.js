@@ -379,6 +379,11 @@ function setDisplayUnit(unit) {
   document.querySelectorAll('#btn-unit-n, #btn-unit-gf, #btn-unit-kgf').forEach(b => b.classList.remove('ativo'));
   document.getElementById(`btn-unit-${unit.toLowerCase()}`).classList.add('ativo');
 
+  // Disparar evento customizado para o jogo Martelo do Thor
+  document.dispatchEvent(new CustomEvent('unidade-alterada', {
+    detail: { unidade: unit }
+  }));
+
   // Re-processa os dados existentes para a nova unidade
   const newData = rawDataN.map(point => {
     return [point[0], convertForce(point[1], displayUnit)];
@@ -648,6 +653,11 @@ function updateUIFromData(dado) {
   document.getElementById('forca-ems').textContent = emaDisplay.toFixed(3);
   document.getElementById('forca-maxima').textContent = maxDisplayForce.toFixed(3);
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
+
+  // Disparar evento customizado para o jogo Martelo do Thor
+  document.dispatchEvent(new CustomEvent('forca-atualizada', {
+    detail: { forcaN: forcaFiltrada, unidade: displayUnit }
+  }));
 
   // Calcula percentual para alertas
   const capacidadeGramas = parseFloat(document.getElementById("param-capacidade-maxima")?.value) || 5000;
