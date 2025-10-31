@@ -61,10 +61,14 @@ const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 // INICIALIZAÇÃO
 // ==========================================
 
+// Elemento do painel de debug
+let debugPanel = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   showScreen('start');
   startForcePolling(); // Inicia polling de força
+  createDebugPanel(); // Criar painel de debug permanente
   console.log('✓ Martelo do Thor carregado');
 });
 
@@ -450,57 +454,134 @@ if (document.readyState === 'loading') {
 }
 
 // ==========================================
-// DEBUG
+// DEBUG PANEL - PAINEL PERMANENTE
 // ==========================================
+
+function createDebugPanel() {
+  // Criar painel de debug
+  debugPanel = document.createElement('div');
+  debugPanel.id = 'debug-panel-martelo';
+  debugPanel.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #0a0a0a;
+    color: #0f0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    z-index: 9999;
+    border: 2px solid #0f0;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5), inset 0 0 5px rgba(0, 255, 0, 0.2);
+    line-height: 1.5;
+    user-select: none;
+    pointer-events: none;
+  `;
+  
+  document.body.appendChild(debugPanel);
+  
+  // Atualizar painel a cada 100ms
+  setInterval(updateDebugPanel, 100);
+}
+
+function updateDebugPanel() {
+  if (!debugPanel) return;
+  
+  const statusIcon = forcePollingActive ? '✓' : '✗';
+  const statusColor = forcePollingActive ? '#0f0' : '#f00';
+  
+  debugPanel.innerHTML = `
+    <div style="color: #0f0; font-weight: bold; margin-bottom: 5px;">⚡ FORÇA - DEBUG</div>
+    <div style="color: ${statusColor}; margin-bottom: 3px;">${statusIcon} Status: ${forcePollingActive ? 'ATIVO' : 'INATIVO'}</div>
+    <div>N: ${currentForceValue.toFixed(2)} N</div>
+    <div>kg: ${(currentForceValue / 9.80665).toFixed(3)} kg</div>
+    <div style="color: #888; font-size: 11px; margin-top: 3px;">Pressione D para mais</div>
+  `;
+}
 
 function debugForceReading() {
   console.log('═══════════════════════════════════════');
-  console.log('🔍 DEBUG - LEITURA DE FORÇA');
+  console.log('🔍 DEBUG DETALHADO - LEITURA DE FORÇA');
   console.log('═══════════════════════════════════════');
   console.log('Status do Polling:', forcePollingActive ? '✓ ATIVO' : '✗ INATIVO');
-  console.log('Valor Atual (N):', currentForceValue);
+  console.log('Valor Atual (N):', currentForceValue.toFixed(2));
   console.log('Valor Atual (kg):', (currentForceValue / 9.80665).toFixed(3));
   console.log('Erro de Polling:', forcePollingError || 'nenhum');
   console.log('window.opener disponível:', !!window.opener);
   if (window.opener) {
     console.log('window.opener.forcaAtual:', window.opener.forcaAtual);
+    console.log('typeof window.opener.forcaAtual:', typeof window.opener.forcaAtual);
   }
+  console.log('Estado do Jogo:', {
+    playerName: marteloState.playerName,
+    currentAttempt: marteloState.currentAttempt,
+    totalMaxForce: marteloState.totalMaxForce,
+    isGameRunning: marteloState.isGameRunning
+  });
   console.log('═══════════════════════════════════════');
   
-  // Mostrar alerta visual
-  const debugDiv = document.createElement('div');
-  debugDiv.style.cssText = `
+  // Mostrar modal com detalhes completos
+  const debugModal = document.createElement('div');
+  debugModal.style.cssText = `
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: #1a1a1a;
     color: #0f0;
-    padding: 15px;
-    border-radius: 8px;
-    font-family: monospace;
-    font-size: 12px;
+    padding: 20px;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
     z-index: 10000;
     border: 2px solid #0f0;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
+    max-width: 400px;
+    line-height: 1.6;
   `;
-  debugDiv.innerHTML = `
-    <strong>⚡ DEBUG - FORÇA</strong><br>
-    Status: ${forcePollingActive ? '✓ ATIVO' : '✗ INATIVO'}<br>
-    Valor: ${currentForceValue.toFixed(2)} N<br>
-    Valor: ${(currentForceValue / 9.80665).toFixed(3)} kg<br>
-    Erro: ${forcePollingError || 'nenhum'}<br>
-    <small>(pressione D novamente para fechar)</small>
+  debugModal.innerHTML = `
+    <div style="margin-bottom: 10px; border-bottom: 1px solid #0f0; padding-bottom: 10px;">
+      <strong style="font-size: 16px;">⚡ DEBUG DETALHADO</strong>
+    </div>
+    <div style="margin-bottom: 15px;">
+      <strong>📊 LEITURA DE FORÇA</strong><br>
+      Status: <span style="color: ${forcePollingActive ? '#0f0' : '#f00'}; font-weight: bold;">${forcePollingActive ? '✓ ATIVO' : '✗ INATIVO'}</span><br>
+      Valor: <span style="color: #ff0;">${currentForceValue.toFixed(2)} N</span><br>
+      Valor: <span style="color: #ff0;">${(currentForceValue / 9.80665).toFixed(3)} kg</span><br>
+      Erro: ${forcePollingError || '<span style="color: #0f0;">nenhum</span>'}
+    </div>
+    <div style="margin-bottom: 15px;">
+      <strong>🔗 CONEXÃO COM JANELA PAI</strong><br>
+      window.opener: <span style="color: ${window.opener ? '#0f0' : '#f00'};">${window.opener ? '✓ Disponível' : '✗ Não disponível'}</span><br>
+      ${window.opener ? `forcaAtual: <span style="color: #ff0;">${window.opener.forcaAtual || 'undefined'}</span>` : ''}
+    </div>
+    <div style="margin-bottom: 15px; border-top: 1px solid #0f0; padding-top: 10px;">
+      <strong>🎮 ESTADO DO JOGO</strong><br>
+      Jogador: ${marteloState.playerName || '(não iniciado)'}<br>
+      Tentativa: ${marteloState.currentAttempt}/3<br>
+      Máximo: ${marteloState.totalMaxForce.toFixed(2)} N<br>
+      Rodando: ${marteloState.isGameRunning ? '✓ Sim' : '✗ Não'}
+    </div>
+    <div style="text-align: center; font-size: 11px; color: #888;">
+      Pressione D novamente ou clique para fechar
+    </div>
   `;
   
-  document.body.appendChild(debugDiv);
+  document.body.appendChild(debugModal);
   
-  // Remove after 5 seconds or on next D press
-  setTimeout(() => debugDiv.remove(), 5000);
+  // Remover ao clicar
+  debugModal.addEventListener('click', () => debugModal.remove());
   
-  // Ou remove ao pressionar D novamente
+  // Remover após 10 segundos
+  setTimeout(() => {
+    if (debugModal.parentNode) debugModal.remove();
+  }, 10000);
+  
+  // Remover ao pressionar D novamente
   const handleKeyPress = (e) => {
     if (e.key === 'd' || e.key === 'D') {
-      debugDiv.remove();
+      if (debugModal.parentNode) debugModal.remove();
       document.removeEventListener('keydown', handleKeyPress);
     }
   };
