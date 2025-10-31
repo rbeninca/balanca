@@ -406,6 +406,25 @@ body {
     box-shadow: 0 0 10px var(--color-accent);
 }
 
+/* Force Graph */
+#graphContainer {
+    width: 90%;
+    height: 250px;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--color-secondary);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 0 20px rgba(255, 0, 224, 0.3);
+}
+
+#forceGraphCanvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
 /* Results Screen */
 #results-screen h2 {
     font-size: 3rem;

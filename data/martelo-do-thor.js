@@ -11,7 +11,9 @@ const marteloState = {
   attempts: [], // Histórico completo
   totalMaxForce: 0,
   isGameRunning: false,
-  countdownActive: false
+  countdownActive: false,
+  // Dados para o gráfico - array de arrays, cada um contém os pontos (tempo, força) de uma tentativa
+  forceDataPerAttempt: [[], [], []]
 };
 
 // Elementos DOM
@@ -40,7 +42,8 @@ const elements = {
   playAgainButton: document.getElementById('playAgainButton'),
   showRankingButton: document.getElementById('showRankingButton'),
   rankingTableBody: document.querySelector('#rankingTable tbody'),
-  backToStartButton: document.getElementById('backToStartButton')
+  backToStartButton: document.getElementById('backToStartButton'),
+  forceGraphCanvas: document.getElementById('forceGraphCanvas')
 };
 
 // Áudio
@@ -166,6 +169,7 @@ function startGame() {
   marteloState.currentAttempt = 1;
   marteloState.forceMaxPerAttempt = [0, 0, 0];
   marteloState.totalMaxForce = 0;
+  marteloState.forceDataPerAttempt = [[], [], []]; // Limpar dados do gráfico
   
   showScreen('game');
   startCountdown();
@@ -240,6 +244,7 @@ function startAttempt() {
   marteloState.isGameRunning = true;
   const attemptIndex = marteloState.currentAttempt - 1;
   marteloState.forceMaxPerAttempt[attemptIndex] = 0;
+  marteloState.forceDataPerAttempt[attemptIndex] = []; // Limpar dados anteriores
 
   elements.currentPlayer.innerHTML = `
     <div class="attempt-info">
@@ -259,6 +264,13 @@ function startAttempt() {
     const forceN = currentForceValue;
     const forceKg = forceN / 9.80665; // Newton para kgf
 
+    // Capturar dados para o gráfico (tempo em segundos e força em kg)
+    const timeInSeconds = (elapsed / 1000);
+    marteloState.forceDataPerAttempt[attemptIndex].push({
+      time: timeInSeconds,
+      force: forceKg
+    });
+
     // Atualizar máximo desta tentativa
     if (forceKg > marteloState.forceMaxPerAttempt[attemptIndex]) {
       marteloState.forceMaxPerAttempt[attemptIndex] = forceKg;
@@ -273,6 +285,9 @@ function startAttempt() {
 
     // Atualizar display com timer
     updateForceDisplay(forceKg, remainingSec);
+
+    // Desenhar gráfico
+    drawForceGraph();
 
     // Verificar se acabou
     if (remainingMs <= 0) {
@@ -390,6 +405,146 @@ function triggerLevelEffect(forceKg) {
       sounds[`level${level}`].currentTime = 0;
       sounds[`level${level}`].play().catch(e => console.log(`Som level ${level}:`, e));
     } catch (e) {}
+  }
+}
+
+// ==========================================
+// GRÁFICO DE FORÇA
+// ==========================================
+
+function drawForceGraph() {
+  if (!elements.forceGraphCanvas) return;
+  
+  const canvas = elements.forceGraphCanvas;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  
+  // Configurar canvas
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  
+  const ctx = canvas.getContext('2d');
+  const padding = 40;
+  const graphWidth = canvas.width - padding * 2;
+  const graphHeight = canvas.height - padding * 2;
+  
+  // Limpar canvas
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Desenhar grid
+  ctx.strokeStyle = 'rgba(0, 217, 255, 0.1)';
+  ctx.lineWidth = 1;
+  
+  // Linhas verticais (tempo)
+  for (let i = 0; i <= 10; i++) {
+    const x = padding + (graphWidth / 10) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, padding);
+    ctx.lineTo(x, canvas.height - padding);
+    ctx.stroke();
+  }
+  
+  // Linhas horizontais (força)
+  for (let i = 0; i <= 5; i++) {
+    const y = canvas.height - padding - (graphHeight / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(canvas.width - padding, y);
+    ctx.stroke();
+  }
+  
+  // Cores para cada tentativa
+  const colors = ['#00d9ff', '#ff00e0', '#fff300']; // Ciano, Magenta, Amarelo
+  
+  // Desenhar cada tentativa
+  for (let attemptIndex = 0; attemptIndex < marteloState.currentAttempt; attemptIndex++) {
+    const data = marteloState.forceDataPerAttempt[attemptIndex];
+    if (!data || data.length === 0) continue;
+    
+    ctx.strokeStyle = colors[attemptIndex];
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.8;
+    
+    ctx.beginPath();
+    
+    // Desenhar cada ponto
+    for (let i = 0; i < data.length; i++) {
+      const point = data[i];
+      const timePercent = Math.min(point.time / (ATTEMPT_DURATION / 1000), 1);
+      const forcePercent = Math.min(point.force / MAX_FORCE_DISPLAY, 1);
+      
+      const x = padding + timePercent * graphWidth;
+      const y = canvas.height - padding - forcePercent * graphHeight;
+      
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+  }
+  
+  // Desenhar eixos
+  ctx.strokeStyle = 'rgba(0, 217, 255, 0.5)';
+  ctx.lineWidth = 2;
+  
+  // Eixo X (tempo)
+  ctx.beginPath();
+  ctx.moveTo(padding, canvas.height - padding);
+  ctx.lineTo(canvas.width - padding, canvas.height - padding);
+  ctx.stroke();
+  
+  // Eixo Y (força)
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, canvas.height - padding);
+  ctx.stroke();
+  
+  // Labels dos eixos
+  ctx.fillStyle = 'rgba(0, 217, 255, 0.7)';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'center';
+  
+  // Labels do tempo (0, 2, 4, 6, 8, 10 segundos)
+  for (let i = 0; i <= 10; i += 2) {
+    const x = padding + (graphWidth / 10) * i;
+    ctx.fillText(`${i}s`, x, canvas.height - padding + 20);
+  }
+  
+  // Labels da força
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const force = (MAX_FORCE_DISPLAY / 5) * i;
+    const y = canvas.height - padding - (graphHeight / 5) * i;
+    ctx.fillText(`${force.toFixed(0)}kg`, padding - 10, y + 5);
+  }
+  
+  // Label dos eixos
+  ctx.fillStyle = 'rgba(0, 217, 255, 0.7)';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Tempo (s)', canvas.width / 2, canvas.height - 5);
+  
+  ctx.save();
+  ctx.translate(15, canvas.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Força (kg)', 0, 0);
+  ctx.restore();
+  
+  // Legenda
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'left';
+  const legendX = canvas.width - 200;
+  const legendY = padding + 10;
+  
+  for (let i = 0; i < marteloState.currentAttempt; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(legendX, legendY + i * 20, 15, 15);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillText(`Tentativa ${i + 1}`, legendX + 20, legendY + i * 20 + 12);
   }
 }
 
@@ -568,6 +723,7 @@ function resetGame() {
   marteloState.forceMaxPerAttempt = [0, 0, 0];
   marteloState.totalMaxForce = 0;
   marteloState.attempts = [];
+  marteloState.forceDataPerAttempt = [[], [], []]; // Limpar dados do gráfico
   
   elements.forceDisplay.textContent = '0.0 kg';
   elements.newtonDisplay.textContent = '(≈ 0.0 N)';
