@@ -34,14 +34,27 @@ const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 // Elemento do painel de debug
 let debugPanel = null;
 
+let frasesData = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   initializeDOMElements();
   setupEventListeners();
+  loadFrases();
   showScreen('start');
   startForcePolling(); // Inicia polling de força
   createDebugPanel(); // Criar painel de debug permanente
   console.log('✓ Martelo do Thor carregado');
 });
+
+async function loadFrases() {
+  try {
+    const response = await fetch('frases.json');
+    frasesData = await response.json();
+    console.log('✓ Frases de deboche carregadas com sucesso!');
+  } catch (e) {
+    console.error('Erro ao carregar frases.json:', e);
+  }
+}
 
 function initializeDOMElements() {
   // Preenche o objeto de elementos
@@ -71,6 +84,7 @@ function initializeDOMElements() {
   elements.rankingTableBody = document.querySelector('#rankingTable tbody');
   elements.backToStartButton = document.getElementById('backToStartButton');
   elements.forceGraphCanvas = document.getElementById('forceGraphCanvas');
+  elements.attemptMessage = document.getElementById('attempt-message');
   
   // Modal de Novo Recorde
   elements.modalNovoRecorde = document.getElementById('modal-novo-recorde');
@@ -607,6 +621,16 @@ function endAttempt() {
   const attemptIndex = marteloState.currentAttempt - 1;
   const forceCurrent = marteloState.forceMaxPerAttempt[attemptIndex];
 
+  // Mostra a mensagem de deboche da tentativa
+  const message = getMotivationalMessage(forceCurrent);
+  elements.attemptMessage.textContent = message;
+  elements.attemptMessage.classList.add('visible');
+
+  // Esconde a mensagem após alguns segundos
+  setTimeout(() => {
+    elements.attemptMessage.classList.remove('visible');
+  }, 3000); // A mensagem fica visível por 3 segundos
+
   marteloState.attempts.push({
     attempt: marteloState.currentAttempt,
     force: forceCurrent,
@@ -616,9 +640,9 @@ function endAttempt() {
   // Próxima tentativa ou resultado
   if (marteloState.currentAttempt < marteloState.maxAttempts) {
     marteloState.currentAttempt++;
-    setTimeout(() => startCountdown(), 1500);
+    setTimeout(() => startCountdown(), 3500); // Aumenta o tempo para dar tempo de ler a msg
   } else {
-    showResultsScreen();
+    setTimeout(() => showResultsScreen(), 3500);
   }
 }
 
@@ -659,59 +683,32 @@ function showResultsScreen() {
 }
 
 function getMotivationalMessage(forceKg) {
-  // Frases de "zueira" baseadas na força 💪🎮
-  const messagesWeak = [
-    '🤔 Fraquinho, mas corajoso!',
-    '😅 Deixa eu adivinhar... academia não é sua?',
-    '🐜 Força de formiguinha! Volta quando crescer!',
-    '💨 Vento forte derrubava mais que você!'
-  ];
-  
-  const messagesNormal = [
-    '💪 Está ficando forte!',
-    '👍 Conseguiu sair do sofá, parabéns!',
-    '🎯 Nada mal para um iniciante!',
-    '⭐ Tá indo bem, guerreiro!'
-  ];
-  
-  const messagesGood = [
-    '🔥 Excelente! Quase digno do martelo!',
-    '⚡ Isso sim é força de verdade!',
-    '🚀 Lendário demais!',
-    '💥 Quebrou alguma coisa aí?'
-  ];
-  
-  const messagesGreat = [
-    '⚡ Poder de Asgard flui em você!',
-    '🌩️ Thor ficaria impressionado!',
-    '🏆 Esse é o caminho do herói!',
-    '👊 DEVASTADOR! Quem é você?!'
-  ];
-  
-  const messagesLegendary = [
-    '👑 ⚡ Digno de empunhar Mjölnir! ⚡',
-    '🔱 LENDÁRIO! A terra tremeu!',
-    '⚔️ VOCÊ É UM DEUS! Asgard chora!',
-    '🌟 IMORTAL! Seu nome viverá para sempre!',
-    '💎 PERFEIÇÃO! Essa é a resposta para tudo!',
-    '🎆 IMPOSSÍVEL! Você quebrou a escala!!'
-  ];
-
-  let messageList;
-  
-  if (forceKg < 10) {
-    messageList = messagesWeak;
-  } else if (forceKg < 30) {
-    messageList = messagesNormal;
-  } else if (forceKg < 60) {
-    messageList = messagesGood;
-  } else if (forceKg < 150) {
-    messageList = messagesGreat;
-  } else {
-    messageList = messagesLegendary;
+  if (!frasesData) {
+    return "Preparando o deboche...";
   }
-  
-  return messageList[Math.floor(Math.random() * messageList.length)];
+
+  const percentage = (forceKg / MAX_FORCE_DISPLAY) * 100;
+  let category = null;
+
+  if (percentage <= 20) {
+    category = 'fraca';
+  } else if (percentage <= 50) {
+    category = 'media';
+  } else if (percentage <= 80) {
+    category = 'alta';
+  } else if (percentage <= 95) {
+    category = 'muito_alta';
+  } else {
+    category = 'epica';
+  }
+
+  const categoryData = frasesData.forcas.find(f => f.nivel === category);
+  if (!categoryData || categoryData.frases.length === 0) {
+    return "Sua força é tão indescritível que não achei uma frase para ela.";
+  }
+
+  const randomFrase = categoryData.frases[Math.floor(Math.random() * categoryData.frases.length)];
+  return randomFrase.texto;
 }
 
 // ==========================================
@@ -742,7 +739,7 @@ function saveToRanking(name, forceKg, forceN) {
 
     // Ordenar por força decrescente e manter top 50
     ranking.sort((a, b) => b.forceKg - a.forceKg);
-    ranking.splice(50);
+    
 
     localStorage.setItem('martelo_ranking', JSON.stringify(ranking));
   } catch (e) {
@@ -768,7 +765,7 @@ function updateRankingTable() {
 
     const medals = ['🥇', '🥈', '🥉'];
 
-    ranking.slice(0, 10).forEach((entry, index) => {
+    ranking.forEach((entry, index) => {
       const row = document.createElement('tr');
       const medal = medals[index] || `${index + 1}º`;
 

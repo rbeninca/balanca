@@ -441,9 +441,48 @@ body {
 }
 
 #motivationalMessage {
-    font-size: 2rem;
+    font-size: 3rem; /* Aumenta o tamanho da fonte */
     font-style: italic;
+    font-weight: bold; /* Adiciona negrito */
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* Adiciona uma sombra para melhor legibilidade */
+    padding: 0 2rem; /* Adiciona um pouco de padding para não ficar colado nas bordas */
+    animation: fadeInScale 1s ease-out; /* Adiciona uma animação de entrada */
 }
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Styling for the new attempt message */
+#attempt-message {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--color-accent);
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    padding: 1rem 2rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none; /* So it doesn't interfere with other elements */
+}
+
+#attempt-message.visible {
+    opacity: 1;
+}
+
 
 .action-buttons {
     margin-top: 3rem;
@@ -468,31 +507,70 @@ body {
     box-shadow: 0 0 15px var(--color-primary);
 }
 
-
 /* Ranking Screen */
+#ranking-screen {
+    width: 95%;
+    height: 95%;
+}
+
 #ranking-screen h2 {
-    font-size: 3rem;
+    font-size: 4rem; /* Aumentado */
     margin-bottom: 2rem;
 }
 
+.ranking-table-container {
+    width: 90%;
+    max-height: 70vh; /* 70% of the viewport height */
+    overflow-y: auto;
+    border: 2px solid var(--color-primary);
+    border-radius: 10px;
+    box-shadow: inset 0 0 10px rgba(0, 217, 255, 0.5);
+}
+
+/* Custom Scrollbar */
+.ranking-table-container::-webkit-scrollbar {
+    width: 12px;
+}
+
+.ranking-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.ranking-table-container::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 10px;
+    border: 2px solid var(--color-bg);
+}
+
+.ranking-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+}
+
 #rankingTable {
-    width: 80%;
+    width: 100%; /* Make table fill the container */
     border-collapse: collapse;
-    font-size: 1.5rem;
+    font-size: 1.8rem; /* Aumentado */
 }
 
 #rankingTable th, #rankingTable td {
-    padding: 0.8rem;
+    padding: 1rem; /* Aumentado */
     border-bottom: 1px solid rgba(0, 217, 255, 0.3);
 }
 
 #rankingTable th {
     color: var(--color-accent);
+    font-size: 2rem; /* Aumentado */
 }
 
 #rankingTable tr:first-child td {
     color: var(--color-accent);
-    font-size: 1.8rem;
+    font-size: 2.2rem; /* Aumentado */
+}
+
+#rankingTable canvas {
+    width: 100%;
+    height: 60px; /* Aumentado */
 }
 
 /* Visual Effects */
