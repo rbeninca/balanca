@@ -20,7 +20,7 @@ let dataRequestIntervalId = null; // ID do intervalo de solicitação de dados
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 let serverTimeOffset = 0; // Diferença entre servidor e cliente (ms)
-let forcaAtual = 0; // NOVO: Expor força atual para janelas filhas (Martelo do Thor)
+window.sharedState = { forcaAtual: 0 }; // Objeto compartilhado para estado global
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -46,7 +46,7 @@ let contadorFalhasEstabilizacao = 0;
 // --- Funções de Inicialização ---
 window.onload = () => {
   // Expor forcaAtual como propriedade do window para acesso de janelas filhas
-  window.forcaAtual = forcaAtual;
+  
   
   // Conectar ao worker IMEDIATAMENTE (antes de aguardar o onload completo)
   conectarWorkerRapido();
@@ -659,8 +659,7 @@ function updateUIFromData(dado) {
   document.getElementById('forca-minima').textContent = 'mín: ' + minDisplayForce.toFixed(3);
 
   // NOVO: Atualizar força global para janelas filhas (Martelo do Thor)
-  forcaAtual = forcaFiltrada;
-  window.forcaAtual = forcaFiltrada; // Sincronizar com window para acesso de janelas filhas
+  window.sharedState.forcaAtual = forcaFiltrada;
 
   // Disparar evento customizado para o jogo Martelo do Thor
   document.dispatchEvent(new CustomEvent('forca-atualizada', {

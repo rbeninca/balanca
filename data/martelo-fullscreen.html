@@ -67,6 +67,7 @@
                         <th>Pos.</th>
                         <th>Nome</th>
                         <th>Força</th>
+                        <th>Curva</th>
                         <th>Data</th>
                     </tr>
                 </thead>
@@ -86,12 +87,38 @@
     <audio id="sound-go" src="sounds/nivel3_trovao-medio.mp3"></audio> <!-- Placeholder -->
     <audio id="sound-level-1" src="sounds/launches/iceball.wav"></audio> <!-- Placeholder -->
     <audio id="sound-level-2" src="sounds/nivel2_metalico.mp3"></audio>
-    <audio id="sound-level-3" src="sounds/nivel3-trovao-medio.mp3"></audio>
+    <audio id="sound-level-3" src="sounds/nivel3_trovao-medio.mp3"></audio>
     <audio id="sound-level-4" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
     <audio id="sound-level-5" src="sounds/launches/slimeball.wav"></audio> <!-- Placeholder -->
     <audio id="sound-level-6" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
     <audio id="sound-result" src="sounds/launches/info.txt"></audio> <!-- Placeholder, just to have a file -->
 
     <script src="martelo-do-thor.js"></script>
+
+    <!-- Modal de Novo Recorde -->
+    <div id="modal-novo-recorde" class="modal-recorde">
+        <div class="modal-recorde-content">
+            <div class="modal-recorde-header">
+                <span class="modal-recorde-icone">🏆</span>
+                <h2 id="modal-recorde-titulo">NOVO RECORDE!</h2>
+            </div>
+            <div class="modal-recorde-body">
+                <p id="modal-recorde-mensagem">Você ultrapassou a marca de [NOME]!</p>
+                <div class="modal-recorde-display">
+                    <div class="modal-recorde-valor">
+                        <span class="modal-recorde-label">Sua Força:</span>
+                        <span id="modal-recorde-sua-forca" class="modal-recorde-numero">---</span>
+                    </div>
+                    <div class="modal-recorde-valor">
+                        <span class="modal-recorde-label">Recorde Anterior:</span>
+                        <span id="modal-recorde-anterior" class="modal-recorde-numero">---</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-recorde-footer">
+                <button onclick="fecharModalNovoRecorde()" class="btn-modal-recorde-ok">CONTINUAR!</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

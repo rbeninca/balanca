@@ -17,47 +17,10 @@ const marteloState = {
 };
 
 // Elementos DOM
-const elements = {
-  gameContainer: document.getElementById('gameContainer'),
-  screens: {
-    start: document.getElementById('start-screen'),
-    game: document.getElementById('game-screen'),
-    results: document.getElementById('results-screen'),
-    ranking: document.getElementById('ranking-screen')
-  },
-  playerNameInput: document.getElementById('playerName'),
-  startButton: document.getElementById('startButton'),
-  countdown: document.getElementById('countdown'),
-  currentPlayer: document.getElementById('currentPlayer'),
-  forceDisplay: document.getElementById('forceDisplay'),
-  newtonDisplay: document.getElementById('newtonDisplay'),
-  progressBar: document.getElementById('progressBar'),
-  verticalForceBar: document.getElementById('vertical-force-bar'),
-  forceMarkerCurrent: document.getElementById('force-marker-current'),
-  forceMarkerMax: document.getElementById('force-marker-max'),
-  labelForceCurrent: document.getElementById('label-force-current'),
-  labelForceMax: document.getElementById('label-force-max'),
-  resultForce: document.getElementById('resultForce'),
-  motivationalMessage: document.getElementById('motivationalMessage'),
-  playAgainButton: document.getElementById('playAgainButton'),
-  showRankingButton: document.getElementById('showRankingButton'),
-  rankingTableBody: document.querySelector('#rankingTable tbody'),
-  backToStartButton: document.getElementById('backToStartButton'),
-  forceGraphCanvas: document.getElementById('forceGraphCanvas')
-};
+const elements = {};
 
 // Áudio
-const sounds = {
-  countdown: document.getElementById('sound-countdown'),
-  go: document.getElementById('sound-go'),
-  level1: document.getElementById('sound-level-1'),
-  level2: document.getElementById('sound-level-2'),
-  level3: document.getElementById('sound-level-3'),
-  level4: document.getElementById('sound-level-4'),
-  level5: document.getElementById('sound-level-5'),
-  level6: document.getElementById('sound-level-6'),
-  result: document.getElementById('sound-result')
-};
+const sounds = {};
 
 // Constantes
 const ATTEMPT_DURATION = 10000; // 10 segundos (aumentado de 3)
@@ -72,12 +35,61 @@ const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 let debugPanel = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initializeDOMElements();
   setupEventListeners();
   showScreen('start');
   startForcePolling(); // Inicia polling de força
   createDebugPanel(); // Criar painel de debug permanente
   console.log('✓ Martelo do Thor carregado');
 });
+
+function initializeDOMElements() {
+  // Preenche o objeto de elementos
+  elements.gameContainer = document.getElementById('gameContainer');
+  elements.screens = {
+    start: document.getElementById('start-screen'),
+    game: document.getElementById('game-screen'),
+    results: document.getElementById('results-screen'),
+    ranking: document.getElementById('ranking-screen')
+  };
+  elements.playerNameInput = document.getElementById('playerName');
+  elements.startButton = document.getElementById('startButton');
+  elements.countdown = document.getElementById('countdown');
+  elements.currentPlayer = document.getElementById('currentPlayer');
+  elements.forceDisplay = document.getElementById('forceDisplay');
+  elements.newtonDisplay = document.getElementById('newtonDisplay');
+  elements.progressBar = document.getElementById('progressBar');
+  elements.verticalForceBar = document.getElementById('vertical-force-bar');
+  elements.forceMarkerCurrent = document.getElementById('force-marker-current');
+  elements.forceMarkerMax = document.getElementById('force-marker-max');
+  elements.labelForceCurrent = document.getElementById('label-force-current');
+  elements.labelForceMax = document.getElementById('label-force-max');
+  elements.resultForce = document.getElementById('resultForce');
+  elements.motivationalMessage = document.getElementById('motivationalMessage');
+  elements.playAgainButton = document.getElementById('playAgainButton');
+  elements.showRankingButton = document.getElementById('showRankingButton');
+  elements.rankingTableBody = document.querySelector('#rankingTable tbody');
+  elements.backToStartButton = document.getElementById('backToStartButton');
+  elements.forceGraphCanvas = document.getElementById('forceGraphCanvas');
+  
+  // Modal de Novo Recorde
+  elements.modalNovoRecorde = document.getElementById('modal-novo-recorde');
+  elements.modalRecordeMensagem = document.getElementById('modal-recorde-mensagem');
+  elements.modalRecordeSuaForca = document.getElementById('modal-recorde-sua-forca');
+  elements.modalRecordeAnterior = document.getElementById('modal-recorde-anterior');
+
+  // Preenche o objeto de sons
+  sounds.countdown = document.getElementById('sound-countdown');
+  sounds.go = document.getElementById('sound-go');
+  sounds.level1 = document.getElementById('sound-level-1');
+  sounds.level2 = document.getElementById('sound-level-2');
+  sounds.level3 = document.getElementById('sound-level-3');
+  sounds.level4 = document.getElementById('sound-level-4');
+  sounds.level5 = document.getElementById('sound-level-5');
+  sounds.level6 = document.getElementById('sound-level-6');
+  sounds.result = document.getElementById('sound-result');
+  sounds.newRecord = new Audio('sounds/new_record.mp3'); // Som para novo recorde
+}
 
 function setupEventListeners() {
   elements.startButton.addEventListener('click', startGame);
@@ -104,8 +116,8 @@ let forcePollingError = null;
 function startForcePolling() {
   // Primeiro, tentar acessar imediatamente para detectar erros
   try {
-    if (window.opener && window.opener.forcaAtual !== undefined) {
-      console.log('✓ Acesso ao window.opener.forcaAtual disponível!');
+    if (window.opener && window.opener.sharedState && window.opener.sharedState.forcaAtual !== undefined) {
+      console.log('✓ Acesso ao window.opener.sharedState.forcaAtual disponível!');
       forcePollingActive = true;
     } else if (window.opener) {
       console.warn('⚠️ window.opener encontrado mas forcaAtual não está definido');
@@ -122,8 +134,8 @@ function startForcePolling() {
   // Inicia o polling de qualquer forma
   const pollingInterval = setInterval(() => {
     try {
-      if (window.opener && typeof window.opener.forcaAtual === 'number') {
-        currentForceValue = window.opener.forcaAtual;
+      if (window.opener && window.opener.sharedState && typeof window.opener.sharedState.forcaAtual === 'number') {
+        currentForceValue = window.opener.sharedState.forcaAtual;
         forcePollingActive = true;
         forcePollingError = null;
       }
@@ -465,7 +477,12 @@ function drawForceGraph() {
     const data = marteloState.forceDataPerAttempt[attemptIndex];
     if (!data || data.length === 0) continue;
     
-    ctx.strokeStyle = colors[attemptIndex];
+    // Gradiente para a linha
+    const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+    gradient.addColorStop(0, colors[attemptIndex]);
+    gradient.addColorStop(1, getForceColor(marteloState.forceMaxPerAttempt[attemptIndex]));
+
+    ctx.strokeStyle = gradient;
     ctx.lineWidth = 5; // Aumentado para 5px
     ctx.globalAlpha = 0.9;
     
@@ -521,10 +538,12 @@ function drawForceGraph() {
     ctx.stroke();
     
     // Label do máximo perto do ponto
-    ctx.font = 'bold 11px Arial';
-    ctx.fillStyle = colors[attemptIndex];
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText(`${maxForce.toFixed(0)}kg`, maxX, maxY - 18);
+    ctx.shadowColor = 'black';
+    ctx.shadowBlur = 5;
+    ctx.fillText(`${maxForce.toFixed(0)}kg`, maxX, maxY - 20);
     
     ctx.globalAlpha = 1.0;
     ctx.shadowBlur = 0;
@@ -700,20 +719,36 @@ function getMotivationalMessage(forceKg) {
 // ==========================================
 
 function saveToRanking(name, forceKg, forceN) {
-  const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+  try {
+    const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+    const oldRecord = ranking.length > 0 ? ranking[0] : null;
 
-  ranking.push({
-    name,
-    forceKg,
-    forceN,
-    date: new Date().toLocaleDateString('pt-BR')
-  });
+    // Verifica se o recorde foi quebrado
+    if (oldRecord && forceKg > oldRecord.forceKg) {
+      abrirModalNovoRecorde(name, forceKg, oldRecord);
+    }
 
-  // Ordenar por força decrescente e manter top 50
-  ranking.sort((a, b) => b.forceKg - a.forceKg);
-  ranking.splice(50);
+    // Encontra a tentativa com a força máxima
+    const bestAttemptIndex = marteloState.forceMaxPerAttempt.indexOf(Math.max(...marteloState.forceMaxPerAttempt));
+    const bestAttemptData = marteloState.forceDataPerAttempt[bestAttemptIndex];
 
-  localStorage.setItem('martelo_ranking', JSON.stringify(ranking));
+    ranking.push({
+      name,
+      forceKg,
+      forceN,
+      date: new Date().toLocaleDateString('pt-BR'),
+      curveData: bestAttemptData // Salva a curva da melhor tentativa
+    });
+
+    // Ordenar por força decrescente e manter top 50
+    ranking.sort((a, b) => b.forceKg - a.forceKg);
+    ranking.splice(50);
+
+    localStorage.setItem('martelo_ranking', JSON.stringify(ranking));
+  } catch (e) {
+    console.error("Erro ao salvar o ranking:", e);
+    alert("Ocorreu um erro ao salvar o ranking. Verifique o console para mais detalhes.");
+  }
 }
 
 function showRankingScreen() {
@@ -722,30 +757,109 @@ function showRankingScreen() {
 }
 
 function updateRankingTable() {
-  const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
-  elements.rankingTableBody.innerHTML = '';
+  try {
+    const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+    elements.rankingTableBody.innerHTML = '';
 
-  if (ranking.length === 0) {
-    elements.rankingTableBody.innerHTML = '<tr><td colspan="4">Nenhum registro ainda!</td></tr>';
-    return;
+    if (ranking.length === 0) {
+      elements.rankingTableBody.innerHTML = '<tr><td colspan="5">Nenhum registro ainda!</td></tr>';
+      return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+
+    ranking.slice(0, 10).forEach((entry, index) => {
+      const row = document.createElement('tr');
+      const medal = medals[index] || `${index + 1}º`;
+
+      // Create and append cells one by one
+      const medalCell = document.createElement('td');
+      medalCell.textContent = medal;
+      row.appendChild(medalCell);
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = entry.name;
+      row.appendChild(nameCell);
+
+      const forceCell = document.createElement('td');
+      forceCell.textContent = `${entry.forceKg.toFixed(1)} kg (${entry.forceN.toFixed(0)} N)`;
+      row.appendChild(forceCell);
+
+      const curveCell = document.createElement('td');
+      const canvas = document.createElement('canvas');
+      canvas.width = 150;
+      canvas.height = 50;
+      curveCell.appendChild(canvas);
+      row.appendChild(curveCell);
+
+      const dateCell = document.createElement('td');
+      dateCell.textContent = entry.date;
+      row.appendChild(dateCell);
+
+      elements.rankingTableBody.appendChild(row);
+
+      if (entry.curveData) {
+        drawMiniGraph(canvas, entry.curveData);
+      }
+    });
+  } catch (e) {
+    console.error("Erro ao atualizar a tabela de ranking:", e);
+    elements.rankingTableBody.innerHTML = '<tr><td colspan="5">Ocorreu um erro ao carregar o ranking.</td></tr>';
   }
-
-  const medals = ['🥇', '🥈', '🥉'];
-
-  ranking.slice(0, 10).forEach((entry, index) => {
-    const row = document.createElement('tr');
-    const medal = medals[index] || `${index + 1}º`;
-
-    row.innerHTML = `
-      <td>${medal}</td>
-      <td>${entry.name}</td>
-      <td>${entry.forceKg.toFixed(1)} kg (${entry.forceN.toFixed(0)} N)</td>
-      <td>${entry.date}</td>
-    `;
-
-    elements.rankingTableBody.appendChild(row);
-  });
 }
+
+function drawMiniGraph(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  ctx.clearRect(0, 0, width, height);
+
+  if (!data || data.length === 0) return;
+
+  const maxForce = Math.max(...data.map(p => p.force));
+  const maxTime = Math.max(...data.map(p => p.time));
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#00d9ff';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#00d9ff';
+  ctx.shadowBlur = 5;
+
+  for (let i = 0; i < data.length; i++) {
+    const point = data[i];
+    const x = (point.time / maxTime) * width;
+    const y = height - (point.force / maxForce) * height;
+
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.stroke();
+}
+
+// ==========================================
+// MODAL NOVO RECORDE
+// ==========================================
+
+function abrirModalNovoRecorde(playerName, newForce, oldRecord) {
+  elements.modalRecordeMensagem.textContent = `Você ultrapassou a marca de ${oldRecord.name}!`;
+  elements.modalRecordeSuaForca.textContent = `${newForce.toFixed(1)} kg`;
+  elements.modalRecordeAnterior.textContent = `${oldRecord.forceKg.toFixed(1)} kg`;
+  
+  elements.modalNovoRecorde.style.display = 'flex';
+  
+  if (sounds.newRecord) {
+    sounds.newRecord.play().catch(e => console.log('Som newRecord:', e));
+  }
+}
+
+function fecharModalNovoRecorde() {
+  elements.modalNovoRecorde.style.display = 'none';
+}
+
 
 // ==========================================
 // RESET
@@ -840,8 +954,8 @@ function debugForceReading() {
   console.log('Erro de Polling:', forcePollingError || 'nenhum');
   console.log('window.opener disponível:', !!window.opener);
   if (window.opener) {
-    console.log('window.opener.forcaAtual:', window.opener.forcaAtual);
-    console.log('typeof window.opener.forcaAtual:', typeof window.opener.forcaAtual);
+    console.log('window.opener.sharedState.forcaAtual:', window.opener.sharedState.forcaAtual);
+    console.log('typeof window.opener.sharedState.forcaAtual:', typeof window.opener.sharedState.forcaAtual);
   }
   console.log('Estado do Jogo:', {
     playerName: marteloState.playerName,
@@ -884,7 +998,7 @@ function debugForceReading() {
     <div style="margin-bottom: 15px;">
       <strong>🔗 CONEXÃO COM JANELA PAI</strong><br>
       window.opener: <span style="color: ${window.opener ? '#0f0' : '#f00'};">${window.opener ? '✓ Disponível' : '✗ Não disponível'}</span><br>
-      ${window.opener ? `forcaAtual: <span style="color: #ff0;">${window.opener.forcaAtual || 'undefined'}</span>` : ''}
+      ${window.opener ? `sharedState.forcaAtual: <span style="color: #ff0;">${window.opener.sharedState ? window.opener.sharedState.forcaAtual : 'undefined'}</span>` : ''}
     </div>
     <div style="margin-bottom: 15px; border-top: 1px solid #0f0; padding-top: 10px;">
       <strong>🎮 ESTADO DO JOGO</strong><br>
