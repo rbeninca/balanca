@@ -629,7 +629,7 @@ function endAttempt() {
   // Esconde a mensagem após alguns segundos
   setTimeout(() => {
     elements.attemptMessage.classList.remove('visible');
-  }, 3000); // A mensagem fica visível por 3 segundos
+  }, 4000); // A mensagem fica visível por 4 segundos
 
   marteloState.attempts.push({
     attempt: marteloState.currentAttempt,
@@ -640,9 +640,9 @@ function endAttempt() {
   // Próxima tentativa ou resultado
   if (marteloState.currentAttempt < marteloState.maxAttempts) {
     marteloState.currentAttempt++;
-    setTimeout(() => startCountdown(), 3500); // Aumenta o tempo para dar tempo de ler a msg
+    setTimeout(() => startCountdown(), 4500); // Aumenta o tempo para dar tempo de ler a msg
   } else {
-    setTimeout(() => showResultsScreen(), 3500);
+    setTimeout(() => showResultsScreen(), 4500);
   }
 }
 

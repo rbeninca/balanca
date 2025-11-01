@@ -462,17 +462,21 @@ body {
 
 /* Styling for the new attempt message */
 #attempt-message {
-    position: absolute;
-    top: 60%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 2.5rem;
+    position: fixed; /* Changed to fixed for full-screen overlay */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 6rem; /* Significantly increased font size */
     font-weight: bold;
     color: var(--color-accent);
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-    padding: 1rem 2rem;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
+    text-shadow: 3px 3px 15px rgba(0, 0, 0, 0.8);
+    padding: 2rem;
+    background: rgba(12, 10, 29, 0.9); /* Semi-transparent background */
     z-index: 20;
     opacity: 0;
     transition: opacity 0.5s ease-out;
