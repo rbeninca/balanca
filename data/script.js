@@ -20,7 +20,10 @@ let dataRequestIntervalId = null; // ID do intervalo de solicitação de dados
 let btnToggleLabels, btnToggleDisplayMode, btnToggleGrid, btnSetSmoothLine, btnSetStraightLine;
 let isMysqlConnected = false; // NEW: Global variable for MySQL connection status
 let serverTimeOffset = 0; // Diferença entre servidor e cliente (ms)
-window.sharedState = { forcaAtual: 0 }; // Objeto compartilhado para estado global
+window.sharedState = { 
+  forcaAtual: 0, 
+  overloadAlert: { active: false, level: 0, percent: 0, forca: 0 } 
+}; // Objeto compartilhado para estado global
 
 // --- Variáveis de Filtros e Análise ---
 let antiNoisingAtivo = false;
@@ -1079,7 +1082,17 @@ function verificarModalSobrecarga(forcaAtualN, percentual) {
   if (percentual >= 100) nivelAtual = 100;
   else if (percentual >= 90) nivelAtual = 90;
   else if (percentual >= 80) nivelAtual = 80;
-  
+
+  // Atualiza o estado compartilhado para o jogo
+  window.sharedState.overloadAlert = {
+    active: percentual >= 80,
+    level: nivelAtual,
+    percent: percentual,
+    forca: forcaAtualN,
+    capacidade: capacidadeN,
+    displayUnit: displayUnit
+  };
+
   // Se o modal foi fechado manualmente, só reabre após 10 segundos OU se a carga cair abaixo de 70%
   const tempoDesdeFechar = Date.now() - timestampFechamentoManual;
   if (modalFechadoPeloUsuario && percentual < 70) {

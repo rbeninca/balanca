@@ -23,9 +23,34 @@
 
         <!-- Tela de Início -->
         <div id="start-screen" class="screen active">
+            <button id="settingsButton" class="btn-settings">⚙️</button>
             <h1 id="title">⚡ MARTELO DE THOR ⚡</h1>
             <input type="text" id="playerName" placeholder="Digite seu nome, Viking!">
             <button id="startButton">INICIAR DESAFIO</button>
+        </div>
+
+        <!-- Tela de Configurações -->
+        <div id="settings-screen" class="screen">
+            <h2>⚙️ Configurações do Jogo</h2>
+            <div class="settings-container">
+                <div class="setting-item">
+                    <label for="maxForceInput">Força Máxima do Display (kg):</label>
+                    <input type="number" id="maxForceInput" class="settings-input">
+                </div>
+                <div class="setting-item">
+                    <label>Níveis de Deboche (% da Força Máxima):</label>
+                    <div class="threshold-grid">
+                        <span>Fraca:</span><input type="number" id="threshold-fraca" class="settings-input-small" placeholder="0-20">
+                        <span>Média:</span><input type="number" id="threshold-media" class="settings-input-small" placeholder="20-50">
+                        <span>Alta:</span><input type="number" id="threshold-alta" class="settings-input-small" placeholder="50-80">
+                        <span>Muito Alta:</span><input type="number" id="threshold-muito_alta" class="settings-input-small" placeholder="80-95">
+                        <span>Épica:</span><input type="number" id="threshold-epica" class="settings-input-small" placeholder="95-100">
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button id="saveSettingsButton">Salvar e Voltar</button>
+            </div>
         </div>
 
         <!-- Tela do Jogo -->
@@ -78,6 +103,9 @@
                     </tbody>
                 </table>
             </div>
+            <div class="ranking-actions">
+                <button id="clearRankingButton" class="btn-small-perigo">🗑️ Limpar Ranking</button>
+            </div>
             <div class="action-buttons">
                 <button id="backToStartButton">Voltar ao Início</button>
             </div>
@@ -94,32 +122,46 @@
     <audio id="sound-level-4" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
     <audio id="sound-level-5" src="sounds/launches/slimeball.wav"></audio> <!-- Placeholder -->
     <audio id="sound-level-6" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
-    <audio id="sound-result" src="sounds/launches/info.txt"></audio> <!-- Placeholder, just to have a file -->
+    <audio id="sound-result"></audio> <!-- Placeholder, just to have a file -->
 
     <script src="martelo-do-thor.js"></script>
 
-    <!-- Modal de Novo Recorde -->
-    <div id="modal-novo-recorde" class="modal-recorde">
-        <div class="modal-recorde-content">
-            <div class="modal-recorde-header">
-                <span class="modal-recorde-icone">🏆</span>
-                <h2 id="modal-recorde-titulo">NOVO RECORDE!</h2>
+    <!-- Modal de Alerta de Sobrecarga -->
+    <div id="modal-alerta-sobrecarga-martelo" class="modal-sobrecarga">
+        <div class="modal-sobrecarga-content">
+            <div class="modal-sobrecarga-header">
+                <span class="modal-sobrecarga-icone">⚠️</span>
+                <h2 id="modal-sobrecarga-titulo-martelo">ATENÇÃO: APROXIMANDO DO LIMITE!</h2>
             </div>
-            <div class="modal-recorde-body">
-                <p id="modal-recorde-mensagem">Você ultrapassou a marca de [NOME]!</p>
-                <div class="modal-recorde-display">
-                    <div class="modal-recorde-valor">
-                        <span class="modal-recorde-label">Sua Força:</span>
-                        <span id="modal-recorde-sua-forca" class="modal-recorde-numero">---</span>
+            <div class="modal-sobrecarga-body">
+                <div class="modal-sobrecarga-display">
+                    <div class="modal-sobrecarga-valor">
+                        <span class="modal-sobrecarga-label">Carga Atual:</span>
+                        <span id="modal-sobrecarga-valor-atual-martelo" class="modal-sobrecarga-numero">---</span>
                     </div>
-                    <div class="modal-recorde-valor">
-                        <span class="modal-recorde-label">Recorde Anterior:</span>
-                        <span id="modal-recorde-anterior" class="modal-recorde-numero">---</span>
+                    <div class="modal-sobrecarga-barra">
+                        <div id="modal-sobrecarga-barra-progresso-martelo" class="modal-sobrecarga-barra-fill"></div>
+                        <span id="modal-sobrecarga-percentual-martelo" class="modal-sobrecarga-percentual-texto">0%</span>
+                    </div>
+                    <div class="modal-sobrecarga-limite">
+                        <span class="modal-sobrecarga-label">Limite Máximo:</span>
+                        <span id="modal-sobrecarga-valor-limite-martelo" class="modal-sobrecarga-numero">---</span>
                     </div>
                 </div>
+                <div class="modal-sobrecarga-aviso">
+                    <p id="modal-sobrecarga-mensagem-martelo">
+                        ⚠️ Você está próximo do limite da célula de carga!<br>
+                        <strong>RISCO DE DANOS PERMANENTES AO EQUIPAMENTO!</strong>
+                    </p>
+                    <p class="modal-sobrecarga-instrucao">
+                        Reduza a carga imediatamente para evitar a destruição da célula.
+                    </p>
+                </div>
             </div>
-            <div class="modal-recorde-footer">
-                <button onclick="fecharModalNovoRecorde()" class="btn-modal-recorde-ok">CONTINUAR!</button>
+            <div class="modal-sobrecarga-footer">
+                <button onclick="fecharModalSobrecargaMartelo()" class="btn-modal-sobrecarga-ok">
+                    Entendi - Fechar Alerta
+                </button>
             </div>
         </div>
     </div>

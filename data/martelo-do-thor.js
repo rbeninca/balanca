@@ -18,6 +18,8 @@ const marteloState = {
 
 // Elementos DOM
 const elements = {};
+let frasesData = null;
+let gameSettings = {};
 
 // Áudio
 const sounds = {};
@@ -25,7 +27,7 @@ const sounds = {};
 // Constantes
 const ATTEMPT_DURATION = 10000; // 10 segundos (aumentado de 3)
 const COUNTDOWN_DURATION = 3000; // 3 segundos de contagem regressiva
-const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
+
 
 // ==========================================
 // INICIALIZAÇÃO
@@ -34,12 +36,13 @@ const MAX_FORCE_DISPLAY = 300; // kg máximo para a barra
 // Elemento do painel de debug
 let debugPanel = null;
 
-let frasesData = null;
+
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeDOMElements();
   setupEventListeners();
   loadFrases();
+  loadSettings();
   showScreen('start');
   startForcePolling(); // Inicia polling de força
   createDebugPanel(); // Criar painel de debug permanente
@@ -63,7 +66,8 @@ function initializeDOMElements() {
     start: document.getElementById('start-screen'),
     game: document.getElementById('game-screen'),
     results: document.getElementById('results-screen'),
-    ranking: document.getElementById('ranking-screen')
+    ranking: document.getElementById('ranking-screen'),
+    settings: document.getElementById('settings-screen') // Adicionado
   };
   elements.playerNameInput = document.getElementById('playerName');
   elements.startButton = document.getElementById('startButton');
@@ -83,6 +87,16 @@ function initializeDOMElements() {
   elements.showRankingButton = document.getElementById('showRankingButton');
   elements.rankingTableBody = document.querySelector('#rankingTable tbody');
   elements.backToStartButton = document.getElementById('backToStartButton');
+  elements.clearRankingButton = document.getElementById('clearRankingButton');
+  elements.settingsButton = document.getElementById('settingsButton');
+  elements.settingsScreen = document.getElementById('settings-screen');
+  elements.maxForceInput = document.getElementById('maxForceInput');
+  elements.thresholdFraca = document.getElementById('threshold-fraca');
+  elements.thresholdMedia = document.getElementById('threshold-media');
+  elements.thresholdAlta = document.getElementById('threshold-alta');
+  elements.thresholdMuitoAlta = document.getElementById('threshold-muito_alta');
+  elements.thresholdEpica = document.getElementById('threshold-epica');
+  elements.saveSettingsButton = document.getElementById('saveSettingsButton');
   elements.forceGraphCanvas = document.getElementById('forceGraphCanvas');
   elements.attemptMessage = document.getElementById('attempt-message');
   
@@ -91,6 +105,15 @@ function initializeDOMElements() {
   elements.modalRecordeMensagem = document.getElementById('modal-recorde-mensagem');
   elements.modalRecordeSuaForca = document.getElementById('modal-recorde-sua-forca');
   elements.modalRecordeAnterior = document.getElementById('modal-recorde-anterior');
+
+  // Modal de Sobrecarga
+  elements.modalSobrecarga = document.getElementById('modal-alerta-sobrecarga-martelo');
+  elements.modalSobrecargaTitulo = document.getElementById('modal-sobrecarga-titulo-martelo');
+  elements.modalSobrecargaMensagem = document.getElementById('modal-sobrecarga-mensagem-martelo');
+  elements.modalSobrecargaValorAtual = document.getElementById('modal-sobrecarga-valor-atual-martelo');
+  elements.modalSobrecargaBarraProgresso = document.getElementById('modal-sobrecarga-barra-progresso-martelo');
+  elements.modalSobrecargaPercentual = document.getElementById('modal-sobrecarga-percentual-martelo');
+  elements.modalSobrecargaValorLimite = document.getElementById('modal-sobrecarga-valor-limite-martelo');
 
   // Preenche o objeto de sons
   sounds.countdown = document.getElementById('sound-countdown');
@@ -110,6 +133,9 @@ function setupEventListeners() {
   elements.playAgainButton.addEventListener('click', resetGame);
   elements.showRankingButton.addEventListener('click', showRankingScreen);
   elements.backToStartButton.addEventListener('click', () => showScreen('start'));
+  elements.clearRankingButton.addEventListener('click', clearRanking);
+  elements.settingsButton.addEventListener('click', showSettingsScreen);
+  elements.saveSettingsButton.addEventListener('click', saveSettings);
   
   // Adicionar atalho para debug (tecla D)
   document.addEventListener('keydown', (e) => {
@@ -148,15 +174,26 @@ function startForcePolling() {
   // Inicia o polling de qualquer forma
   const pollingInterval = setInterval(() => {
     try {
-      if (window.opener && window.opener.sharedState && typeof window.opener.sharedState.forcaAtual === 'number') {
-        currentForceValue = window.opener.sharedState.forcaAtual;
-        forcePollingActive = true;
-        forcePollingError = null;
+      if (window.opener && window.opener.sharedState) {
+        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+          currentForceValue = window.opener.sharedState.forcaAtual;
+          forcePollingActive = true;
+          forcePollingError = null;
+        }
+
+        // Verifica o estado do alerta de sobrecarga
+        const overloadAlertState = window.opener.sharedState.overloadAlert;
+        if (overloadAlertState && overloadAlertState.active) {
+          elements.modalSobrecarga.classList.add('ativo');
+          updateOverloadModal(overloadAlertState);
+        } else {
+          elements.modalSobrecarga.classList.remove('ativo');
+        }
       }
     } catch (e) {
       // Continua tentando mesmo com erro
       if (!forcePollingError) {
-        console.warn('Erro recorrente ao acessar forcaAtual:', e.message);
+        console.warn('Erro recorrente ao acessar sharedState:', e.message);
         forcePollingError = e.message;
       }
     }
@@ -346,12 +383,12 @@ function updateForceDisplay(forceKg, remainingSec = null) {
   elements.newtonDisplay.style.color = '#aaa';
 
   // Barra de progresso horizontal
-  const percentage = Math.min((forceKg / MAX_FORCE_DISPLAY) * 100, 100);
+  const percentage = Math.min((forceKg / gameSettings.maxForceDisplay) * 100, 100);
   elements.progressBar.style.width = percentage + '%';
   elements.progressBar.style.background = getForceColor(forceKg);
 
   // Barra vertical de fundo - mostra a força atual
-  const height = Math.min((forceKg / MAX_FORCE_DISPLAY) * 100, 100);
+  const height = Math.min((forceKg / gameSettings.maxForceDisplay) * 100, 100);
   elements.verticalForceBar.style.height = height + '%';
   
   // Usar gradiente com cores mais sutis para background
@@ -396,7 +433,7 @@ function updateForceDisplay(forceKg, remainingSec = null) {
   }
   
   if (elements.forceMarkerMax) {
-    const maxPercentage = Math.min((marteloState.totalMaxForce / MAX_FORCE_DISPLAY) * 100, 100);
+    const maxPercentage = Math.min((marteloState.totalMaxForce / gameSettings.maxForceDisplay) * 100, 100);
     elements.forceMarkerMax.style.bottom = maxPercentage + '%';
   }
 }
@@ -515,7 +552,7 @@ function drawForceGraph() {
     for (let i = 0; i < data.length; i++) {
       const point = data[i];
       const timePercent = Math.min(point.time / (ATTEMPT_DURATION / 1000), 1);
-      const forcePercent = Math.min(point.force / MAX_FORCE_DISPLAY, 1);
+      const forcePercent = Math.min(point.force / gameSettings.maxForceDisplay, 1);
       
       const x = paddingLeft + timePercent * graphWidth;
       const y = canvas.height - paddingBottom - forcePercent * graphHeight;
@@ -584,7 +621,7 @@ function drawForceGraph() {
   ctx.textAlign = 'right';
   
   for (let i = 0; i <= 5; i++) {
-    const force = (MAX_FORCE_DISPLAY / 5) * i;
+    const force = (gameSettings.maxForceDisplay / 5) * i;
     const y = canvas.height - paddingBottom - (graphHeight / 5) * i;
     
     // Label sobre o gráfico (direita do eixo Y)
@@ -687,16 +724,16 @@ function getMotivationalMessage(forceKg) {
     return "Preparando o deboche...";
   }
 
-  const percentage = (forceKg / MAX_FORCE_DISPLAY) * 100;
+  const percentage = (forceKg / gameSettings.maxForceDisplay) * 100;
   let category = null;
 
-  if (percentage <= 20) {
+  if (percentage <= gameSettings.thresholds.fraca) {
     category = 'fraca';
-  } else if (percentage <= 50) {
+  } else if (percentage <= gameSettings.thresholds.media) {
     category = 'media';
-  } else if (percentage <= 80) {
+  } else if (percentage <= gameSettings.thresholds.alta) {
     category = 'alta';
-  } else if (percentage <= 95) {
+  } else if (percentage <= gameSettings.thresholds.muito_alta) {
     category = 'muito_alta';
   } else {
     category = 'epica';
@@ -709,6 +746,62 @@ function getMotivationalMessage(forceKg) {
 
   const randomFrase = categoryData.frases[Math.floor(Math.random() * categoryData.frases.length)];
   return randomFrase.texto;
+}
+
+// ==========================================
+// SETTINGS
+// ==========================================
+
+function loadSettings() {
+  const savedSettings = JSON.parse(localStorage.getItem('martelo_settings'));
+  const defaultSettings = {
+    maxForceDisplay: 0, // Default to 0 to trigger dynamic calculation
+    thresholds: {
+      fraca: 20,
+      media: 50,
+      alta: 80,
+      muito_alta: 95,
+      epica: 100
+    }
+  };
+
+  gameSettings = { ...defaultSettings, ...savedSettings };
+
+  // Se a força máxima não estiver definida, usa o maior valor do ranking
+  if (!gameSettings.maxForceDisplay || gameSettings.maxForceDisplay === 0) {
+    const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+    if (ranking.length > 0) {
+      gameSettings.maxForceDisplay = Math.ceil(ranking[0].forceKg / 10) * 10; // Arredonda para cima para a próxima dezena
+    } else {
+      gameSettings.maxForceDisplay = 300; // Fallback se o ranking estiver vazio
+    }
+  }
+
+  // Update input fields
+  elements.maxForceInput.value = gameSettings.maxForceDisplay;
+  elements.thresholdFraca.value = gameSettings.thresholds.fraca;
+  elements.thresholdMedia.value = gameSettings.thresholds.media;
+  elements.thresholdAlta.value = gameSettings.thresholds.alta;
+  elements.thresholdMuitoAlta.value = gameSettings.thresholds.muito_alta;
+  elements.thresholdEpica.value = gameSettings.thresholds.epica;
+}
+
+function saveSettings() {
+  gameSettings.maxForceDisplay = parseInt(elements.maxForceInput.value) || 300;
+  gameSettings.thresholds.fraca = parseInt(elements.thresholdFraca.value) || 20;
+  gameSettings.thresholds.media = parseInt(elements.thresholdMedia.value) || 50;
+  gameSettings.thresholds.alta = parseInt(elements.thresholdAlta.value) || 80;
+  gameSettings.thresholds.muito_alta = parseInt(elements.thresholdMuitoAlta.value) || 95;
+  gameSettings.thresholds.epica = parseInt(elements.thresholdEpica.value) || 100;
+
+  localStorage.setItem('martelo_settings', JSON.stringify(gameSettings));
+  alert("Configurações salvas!");
+  showScreen('start');
+}
+
+function showSettingsScreen() {
+  loadSettings();
+  showScreen('settings');
 }
 
 // ==========================================
@@ -733,7 +826,7 @@ function saveToRanking(name, forceKg, forceN) {
       name,
       forceKg,
       forceN,
-      date: new Date().toLocaleDateString('pt-BR'),
+      date: new Date().toLocaleString('pt-BR'),
       curveData: bestAttemptData // Salva a curva da melhor tentativa
     });
 
@@ -805,6 +898,14 @@ function updateRankingTable() {
   }
 }
 
+function clearRanking() {
+  if (confirm("Você tem certeza que deseja limpar TODO o ranking? Esta ação não pode ser desfeita.")) {
+    localStorage.removeItem('martelo_ranking');
+    updateRankingTable();
+    console.log('Ranking limpo pelo usuário.');
+  }
+}
+
 function drawMiniGraph(canvas, data) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
@@ -842,11 +943,21 @@ function drawMiniGraph(canvas, data) {
 // ==========================================
 
 function abrirModalNovoRecorde(playerName, newForce, oldRecord) {
-  elements.modalRecordeMensagem.textContent = `Você ultrapassou a marca de ${oldRecord.name}!`;
-  elements.modalRecordeSuaForca.textContent = `${newForce.toFixed(1)} kg`;
-  elements.modalRecordeAnterior.textContent = `${oldRecord.forceKg.toFixed(1)} kg`;
+  const modal = document.getElementById('modal-novo-recorde');
+  const mensagem = document.getElementById('modal-recorde-mensagem');
+  const suaForca = document.getElementById('modal-recorde-sua-forca');
+  const anterior = document.getElementById('modal-recorde-anterior');
+
+  if (!modal || !mensagem || !suaForca || !anterior) {
+    console.error("Erro: Um ou mais elementos do modal de novo recorde não foram encontrados.");
+    return;
+  }
+
+  mensagem.textContent = `Você ultrapassou a marca de ${oldRecord.name}!`;
+  suaForca.textContent = `${newForce.toFixed(1)} kg`;
+  anterior.textContent = `${oldRecord.forceKg.toFixed(1)} kg`;
   
-  elements.modalNovoRecorde.style.display = 'flex';
+  modal.style.display = 'flex';
   
   if (sounds.newRecord) {
     sounds.newRecord.play().catch(e => console.log('Som newRecord:', e));
@@ -855,6 +966,64 @@ function abrirModalNovoRecorde(playerName, newForce, oldRecord) {
 
 function fecharModalNovoRecorde() {
   elements.modalNovoRecorde.style.display = 'none';
+}
+
+// ==========================================
+// MODAL SOBRECARGA
+// ==========================================
+
+function fecharModalSobrecargaMartelo() {
+  if (elements.modalSobrecarga) {
+    elements.modalSobrecarga.classList.remove('ativo');
+  }
+}
+
+function updateOverloadModal(alertState) {
+  if (!elements.modalSobrecarga) return;
+
+  const { level, percent, forca, capacidade, displayUnit } = alertState;
+
+  const valorAtual = convertForce(Math.abs(forca), displayUnit);
+  const valorLimite = convertForce(capacidade, displayUnit);
+
+  elements.modalSobrecargaValorAtual.textContent = `${valorAtual.toFixed(1)} ${displayUnit}`;
+  elements.modalSobrecargaValorLimite.textContent = `${valorLimite.toFixed(1)} ${displayUnit}`;
+  elements.modalSobrecargaPercentual.textContent = `${percent.toFixed(1)}%`;
+  elements.modalSobrecargaBarraProgresso.style.width = `${Math.min(percent, 100)}%`;
+
+  const modalContent = elements.modalSobrecarga.querySelector('.modal-sobrecarga-content');
+  modalContent.classList.remove('alerta-80', 'alerta-90', 'alerta-100');
+
+  if (level >= 100) {
+    modalContent.classList.add('alerta-100');
+    elements.modalSobrecargaTitulo.textContent = '🚨 LIMITE EXCEDIDO! PARE IMEDIATAMENTE! 🚨';
+    elements.modalSobrecargaMensagem.innerHTML = `
+      ⛔ <strong>LIMITE DA CÉLULA ULTRAPASSADO!</strong><br>
+      <strong style="font-size: 1.15rem; color: #7f1d1d;">RISCO CRÍTICO DE DESTRUIÇÃO DO EQUIPAMENTO!</strong>
+    `;
+  } else if (level >= 90) {
+    modalContent.classList.add('alerta-90');
+    elements.modalSobrecargaTitulo.textContent = '🚨 PERIGO: MUITO PRÓXIMO DO LIMITE! 🚨';
+    elements.modalSobrecargaMensagem.innerHTML = `
+      ⚠️ Você está em zona crítica!<br>
+      <strong>RISCO IMINENTE DE DANOS PERMANENTES!</strong>
+    `;
+  } else if (level >= 80) {
+    modalContent.classList.add('alerta-80');
+    elements.modalSobrecargaTitulo.textContent = '⚠️ ATENÇÃO: APROXIMANDO DO LIMITE! ⚠️';
+    elements.modalSobrecargaMensagem.innerHTML = `
+      ⚠️ Você está próximo do limite da célula de carga!<br>
+      <strong>RISCO DE DANOS PERMANENTES AO EQUIPAMENTO!</strong>
+    `;
+  }
+}
+
+// Função auxiliar para converter força, se necessário
+function convertForce(valueN, unit) {
+  const g_force_conversion = 101.9716;
+  if (unit === 'gf') return valueN * g_force_conversion;
+  if (unit === 'kgf') return valueN * (g_force_conversion / 1000);
+  return valueN;
 }
 
 
