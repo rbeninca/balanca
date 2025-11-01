@@ -97,6 +97,7 @@ function initializeDOMElements() {
   elements.thresholdMuitoAlta = document.getElementById('threshold-muito_alta');
   elements.thresholdEpica = document.getElementById('threshold-epica');
   elements.saveSettingsButton = document.getElementById('saveSettingsButton');
+  elements.dynamicMaxForceCheckbox = document.getElementById('dynamicMaxForceCheckbox');
   elements.forceGraphCanvas = document.getElementById('forceGraphCanvas');
   elements.attemptMessage = document.getElementById('attempt-message');
   
@@ -136,6 +137,21 @@ function setupEventListeners() {
   elements.clearRankingButton.addEventListener('click', clearRanking);
   elements.settingsButton.addEventListener('click', showSettingsScreen);
   elements.saveSettingsButton.addEventListener('click', saveSettings);
+
+  elements.dynamicMaxForceCheckbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      elements.maxForceInput.disabled = true;
+      // Recalcula o valor dinâmico e atualiza o input
+      const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+      let dynamicMax = 300; // Fallback
+      if (ranking.length > 0) {
+        dynamicMax = Math.ceil(ranking[0].forceKg / 10) * 10;
+      }
+      elements.maxForceInput.value = dynamicMax;
+    } else {
+      elements.maxForceInput.disabled = false;
+    }
+  });
   
   // Adicionar atalho para debug (tecla D)
   document.addEventListener('keydown', (e) => {
@@ -755,7 +771,8 @@ function getMotivationalMessage(forceKg) {
 function loadSettings() {
   const savedSettings = JSON.parse(localStorage.getItem('martelo_settings'));
   const defaultSettings = {
-    maxForceDisplay: 0, // Default to 0 to trigger dynamic calculation
+    maxForceDisplay: 300,
+    useDynamicMaxForce: true, // Novo: habilitado por padrão
     thresholds: {
       fraca: 20,
       media: 50,
@@ -767,18 +784,23 @@ function loadSettings() {
 
   gameSettings = { ...defaultSettings, ...savedSettings };
 
-  // Se a força máxima não estiver definida, usa o maior valor do ranking
-  if (!gameSettings.maxForceDisplay || gameSettings.maxForceDisplay === 0) {
+  // Se a opção dinâmica estiver ativa, calcula o valor do ranking
+  if (gameSettings.useDynamicMaxForce) {
     const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
     if (ranking.length > 0) {
       gameSettings.maxForceDisplay = Math.ceil(ranking[0].forceKg / 10) * 10; // Arredonda para cima para a próxima dezena
     } else {
-      gameSettings.maxForceDisplay = 300; // Fallback se o ranking estiver vazio
+      // Se não houver ranking, usa o valor manual salvo ou o padrão
+      gameSettings.maxForceDisplay = savedSettings?.maxForceDisplay || defaultSettings.maxForceDisplay;
     }
+    elements.maxForceInput.disabled = true;
+  } else {
+    elements.maxForceInput.disabled = false;
   }
 
   // Update input fields
   elements.maxForceInput.value = gameSettings.maxForceDisplay;
+  elements.dynamicMaxForceCheckbox.checked = gameSettings.useDynamicMaxForce;
   elements.thresholdFraca.value = gameSettings.thresholds.fraca;
   elements.thresholdMedia.value = gameSettings.thresholds.media;
   elements.thresholdAlta.value = gameSettings.thresholds.alta;
@@ -787,7 +809,10 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  gameSettings.useDynamicMaxForce = elements.dynamicMaxForceCheckbox.checked;
+  // Salva o valor manual mesmo que o dinâmico esteja ativo
   gameSettings.maxForceDisplay = parseInt(elements.maxForceInput.value) || 300;
+  
   gameSettings.thresholds.fraca = parseInt(elements.thresholdFraca.value) || 20;
   gameSettings.thresholds.media = parseInt(elements.thresholdMedia.value) || 50;
   gameSettings.thresholds.alta = parseInt(elements.thresholdAlta.value) || 80;
@@ -796,6 +821,8 @@ function saveSettings() {
 
   localStorage.setItem('martelo_settings', JSON.stringify(gameSettings));
   alert("Configurações salvas!");
+  // Recarrega as configurações para aplicar a lógica dinâmica se necessário
+  loadSettings(); 
   showScreen('start');
 }
 

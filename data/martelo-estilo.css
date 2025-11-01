@@ -619,6 +619,13 @@ body {
     box-shadow: 0 0 10px var(--color-secondary);
 }
 
+.dynamic-max-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
 .threshold-grid {
     display: grid;
     grid-template-columns: auto 1fr;
