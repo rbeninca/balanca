@@ -98,6 +98,13 @@ function initializeDOMElements() {
   elements.thresholdEpica = document.getElementById('threshold-epica');
   elements.saveSettingsButton = document.getElementById('saveSettingsButton');
   elements.dynamicMaxForceCheckbox = document.getElementById('dynamicMaxForceCheckbox');
+
+  // Ranking Markers
+  elements.rankingMarkers = {
+    marker1: document.getElementById('rank-marker-1'),
+    marker2: document.getElementById('rank-marker-2'),
+    marker3: document.getElementById('rank-marker-3')
+  };
   elements.forceGraphCanvas = document.getElementById('forceGraphCanvas');
   elements.attemptMessage = document.getElementById('attempt-message');
   
@@ -250,6 +257,7 @@ function startGame() {
   marteloState.totalMaxForce = 0;
   marteloState.forceDataPerAttempt = [[], [], []]; // Limpar dados do gráfico
   
+  updateRankingMarkers(); // Atualiza os marcadores do ranking
   showScreen('game');
   startCountdown();
 }
@@ -376,6 +384,8 @@ function startAttempt() {
   }, 50);
 }
 
+let isRecordAnimationPlaying = false;
+
 function updateForceDisplay(forceKg, remainingSec = null) {
   const forceN = forceKg * 9.80665;
   
@@ -440,11 +450,16 @@ function updateForceDisplay(forceKg, remainingSec = null) {
     elements.labelForceMax.textContent = `${marteloState.totalMaxForce.toFixed(1)} kg`;
     
     // Efeito de novo recorde
-    if (marteloState.totalMaxForce > forceMaxAnterior) {
+    if (marteloState.totalMaxForce > forceMaxAnterior && !isRecordAnimationPlaying) {
+      isRecordAnimationPlaying = true;
       elements.forceMarkerMax.style.animation = 'none';
+      // Força um reflow para reiniciar a animação
+      void elements.forceMarkerMax.offsetWidth;
+      elements.forceMarkerMax.style.animation = 'record-shock 0.6s ease-out';
       setTimeout(() => {
-        elements.forceMarkerMax.style.animation = 'record-shock 0.6s ease-out';
-      }, 10);
+        isRecordAnimationPlaying = false;
+        elements.forceMarkerMax.style.animation = ''; // Limpa a animação ao final
+      }, 600);
     }
   }
   
@@ -933,6 +948,28 @@ function clearRanking() {
   }
 }
 
+function updateRankingMarkers() {
+  const ranking = JSON.parse(localStorage.getItem('martelo_ranking') || '[]');
+  const top3 = ranking.slice(0, 3);
+
+  // Esconde todos os marcadores primeiro
+  Object.values(elements.rankingMarkers).forEach(marker => {
+    if(marker) marker.classList.remove('visible');
+  });
+
+  top3.forEach((entry, index) => {
+    const marker = elements.rankingMarkers[`marker${index + 1}`];
+    if (!marker) return;
+
+    const percentage = (entry.forceKg / gameSettings.maxForceDisplay) * 100;
+    const bottomPosition = Math.min(percentage, 100); // Limita a 100%
+
+    marker.style.bottom = `${bottomPosition}%`;
+    marker.innerHTML = `<span>${index + 1}º - ${entry.name}: ${entry.forceKg.toFixed(1)} kg</span>`;
+    marker.classList.add('visible');
+  });
+}
+
 function drawMiniGraph(canvas, data) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
@@ -1071,6 +1108,11 @@ function resetGame() {
   elements.newtonDisplay.textContent = '(≈ 0.0 N)';
   elements.progressBar.style.width = '0%';
   elements.verticalForceBar.style.height = '0%';
+
+  if (elements.forceMarkerCurrent) elements.forceMarkerCurrent.style.bottom = '0%';
+  if (elements.forceMarkerMax) elements.forceMarkerMax.style.bottom = '0%';
+  if (elements.labelForceCurrent) elements.labelForceCurrent.textContent = '0 kg';
+  if (elements.labelForceMax) elements.labelForceMax.textContent = '0 kg';
   
   showScreen('start');
 }
