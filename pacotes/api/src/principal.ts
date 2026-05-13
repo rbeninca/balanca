@@ -22,7 +22,8 @@ export function criarApp(opcoes: OpcoesCriarApp) {
     return rep.send({ status: 'ok', modo: db.obterModo() });
   });
 
-  const contexto = { db, verificarChave };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const contexto: any = { db, verificarChave };
   app.register(rotasSessoes, contexto);
   app.register(rotasLeituras, contexto);
   app.register(rotasMetadados, contexto);
