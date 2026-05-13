@@ -16,11 +16,12 @@ export interface DadosAnalise {
 let instanciaAtual: TelaAnalise | null = null;
 
 export class TelaAnalise {
-  private overlay:    HTMLElement;
-  private chart:      ApexCharts | null = null;
-  private burnInicio  = 0;   // índice
-  private burnFim     = 0;   // índice
-  private nomeSessao: string;
+  private overlay:        HTMLElement;
+  private chart:          ApexCharts | null = null;
+  private burnInicio      = 0;   // índice
+  private burnFim         = 0;   // índice
+  private nomeSessao:     string;
+  private leiturasMutadas = false;
 
   constructor(
     private dados: DadosAnalise,
@@ -31,6 +32,7 @@ export class TelaAnalise {
     instanciaAtual = this;
 
     this.nomeSessao = dados.nomeSessao;
+    this.normalizarLeiturasPorTempo();
     this.overlay = document.createElement('div');
     this.overlay.className = 'modal-overlay';
     this.overlay.innerHTML = this.html();
@@ -39,6 +41,11 @@ export class TelaAnalise {
     this.detectarQueima();
     setTimeout(() => { this.renderizarGrafico(); this.atualizarStats(); }, 80);
     this.bindEventos();
+  }
+
+  private normalizarLeiturasPorTempo() {
+    if (this.dados.leituras.length < 2) return;
+    this.dados.leituras = [...this.dados.leituras].sort((a, b) => a.marcaTemporal - b.marcaTemporal);
   }
 
   private html(): string {
@@ -72,8 +79,8 @@ export class TelaAnalise {
 
               <div class="stats-secao">
                 <h3>Queima</h3>
-                <div class="stat-item"><span class="stat-label">Início queima</span><span class="stat-valor" id="st-t0">—</span></div>
-                <div class="stat-item"><span class="stat-label">Fim queima</span><span class="stat-valor" id="st-t1">—</span></div>
+                <div class="stat-item"><span class="stat-label">Início queima</span><span class="stat-valor"><input type="number" class="stat-input" id="st-t0" step="0.001" min="0"> s</span></div>
+                <div class="stat-item"><span class="stat-label">Fim queima</span><span class="stat-valor"><input type="number" class="stat-input" id="st-t1" step="0.001" min="0"> s</span></div>
                 <div class="stat-item"><span class="stat-label">Duração queima</span><span class="stat-valor" id="st-tbq">—</span></div>
                 <div class="stat-item"><span class="stat-label">Impulso total</span><span class="stat-valor" id="st-impulso">—</span></div>
                 <div class="stat-item"><span class="stat-label">F média</span><span class="stat-valor" id="st-fmed">—</span></div>
@@ -92,6 +99,7 @@ export class TelaAnalise {
               </div>
 
               <button id="btn-auto-detectar" class="btn-outline btn-sm" style="width:100%;margin-top:0.5rem">Auto-detectar queima</button>
+              <button id="btn-recortar" class="btn-warning btn-sm" style="width:100%;margin-top:0.4rem" title="Remove amostras fora da região de queima">✂ Recortar fora da queima</button>
             </div>
           </div>
         </div>
@@ -173,7 +181,7 @@ export class TelaAnalise {
         },
       },
       colors: ['#2563eb'],
-      stroke: { curve: 'smooth', width: 2 },
+      stroke: { curve: 'straight', width: 2 },
       fill:   { type: 'solid', opacity: 1 },
       markers: { size: 0, hover: { size: 4 } },
       xaxis: {
@@ -227,8 +235,12 @@ export class TelaAnalise {
     const tInicio = (ls[inicio]?.marcaTemporal ?? t0) - t0;
     const tFim    = (ls[fim]?.marcaTemporal   ?? t0) - t0;
 
-    setTxt('st-t0',  `${fmt(tInicio / 1000, 3)} s`);
-    setTxt('st-t1',  `${fmt(tFim   / 1000, 3)} s`);
+    const setInput = (id: string, v: number) => {
+      const el = this.overlay.querySelector<HTMLInputElement>(`#${id}`);
+      if (el && document.activeElement !== el) el.value = v.toFixed(3);
+    };
+    setInput('st-t0', tInicio / 1000);
+    setInput('st-t1', tFim / 1000);
     setTxt('st-tbq', `${fmt((tFim - tInicio) / 1000, 3)} s`);
 
     // tenta analisarMotor usando os dados completos (emQueima vem do pipeline)
@@ -263,6 +275,31 @@ export class TelaAnalise {
         setTxt('st-impulso', `${fmt(impul)} N·s`);
       }
     }
+  }
+
+  private encontrarIndiceMaisProximo(tempoS: number): number {
+    const ls = this.dados.leituras;
+    if (ls.length === 0) return 0;
+    const t0 = ls[0]!.marcaTemporal;
+    const alvo = t0 + tempoS * 1000;
+    let best = 0;
+    let bestDiff = Math.abs(ls[0]!.marcaTemporal - alvo);
+    for (let i = 1; i < ls.length; i++) {
+      const d = Math.abs(ls[i]!.marcaTemporal - alvo);
+      if (d < bestDiff) { bestDiff = d; best = i; }
+    }
+    return best;
+  }
+
+  private recortarQueima() {
+    const ls = this.dados.leituras;
+    if (ls.length === 0 || this.burnInicio >= this.burnFim) return;
+    this.dados.leituras = ls.slice(this.burnInicio, this.burnFim + 1);
+    this.leiturasMutadas = true;
+    this.burnInicio = 0;
+    this.burnFim    = this.dados.leituras.length - 1;
+    this.renderizarGrafico();
+    this.atualizarStats();
   }
 
   private baixarArquivo(blob: Blob, nome: string) {
@@ -303,11 +340,31 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-fechar-analise')!.addEventListener('click', () => this.destruir());
     this.overlay.querySelector('#btn-descartar')!.addEventListener('click',      () => this.destruir());
     this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(); this.renderizarGrafico(); this.atualizarStats(); });
+    this.overlay.querySelector('#btn-recortar')!.addEventListener('click',       () => this.recortarQueima());
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
 
     const inputNome = this.overlay.querySelector<HTMLInputElement>('#nome-sessao-analise')!;
     inputNome.addEventListener('input', () => { this.nomeSessao = inputNome.value.trim() || this.dados.nomeSessao; });
+
+    const inputT0 = this.overlay.querySelector<HTMLInputElement>('#st-t0')!;
+    const inputT1 = this.overlay.querySelector<HTMLInputElement>('#st-t1')!;
+    inputT0.addEventListener('change', () => {
+      const v = parseFloat(inputT0.value);
+      if (!isNaN(v)) {
+        this.burnInicio = Math.min(this.encontrarIndiceMaisProximo(v), this.burnFim);
+        this.renderizarGrafico();
+        this.atualizarStats();
+      }
+    });
+    inputT1.addEventListener('change', () => {
+      const v = parseFloat(inputT1.value);
+      if (!isNaN(v)) {
+        this.burnFim = Math.max(this.encontrarIndiceMaisProximo(v), this.burnInicio);
+        this.renderizarGrafico();
+        this.atualizarStats();
+      }
+    });
 
     this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click', () => this.salvarSessao());
   }
@@ -316,7 +373,10 @@ export class TelaAnalise {
     const idSessao = this.dados.idSessao;
     if (!idSessao) { this.destruir(); return; }
 
-    // Persiste metadados de análise
+    if (this.leiturasMutadas) {
+      await this.armazenamento.substituirLeituras(idSessao, this.dados.leituras);
+    }
+
     try {
       const analise = analisarMotor(this.dados.leituras, {});
       await this.armazenamento.salvarMetadados(idSessao, { descricao: analise.nomeComum });
