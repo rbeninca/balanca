@@ -1,4 +1,5 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 import type { GerenciadorSessao } from '../nucleo/GerenciadorSessao.js';
 import type { ArmazenamentoLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
@@ -14,6 +15,8 @@ export type Fonte = {
   enviarComando?(cmd: object): void;
   fechar?(): void;
   desconectar?(): Promise<void>;
+  atualizarConfigPipeline?(patch: PipelinePatch): void;
+  obterConfigPipeline?(): EstadoPipeline;
 };
 
 const MAX_FLUXO      = 300;   // pontos no modo fluxo
@@ -106,6 +109,49 @@ export class TelaMedicao {
           <button id="ctrl-limpar" class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
         </div>
 
+        <div class="filtros-painel" id="filtros-painel">
+          <button class="filtros-header" id="filtros-toggle">
+            <span class="filtros-titulo">Processamento de Sinal</span>
+            <span class="filtros-badge" id="filtros-badge">3 ativos</span>
+            <span class="filtros-seta" id="filtros-seta">▼</span>
+          </button>
+          <div class="filtros-corpo hidden" id="filtros-corpo">
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-zona-morta" checked>
+                Zona Morta
+              </label>
+              <div class="filtro-params">
+                <span>Limiar</span>
+                <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.01">
+                <span>N</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-media-movel" checked>
+                Média Móvel
+              </label>
+              <div class="filtro-params">
+                <span>Janela</span>
+                <input type="number" id="in-media-movel" class="filtro-num" value="5" min="1" max="50" step="1">
+                <span>amostras</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-det-queima" checked>
+                Det. Queima
+              </label>
+              <div class="filtro-params">
+                <span>Histerese</span>
+                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10">
+                <span>ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="status-bar">
           <span><span id="ponto-serial" class="status-ponto"></span><span id="txt-serial">Serial desconectado</span></span>
           <span id="txt-hz">0 Hz</span>
@@ -195,6 +241,72 @@ export class TelaMedicao {
 
     this.dimensionarCanvas();
     window.addEventListener('resize', () => this.dimensionarCanvas());
+
+    this.inicializarPainelFiltros(container);
+  }
+
+  private inicializarPainelFiltros(container: HTMLElement) {
+    // Ler estado inicial da fonte (se disponível)
+    const cfgInicial = this.fonte.obterConfigPipeline?.();
+    if (cfgInicial) {
+      const ckZona   = container.querySelector<HTMLInputElement>('#ck-zona-morta')!;
+      const ckMedia  = container.querySelector<HTMLInputElement>('#ck-media-movel')!;
+      const ckQueima = container.querySelector<HTMLInputElement>('#ck-det-queima')!;
+      const inZona   = container.querySelector<HTMLInputElement>('#in-zona-morta')!;
+      const inMedia  = container.querySelector<HTMLInputElement>('#in-media-movel')!;
+      const inHister = container.querySelector<HTMLInputElement>('#in-det-hister')!;
+      ckZona.checked   = cfgInicial.ativoZonaMorta;
+      ckMedia.checked  = cfgInicial.ativoMediaMovel;
+      ckQueima.checked = cfgInicial.ativoDetectorQueima;
+      inZona.value     = String(cfgInicial.limiarZonaMortaN);
+      inMedia.value    = String(cfgInicial.janelaMediaMovel);
+      inHister.value   = String(cfgInicial.tempoMinFimMs);
+    }
+
+    // Toggle painel
+    const toggle = container.querySelector('#filtros-toggle')!;
+    const corpo  = container.querySelector('#filtros-corpo')!;
+    const seta   = container.querySelector('#filtros-seta')!;
+    toggle.addEventListener('click', () => {
+      const aberto = !corpo.classList.contains('hidden');
+      corpo.classList.toggle('hidden', aberto);
+      seta.classList.toggle('aberto', !aberto);
+    });
+
+    const aplicar = () => {
+      const ckZona   = container.querySelector<HTMLInputElement>('#ck-zona-morta')!;
+      const ckMedia  = container.querySelector<HTMLInputElement>('#ck-media-movel')!;
+      const ckQueima = container.querySelector<HTMLInputElement>('#ck-det-queima')!;
+      const patch: PipelinePatch = {
+        ativoZonaMorta:      ckZona.checked,
+        limiarZonaMortaN:    Math.max(0, +(container.querySelector<HTMLInputElement>('#in-zona-morta')!.value) || 0.05),
+        ativoMediaMovel:     ckMedia.checked,
+        janelaMediaMovel:    Math.max(1, +(container.querySelector<HTMLInputElement>('#in-media-movel')!.value) || 5),
+        ativoDetectorQueima: ckQueima.checked,
+        tempoMinFimMs:       Math.max(0, +(container.querySelector<HTMLInputElement>('#in-det-hister')!.value) || 100),
+      };
+      this.fonte.atualizarConfigPipeline?.(patch);
+      this.atualizarBadgeFiltros(container);
+    };
+
+    ['#ck-zona-morta','#ck-media-movel','#ck-det-queima'].forEach(id =>
+      container.querySelector(id)!.addEventListener('change', aplicar));
+    ['#in-zona-morta','#in-media-movel','#in-det-hister'].forEach(id =>
+      container.querySelector(id)!.addEventListener('change', aplicar));
+
+    this.atualizarBadgeFiltros(container);
+  }
+
+  private atualizarBadgeFiltros(container: HTMLElement) {
+    const badge = container.querySelector<HTMLElement>('#filtros-badge');
+    if (!badge) return;
+    const ativos = [
+      container.querySelector<HTMLInputElement>('#ck-zona-morta')?.checked,
+      container.querySelector<HTMLInputElement>('#ck-media-movel')?.checked,
+      container.querySelector<HTMLInputElement>('#ck-det-queima')?.checked,
+    ].filter(Boolean).length;
+    badge.textContent = ativos === 3 ? '3 ativos' : ativos === 0 ? 'inativo' : `${ativos}/3 ativos`;
+    badge.className = 'filtros-badge' + (ativos === 3 ? '' : ativos === 0 ? ' inativo' : ' parcial');
   }
 
   private dimensionarCanvas() {

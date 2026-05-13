@@ -90,6 +90,25 @@
     .ctrl-btn-solo { border: 1px solid #d1d5db; border-radius: 4px; }
     .ctrl-btn-solo.ativo { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
 
+    /* ── Painel de filtros de processamento ────────────────────────────────── */
+    .filtros-painel { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.75rem; overflow: hidden; }
+    .filtros-header { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.75rem; background: #f9fafb; border: none; cursor: pointer; font-size: 0.78rem; color: #374151; text-align: left; }
+    .filtros-header:hover { background: #f3f4f6; }
+    .filtros-titulo { flex: 1; font-weight: 600; }
+    .filtros-badge { font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 10px; background: #dcfce7; color: #166534; }
+    .filtros-badge.parcial { background: #fef9c3; color: #854d0e; }
+    .filtros-badge.inativo { background: #fee2e2; color: #991b1b; }
+    .filtros-seta { font-size: 0.65rem; color: #9ca3af; transition: transform 0.2s; }
+    .filtros-seta.aberto { transform: rotate(180deg); }
+    .filtros-corpo { padding: 0.5rem 0.75rem; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 0.35rem; }
+    .filtro-linha { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; min-height: 1.9rem; }
+    .filtro-linha:has(.filtro-chk input:not(:checked)) { opacity: 0.5; }
+    .filtro-chk { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer; min-width: 130px; color: #374151; user-select: none; }
+    .filtro-chk input[type="checkbox"] { accent-color: #2563eb; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+    .filtro-params { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #6b7280; flex-wrap: wrap; }
+    .filtro-num { width: 62px; padding: 0.22rem 0.4rem; border: 1px solid #d1d5db; border-radius: 3px; font-size: 0.8rem; color: #1a1a1a; background: #fff; text-align: right; }
+    .filtro-num:focus { outline: none; border-color: #2563eb; }
+
     /* ── Barra de status ────────────────────────────────────────────────────── */
     .status-bar { display: flex; gap: 1.5rem; justify-content: center; font-size: 0.75rem; color: #9ca3af; padding: 0.4rem 0 0.75rem; flex-wrap: wrap; }
     .status-ponto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #d1d5db; vertical-align: middle; margin-right: 0.3rem; }
