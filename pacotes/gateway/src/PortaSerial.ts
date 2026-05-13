@@ -17,6 +17,7 @@ export class PortaSerial extends EventEmitter {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private tentativa = 0;
   private abortado  = false;
+  private pausado   = false;
   private conectado = false;
 
   constructor(private opcoes: OpcaoPortaSerial) {
@@ -94,7 +95,7 @@ export class PortaSerial extends EventEmitter {
   }
 
   private agendarReconexao(motivo: string): void {
-    if (this.abortado) return;
+    if (this.abortado || this.pausado) return;
 
     if (this.conectado) {
       this.conectado = false;
@@ -117,6 +118,28 @@ export class PortaSerial extends EventEmitter {
         else resolve();
       });
     });
+  }
+
+  pausar(): Promise<void> {
+    this.pausado = true;
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    return new Promise((resolve) => {
+      if (!this.porta?.isOpen) { resolve(); return; }
+      this.porta.close(() => {
+        this.conectado = false;
+        this.emit('desconectado', 'pausado para atualização de firmware');
+        resolve();
+      });
+    });
+  }
+
+  retomar(): void {
+    this.pausado   = false;
+    this.tentativa = 0;
+    this.conectar();
   }
 
   fechar(): Promise<void> {

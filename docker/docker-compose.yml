@@ -55,5 +55,30 @@ services:
       start_period: 5s
       retries: 3
 
+  atualizador:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.firmware
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    ports:
+      - "8767:8767"
+    environment:
+      PORTA_SERIAL: /dev/ttyUSB0
+      PORTA_HTTP: "8767"
+      PORTA_GATEWAY_HTTP: http://gateway:8766
+      CAMINHO_FIRMWARE: /firmware/balanca.bin
+      CAMINHO_VERSAO: /firmware/versao.json
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8767/saude"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
 volumes:
   dados_sqlite:
