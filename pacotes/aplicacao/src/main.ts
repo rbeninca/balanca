@@ -3,13 +3,14 @@ import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
+import { TelaConfiguracoes } from './interface/TelaConfiguracoes.js';
 
 const armazenamento = new ArmazenamentoLocal();
 const gerenciador   = new GerenciadorSessao(armazenamento);
 
 const app = document.getElementById('app')!;
 
-type Tela = 'conexao' | 'medicao' | 'sessoes';
+type Tela = 'conexao' | 'medicao' | 'sessoes' | 'configuracoes';
 
 let telaAtual:  Tela   = 'conexao';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,11 +42,26 @@ function renderizar() {
         gerenciador,
         armazenamento,
         () => navegar('sessoes'),
+        () => navegar('configuracoes'),
       );
       break;
 
     case 'sessoes':
-      new TelaSessoes(app, armazenamento, () => navegar('medicao'));
+      new TelaSessoes(
+        app,
+        armazenamento,
+        () => navegar('medicao'),
+        () => navegar('configuracoes'),
+      );
+      break;
+
+    case 'configuracoes':
+      new TelaConfiguracoes(
+        app,
+        fonteAtual,
+        () => navegar('medicao'),
+        () => navegar('sessoes'),
+      );
       break;
   }
 }

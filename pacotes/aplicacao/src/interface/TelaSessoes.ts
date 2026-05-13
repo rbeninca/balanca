@@ -9,6 +9,7 @@ export class TelaSessoes {
     container: HTMLElement,
     private armazenamento: ArmazenamentoLocal,
     private onMedicao: () => void,
+    private onConfiguracoes: () => void,
   ) {
     this.renderizar(container);
   }
@@ -18,6 +19,7 @@ export class TelaSessoes {
       <div class="nav-links">
         <a href="#" id="nav-medir">Medição</a>
         <a href="#" id="nav-sessoes" class="ativo">Sessões</a>
+        <a href="#" id="nav-config">Configurações</a>
       </div>
       <div class="card">
         <h2>Sessões Gravadas</h2>
@@ -28,6 +30,10 @@ export class TelaSessoes {
     container.querySelector('#nav-medir')!.addEventListener('click', (e) => {
       e.preventDefault();
       this.onMedicao();
+    });
+    container.querySelector('#nav-config')!.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.onConfiguracoes();
     });
 
     const sessoes = await this.armazenamento.listarSessoes();
