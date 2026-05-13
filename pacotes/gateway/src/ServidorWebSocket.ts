@@ -38,17 +38,20 @@ export class ServidorWebSocket {
         const leitura = this.pipeline.processar(pacote as PacoteDados);
         this.difundir({ tipo: 'LEITURA', carga: leitura });
       } else if (pacote.tipo === 'CONFIGURACAO') {
-        this.pipeline.atualizarCalibracao(
-          pacote.fatorConversao / 1000 * pacote.gravidade,
-          pacote.offsetTara,
-        );
         this.difundir({ tipo: 'CONFIG', carga: pacote });
       } else if (pacote.tipo === 'STATUS') {
         this.difundir({ tipo: 'STATUS', carga: pacote });
       }
     });
 
-    porta.on('conectado',    () => this.difundir({ tipo: 'SERIAL_OK' }));
+    porta.on('conectado', async () => {
+      this.difundir({ tipo: 'SERIAL_OK' });
+      // Solicita configuração ao ESP32 para calibrar o pipeline corretamente
+      try {
+        const bytes = codificarComando({ tipo: 'CMD_OBTER_CONFIG' });
+        await porta.enviar(Buffer.from(bytes));
+      } catch { /* ignora — o ESP32 enviará CONFIG ao reiniciar */ }
+    });
     porta.on('desconectado', () => this.difundir({ tipo: 'SERIAL_OFF' }));
   }
 
