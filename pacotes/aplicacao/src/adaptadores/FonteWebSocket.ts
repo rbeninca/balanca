@@ -1,4 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import { PipelineProcessamento } from '@balancagfig/processamento';
+import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 
 export interface StatusFonteWS {
   conectado: boolean;
@@ -17,8 +19,20 @@ export class FonteWebSocket {
   private ws: WebSocket;
   private _status: StatusFonteWS = { conectado: false, transporte: 'websocket' };
   private ouvintes: { [K in keyof EventosDadosWS]?: Array<Ouvinte<EventosDadosWS[K]>> } = {};
+  private pipeline: PipelineProcessamento;
 
   constructor(url: string, factory?: (url: string) => WebSocket) {
+    this.pipeline = new PipelineProcessamento({
+      limiarZonaMortaN: 0.05,
+      janelaMediaMovel: 5,
+      fatorCalibracao: 1.0,
+      deslocamentoTara: 0,
+      tempoMinFimMs: 100,
+    });
+    // Gateway already processes data; local filters start disabled
+    this.pipeline.atualizarConfig({
+      ativoZonaMorta: false, ativoMediaMovel: false, ativoDetectorQueima: false,
+    });
     const criar = factory ?? ((u: string) => new WebSocket(u));
     this.ws = criar(url);
     this.ws.onmessage = (ev) => this._processar(ev.data as string);
@@ -34,12 +48,14 @@ export class FonteWebSocket {
     try { msg = JSON.parse(json); } catch { return; }
 
     switch (msg.tipo) {
-      case 'LEITURA':
+      case 'LEITURA': {
         // forcaBruta nunca é exposta para o consumidor
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { forcaBruta: _fb, ...leitura } = msg.carga ?? {};
-        this._emitir('dados', leitura as LeituraProcessada);
+        const { forcaBruta: _fb, ...base } = msg.carga ?? {};
+        const leitura = this.pipeline.processarLeitura(base as LeituraProcessada);
+        this._emitir('dados', leitura);
         break;
+      }
       case 'CONFIG':
         this._emitir('config', msg.carga);
         break;
@@ -85,6 +101,14 @@ export class FonteWebSocket {
 
   obterStatus(): StatusFonteWS {
     return this._status;
+  }
+
+  atualizarConfigPipeline(patch: PipelinePatch): void {
+    this.pipeline.atualizarConfig(patch);
+  }
+
+  obterConfigPipeline(): EstadoPipeline {
+    return this.pipeline.obterConfig();
   }
 
   fechar(): void {

@@ -1,7 +1,7 @@
 import { decodificar } from '@balancagfig/protocolo';
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import { PipelineProcessamento } from '@balancagfig/processamento';
-import type { ConfiguracaoPipeline } from '@balancagfig/processamento/tipos';
+import type { ConfiguracaoPipeline, EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 
 export interface StatusFonteWebSerial {
   conectado: boolean;
@@ -73,6 +73,14 @@ export class FonteWebSerial {
   on(evento: string, fn: Ouvinte<any>): void {
     if (evento === 'dados') this.ouvintesDados.push(fn);
     else if (evento === 'erro') this.ouvinteserro.push(fn);
+  }
+
+  atualizarConfigPipeline(patch: PipelinePatch): void {
+    this.pipeline.atualizarConfig(patch);
+  }
+
+  obterConfigPipeline(): EstadoPipeline {
+    return this.pipeline.obterConfig();
   }
 
   obterStatus(): StatusFonteWebSerial {
