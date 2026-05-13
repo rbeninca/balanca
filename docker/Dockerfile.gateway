@@ -1,0 +1,46 @@
+FROM node:24-alpine AS base
+WORKDIR /app
+
+# Instala dependências nativas para serialport
+RUN apk add --no-cache python3 make g++ linux-headers eudev-dev
+
+COPY package.json package-lock.json ./
+COPY tsconfig.base.json ./
+COPY pacotes/protocolo/package.json pacotes/protocolo/
+COPY pacotes/processamento/package.json pacotes/processamento/
+COPY pacotes/gateway/package.json pacotes/gateway/
+
+RUN npm ci --workspace=pacotes/protocolo --workspace=pacotes/processamento --workspace=pacotes/gateway
+
+COPY pacotes/protocolo/src pacotes/protocolo/src
+COPY pacotes/protocolo/tsconfig.json pacotes/protocolo/
+COPY pacotes/processamento/src pacotes/processamento/src
+COPY pacotes/processamento/tsconfig.json pacotes/processamento/
+COPY pacotes/gateway/src pacotes/gateway/src
+COPY pacotes/gateway/tsconfig.json pacotes/gateway/
+
+RUN npm run compilar --workspace=pacotes/protocolo && \
+    npm run compilar --workspace=pacotes/processamento && \
+    npm run compilar --workspace=pacotes/gateway
+
+FROM node:24-alpine
+WORKDIR /app
+RUN apk add --no-cache eudev
+
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/pacotes/protocolo/dist ./pacotes/protocolo/dist
+COPY --from=base /app/pacotes/processamento/dist ./pacotes/processamento/dist
+COPY --from=base /app/pacotes/gateway/dist ./pacotes/gateway/dist
+COPY --from=base /app/pacotes/protocolo/package.json ./pacotes/protocolo/
+COPY --from=base /app/pacotes/processamento/package.json ./pacotes/processamento/
+COPY --from=base /app/pacotes/gateway/package.json ./pacotes/gateway/
+COPY --from=base /app/package.json ./
+
+ENV PORTA_SERIAL=/dev/ttyUSB0
+ENV BAUD_SERIAL=921600
+ENV PORTA_WEBSOCKET=8765
+ENV PORTA_HTTP=8766
+
+EXPOSE 8765 8766
+
+CMD ["node", "pacotes/gateway/dist/principal.js"]

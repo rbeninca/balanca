@@ -1,0 +1,13 @@
+{
+  "name": "@balancagfig/ponta-a-ponta",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "testar:ci": "vitest run --reporter=junit --outputFile=test-results.xml"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
