@@ -165,6 +165,19 @@ export class ArmazenamentoLocal {
     return exportarCSV(leituras);
   }
 
+  async substituirLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void> {
+    const db = await abrirBD();
+    await tx(db, ['leituras'], 'readwrite', async (t) => {
+      const store = t.objectStore('leituras');
+      const idx   = store.index('id_sessao');
+      await deleteByIndex(store, idx, idSessao);
+      for (const l of leituras) {
+        await add(store, { id_sessao: idSessao, ...l });
+      }
+    });
+    db.close();
+  }
+
   async salvarMetadados(idSessao: string, meta: MetadadosLocal): Promise<void> {
     const db = await abrirBD();
     await tx(db, ['metadados'], 'readwrite', async (t) => put(t.objectStore('metadados'), { id_sessao: idSessao, ...meta }));
