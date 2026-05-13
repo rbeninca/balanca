@@ -41,5 +41,19 @@ services:
       start_period: 10s
       retries: 3
 
+  webapp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.webapp
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
 volumes:
   dados_sqlite:

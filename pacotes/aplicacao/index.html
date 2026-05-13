@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BalançaGFIG</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+    #app { width: 100%; max-width: 500px; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #fff; letter-spacing: -0.02em; }
+    h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #fff; }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.3rem; margin-top: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    label:first-child { margin-top: 0; }
+    input[type="text"], input[type="password"] { width: 100%; padding: 0.5rem 0.75rem; background: #111; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 0.9rem; }
+    input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #4a9eff; }
+    .radio-group { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.5rem 0; }
+    .radio-label { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 0.75rem; border: 1px solid #2a2a2a; border-radius: 4px; transition: border-color 0.15s; }
+    .radio-label:has(input:checked) { border-color: #4a9eff; background: #0a1a2a; }
+    .radio-label input[type="radio"] { accent-color: #4a9eff; }
+    button { padding: 0.6rem 1.25rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background 0.15s; }
+    .btn-primary { background: #4a9eff; color: #fff; }
+    .btn-primary:hover { background: #3a8eef; }
+    .btn-primary:disabled { background: #1a3a5a; color: #4a6a8a; cursor: not-allowed; }
+    .btn-danger { background: #c03030; color: #fff; }
+    .btn-danger:hover { background: #a02020; }
+    .btn-secondary { background: #2a2a2a; color: #c0c0c0; border: 1px solid #3a3a3a; }
+    .btn-secondary:hover { background: #333; }
+    .status-box { padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.85rem; background: #161616; color: #888; border: 1px solid #2a2a2a; }
+    .status-box.ok { background: #0a1f0a; color: #4caf50; border-color: #1a4f1a; }
+    .status-box.aviso { background: #1f1a0a; color: #ffa040; border-color: #4f3a0a; }
+    .status-box.erro { background: #1f0a0a; color: #ef5350; border-color: #4f1a1a; }
+    .valor-forca { font-size: 4rem; font-weight: 700; color: #4a9eff; text-align: center; padding: 1.5rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
+    .valor-forca span.unidade { font-size: 1.5rem; color: #4a6a9a; font-weight: 400; }
+    .controles { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .nav-links { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; }
+    .nav-links a { color: #4a9eff; text-decoration: none; padding: 0.3rem 0; border-bottom: 2px solid transparent; }
+    .nav-links a.ativo { border-bottom-color: #4a9eff; color: #fff; }
+    .nav-links a:hover { color: #7ab8ff; }
+    .sessao-item { padding: 0.75rem; border-bottom: 1px solid #1f1f1f; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .sessao-item:last-child { border-bottom: none; }
+    .sessao-item .nome { font-size: 0.9rem; color: #e0e0e0; }
+    .sessao-item .meta { font-size: 0.75rem; color: #666; }
+    .ports-list { font-size: 0.85rem; color: #aaa; margin-top: 0.5rem; }
+    .ports-list li { padding: 0.3rem 0; list-style: none; }
+    .hidden { display: none !important; }
+    .btn-row { display: flex; gap: 0.6rem; margin-top: 1rem; }
+    .info-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; padding: 0.25rem 0; }
+    .gravando-badge { display: inline-block; background: #c03030; color: #fff; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 3px; vertical-align: middle; margin-left: 0.5rem; animation: piscar 1s step-end infinite; }
+    @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .vazio { text-align: center; color: #555; font-size: 0.9rem; padding: 2rem; }
+    .motor-badge { display: inline-block; background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 600; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
