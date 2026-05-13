@@ -1,25 +1,39 @@
 FROM node:24-alpine AS base
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY tsconfig.base.json ./
-COPY pacotes/api/package.json pacotes/api/
+# Ferramentas de build para better-sqlite3 (node-gyp)
+RUN apk add --no-cache python3 make g++
 
+# Copia package.json de TODOS os workspaces para satisfazer o lockfile
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY pacotes/protocolo/package.json     pacotes/protocolo/
+COPY pacotes/processamento/package.json pacotes/processamento/
+COPY pacotes/analise/package.json       pacotes/analise/
+COPY pacotes/relatorio/package.json     pacotes/relatorio/
+COPY pacotes/gateway/package.json       pacotes/gateway/
+COPY pacotes/api/package.json           pacotes/api/
+COPY pacotes/aplicacao/package.json     pacotes/aplicacao/
+COPY ponta-a-ponta/package.json         ponta-a-ponta/
+
+# Instala todas as deps (inclui typescript para compilação)
 RUN npm ci --workspace=pacotes/api
 
-COPY pacotes/api/src pacotes/api/src
+# Copia fontes e compila TypeScript
+COPY pacotes/api/src        pacotes/api/src
 COPY pacotes/api/tsconfig.json pacotes/api/
-
 RUN npm run compilar --workspace=pacotes/api
 
+# Remove devDependencies para imagem final menor
+RUN npm prune --omit=dev
+
+# ── Imagem final ────────────────────────────────────────────────────────────
 FROM node:24-alpine
 WORKDIR /app
 
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/pacotes/api/dist ./pacotes/api/dist
-COPY --from=base /app/pacotes/api/src/bancoDados/esquema.sql ./pacotes/api/dist/bancoDados/
+COPY --from=base /app/node_modules             ./node_modules
+COPY --from=base /app/pacotes/api/dist         ./pacotes/api/dist
 COPY --from=base /app/pacotes/api/package.json ./pacotes/api/
-COPY --from=base /app/package.json ./
+COPY --from=base /app/package.json             ./
 
 RUN mkdir -p /dados && chown node:node /dados
 USER node
@@ -30,7 +44,7 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=10s --timeout=5s --start-period=5s \
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/saude || exit 1
 
 CMD ["node", "pacotes/api/dist/principal.js"]
