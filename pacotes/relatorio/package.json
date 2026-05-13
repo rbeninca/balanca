@@ -1,0 +1,25 @@
+{
+  "name": "@balancagfig/relatorio",
+  "version": "2.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "compilar": "tsc",
+    "test": "vitest run",
+    "testar:cobertura": "vitest run --coverage",
+    "testar:ci": "vitest run --reporter=junit --outputFile=test-results.xml"
+  },
+  "dependencies": {
+    "@balancagfig/analise": "*",
+    "@balancagfig/processamento": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
+  }
+}
