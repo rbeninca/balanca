@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { ProvedorSQLite } from '../bancoDados/ProvedorSQLite.js';
+import type { ContextoRotas } from './tipos.js';
 
 interface MetadadosSessao {
   id_sessao: string;
@@ -11,10 +11,7 @@ interface MetadadosSessao {
   observacoes: string | null;
 }
 
-export async function rotasMetadados(app: FastifyInstance, { db, verificarChave }: {
-  db: ProvedorSQLite;
-  verificarChave: (req: Parameters<FastifyInstance['addHook']>[1], rep: Parameters<FastifyInstance['addHook']>[1]) => Promise<void>;
-}) {
+export async function rotasMetadados(app: FastifyInstance, { db, verificarChave }: ContextoRotas) {
   app.get<{ Params: { id: string } }>('/sessoes/:id/metadados', async (req, rep) => {
     const sessao = db.consultarUm<{ id: string }>('SELECT id FROM sessoes WHERE id = ?', [req.params.id]);
     if (!sessao) return rep.status(404).send({ erro: 'Sessão não encontrada' });

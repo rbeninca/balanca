@@ -4,7 +4,7 @@
   "type": "module",
   "main": "./dist/principal.js",
   "scripts": {
-    "compilar": "tsc",
+    "compilar": "tsc && cp src/bancoDados/esquema.sql dist/bancoDados/esquema.sql",
     "iniciar": "node dist/principal.js",
     "test": "vitest run",
     "testar:cobertura": "vitest run --coverage",

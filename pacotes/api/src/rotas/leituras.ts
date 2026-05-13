@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ProvedorSQLite } from '../bancoDados/ProvedorSQLite.js';
+import type { ContextoRotas } from './tipos.js';
 
 interface LeituraInput {
   marca_temporal: number;
@@ -44,10 +45,7 @@ function atualizarMetricasSessao(db: ProvedorSQLite, idSessao: string): void {
   );
 }
 
-export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }: {
-  db: ProvedorSQLite;
-  verificarChave: (req: Parameters<FastifyInstance['addHook']>[1], rep: Parameters<FastifyInstance['addHook']>[1]) => Promise<void>;
-}) {
+export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }: ContextoRotas) {
   app.get<{ Params: { id: string } }>('/sessoes/:id/leituras', async (req, rep) => {
     const sessao = db.consultarUm<{ id: string }>('SELECT id FROM sessoes WHERE id = ?', [req.params.id]);
     if (!sessao) return rep.status(404).send({ erro: 'Sessão não encontrada' });
