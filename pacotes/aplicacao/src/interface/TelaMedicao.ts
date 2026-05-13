@@ -6,17 +6,18 @@ import { WizardCalibracao } from './WizardCalibracao.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
-type Fonte = {
-  on(evento: 'dados',   fn: (l: LeituraProcessada) => void): void;
-  on(evento: 'config',  fn: (c: unknown) => void): void;
-  on(evento: 'status',  fn: (s: unknown) => void): void;
-  on(evento: string,    fn: (v: unknown) => void): void;
+export type Fonte = {
+  on(evento: 'dados',  fn: (l: LeituraProcessada) => void): void;
+  on(evento: 'config', fn: (c: unknown) => void): void;
+  on(evento: 'status', fn: (s: unknown) => void): void;
+  on(evento: string,   fn: (v: unknown) => void): void;
   enviarComando?(cmd: object): void;
   fechar?(): void;
   desconectar?(): Promise<void>;
 };
 
-const MAX_PONTOS = 300;
+const MAX_FLUXO      = 300;   // pontos no modo fluxo
+const MAX_ACUMULADO  = 5000;  // pontos no modo acumulado
 const UNIDADES: Unidade[] = ['N', 'kg', 'g'];
 
 function converterForca(valorN: number, unidade: Unidade): number {
@@ -26,33 +27,38 @@ function converterForca(valorN: number, unidade: Unidade): number {
 }
 
 export class TelaMedicao {
-  private gravando      = false;
+  private gravando       = false;
   private dadosGravados: LeituraProcessada[] = [];
   private dadosGrafico: { valor: number; tempo: number }[] = [];
-  private unidade: Unidade = 'N';
-  private ultimaForca   = 0;
+  private unidade: Unidade   = 'N';
+  private ultimaForca        = 0;
   private ultimaLeitura: LeituraProcessada | null = null;
-  private totalMensagens = 0;
-  private hz            = 0;
-  private contMsgs      = 0;
-  private ultimoHzTs    = Date.now();
-  private capacidadeMaxN  = 500;
+  private hz                 = 0;
+  private contMsgs           = 0;
+  private ultimoHzTs         = Date.now();
   private animFrameId: number | null = null;
   private canvas: HTMLCanvasElement | null = null;
-  private nomeSessao    = '';
+  private nomeSessao         = '';
+  private impulsoOffset      = 0;
+
+  // Controles do gráfico
+  private modoPontos     = false;
+  private modoAcumulado  = false;
+  private pausado        = false;
 
   // refs DOM
-  private elValor:   HTMLElement | null = null;
-  private elUnidade: HTMLElement | null = null;
-  private elQueima:  HTMLElement | null = null;
-  private elHz:      HTMLElement | null = null;
-  private elPonto:   HTMLElement | null = null;
-  private elImpulso: HTMLElement | null = null;
+  private elValor:      HTMLElement | null = null;
+  private elUnidade:    HTMLElement | null = null;
+  private elQueima:     HTMLElement | null = null;
+  private elHz:         HTMLElement | null = null;
+  private elPonto:      HTMLElement | null = null;
+  private elImpulso:    HTMLElement | null = null;
   private elBtnIniciar: HTMLButtonElement | null = null;
   private elBtnParar:   HTMLButtonElement | null = null;
-  private elBadge:   HTMLElement | null = null;
-  private elStatus:  HTMLElement | null = null;
-  private elNome:    HTMLInputElement | null = null;
+  private elBadge:      HTMLElement | null = null;
+  private elStatus:     HTMLElement | null = null;
+  private elNome:       HTMLInputElement | null = null;
+  private elBtnPausar:  HTMLButtonElement | null = null;
 
   constructor(
     container: HTMLElement,
@@ -60,6 +66,7 @@ export class TelaMedicao {
     private gerenciador: GerenciadorSessao,
     private armazenamento: ArmazenamentoLocal,
     private onSessoes: () => void,
+    private onConfiguracoes: () => void,
   ) {
     this.renderizar(container);
     this.fonte.on('dados',  (l) => this.onDados(l as LeituraProcessada));
@@ -73,6 +80,7 @@ export class TelaMedicao {
       <div class="nav-links">
         <a href="#" id="nav-medir" class="ativo">Medição</a>
         <a href="#" id="nav-sessoes">Sessões</a>
+        <a href="#" id="nav-config">Configurações</a>
       </div>
 
       <div class="card">
@@ -83,7 +91,19 @@ export class TelaMedicao {
 
         <div class="chart-container">
           <canvas id="grafico-rt" class="grafico-realtime"></canvas>
-          <span id="chart-auto" class="chart-label-auto ativo">AUTO</span>
+        </div>
+
+        <div class="chart-controles">
+          <div class="ctrl-grupo">
+            <button id="ctrl-linha"  class="ctrl-btn ativo" title="Exibir linha contínua">Linha</button>
+            <button id="ctrl-pontos" class="ctrl-btn"       title="Exibir pontos individuais">Pontos</button>
+          </div>
+          <div class="ctrl-grupo">
+            <button id="ctrl-fluxo"     class="ctrl-btn ativo" title="Janela deslizante dos últimos pontos">Fluxo</button>
+            <button id="ctrl-acumulado" class="ctrl-btn"       title="Acumula todos os pontos desde o último limpar">Acumulado</button>
+          </div>
+          <button id="ctrl-pausar" class="ctrl-btn ctrl-btn-solo" title="Pausar/continuar atualização do gráfico">⏸ Pausar</button>
+          <button id="ctrl-limpar" class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
         </div>
 
         <div class="status-bar">
@@ -105,46 +125,73 @@ export class TelaMedicao {
           <input id="nome-sessao" type="text" placeholder="Sessão ${new Date().toLocaleDateString('pt-BR')}">
         </div>
         <div class="controles">
-          <button id="btn-iniciar" class="btn-primary">Iniciar</button>
-          <button id="btn-parar"   class="btn-danger hidden">Parar</button>
-          <button id="btn-tarar"   class="btn-secondary">Tarar</button>
+          <button id="btn-iniciar"  class="btn-primary">Iniciar</button>
+          <button id="btn-parar"    class="btn-danger hidden">Parar</button>
+          <button id="btn-tarar"    class="btn-secondary">Tarar</button>
           <button id="btn-calibrar" class="btn-secondary">Calibração</button>
         </div>
         <div id="status-grav" class="status-box hidden" style="margin-top:0.75rem"></div>
       </div>
     `;
 
-    this.canvas     = container.querySelector('#grafico-rt')!;
-    this.elValor    = container.querySelector('#leit-valor');
-    this.elUnidade  = container.querySelector('#leit-unidade');
-    this.elQueima   = container.querySelector('#txt-queima');
-    this.elHz       = container.querySelector('#txt-hz');
-    this.elPonto    = container.querySelector('#ponto-serial');
-    this.elImpulso  = container.querySelector('#val-impulso');
+    this.canvas       = container.querySelector('#grafico-rt')!;
+    this.elValor      = container.querySelector('#leit-valor');
+    this.elUnidade    = container.querySelector('#leit-unidade');
+    this.elQueima     = container.querySelector('#txt-queima');
+    this.elHz         = container.querySelector('#txt-hz');
+    this.elPonto      = container.querySelector('#ponto-serial');
+    this.elImpulso    = container.querySelector('#val-impulso');
     this.elBtnIniciar = container.querySelector('#btn-iniciar');
     this.elBtnParar   = container.querySelector('#btn-parar');
-    this.elBadge    = container.querySelector('#badge-gravando');
-    this.elStatus   = container.querySelector('#status-grav');
-    this.elNome     = container.querySelector('#nome-sessao');
+    this.elBadge      = container.querySelector('#badge-gravando');
+    this.elStatus     = container.querySelector('#status-grav');
+    this.elNome       = container.querySelector('#nome-sessao');
+    this.elBtnPausar  = container.querySelector('#ctrl-pausar');
 
     this.elUnidade?.addEventListener('click', () => this.alternarUnidade());
 
     container.querySelector('#nav-sessoes')!.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.destruir();
-      this.onSessoes();
+      e.preventDefault(); this.destruir(); this.onSessoes();
+    });
+    container.querySelector('#nav-config')!.addEventListener('click', (e) => {
+      e.preventDefault(); this.destruir(); this.onConfiguracoes();
     });
 
     this.elBtnIniciar!.addEventListener('click', () => this.iniciarGravacao());
     this.elBtnParar!.addEventListener('click',   () => this.pararGravacao());
 
-    container.querySelector('#btn-tarar')!.addEventListener('click', () => {
-      this.fonte.enviarComando?.({ tipo: 'CMD_TARAR' });
-    });
+    container.querySelector('#btn-tarar')!.addEventListener('click', () =>
+      this.fonte.enviarComando?.({ tipo: 'CMD_TARAR' }));
 
-    container.querySelector('#btn-calibrar')!.addEventListener('click', () => {
-      new WizardCalibracao(this.fonte, () => {});
+    container.querySelector('#btn-calibrar')!.addEventListener('click', () =>
+      new WizardCalibracao(this.fonte, () => {}));
+
+    // Controles do gráfico
+    const ativarModo = (grupo: string, ativo: string) => {
+      container.querySelectorAll(`[id^="${grupo}-"]`).forEach(b =>
+        b.classList.toggle('ativo', b.id === ativo));
+    };
+
+    container.querySelector('#ctrl-linha')!.addEventListener('click', () => {
+      this.modoPontos = false; ativarModo('ctrl', 'ctrl-linha');
     });
+    container.querySelector('#ctrl-pontos')!.addEventListener('click', () => {
+      this.modoPontos = true; ativarModo('ctrl', 'ctrl-pontos');
+    });
+    container.querySelector('#ctrl-fluxo')!.addEventListener('click', () => {
+      this.modoAcumulado = false; ativarModo('ctrl', 'ctrl-fluxo');
+    });
+    container.querySelector('#ctrl-acumulado')!.addEventListener('click', () => {
+      this.modoAcumulado = true; ativarModo('ctrl', 'ctrl-acumulado');
+    });
+    container.querySelector('#ctrl-pausar')!.addEventListener('click', () => {
+      this.pausado = !this.pausado;
+      if (this.elBtnPausar) {
+        this.elBtnPausar.textContent = this.pausado ? '▶ Continuar' : '⏸ Pausar';
+        this.elBtnPausar.classList.toggle('ativo', this.pausado);
+      }
+    });
+    container.querySelector('#ctrl-limpar')!.addEventListener('click', () => this.limpar());
 
     this.dimensionarCanvas();
     window.addEventListener('resize', () => this.dimensionarCanvas());
@@ -161,25 +208,25 @@ export class TelaMedicao {
   private onDados(l: LeituraProcessada) {
     this.ultimaForca   = l.forcaNewton;
     this.ultimaLeitura = l;
-    this.totalMensagens++;
     this.contMsgs++;
 
     const agora = Date.now();
     if (agora - this.ultimoHzTs >= 1000) {
       this.hz = this.contMsgs;
-      this.contMsgs = 0;
+      this.contMsgs  = 0;
       this.ultimoHzTs = agora;
       if (this.elHz) this.elHz.textContent = `${this.hz} Hz`;
     }
 
-    this.dadosGrafico.push({ valor: l.forcaNewton, tempo: l.marcaTemporal });
-    if (!this.gravando && this.dadosGrafico.length > MAX_PONTOS) {
-      this.dadosGrafico.shift();
+    if (!this.pausado) {
+      this.dadosGrafico.push({ valor: l.forcaNewton, tempo: l.marcaTemporal });
+      const limite = this.modoAcumulado ? MAX_ACUMULADO : MAX_FLUXO;
+      if (this.dadosGrafico.length > limite) this.dadosGrafico.shift();
     }
 
     if (this.gravando) {
       this.dadosGravados.push(l);
-      this.gerenciador.adicionarLeitura(l).catch(() => {/* ignora erros de flush */});
+      this.gerenciador.adicionarLeitura(l).catch(() => {});
     }
 
     this.atualizarDisplay();
@@ -188,12 +235,12 @@ export class TelaMedicao {
   private onConfig(raw: unknown) {
     const c = raw as { capacidadeMaxGramas?: number } | null;
     if (c?.capacidadeMaxGramas) {
-      this.capacidadeMaxN = (c.capacidadeMaxGramas / 1000) * 9.80665;
+      // reservado para range futuro do gráfico
     }
   }
 
   private onStatus(raw: unknown) {
-    const s = raw as { conectado?: boolean } | null;
+    const s  = raw as { conectado?: boolean } | null;
     const ok = s?.conectado ?? false;
     if (this.elPonto) {
       this.elPonto.className = 'status-ponto' + (ok ? ' pulsando' : ' erro');
@@ -204,14 +251,9 @@ export class TelaMedicao {
 
   private atualizarDisplay() {
     const convertido = converterForca(this.ultimaForca, this.unidade);
-    const formatado  = convertido.toFixed(this.unidade === 'N' ? 2 : 3);
     if (this.elValor) {
-      this.elValor.textContent = formatado;
-      if (this.ultimaLeitura?.emQueima) {
-        this.elValor.classList.add('em-queima');
-      } else {
-        this.elValor.classList.remove('em-queima');
-      }
+      this.elValor.textContent = convertido.toFixed(this.unidade === 'N' ? 2 : 3);
+      this.elValor.classList.toggle('em-queima', !!this.ultimaLeitura?.emQueima);
     }
 
     if (this.elQueima) {
@@ -220,8 +262,8 @@ export class TelaMedicao {
     }
 
     if (this.elImpulso) {
-      const ns = this.ultimaLeitura?.impulsoAcumuladoNs ?? 0;
-      this.elImpulso.textContent = `${ns.toFixed(3)} N·s`;
+      const ns = (this.ultimaLeitura?.impulsoAcumuladoNs ?? 0) - this.impulsoOffset;
+      this.elImpulso.textContent = `${Math.max(0, ns).toFixed(3)} N·s`;
     }
   }
 
@@ -230,6 +272,12 @@ export class TelaMedicao {
     this.unidade = UNIDADES[(idx + 1) % UNIDADES.length]!;
     if (this.elUnidade) this.elUnidade.textContent = this.unidade;
     this.atualizarDisplay();
+  }
+
+  private limpar() {
+    this.dadosGrafico  = [];
+    this.impulsoOffset = this.ultimaLeitura?.impulsoAcumuladoNs ?? 0;
+    if (this.elImpulso) this.elImpulso.textContent = '0.000 N·s';
   }
 
   private iniciarLoop() {
@@ -242,20 +290,21 @@ export class TelaMedicao {
 
   private renderizarGrafico() {
     if (!this.canvas) return;
-    const ctx   = this.canvas.getContext('2d');
+    const ctx = this.canvas.getContext('2d');
     if (!ctx) return;
 
-    const ratio  = window.devicePixelRatio || 1;
+    const ratio = window.devicePixelRatio || 1;
     const W = this.canvas.width  / ratio;
     const H = this.canvas.height / ratio;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
     if (this.dadosGrafico.length === 0) {
-      ctx.fillStyle = '#3a3a3a';
-      ctx.font = '13px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Aguardando dados...', W / 2, H / 2);
+      ctx.fillStyle    = '#3a3a3a';
+      ctx.font         = '13px system-ui, sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.pausado ? '⏸ Pausado' : 'Aguardando dados...', W / 2, H / 2);
       return;
     }
 
@@ -264,27 +313,42 @@ export class TelaMedicao {
     const minVal  = Math.min(...valores, 0);
     const range   = Math.max(maxVal - minVal, 0.1) * 1.15 || 1;
 
-    const mg  = { top: 20, right: 52, bottom: 24, left: 8 };
-    const pw  = W - mg.left - mg.right;
-    const ph  = H - mg.top  - mg.bottom;
+    // margens: bottom maior em modo acumulado para label de tempo
+    const mg = { top: 20, right: 56, bottom: this.modoAcumulado ? 32 : 20, left: 8 };
+    const pw = W - mg.left - mg.right;
+    const ph = H - mg.top  - mg.bottom;
 
-    // grade
+    // grade horizontal
     const numLinhas = 5;
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth   = 1;
+    ctx.strokeStyle  = '#222';
+    ctx.lineWidth    = 1;
     for (let i = 0; i <= numLinhas; i++) {
       const y = mg.top + (ph / numLinhas) * i;
-      ctx.beginPath();
-      ctx.moveTo(mg.left, y);
-      ctx.lineTo(W - mg.right, y);
-      ctx.stroke();
-
-      const valorLinha = (maxVal * 1.15) - (range * (i / numLinhas));
-      ctx.fillStyle  = '#444';
-      ctx.font       = '10px system-ui, sans-serif';
-      ctx.textAlign  = 'left';
+      ctx.beginPath(); ctx.moveTo(mg.left, y); ctx.lineTo(W - mg.right, y); ctx.stroke();
+      const vLinha = (maxVal * 1.15) - (range * (i / numLinhas));
+      ctx.fillStyle    = '#444';
+      ctx.font         = '10px system-ui, sans-serif';
+      ctx.textAlign    = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${valorLinha.toFixed(1)} ${this.unidade}`, W - mg.right + 3, y);
+      ctx.fillText(`${vLinha.toFixed(1)} ${this.unidade}`, W - mg.right + 3, y);
+    }
+
+    // eixo X (tempo) no modo acumulado
+    if (this.modoAcumulado && this.dadosGrafico.length > 1) {
+      const t0 = this.dadosGrafico[0]!.tempo;
+      const tN = this.dadosGrafico[this.dadosGrafico.length - 1]!.tempo;
+      const durS = (tN - t0) / 1000;
+      const numTicks = Math.min(6, Math.floor(pw / 60));
+      ctx.fillStyle    = '#444';
+      ctx.font         = '10px system-ui, sans-serif';
+      ctx.textBaseline = 'top';
+      for (let i = 0; i <= numTicks; i++) {
+        const frac = i / numTicks;
+        const x    = mg.left + frac * pw;
+        const t    = (durS * frac).toFixed(1);
+        ctx.textAlign = i === 0 ? 'left' : i === numTicks ? 'right' : 'center';
+        ctx.fillText(`${t}s`, x, mg.top + ph + 4);
+      }
     }
 
     // linha de zero
@@ -292,59 +356,62 @@ export class TelaMedicao {
       const zy = mg.top + ph - ((0 - minVal) / range) * ph;
       ctx.strokeStyle = '#333';
       ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(mg.left, zy);
-      ctx.lineTo(W - mg.right, zy);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mg.left, zy); ctx.lineTo(W - mg.right, zy); ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // fill área
     const cor = this.ultimaLeitura?.emQueima ? '#ff7040' : '#4a9eff';
     const n   = this.dadosGrafico.length;
     const den = Math.max(n - 1, 1);
 
-    ctx.beginPath();
-    this.dadosGrafico.forEach((d, i) => {
-      const v = converterForca(d.valor, this.unidade);
-      const x = mg.left + (i / den) * pw;
-      const y = mg.top + ph - ((v - minVal) / range) * ph;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.lineTo(mg.left + pw, mg.top + ph);
-    ctx.lineTo(mg.left,      mg.top + ph);
-    ctx.closePath();
-    ctx.fillStyle = cor + '18';
-    ctx.fill();
+    const posX = (i: number) => mg.left + (i / den) * pw;
+    const posY = (v: number) => mg.top + ph - ((v - minVal) / range) * ph;
 
-    // linha principal
-    ctx.beginPath();
-    ctx.strokeStyle = cor;
-    ctx.lineWidth   = 2;
-    ctx.shadowColor = cor;
-    ctx.shadowBlur  = 4;
-    this.dadosGrafico.forEach((d, i) => {
-      const v = converterForca(d.valor, this.unidade);
-      const x = mg.left + (i / den) * pw;
-      const y = mg.top + ph - ((v - minVal) / range) * ph;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    if (this.modoPontos) {
+      // modo pontos
+      ctx.fillStyle = cor;
+      this.dadosGrafico.forEach((d, i) => {
+        const v = converterForca(d.valor, this.unidade);
+        ctx.beginPath();
+        ctx.arc(posX(i), posY(v), 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    } else {
+      // modo linha: fill área + linha + ponto atual
+      ctx.beginPath();
+      this.dadosGrafico.forEach((d, i) => {
+        const v = converterForca(d.valor, this.unidade);
+        i === 0 ? ctx.moveTo(posX(i), posY(v)) : ctx.lineTo(posX(i), posY(v));
+      });
+      ctx.lineTo(posX(n - 1), mg.top + ph);
+      ctx.lineTo(mg.left,     mg.top + ph);
+      ctx.closePath();
+      ctx.fillStyle = cor + '18';
+      ctx.fill();
 
-    // ponto atual
-    const ult = this.dadosGrafico[this.dadosGrafico.length - 1]!;
-    const ultV = converterForca(ult.valor, this.unidade);
-    const lx = mg.left + pw;
-    const ly = mg.top + ph - ((ultV - minVal) / range) * ph;
-    ctx.beginPath();
-    ctx.arc(lx, ly, 4, 0, Math.PI * 2);
-    ctx.fillStyle = cor;
-    ctx.fill();
+      ctx.beginPath();
+      ctx.strokeStyle = cor;
+      ctx.lineWidth   = 2;
+      ctx.shadowColor = cor;
+      ctx.shadowBlur  = 4;
+      this.dadosGrafico.forEach((d, i) => {
+        const v = converterForca(d.valor, this.unidade);
+        i === 0 ? ctx.moveTo(posX(i), posY(v)) : ctx.lineTo(posX(i), posY(v));
+      });
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // ponto atual
+      const ult = this.dadosGrafico[n - 1]!;
+      ctx.beginPath();
+      ctx.arc(posX(n - 1), posY(converterForca(ult.valor, this.unidade)), 4, 0, Math.PI * 2);
+      ctx.fillStyle = cor;
+      ctx.fill();
+    }
   }
 
   private async iniciarGravacao() {
-    this.nomeSessao = this.elNome?.value.trim() ||
+    this.nomeSessao    = this.elNome?.value.trim() ||
       `Sessão ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
     this.dadosGravados = [];
     this.dadosGrafico  = [];
@@ -376,9 +443,8 @@ export class TelaMedicao {
     }
 
     if (this.dadosGravados.length > 0) {
-      const leituras = [...this.dadosGravados];
       new TelaAnalise(
-        { leituras, nomeSessao: this.nomeSessao, modo: 'nova', idSessao: sessao.id },
+        { leituras: [...this.dadosGravados], nomeSessao: this.nomeSessao, modo: 'nova', idSessao: sessao.id },
         this.armazenamento,
         () => {},
       );

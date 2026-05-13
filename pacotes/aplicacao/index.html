@@ -80,6 +80,16 @@
     .chart-label-auto { position: absolute; top: 6px; right: 8px; font-size: 0.65rem; color: #555; cursor: pointer; user-select: none; }
     .chart-label-auto.ativo { color: #4a9eff; }
 
+    /* ── Controles do gráfico ───────────────────────────────────────────────── */
+    .chart-controles { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem; }
+    .ctrl-grupo { display: flex; border: 1px solid #2a2a2a; border-radius: 4px; overflow: hidden; }
+    .ctrl-btn { padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: #111; color: #666; border: none; border-radius: 0; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .ctrl-grupo .ctrl-btn + .ctrl-btn { border-left: 1px solid #2a2a2a; }
+    .ctrl-btn:hover { background: #1e1e1e; color: #aaa; }
+    .ctrl-btn.ativo { background: #1a2a3a; color: #4a9eff; }
+    .ctrl-btn-solo { border: 1px solid #2a2a2a; border-radius: 4px; }
+    .ctrl-btn-solo.ativo { background: #2a1a1a; color: #ffa040; border-color: #4f2a0a; }
+
     /* ── Barra de status ────────────────────────────────────────────────────── */
     .status-bar { display: flex; gap: 1.5rem; justify-content: center; font-size: 0.75rem; color: #555; padding: 0.4rem 0 0.75rem; flex-wrap: wrap; }
     .status-ponto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #333; vertical-align: middle; margin-right: 0.3rem; }
@@ -147,6 +157,20 @@
     .wizard-aviso { background: #1f1a0a; border: 1px solid #4f3a0a; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; color: #ffa040; }
     .wizard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
     .wizard-grid > div label:first-child { margin-top: 0; }
+
+    /* ── Tabela de configurações ────────────────────────────────────────────── */
+    .cfg-table-wrap { overflow-x: auto; }
+    .cfg-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .cfg-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #555; padding: 0.4rem 0.75rem; border-bottom: 1px solid #2a2a2a; }
+    .cfg-linha { border-bottom: 1px solid #1a1a1a; }
+    .cfg-linha:last-child { border-bottom: none; }
+    .cfg-linha:hover { background: #1e1e1e; }
+    .cfg-label { padding: 0.6rem 0.75rem; vertical-align: middle; min-width: 180px; }
+    .cfg-nome  { color: #c8c8c8; font-weight: 500; }
+    .cfg-desc  { font-size: 0.72rem; color: #555; margin-top: 0.1rem; }
+    .cfg-input-cell { padding: 0.4rem 0.75rem; vertical-align: middle; }
+    .cfg-input { width: 140px; }
+    .cfg-enviar-cell { padding: 0.4rem 0.75rem; vertical-align: middle; white-space: nowrap; }
 
     /* ── Utilitários ────────────────────────────────────────────────────────── */
     .hidden { display: none !important; }
