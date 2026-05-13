@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /home/rbeninca/projetos/balancaGFIG2/ && echo \"---\" && ls /home/rbeninca/projetos/balancaGFIGv1/ 2>/dev/null || echo \"v1 não encontrado\")",
+      "Read(//home/rbeninca/projetos/**)",
+      "Bash(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null || echo \"nenhuma porta USB serial encontrada\")",
+      "Read(//dev/**)",
+      "Bash(git init *)",
+      "Bash(git checkout *)",
+      "Bash(npm install *)",
+      "Read(//usr/bin/**)",
+      "Read(//home/rbeninca/.nvm/versions/node/**)",
+      "Bash(export PATH=\"$HOME/.nvm/versions/node/v24.15.0/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Bash(npm test *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

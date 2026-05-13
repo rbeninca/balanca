@@ -1,0 +1,25 @@
+{
+  "name": "@balancagfig/protocolo",
+  "version": "2.0.0",
+  "type": "module",
+  "main": "./dist/codificador.js",
+  "types": "./dist/codificador.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/codificador.js",
+      "types": "./dist/codificador.d.ts"
+    }
+  },
+  "scripts": {
+    "compilar": "tsc",
+    "test": "vitest run",
+    "testar:cobertura": "vitest run --coverage",
+    "testar:ci": "vitest run --reporter=junit --outputFile=test-results.xml"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
