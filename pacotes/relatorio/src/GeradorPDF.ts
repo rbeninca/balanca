@@ -1,4 +1,4 @@
-import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import type { LeituraProcessada } from '@balancagfig/processamento';
 import type { ResultadoAnalise } from '@balancagfig/analise';
 
 export interface MetadadosPDF {
@@ -54,35 +54,36 @@ function gerarHTMLRelatorio(
   const info  = infoClasse(analise.letraMotor);
   const cor   = info.cor;
   const faixa = `${info.min.toFixed(2)} – ${info.max.toFixed(2)} N⋅s`;
+  const leiturasOrdenadas = [...leituras].sort((a, b) => a.marcaTemporal - b.marcaTemporal);
 
-  const t0 = leituras[0]?.marcaTemporal ?? 0;
-  const tN = leituras[leituras.length - 1]?.marcaTemporal ?? 0;
+  const t0 = leiturasOrdenadas[0]?.marcaTemporal ?? 0;
+  const tN = leiturasOrdenadas[leiturasOrdenadas.length - 1]?.marcaTemporal ?? 0;
   const duracaoTotal  = (tN - t0) / 1000;
-  const hz = duracaoTotal > 0 ? (leituras.length / duracaoTotal).toFixed(1) : '0.0';
+  const hz = duracaoTotal > 0 ? (leiturasOrdenadas.length / duracaoTotal).toFixed(1) : '0.0';
 
-  const queima    = leituras.filter(l => l.emQueima);
+  const queima    = leiturasOrdenadas.filter(l => l.emQueima);
   const tIgnicao  = queima.length > 0 ? (queima[0]!.marcaTemporal  - t0) / 1000 : 0;
   const tBurnout  = queima.length > 0 ? (queima[queima.length - 1]!.marcaTemporal - t0) / 1000 : 0;
 
   let impulsoPositivo = 0;
   let impulsoNegativo = 0;
-  for (let i = 1; i < leituras.length; i++) {
-    const dt = (leituras[i]!.marcaTemporal - leituras[i - 1]!.marcaTemporal) / 1000;
-    const fm = (leituras[i]!.forcaNewton + leituras[i - 1]!.forcaNewton) / 2;
+  for (let i = 1; i < leiturasOrdenadas.length; i++) {
+    const dt = (leiturasOrdenadas[i]!.marcaTemporal - leiturasOrdenadas[i - 1]!.marcaTemporal) / 1000;
+    const fm = (leiturasOrdenadas[i]!.forcaNewton + leiturasOrdenadas[i - 1]!.forcaNewton) / 2;
     if (fm >= 0) impulsoPositivo += fm * dt;
     else         impulsoNegativo += fm * dt;
   }
   const impulsoLiquido = impulsoPositivo + impulsoNegativo;
 
-  const n = leituras.length || 1;
-  const forcaMediaAmostral = leituras.reduce((s, l) => s + l.forcaNewton, 0) / n;
-  const forcasPos = leituras.filter(l => l.forcaNewton > 0);
+  const n = leiturasOrdenadas.length || 1;
+  const forcaMediaAmostral = leiturasOrdenadas.reduce((s, l) => s + l.forcaNewton, 0) / n;
+  const forcasPos = leiturasOrdenadas.filter(l => l.forcaNewton > 0);
   const forcaMediaPositiva = forcasPos.length > 0
     ? forcasPos.reduce((s, l) => s + l.forcaNewton, 0) / forcasPos.length : 0;
   const forcaMediaQueima = analise.duracaoQueima_s > 0
     ? analise.impulsoTotal_Ns / analise.duracaoQueima_s : 0;
-  const forcaMin = leituras.length > 0 ? Math.min(...leituras.map(l => l.forcaNewton)) : 0;
-  const maxF     = leituras.length > 0 ? Math.max(...leituras.map(l => l.forcaNewton)) : 1;
+  const forcaMin = leiturasOrdenadas.length > 0 ? Math.min(...leiturasOrdenadas.map(l => l.forcaNewton)) : 0;
+  const maxF     = leiturasOrdenadas.length > 0 ? Math.max(...leiturasOrdenadas.map(l => l.forcaNewton)) : 1;
 
   const ispTexto = analise.impulsoEspecifico_s != null
     ? `${analise.impulsoEspecifico_s.toFixed(2)} s`
@@ -91,7 +92,7 @@ function gerarHTMLRelatorio(
   const GF_PER_N  = 1000 / 9.80665;
   const KGF_PER_N = 1    / 9.80665;
 
-  const linhasTabela = leituras.map((l, i) => {
+  const linhasTabela = leiturasOrdenadas.map((l, i) => {
     const t   = ((l.marcaTemporal - t0) / 1000).toFixed(6);
     const nN  = l.forcaNewton.toFixed(6);
     const gf  = (l.forcaNewton * GF_PER_N).toFixed(6);
@@ -114,7 +115,7 @@ function gerarHTMLRelatorio(
     </tr>`;
   }).join('\n');
 
-  const chartData = JSON.stringify(leituras.map(l => ({
+  const chartData = JSON.stringify(leiturasOrdenadas.map(l => ({
     t: (l.marcaTemporal - t0) / 1000,
     f: l.forcaNewton,
   })));

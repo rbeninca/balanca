@@ -1,4 +1,4 @@
-import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import type { LeituraProcessada } from '@balancagfig/processamento';
 import type { ResultadoAnalise } from '@balancagfig/analise';
 
 export interface MetadadosJSON {
