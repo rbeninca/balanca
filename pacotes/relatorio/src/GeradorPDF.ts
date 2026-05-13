@@ -505,7 +505,7 @@ function gerarHTMLRelatorio(
       var z0 = py(0);
       ctx.moveTo(px(tempos[0]), z0);
       for (var k = 0; k < DATA.length; k++) {
-        ctx.lineTo(px(DATA[k].t), py(Math.max(0, DATA[k].f)));
+        ctx.lineTo(px(DATA[k].t), py(DATA[k].f));
       }
       ctx.lineTo(px(tempos[tempos.length - 1]), z0);
       ctx.closePath(); ctx.fill();
