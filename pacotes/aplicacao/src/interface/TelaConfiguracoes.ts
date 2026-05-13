@@ -46,6 +46,7 @@ export class TelaConfiguracoes {
     private fonte: Fonte,
     private onMedicao: () => void,
     private onSessoes: () => void,
+    private onFirmware?: () => void,
   ) {
     this.renderizar(container);
     this.ouvinte = (raw) => this.aplicarConfig(raw);
@@ -81,6 +82,7 @@ export class TelaConfiguracoes {
         <a href="#" id="nav-medir">Medição</a>
         <a href="#" id="nav-sessoes">Sessões</a>
         <a href="#" id="nav-config" class="ativo">Configurações</a>
+        <a href="#" id="nav-firmware" style="margin-left:auto">Firmware</a>
       </div>
 
       <div class="card">
@@ -113,6 +115,9 @@ export class TelaConfiguracoes {
     });
     container.querySelector('#nav-sessoes')!.addEventListener('click', (e) => {
       e.preventDefault(); this.onSessoes();
+    });
+    container.querySelector('#nav-firmware')!.addEventListener('click', (e) => {
+      e.preventDefault(); this.onFirmware?.();
     });
     container.querySelector('#cfg-btn-atualizar')!.addEventListener('click', () => {
       this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });

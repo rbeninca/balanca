@@ -4,18 +4,20 @@ import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
 import { TelaConfiguracoes } from './interface/TelaConfiguracoes.js';
+import { TelaFirmware } from './interface/TelaFirmware.js';
 
 const armazenamento = new ArmazenamentoLocal();
 const gerenciador   = new GerenciadorSessao(armazenamento);
 
 const app = document.getElementById('app')!;
 
-type Tela = 'conexao' | 'medicao' | 'sessoes' | 'configuracoes';
+type Tela = 'conexao' | 'medicao' | 'sessoes' | 'configuracoes' | 'firmware';
 
 let telaAtual:  Tela   = 'conexao';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let fonteAtual: any    = null;
 let telaMedicaoAtual: TelaMedicao | null = null;
+let telaFirmwareAtual: TelaFirmware | null = null;
 
 function navegar(tela: Tela) {
   telaAtual = tela;
@@ -25,6 +27,8 @@ function navegar(tela: Tela) {
 function renderizar() {
   telaMedicaoAtual?.destruir();
   telaMedicaoAtual = null;
+  telaFirmwareAtual?.destruir();
+  telaFirmwareAtual = null;
   app.innerHTML    = '';
 
   switch (telaAtual) {
@@ -61,6 +65,14 @@ function renderizar() {
         fonteAtual,
         () => navegar('medicao'),
         () => navegar('sessoes'),
+        () => navegar('firmware'),
+      );
+      break;
+
+    case 'firmware':
+      telaFirmwareAtual = new TelaFirmware(
+        app,
+        () => navegar('configuracoes'),
       );
       break;
   }

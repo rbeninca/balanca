@@ -1,0 +1,50 @@
+# ── Stage 1: compilar firmware com PlatformIO ────────────────────────────────
+FROM python:3.12-slim AS firmware-builder
+
+RUN pip install --no-cache-dir platformio==6.1.16
+
+WORKDIR /firmware
+COPY firmware/ .
+
+# Baixa dependências e compila (resultado: .pio/build/nodemcuv2/firmware.bin)
+RUN platformio run --environment nodemcuv2
+
+# ── Stage 2: compilar servidor Node.js ───────────────────────────────────────
+# O atualizador usa apenas módulos built-in do Node (http, child_process, fs),
+# então não precisa do lockfile do monorepo — compila isoladamente.
+FROM node:24-alpine AS node-builder
+WORKDIR /app
+
+COPY tsconfig.base.json ./
+COPY pacotes/atualizador/package.json   pacotes/atualizador/
+COPY pacotes/atualizador/src            pacotes/atualizador/src
+COPY pacotes/atualizador/tsconfig.json  pacotes/atualizador/
+
+WORKDIR /app/pacotes/atualizador
+RUN npm install && npx tsc
+
+# ── Stage 3: imagem final ─────────────────────────────────────────────────────
+FROM node:24-alpine
+WORKDIR /app
+
+# esptool (Python) — único uso de Python na imagem final
+RUN apk add --no-cache python3 py3-pip && \
+    pip install --no-cache-dir --break-system-packages esptool
+
+# Firmware compilado e metadados de versão
+COPY --from=firmware-builder /firmware/.pio/build/nodemcuv2/firmware.bin /firmware/balanca.bin
+COPY firmware/versao.json /firmware/versao.json
+
+# Servidor Node.js — sem node_modules (sem dependências de runtime)
+COPY --from=node-builder /app/pacotes/atualizador/dist            ./pacotes/atualizador/dist
+COPY --from=node-builder /app/pacotes/atualizador/package.json    ./pacotes/atualizador/
+
+ENV PORTA_SERIAL=/dev/ttyUSB0
+ENV PORTA_HTTP=8767
+ENV PORTA_GATEWAY_HTTP=http://gateway:8766
+ENV CAMINHO_FIRMWARE=/firmware/balanca.bin
+ENV CAMINHO_VERSAO=/firmware/versao.json
+
+EXPOSE 8767
+
+CMD ["node", "pacotes/atualizador/dist/servidor.js"]

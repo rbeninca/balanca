@@ -1,0 +1,14 @@
+{
+  "name": "@balancagfig/atualizador",
+  "version": "2.0.0",
+  "type": "module",
+  "main": "./dist/servidor.js",
+  "scripts": {
+    "compilar": "tsc",
+    "iniciar": "node dist/servidor.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

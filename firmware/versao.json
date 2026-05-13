@@ -1,0 +1,6 @@
+{
+  "versao": "V16",
+  "protocolo": 2,
+  "plataforma": "ESP8266 NodeMCU v2",
+  "baud": 921600
+}

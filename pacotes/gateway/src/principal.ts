@@ -21,7 +21,7 @@ const servidor = new ServidorWebSocket(porta, config, PORTA_WEBSOCKET);
 
 porta.iniciar();
 
-// Health-check HTTP simples
+// Health-check HTTP simples + endpoints de coordenação para atualização de firmware
 const http = createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/saude') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -30,6 +30,18 @@ const http = createServer((req, res) => {
       serial:   porta.estaConectado(),
       clientes: servidor.obterNumClientes(),
     }));
+  } else if (req.method === 'POST' && req.url === '/pausar') {
+    porta.pausar().then(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    }).catch(() => {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false }));
+    });
+  } else if (req.method === 'POST' && req.url === '/retomar') {
+    porta.retomar();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
   } else {
     res.writeHead(404);
     res.end();
