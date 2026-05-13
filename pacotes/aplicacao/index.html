@@ -5,52 +5,168 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BalançaGFIG</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
-    #app { width: 100%; max-width: 500px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #app { width: 100%; max-width: 920px; }
+
+    /* ── Tipografia ─────────────────────────────────────────────────────────── */
     h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #fff; letter-spacing: -0.02em; }
     h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #fff; }
+    h3 { font-size: 0.95rem; color: #ccc; margin-bottom: 0.75rem; }
+
+    /* ── Card ───────────────────────────────────────────────────────────────── */
     .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+
+    /* ── Formulário ─────────────────────────────────────────────────────────── */
     label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.3rem; margin-top: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
     label:first-child { margin-top: 0; }
-    input[type="text"], input[type="password"] { width: 100%; padding: 0.5rem 0.75rem; background: #111; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 0.9rem; }
-    input[type="text"]:focus, input[type="password"]:focus { outline: none; border-color: #4a9eff; }
+    input[type="text"], input[type="password"], input[type="number"] { width: 100%; padding: 0.5rem 0.75rem; background: #111; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 0.9rem; }
+    input:focus { outline: none; border-color: #4a9eff; }
     .radio-group { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.5rem 0; }
     .radio-label { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; padding: 0.5rem 0.75rem; border: 1px solid #2a2a2a; border-radius: 4px; transition: border-color 0.15s; }
     .radio-label:has(input:checked) { border-color: #4a9eff; background: #0a1a2a; }
     .radio-label input[type="radio"] { accent-color: #4a9eff; }
-    button { padding: 0.6rem 1.25rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background 0.15s; }
-    .btn-primary { background: #4a9eff; color: #fff; }
-    .btn-primary:hover { background: #3a8eef; }
-    .btn-primary:disabled { background: #1a3a5a; color: #4a6a8a; cursor: not-allowed; }
-    .btn-danger { background: #c03030; color: #fff; }
-    .btn-danger:hover { background: #a02020; }
+
+    /* ── Botões ─────────────────────────────────────────────────────────────── */
+    button { padding: 0.6rem 1.25rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: background 0.15s, opacity 0.15s; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary   { background: #4a9eff; color: #fff; }
+    .btn-primary:hover:not(:disabled)   { background: #3a8eef; }
+    .btn-danger    { background: #c03030; color: #fff; }
+    .btn-danger:hover:not(:disabled)    { background: #a02020; }
     .btn-secondary { background: #2a2a2a; color: #c0c0c0; border: 1px solid #3a3a3a; }
-    .btn-secondary:hover { background: #333; }
-    .status-box { padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.85rem; background: #161616; color: #888; border: 1px solid #2a2a2a; }
-    .status-box.ok { background: #0a1f0a; color: #4caf50; border-color: #1a4f1a; }
-    .status-box.aviso { background: #1f1a0a; color: #ffa040; border-color: #4f3a0a; }
-    .status-box.erro { background: #1f0a0a; color: #ef5350; border-color: #4f1a1a; }
-    .valor-forca { font-size: 4rem; font-weight: 700; color: #4a9eff; text-align: center; padding: 1.5rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
-    .valor-forca span.unidade { font-size: 1.5rem; color: #4a6a9a; font-weight: 400; }
+    .btn-secondary:hover:not(:disabled) { background: #333; }
+    .btn-success   { background: #2d7a2d; color: #fff; }
+    .btn-success:hover:not(:disabled)   { background: #246624; }
+    .btn-outline   { background: transparent; color: #4a9eff; border: 1px solid #4a9eff; }
+    .btn-outline:hover:not(:disabled)   { background: rgba(74,158,255,0.08); }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
     .controles { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .btn-row { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+
+    /* ── Status boxes ───────────────────────────────────────────────────────── */
+    .status-box { padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.85rem; background: #161616; color: #888; border: 1px solid #2a2a2a; }
+    .status-box.ok    { background: #0a1f0a; color: #4caf50; border-color: #1a4f1a; }
+    .status-box.aviso { background: #1f1a0a; color: #ffa040; border-color: #4f3a0a; }
+    .status-box.erro  { background: #1f0a0a; color: #ef5350; border-color: #4f1a1a; }
+
+    /* ── Nav ────────────────────────────────────────────────────────────────── */
     .nav-links { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; }
     .nav-links a { color: #4a9eff; text-decoration: none; padding: 0.3rem 0; border-bottom: 2px solid transparent; }
     .nav-links a.ativo { border-bottom-color: #4a9eff; color: #fff; }
     .nav-links a:hover { color: #7ab8ff; }
-    .sessao-item { padding: 0.75rem; border-bottom: 1px solid #1f1f1f; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+
+    /* ── Leitura principal (grande) ─────────────────────────────────────────── */
+    .leitura-principal { display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; padding: 1.25rem 0 0.75rem; line-height: 1; }
+    .leitura-valor { font-size: clamp(3.5rem, 14vw, 7rem); font-weight: 200; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; color: #4a9eff; line-height: 1; transition: color 0.3s; }
+    .leitura-valor.em-queima { color: #ff7040; }
+    .leitura-unidade { font-size: clamp(1.8rem, 7vw, 3.5rem); color: #4a6a9a; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: background 0.15s, color 0.15s; user-select: none; }
+    .leitura-unidade:hover { background: rgba(74,158,255,0.1); color: #7ab8ff; }
+
+    /* ── Gráfico tempo-real ─────────────────────────────────────────────────── */
+    .chart-container { position: relative; background: #111; border-radius: 6px; overflow: hidden; margin-bottom: 1rem; }
+    canvas.grafico-realtime { display: block; width: 100%; height: clamp(160px, 30vh, 280px); }
+    .chart-label-auto { position: absolute; top: 6px; right: 8px; font-size: 0.65rem; color: #555; cursor: pointer; user-select: none; }
+    .chart-label-auto.ativo { color: #4a9eff; }
+
+    /* ── Barra de status ────────────────────────────────────────────────────── */
+    .status-bar { display: flex; gap: 1.5rem; justify-content: center; font-size: 0.75rem; color: #555; padding: 0.4rem 0 0.75rem; flex-wrap: wrap; }
+    .status-ponto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #333; vertical-align: middle; margin-right: 0.3rem; }
+    .status-ponto.ok      { background: #4caf50; }
+    .status-ponto.erro    { background: #ef5350; }
+    .status-ponto.pulsando { background: #4caf50; animation: piscar 1s ease-in-out infinite; }
+
+    /* ── Info rows ──────────────────────────────────────────────────────────── */
+    .info-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; padding: 0.25rem 0; }
+    .info-row span:last-child { color: #aaa; font-variant-numeric: tabular-nums; }
+
+    /* ── Badges ─────────────────────────────────────────────────────────────── */
+    .gravando-badge { display: inline-block; background: #c03030; color: #fff; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 3px; vertical-align: middle; margin-left: 0.5rem; animation: piscar 1s step-end infinite; }
+    .motor-badge { display: inline-block; background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 600; font-family: monospace; }
+
+    /* ── Sessões ────────────────────────────────────────────────────────────── */
+    .sessao-item { padding: 0.75rem; border-bottom: 1px solid #1f1f1f; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
     .sessao-item:last-child { border-bottom: none; }
     .sessao-item .nome { font-size: 0.9rem; color: #e0e0e0; }
-    .sessao-item .meta { font-size: 0.75rem; color: #666; }
+    .sessao-item .meta { font-size: 0.75rem; color: #666; margin-top: 0.2rem; }
+    .sessao-acoes { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+
+    /* ── Modal genérico ─────────────────────────────────────────────────────── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; width: 100%; max-width: 900px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-shrink: 0; }
+    .modal-header h2 { margin: 0; }
+    .modal-fechar { background: none; border: none; font-size: 1.6rem; color: #555; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; }
+    .modal-fechar:hover { color: #ccc; }
+    .modal-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #2a2a2a; display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; flex-shrink: 0; }
+
+    /* ── Layout de análise ──────────────────────────────────────────────────── */
+    .analise-layout { display: flex; gap: 1.25rem; }
+    .analise-grafico { flex: 3; min-width: 0; }
+    .analise-stats   { flex: 2; min-width: 180px; max-width: 280px; overflow-y: auto; }
+    #analise-chart { height: 320px; }
+
+    .stats-secao { margin-bottom: 1.25rem; }
+    .stats-secao h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: #555; margin-bottom: 0.6rem; border-bottom: 1px solid #222; padding-bottom: 0.3rem; }
+    .stat-item { display: flex; justify-content: space-between; align-items: baseline; padding: 0.25rem 0; font-size: 0.82rem; }
+    .stat-label { color: #666; }
+    .stat-valor { color: #e0e0e0; font-variant-numeric: tabular-nums; }
+
+    .motor-classificacao { display: block; text-align: center; padding: 0.5rem 1rem; border-radius: 6px; font-size: 2rem; font-weight: 700; font-family: monospace; background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; margin-top: 0.5rem; }
+
+    /* ── Wizard de calibração ───────────────────────────────────────────────── */
+    .wizard-progresso { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; align-items: center; }
+    .wizard-dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2a2a; border: 1px solid #3a3a3a; transition: background 0.2s; flex-shrink: 0; }
+    .wizard-dot.ativo    { background: #4a9eff; border-color: #4a9eff; }
+    .wizard-dot.concluido{ background: #4caf50; border-color: #4caf50; }
+    .wizard-linha { flex: 1; height: 1px; background: #2a2a2a; }
+
+    .wizard-passo { display: none; }
+    .wizard-passo.ativo { display: block; }
+    .wizard-passo h3 { font-size: 1rem; color: #fff; margin-bottom: 0.5rem; }
+    .wizard-passo p  { font-size: 0.88rem; color: #888; margin-bottom: 1rem; line-height: 1.5; }
+
+    .wizard-leitura-live { background: #111; border: 1px solid #2a2a2a; border-radius: 6px; padding: 1rem; text-align: center; margin: 1rem 0; }
+    .wizard-leitura-live .valor { font-size: 2.5rem; font-weight: 200; color: #4a9eff; font-variant-numeric: tabular-nums; }
+    .wizard-leitura-live .label { font-size: 0.75rem; color: #555; margin-top: 0.25rem; }
+
+    .wizard-resultado { background: #0a1f0a; border: 1px solid #1a4f1a; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+    .wizard-resultado p { color: #4caf50; font-size: 0.88rem; margin: 0.25rem 0; }
+    .wizard-aviso { background: #1f1a0a; border: 1px solid #4f3a0a; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0; font-size: 0.85rem; color: #ffa040; }
+    .wizard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .wizard-grid > div label:first-child { margin-top: 0; }
+
+    /* ── Utilitários ────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+    .vazio  { text-align: center; color: #555; font-size: 0.9rem; padding: 2rem; }
     .ports-list { font-size: 0.85rem; color: #aaa; margin-top: 0.5rem; }
     .ports-list li { padding: 0.3rem 0; list-style: none; }
-    .hidden { display: none !important; }
-    .btn-row { display: flex; gap: 0.6rem; margin-top: 1rem; }
-    .info-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; padding: 0.25rem 0; }
-    .gravando-badge { display: inline-block; background: #c03030; color: #fff; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 3px; vertical-align: middle; margin-left: 0.5rem; animation: piscar 1s step-end infinite; }
+
     @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-    .vazio { text-align: center; color: #555; font-size: 0.9rem; padding: 2rem; }
-    .motor-badge { display: inline-block; background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 600; font-family: monospace; }
+
+    /* ── Responsivo ─────────────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      body { padding: 0.5rem; }
+      .analise-layout { flex-direction: column; }
+      .analise-stats  { max-width: 100%; }
+      #analise-chart  { height: 240px; }
+      .modal-footer   { justify-content: stretch; }
+      .modal-footer button { flex: 1; min-width: 0; }
+      .wizard-grid    { grid-template-columns: 1fr; }
+      .sessao-acoes   { width: 100%; justify-content: flex-end; }
+    }
   </style>
 </head>
 <body>
