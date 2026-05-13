@@ -1,5 +1,4 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import { PipelineProcessamento } from '@balancagfig/processamento';
 import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 
 export interface StatusFonteWS {
@@ -15,24 +14,25 @@ export interface EventosDadosWS {
 
 type Ouvinte<T> = (detalhe: T) => void;
 
+// Espelha os defaults de principal.ts no gateway para inicialização síncrona do painel
+const CFG_GATEWAY_PADRAO: EstadoPipeline = {
+  limiarZonaMortaN:    0.5,
+  janelaMediaMovel:    5,
+  fatorCalibracao:     1.0,
+  deslocamentoTara:    0,
+  tempoMinFimMs:       100,
+  ativoZonaMorta:      true,
+  ativoMediaMovel:     true,
+  ativoDetectorQueima: true,
+};
+
 export class FonteWebSocket {
   private ws: WebSocket;
   private _status: StatusFonteWS = { conectado: false, transporte: 'websocket' };
   private ouvintes: { [K in keyof EventosDadosWS]?: Array<Ouvinte<EventosDadosWS[K]>> } = {};
-  private pipeline: PipelineProcessamento;
+  private cfgGateway: EstadoPipeline = { ...CFG_GATEWAY_PADRAO };
 
   constructor(url: string, factory?: (url: string) => WebSocket) {
-    this.pipeline = new PipelineProcessamento({
-      limiarZonaMortaN: 0.05,
-      janelaMediaMovel: 5,
-      fatorCalibracao: 1.0,
-      deslocamentoTara: 0,
-      tempoMinFimMs: 100,
-    });
-    // Gateway already processes data; local filters start disabled
-    this.pipeline.atualizarConfig({
-      ativoZonaMorta: false, ativoMediaMovel: false, ativoDetectorQueima: false,
-    });
     const criar = factory ?? ((u: string) => new WebSocket(u));
     this.ws = criar(url);
     this.ws.onmessage = (ev) => this._processar(ev.data as string);
@@ -51,9 +51,8 @@ export class FonteWebSocket {
       case 'LEITURA': {
         // forcaBruta nunca é exposta para o consumidor
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { forcaBruta: _fb, ...base } = msg.carga ?? {};
-        const leitura = this.pipeline.processarLeitura(base as LeituraProcessada);
-        this._emitir('dados', leitura);
+        const { forcaBruta: _fb, ...leitura } = msg.carga ?? {};
+        this._emitir('dados', leitura as LeituraProcessada);
         break;
       }
       case 'CONFIG':
@@ -61,6 +60,9 @@ export class FonteWebSocket {
         break;
       case 'STATUS':
         this._emitir('status', msg.carga);
+        break;
+      case 'PIPELINE_ESTADO':
+        this.cfgGateway = msg.carga as EstadoPipeline;
         break;
       case 'SERIAL_OFF':
         this._status = { ...this._status, conectado: false };
@@ -99,16 +101,23 @@ export class FonteWebSocket {
     this.ws.send(JSON.stringify(comando));
   }
 
-  obterStatus(): StatusFonteWS {
-    return this._status;
-  }
-
   atualizarConfigPipeline(patch: PipelinePatch): void {
-    this.pipeline.atualizarConfig(patch);
+    // Atualiza o pipeline do gateway via WebSocket
+    if (this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ tipo: 'PIPELINE_CONFIG', carga: patch }));
+    }
+    // Atualização otimista do cache local para resposta imediata da UI
+    for (const k of Object.keys(patch) as (keyof PipelinePatch)[]) {
+      if (patch[k] != null) (this.cfgGateway as Record<string, unknown>)[k] = patch[k];
+    }
   }
 
   obterConfigPipeline(): EstadoPipeline {
-    return this.pipeline.obterConfig();
+    return this.cfgGateway;
+  }
+
+  obterStatus(): StatusFonteWS {
+    return this._status;
   }
 
   fechar(): void {
