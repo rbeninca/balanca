@@ -140,6 +140,8 @@ export class TelaConexao {
         if (this.cfg.modo === 'tvbox') {
           const ip = this.cfg.ip || 'localhost';
           const fonte = new FonteWebSocket(`ws://${ip}:8765`);
+          statusEl.textContent = `Aguardando gateway em ${ip}:8765...`;
+          await fonte.aguardarConexao();
           statusEl.className = 'status-box ok';
           statusEl.textContent = `Conectado ao gateway em ${ip}:8765`;
           this.onConectado(fonte);
