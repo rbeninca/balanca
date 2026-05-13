@@ -66,7 +66,20 @@ export class FonteWebSocket {
     (this.ouvintes[evento] as Array<Ouvinte<EventosDadosWS[K]>>).push(fn);
   }
 
+  aguardarConexao(timeoutMs = 5000): Promise<void> {
+    if (this.ws.readyState === WebSocket.OPEN) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`Timeout: gateway não respondeu em ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+      this.ws.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
+      this.ws.addEventListener('error', () => { clearTimeout(timer); reject(new Error('Erro ao conectar ao gateway')); }, { once: true });
+    });
+  }
+
   enviarComando(comando: object): void {
+    if (this.ws.readyState !== WebSocket.OPEN) return;
     this.ws.send(JSON.stringify(comando));
   }
 
