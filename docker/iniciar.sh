@@ -25,6 +25,7 @@ docker compose $COMPOSE_FILES up -d
 
 echo ""
 echo "Stack iniciado:"
+echo "  Aplicação Web:     http://localhost"
+echo "  API REST:          http://localhost:3000"
 echo "  Gateway WebSocket: ws://localhost:8765"
 echo "  Gateway HTTP:      http://localhost:8766/saude"
-echo "  API REST:          http://localhost:3000"
