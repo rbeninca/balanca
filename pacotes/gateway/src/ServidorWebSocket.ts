@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { PortaSerial } from './PortaSerial.js';
 import { PipelineProcessamento } from '@balancagfig/processamento';
-import type { ConfiguracaoPipeline } from '@balancagfig/processamento';
+import type { ConfiguracaoPipeline, PipelinePatch } from '@balancagfig/processamento';
 import { codificarComando } from '@balancagfig/protocolo';
 import type { PacoteESP32, PacoteDados } from '@balancagfig/protocolo';
 
@@ -20,13 +20,34 @@ export class ServidorWebSocket {
     this.servidor.on('connection', (cliente) => {
       this.clientes.add(cliente);
 
+      // Envia estado atual do pipeline para o cliente recém-conectado
+      cliente.send(JSON.stringify({
+        tipo: 'PIPELINE_ESTADO',
+        carga: this.pipeline.obterConfig(),
+      }));
+
       cliente.on('message', async (mensagem) => {
+        let cmd: Record<string, unknown>;
         try {
-          const cmd = JSON.parse(mensagem.toString()) as Record<string, unknown>;
+          cmd = JSON.parse(mensagem.toString()) as Record<string, unknown>;
+        } catch {
+          return;
+        }
+
+        // Comando de controle do pipeline do gateway (não vai para o ESP32)
+        if (cmd['tipo'] === 'PIPELINE_CONFIG') {
+          this.pipeline.atualizarConfig(cmd['carga'] as PipelinePatch);
+          // Difunde o estado atualizado para todos os clientes
+          this.difundir({ tipo: 'PIPELINE_ESTADO', carga: this.pipeline.obterConfig() });
+          return;
+        }
+
+        // Demais comandos são repassados ao ESP32
+        try {
           const bytes = codificarComando(cmd as never);
           await porta.enviar(Buffer.from(bytes));
         } catch {
-          // JSON inválido ou comando desconhecido — ignora e mantém conexão
+          // Comando desconhecido ou erro de codificação — ignora
         }
       });
 
@@ -46,7 +67,6 @@ export class ServidorWebSocket {
 
     porta.on('conectado', async () => {
       this.difundir({ tipo: 'SERIAL_OK' });
-      // Solicita configuração ao ESP32 para calibrar o pipeline corretamente
       try {
         const bytes = codificarComando({ tipo: 'CMD_OBTER_CONFIG' });
         await porta.enviar(Buffer.from(bytes));

@@ -113,6 +113,7 @@ export class TelaMedicao {
           <button class="filtros-header" id="filtros-toggle">
             <span class="filtros-titulo">Processamento de Sinal</span>
             <span class="filtros-badge" id="filtros-badge">3 ativos</span>
+            <span class="filtros-origem" id="filtros-origem"></span>
             <span class="filtros-seta" id="filtros-seta">▼</span>
           </button>
           <div class="filtros-corpo hidden" id="filtros-corpo">
@@ -248,6 +249,7 @@ export class TelaMedicao {
   private inicializarPainelFiltros(container: HTMLElement) {
     // Ler estado inicial da fonte (se disponível)
     const cfgInicial = this.fonte.obterConfigPipeline?.();
+    const origem = container.querySelector<HTMLElement>('#filtros-origem');
     if (cfgInicial) {
       const ckZona   = container.querySelector<HTMLInputElement>('#ck-zona-morta')!;
       const ckMedia  = container.querySelector<HTMLInputElement>('#ck-media-movel')!;
@@ -261,6 +263,12 @@ export class TelaMedicao {
       inZona.value     = String(cfgInicial.limiarZonaMortaN);
       inMedia.value    = String(cfgInicial.janelaMediaMovel);
       inHister.value   = String(cfgInicial.tempoMinFimMs);
+      // Indica se controla pipeline do gateway (WebSocket) ou local (WebSerial)
+      if (origem) {
+        const isGateway = cfgInicial.limiarZonaMortaN >= 0.5;
+        origem.textContent = isGateway ? 'gateway' : 'local';
+        origem.className   = 'filtros-origem' + (isGateway ? ' gateway' : '');
+      }
     }
 
     // Toggle painel
