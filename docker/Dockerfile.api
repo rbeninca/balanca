@@ -1,0 +1,36 @@
+FROM node:24-alpine AS base
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY tsconfig.base.json ./
+COPY pacotes/api/package.json pacotes/api/
+
+RUN npm ci --workspace=pacotes/api
+
+COPY pacotes/api/src pacotes/api/src
+COPY pacotes/api/tsconfig.json pacotes/api/
+
+RUN npm run compilar --workspace=pacotes/api
+
+FROM node:24-alpine
+WORKDIR /app
+
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/pacotes/api/dist ./pacotes/api/dist
+COPY --from=base /app/pacotes/api/src/bancoDados/esquema.sql ./pacotes/api/dist/bancoDados/
+COPY --from=base /app/pacotes/api/package.json ./pacotes/api/
+COPY --from=base /app/package.json ./
+
+RUN mkdir -p /dados && chown node:node /dados
+USER node
+
+ENV CAMINHO_BANCO=/dados/balanca.db
+ENV PORTA_API=3000
+ENV NODE_ENV=production
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s \
+  CMD wget -qO- http://localhost:3000/saude || exit 1
+
+CMD ["node", "pacotes/api/dist/principal.js"]
