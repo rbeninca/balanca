@@ -119,7 +119,9 @@ export class TelaSessoes {
         const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
         const analise = analisarMotor(ls, {});
         const blob    = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
-        this.baixarArquivo(blob, `${s.nome}.pdf`);
+        const url     = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } catch (e) {
         alert(`Não foi possível gerar o PDF: ${String(e)}\n\nA sessão precisa ter pelo menos uma leitura em queima.`);
       }

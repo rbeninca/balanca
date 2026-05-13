@@ -162,8 +162,8 @@ export class TelaAnalise {
       ],
       chart: {
         height: 320,
-        background: '#111',
-        foreColor: '#888',
+        background: '#ffffff',
+        foreColor: '#374151',
         animations: { enabled: false },
         toolbar: { show: true, tools: { download: false, selection: false, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
         events: {
@@ -188,12 +188,12 @@ export class TelaAnalise {
       markers: { size: 0, hover: { size: 4 } },
       xaxis: {
         type: 'numeric',
-        title: { text: 'Tempo (s)', style: { color: '#555' } },
-        labels: { style: { colors: '#666' }, formatter: (v) => (+v).toFixed(2) },
+        title: { text: 'Tempo (s)', style: { color: '#6b7280' } },
+        labels: { style: { colors: '#6b7280' }, formatter: (v) => (+v).toFixed(2) },
       },
       yaxis: {
-        title: { text: 'Força (N)', style: { color: '#555' } },
-        labels: { style: { colors: '#666' }, formatter: (v) => v.toFixed(1) },
+        title: { text: 'Força (N)', style: { color: '#6b7280' } },
+        labels: { style: { colors: '#6b7280' }, formatter: (v) => v.toFixed(1) },
       },
       annotations: {
         xaxis: [
@@ -201,9 +201,9 @@ export class TelaAnalise {
           { x: tf, borderColor: '#ffa040', label: { borderColor: '#ffa040', style: { color: '#fff', background: '#ffa040', fontSize: '11px' }, text: 'Fim'    } },
         ],
       },
-      grid: { borderColor: '#222' },
+      grid: { borderColor: '#e5e7eb' },
       legend: { show: false },
-      tooltip: { theme: 'dark', x: { formatter: (v) => `${(+v).toFixed(3)} s` } },
+      tooltip: { theme: 'light', x: { formatter: (v) => `${(+v).toFixed(3)} s` } },
     };
 
     this.chart = new ApexCharts(el, options);
@@ -300,7 +300,9 @@ export class TelaAnalise {
       const data    = new Date().toLocaleDateString('pt-BR');
       const analise = analisarMotor(this.dados.leituras, {});
       const blob    = gerarPDF(this.dados.leituras, analise, { nomeSessao: this.nomeSessao, data });
-      this.baixarArquivo(blob, `${this.nomeSessao}.pdf`);
+      const url     = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
       alert(`Erro ao gerar PDF: ${String(e)}\n\nDica: registre pelo menos uma queima para gerar o relatório.`);
     }

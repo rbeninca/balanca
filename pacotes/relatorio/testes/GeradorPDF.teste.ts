@@ -36,9 +36,9 @@ async function textoDoBlob(blob: Blob): Promise<string> {
 
 describe('GeradorPDF', () => {
   // UT-4.4.1
-  it('retorna Blob com MIME application/pdf', () => {
+  it('retorna Blob com MIME text/html', () => {
     const blob = gerarPDF(leituras, analise);
-    expect(blob.type).toBe('application/pdf');
+    expect(blob.type).toBe('text/html; charset=utf-8');
   });
 
   // UT-4.4.2
