@@ -129,19 +129,10 @@ export class TelaAnalise {
     if (this.burnInicio < 0) this.burnInicio = 0;
   }
 
-  private seriesGrafico(): { linha: { x: number; y: number }[]; area: { x: number; y: number | null }[] } {
-    const ls   = this.dados.leituras;
-    const t0   = ls[0]?.marcaTemporal ?? 0;
-    const ti   = (ls[this.burnInicio]?.marcaTemporal ?? t0) - t0;
-    const tf   = (ls[this.burnFim]?.marcaTemporal   ?? t0) - t0;
-
-    const linha = ls.map(l => ({ x: (l.marcaTemporal - t0) / 1000, y: l.forcaNewton }));
-    const area  = ls.map(l => {
-      const tr = l.marcaTemporal - t0;
-      return { x: tr / 1000, y: (tr >= ti && tr <= tf) ? l.forcaNewton : null };
-    });
-
-    return { linha, area };
+  private seriesGrafico(): { x: number; y: number }[] {
+    const ls = this.dados.leituras;
+    const t0 = ls[0]?.marcaTemporal ?? 0;
+    return ls.map(l => ({ x: (l.marcaTemporal - t0) / 1000, y: l.forcaNewton }));
   }
 
   private renderizarGrafico() {
@@ -149,7 +140,7 @@ export class TelaAnalise {
     const el = this.overlay.querySelector<HTMLElement>('#analise-chart');
     if (!el || this.dados.leituras.length === 0) return;
 
-    const { linha, area } = this.seriesGrafico();
+    const linha = this.seriesGrafico();
     const ls = this.dados.leituras;
     const t0 = ls[0]?.marcaTemporal ?? 0;
     const ti = ((ls[this.burnInicio]?.marcaTemporal ?? t0) - t0) / 1000;
@@ -158,7 +149,6 @@ export class TelaAnalise {
     const options: ApexCharts.ApexOptions = {
       series: [
         { name: 'Força (N)', type: 'line', data: linha },
-        { name: 'Queima',    type: 'area', data: area  },
       ],
       chart: {
         height: 320,
@@ -182,9 +172,9 @@ export class TelaAnalise {
           },
         },
       },
-      colors: ['#4a9eff', '#ff7040'],
-      stroke: { curve: 'smooth', width: [2, 0] },
-      fill:   { type: ['solid', 'solid'], opacity: [1, 0.25] },
+      colors: ['#2563eb'],
+      stroke: { curve: 'smooth', width: 2 },
+      fill:   { type: 'solid', opacity: 1 },
       markers: { size: 0, hover: { size: 4 } },
       xaxis: {
         type: 'numeric',
@@ -197,6 +187,7 @@ export class TelaAnalise {
       },
       annotations: {
         xaxis: [
+          { x: ti, x2: tf, fillColor: '#ff7040', opacity: 0.12, label: { text: '' } },
           { x: ti, borderColor: '#4caf50', label: { borderColor: '#4caf50', style: { color: '#fff', background: '#4caf50', fontSize: '11px' }, text: 'Início' } },
           { x: tf, borderColor: '#ffa040', label: { borderColor: '#ffa040', style: { color: '#fff', background: '#ffa040', fontSize: '11px' }, text: 'Fim'    } },
         ],
