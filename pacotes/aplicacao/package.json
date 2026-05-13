@@ -15,7 +15,8 @@
     "@balancagfig/processamento": "*",
     "@balancagfig/protocolo": "*",
     "@balancagfig/relatorio": "*",
-    "apexcharts": "^5.11.0"
+    "apexcharts": "^5.11.0",
+    "esptool-js": "^0.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
