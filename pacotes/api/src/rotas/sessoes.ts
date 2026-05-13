@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import type { ProvedorSQLite } from '../bancoDados/ProvedorSQLite.js';
+import type { ContextoRotas } from './tipos.js';
 
 interface Sessao {
   id: string;
@@ -13,10 +13,7 @@ interface Sessao {
   observacoes: string | null;
 }
 
-export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }: {
-  db: ProvedorSQLite;
-  verificarChave: (req: Parameters<FastifyInstance['addHook']>[1], rep: Parameters<FastifyInstance['addHook']>[1]) => Promise<void>;
-}) {
+export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }: ContextoRotas) {
   // ─── Leitura (sem autenticação) ───────────────────────────────────────────
 
   app.get('/sessoes', async (_req, rep) => {
