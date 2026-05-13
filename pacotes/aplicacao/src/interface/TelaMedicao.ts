@@ -12,6 +12,7 @@ type Fonte = {
 export class TelaMedicao {
   private gravando = false;
   private nomeSessao = '';
+  private totalMensagens = 0;
 
   constructor(
     container: HTMLElement,
@@ -46,6 +47,10 @@ export class TelaMedicao {
           <span>Em queima</span>
           <span id="val-queima">Não</span>
         </div>
+        <div class="info-row">
+          <span>Mensagens recebidas</span>
+          <span id="val-msgs" style="color:#666">0 — aguardando dados...</span>
+        </div>
       </div>
 
       <div class="card">
@@ -67,6 +72,13 @@ export class TelaMedicao {
   }
 
   private atualizarForca(l: LeituraProcessada) {
+    this.totalMensagens++;
+    const valMsgs = document.getElementById('val-msgs');
+    if (valMsgs) {
+      valMsgs.textContent = `${this.totalMensagens}`;
+      valMsgs.style.color = '#4caf50';
+    }
+
     const valNum = document.getElementById('valor-num');
     if (valNum) valNum.textContent = l.forcaNewton.toFixed(2);
 
