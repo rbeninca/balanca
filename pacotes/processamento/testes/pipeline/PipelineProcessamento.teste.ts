@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { PipelineProcessamento } from '../../src/pipeline/PipelineProcessamento.js';
 import type { PacoteDados } from '@balancagfig/protocolo';
 
-function pacote(forcaBruta: number, marcaTemporal = 0): PacoteDados {
+function pacote(forcaNewtons: number, marcaTemporal = 0): PacoteDados {
   return {
     tipo: 'DADOS',
     marcaTemporal,
-    forcaNewtons: 0,   // ignorado — pipeline usa forcaBruta
-    forcaBruta,
+    forcaNewtons,
+    forcaBruta: 0,
     statusFirmware: 0,
   };
 }
@@ -15,20 +15,20 @@ function pacote(forcaBruta: number, marcaTemporal = 0): PacoteDados {
 const configBase = {
   limiarZonaMortaN:  0.5,
   janelaMediaMovel:  1,
-  fatorCalibracao:   2.0,
-  deslocamentoTara:  100,
+  fatorCalibracao:   1.0,
+  deslocamentoTara:  0,
   tempoMinFimMs:     100,
 };
 
 describe('PipelineProcessamento', () => {
   it('UT-2.7.1 — ruído → zona morta elimina', () => {
     const p = new PipelineProcessamento(configBase);
-    const r = p.processar(pacote(100));  // (100-100)*2 = 0 → zona morta → 0
+    const r = p.processar(pacote(0.3));  // 0.3 < limiar 0.5 → zona morta → 0
     expect(r.forcaNewton).toBe(0);
     expect(r.emQueima).toBe(false);
   });
 
-  it('UT-2.7.3 — forcaNewton em Newtons: (200-100)*2 = 200', () => {
+  it('UT-2.7.3 — forcaNewton em Newtons: 200 N passa direto', () => {
     const p = new PipelineProcessamento(configBase);
     const r = p.processar(pacote(200));
     expect(r.forcaNewton).toBeCloseTo(200);
@@ -46,9 +46,8 @@ describe('PipelineProcessamento', () => {
 
   it('UT-2.7.6 — impulso cresce com queima: 10N por 0.5s → ≈5 N·s', () => {
     const p = new PipelineProcessamento(configBase);
-    // forcaBruta = 100+5 = 105 → calibrado: (105-100)*2 = 10 N
-    p.processar(pacote(105, 0));
-    const r = p.processar(pacote(105, 500));
+    p.processar(pacote(10, 0));
+    const r = p.processar(pacote(10, 500));
     expect(r.impulsoAcumuladoNs).toBeCloseTo(5, 1);
   });
 
@@ -62,20 +61,18 @@ describe('PipelineProcessamento', () => {
     expect(r.emQueima).toBe(true);
   });
 
-  it('UT-2.7.8 — atualizarCalibracao() muda fator em runtime', () => {
+  it('UT-2.7.8 — atualizarCalibracao() muda fator em runtime (usado pelo gateway)', () => {
     const p = new PipelineProcessamento(configBase);
-    p.atualizarCalibracao(4.0, 100);
-    const r = p.processar(pacote(150)); // (150-100)*4 = 200 N
-    expect(r.forcaNewton).toBeCloseTo(200);
+    p.atualizarCalibracao(4.0, 0);
     expect(p.obterFatorCalibracao()).toBe(4.0);
   });
 
   it('UT-2.7.2 — sequência completa: emQueima alterna', () => {
     const p = new PipelineProcessamento(configBase);
     // REPOUSO → IGNIÇÃO → BURNOUT
-    expect(p.processar(pacote(100,   0)).emQueima).toBe(false);  // 0 N
+    expect(p.processar(pacote(0,     0)).emQueima).toBe(false);  // 0 N
     expect(p.processar(pacote(200, 100)).emQueima).toBe(true);   // 200 N
-    expect(p.processar(pacote(100, 200)).emQueima).toBe(true);   // 0 N → timer início
-    expect(p.processar(pacote(100, 301)).emQueima).toBe(false);  // 101ms abaixo → REPOUSO
+    expect(p.processar(pacote(0,   200)).emQueima).toBe(true);   // 0 N → timer início
+    expect(p.processar(pacote(0,   301)).emQueima).toBe(false);  // 101ms abaixo → REPOUSO
   });
 });

@@ -22,7 +22,8 @@ export class PipelineProcessamento {
   }
 
   processar(pacote: PacoteDados): LeituraProcessada {
-    let forca = this.calibrador.aplicar(pacote.forcaBruta);
+    // Usa forcaNewtons calibrado pelo firmware ESP32; forcaBruta disponível via atualizarCalibracao
+    let forca = pacote.forcaNewtons;
     forca     = this.zonaMorta.aplicar(forca);
     forca     = this.mediaMovel.aplicar(forca);
 
