@@ -300,7 +300,7 @@ export class TelaMedicao {
     ctx.clearRect(0, 0, W, H);
 
     if (this.dadosGrafico.length === 0) {
-      ctx.fillStyle    = '#3a3a3a';
+      ctx.fillStyle    = '#c0c8d4';
       ctx.font         = '13px system-ui, sans-serif';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
@@ -320,13 +320,13 @@ export class TelaMedicao {
 
     // grade horizontal
     const numLinhas = 5;
-    ctx.strokeStyle  = '#222';
+    ctx.strokeStyle  = '#e5e7eb';
     ctx.lineWidth    = 1;
     for (let i = 0; i <= numLinhas; i++) {
       const y = mg.top + (ph / numLinhas) * i;
       ctx.beginPath(); ctx.moveTo(mg.left, y); ctx.lineTo(W - mg.right, y); ctx.stroke();
       const vLinha = (maxVal * 1.15) - (range * (i / numLinhas));
-      ctx.fillStyle    = '#444';
+      ctx.fillStyle    = '#9ca3af';
       ctx.font         = '10px system-ui, sans-serif';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'middle';
@@ -339,7 +339,7 @@ export class TelaMedicao {
       const tN = this.dadosGrafico[this.dadosGrafico.length - 1]!.tempo;
       const durS = (tN - t0) / 1000;
       const numTicks = Math.min(6, Math.floor(pw / 60));
-      ctx.fillStyle    = '#444';
+      ctx.fillStyle    = '#9ca3af';
       ctx.font         = '10px system-ui, sans-serif';
       ctx.textBaseline = 'top';
       for (let i = 0; i <= numTicks; i++) {
@@ -354,7 +354,7 @@ export class TelaMedicao {
     // linha de zero
     if (minVal < 0) {
       const zy = mg.top + ph - ((0 - minVal) / range) * ph;
-      ctx.strokeStyle = '#333';
+      ctx.strokeStyle = '#d1d5db';
       ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(mg.left, zy); ctx.lineTo(W - mg.right, zy); ctx.stroke();
       ctx.setLineDash([]);
