@@ -1,0 +1,33 @@
+# Override para usar MariaDB em vez de SQLite
+# Uso: docker compose -f docker-compose.yml -f docker-compose.mariadb.yml up
+services:
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: gfig_root
+      MARIADB_DATABASE: balanca
+      MARIADB_USER: balanca
+      MARIADB_PASSWORD: balanca_pass
+    volumes:
+      - dados_mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  api:
+    environment:
+      DB_TIPO: mariadb
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_NOME: balanca
+      DB_USUARIO: balanca
+      DB_SENHA: balanca_pass
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+volumes:
+  dados_mariadb:
