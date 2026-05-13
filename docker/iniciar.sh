@@ -21,7 +21,7 @@ if [ ! -f /dados/.chave-api ]; then
   node pacotes/api/dist/autenticacao/gerarChave.js /tmp/.chave-api-temp 2>/dev/null || true
 fi
 
-docker compose $COMPOSE_FILES up -d
+docker compose $COMPOSE_FILES up -d --build
 
 echo ""
 echo "Stack iniciado:"
