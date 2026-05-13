@@ -3,7 +3,8 @@
   "version": "2.0.0",
   "private": true,
   "workspaces": [
-    "pacotes/*"
+    "pacotes/*",
+    "ponta-a-ponta"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
