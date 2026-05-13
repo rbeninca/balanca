@@ -14,7 +14,9 @@
       "Bash(npm --version)",
       "Bash(npm test *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)"
     ]
   }
 }
