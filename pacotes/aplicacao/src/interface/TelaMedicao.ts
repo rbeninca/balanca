@@ -177,7 +177,10 @@ export class TelaMedicao {
       this.dadosGrafico.shift();
     }
 
-    if (this.gravando) this.dadosGravados.push(l);
+    if (this.gravando) {
+      this.dadosGravados.push(l);
+      this.gerenciador.adicionarLeitura(l).catch(() => {/* ignora erros de flush */});
+    }
 
     this.atualizarDisplay();
   }
