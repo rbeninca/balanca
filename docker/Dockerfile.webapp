@@ -1,0 +1,39 @@
+FROM node:24-alpine AS base
+WORKDIR /app
+
+# Copia package.json de TODOS os workspaces para satisfazer o lockfile
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY pacotes/protocolo/package.json     pacotes/protocolo/
+COPY pacotes/processamento/package.json pacotes/processamento/
+COPY pacotes/analise/package.json       pacotes/analise/
+COPY pacotes/relatorio/package.json     pacotes/relatorio/
+COPY pacotes/gateway/package.json       pacotes/gateway/
+COPY pacotes/api/package.json           pacotes/api/
+COPY pacotes/aplicacao/package.json     pacotes/aplicacao/
+COPY ponta-a-ponta/package.json         ponta-a-ponta/
+
+# Instala deps (inclui vite e typescript)
+RUN npm install --workspace=pacotes/aplicacao
+
+# Copia fontes de todos os pacotes necessários para o build Vite
+COPY pacotes/protocolo/src     pacotes/protocolo/src
+COPY pacotes/processamento/src pacotes/processamento/src
+COPY pacotes/analise/src       pacotes/analise/src
+COPY pacotes/relatorio/src     pacotes/relatorio/src
+COPY pacotes/aplicacao/src     pacotes/aplicacao/src
+COPY pacotes/aplicacao/index.html      pacotes/aplicacao/
+COPY pacotes/aplicacao/vite.config.ts  pacotes/aplicacao/
+COPY pacotes/aplicacao/tsconfig.json   pacotes/aplicacao/
+
+# Compila o SPA com Vite
+RUN npm run compilar --workspace=pacotes/aplicacao
+
+# ── Imagem final ────────────────────────────────────────────────────────────
+FROM nginx:alpine
+COPY --from=base /app/pacotes/aplicacao/dist-web /usr/share/nginx/html
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:80/ || exit 1
