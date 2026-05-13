@@ -5,15 +5,16 @@ import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
 
 const armazenamento = new ArmazenamentoLocal();
-const gerenciador = new GerenciadorSessao(armazenamento);
+const gerenciador   = new GerenciadorSessao(armazenamento);
 
 const app = document.getElementById('app')!;
 
 type Tela = 'conexao' | 'medicao' | 'sessoes';
 
-let telaAtual: Tela = 'conexao';
+let telaAtual:  Tela   = 'conexao';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let fonteAtual: any = null;
+let fonteAtual: any    = null;
+let telaMedicaoAtual: TelaMedicao | null = null;
 
 function navegar(tela: Tela) {
   telaAtual = tela;
@@ -21,7 +22,10 @@ function navegar(tela: Tela) {
 }
 
 function renderizar() {
-  app.innerHTML = '';
+  telaMedicaoAtual?.destruir();
+  telaMedicaoAtual = null;
+  app.innerHTML    = '';
+
   switch (telaAtual) {
     case 'conexao':
       new TelaConexao(app, (fonte) => {
@@ -29,9 +33,17 @@ function renderizar() {
         navegar('medicao');
       });
       break;
+
     case 'medicao':
-      new TelaMedicao(app, fonteAtual, gerenciador, () => navegar('sessoes'));
+      telaMedicaoAtual = new TelaMedicao(
+        app,
+        fonteAtual,
+        gerenciador,
+        armazenamento,
+        () => navegar('sessoes'),
+      );
       break;
+
     case 'sessoes':
       new TelaSessoes(app, armazenamento, () => navegar('medicao'));
       break;
