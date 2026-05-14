@@ -514,8 +514,19 @@ export class TelaAnalise {
     const idSessao = this.dados.idSessao;
     if (!idSessao) { this.destruir(); return; }
 
-    if (this.leiturasMutadas) {
-      await this.armazenamento.substituirLeituras(idSessao, this.dados.leituras);
+    // Aplica burnInicio/burnFim de volta nos flags emQueima
+    const ls = this.dados.leituras;
+    let queimaAlterada = false;
+    for (let i = 0; i < ls.length; i++) {
+      const deveQueimar = i >= this.burnInicio && i <= this.burnFim;
+      if (ls[i]!.emQueima !== deveQueimar) {
+        ls[i]!.emQueima = deveQueimar;
+        queimaAlterada = true;
+      }
+    }
+
+    if (this.leiturasMutadas || queimaAlterada) {
+      await this.armazenamento.substituirLeituras(idSessao, ls);
     }
 
     const meta = this.lerMetadadosFormulario();
