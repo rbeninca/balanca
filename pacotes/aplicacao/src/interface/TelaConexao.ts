@@ -10,6 +10,7 @@ interface ConfigSalva {
 }
 
 const CHAVE_LS = 'balancagfig:conexao';
+const CHAVE_GW = 'balancagfig:gateways';
 
 function carregarConfig(): ConfigSalva {
   try {
@@ -21,6 +22,31 @@ function carregarConfig(): ConfigSalva {
 
 function salvarConfig(cfg: ConfigSalva) {
   localStorage.setItem(CHAVE_LS, JSON.stringify(cfg));
+}
+
+function carregarGatewaysSalvos(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(CHAVE_GW) ?? '[]') as string[];
+  } catch { return []; }
+}
+
+function salvarGateway(ip: string): void {
+  const lista = carregarGatewaysSalvos().filter(x => x !== ip);
+  localStorage.setItem(CHAVE_GW, JSON.stringify([ip, ...lista].slice(0, 10)));
+}
+
+async function testarWs(ip: string): Promise<boolean> {
+  if (location.protocol === 'https:') return false;
+  return new Promise(resolve => {
+    let done = false;
+    const fim = (v: boolean) => { if (!done) { done = true; resolve(v); } };
+    try {
+      const ws = new WebSocket(`ws://${ip}:8765`);
+      const t = setTimeout(() => { ws.close(); fim(false); }, 2000);
+      ws.addEventListener('open', () => { clearTimeout(t); ws.close(); fim(true); });
+      ws.addEventListener('error', () => { clearTimeout(t); fim(false); });
+    } catch { fim(false); }
+  });
 }
 
 export class TelaConexao {
@@ -59,6 +85,7 @@ export class TelaConexao {
         <div id="campos-tvbox" class="${cfg.modo !== 'tvbox' ? 'hidden' : ''}">
           <label for="campo-ip">Endereço IP</label>
           <input id="campo-ip" type="text" placeholder="192.168.1.100" value="${cfg.ip}">
+          <div id="gw-sugestoes"></div>
 
           <label for="campo-chave">Chave de API</label>
           <input id="campo-chave" type="password" placeholder="opcional" value="${cfg.chave}">
@@ -80,12 +107,13 @@ export class TelaConexao {
   }
 
   private bindEventos(container: HTMLElement) {
-    const statusEl = container.querySelector<HTMLElement>('[data-testid="status-deteccao"]')!;
+    const statusEl    = container.querySelector<HTMLElement>('[data-testid="status-deteccao"]')!;
     const camposTVBox = container.querySelector<HTMLElement>('#campos-tvbox')!;
-    const listaPorts = container.querySelector<HTMLElement>('#lista-portas')!;
-    const inputIP = container.querySelector<HTMLInputElement>('#campo-ip')!;
-    const inputChave = container.querySelector<HTMLInputElement>('#campo-chave')!;
+    const listaPorts  = container.querySelector<HTMLElement>('#lista-portas')!;
+    const inputIP     = container.querySelector<HTMLInputElement>('#campo-ip')!;
+    const inputChave  = container.querySelector<HTMLInputElement>('#campo-chave')!;
     const btnConectar = container.querySelector<HTMLButtonElement>('#btn-conectar')!;
+    const sugestoesEl = container.querySelector<HTMLElement>('#gw-sugestoes')!;
 
     const radios = container.querySelectorAll<HTMLInputElement>('input[name="modo"]');
 
@@ -105,6 +133,7 @@ export class TelaConexao {
           statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
         }
         btnConectar.disabled = false;
+        void this.varrerGateways(sugestoesEl, inputIP);
       } else {
         camposTVBox.classList.add('hidden');
         listaPorts.classList.remove('hidden');
@@ -151,6 +180,7 @@ export class TelaConexao {
           const fonte = new FonteWebSocket(`ws://${ip}:8765`);
           statusEl.textContent = `Aguardando gateway em ${ip}:8765...`;
           await fonte.aguardarConexao();
+          salvarGateway(ip);
           statusEl.className = 'status-box ok';
           statusEl.textContent = `Conectado ao gateway em ${ip}:8765`;
           this.onConectado(fonte);
@@ -168,5 +198,52 @@ export class TelaConexao {
         btnConectar.textContent = 'Conectar';
       }
     });
+  }
+
+  private async varrerGateways(sugestoesEl: HTMLElement, inputIP: HTMLInputElement): Promise<void> {
+    if (location.protocol === 'https:') return;
+
+    const candidatos: string[] = [];
+
+    // Hostname da URL atual, se parecer um IP de rede local
+    const host = location.hostname;
+    if (host && host !== 'localhost' && /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+      candidatos.push(host);
+    }
+
+    // Gateways de conexões anteriores bem-sucedidas
+    for (const ip of carregarGatewaysSalvos()) {
+      if (!candidatos.includes(ip)) candidatos.push(ip);
+    }
+
+    if (candidatos.length === 0) return;
+
+    sugestoesEl.innerHTML = '<span class="gw-scan-msg">Verificando gateways...</span>';
+
+    const resultados = await Promise.all(
+      candidatos.map(async ip => ({ ip, ok: await testarWs(ip) }))
+    );
+
+    if (!sugestoesEl.isConnected) return;
+
+    const encontrados = resultados.filter(r => r.ok);
+    if (encontrados.length === 0) {
+      sugestoesEl.innerHTML = '';
+      return;
+    }
+
+    sugestoesEl.innerHTML = '<span class="gw-scan-msg">Gateways disponíveis:</span><div class="gw-chips"></div>';
+    const chipsEl = sugestoesEl.querySelector<HTMLElement>('.gw-chips')!;
+    for (const { ip } of encontrados) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gw-chip';
+      btn.textContent = ip;
+      btn.addEventListener('click', () => {
+        inputIP.value = ip;
+        inputIP.dispatchEvent(new Event('input'));
+      });
+      chipsEl.appendChild(btn);
+    }
   }
 }
