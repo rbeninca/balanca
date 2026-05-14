@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
 # Ferramentas de build para better-sqlite3 (node-gyp)
@@ -13,13 +13,15 @@ COPY pacotes/relatorio/package.json     pacotes/relatorio/
 COPY pacotes/gateway/package.json       pacotes/gateway/
 COPY pacotes/api/package.json           pacotes/api/
 COPY pacotes/aplicacao/package.json     pacotes/aplicacao/
+COPY pacotes/atualizador/package.json   pacotes/atualizador/
 COPY ponta-a-ponta/package.json         ponta-a-ponta/
 
 # Instala todas as deps (inclui typescript para compilação)
-RUN npm ci --workspace=pacotes/api
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace=pacotes/api
 
 # Copia fontes e compila TypeScript
-COPY pacotes/api/src        pacotes/api/src
+COPY pacotes/api/src           pacotes/api/src
 COPY pacotes/api/tsconfig.json pacotes/api/
 RUN npm run compilar --workspace=pacotes/api
 
@@ -27,7 +29,7 @@ RUN npm run compilar --workspace=pacotes/api
 RUN npm prune --omit=dev
 
 # ── Imagem final ────────────────────────────────────────────────────────────
-FROM node:24-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=base /app/node_modules             ./node_modules

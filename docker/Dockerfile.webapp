@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
 # Copia package.json de TODOS os workspaces para satisfazer o lockfile
@@ -10,10 +10,12 @@ COPY pacotes/relatorio/package.json     pacotes/relatorio/
 COPY pacotes/gateway/package.json       pacotes/gateway/
 COPY pacotes/api/package.json           pacotes/api/
 COPY pacotes/aplicacao/package.json     pacotes/aplicacao/
+COPY pacotes/atualizador/package.json   pacotes/atualizador/
 COPY ponta-a-ponta/package.json         ponta-a-ponta/
 
 # Instala deps (inclui vite e typescript)
-RUN npm install --workspace=pacotes/aplicacao
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace=pacotes/aplicacao
 
 # Copia fontes de todos os pacotes necessários para o build Vite
 COPY pacotes/protocolo/src     pacotes/protocolo/src
@@ -24,6 +26,11 @@ COPY pacotes/aplicacao/src     pacotes/aplicacao/src
 COPY pacotes/aplicacao/index.html      pacotes/aplicacao/
 COPY pacotes/aplicacao/vite.config.ts  pacotes/aplicacao/
 COPY pacotes/aplicacao/tsconfig.json   pacotes/aplicacao/
+
+# Copia firmware pré-compilado para os assets da aplicação
+RUN mkdir -p pacotes/aplicacao/public
+COPY firmware/firmware.bin pacotes/aplicacao/public/firmware.bin
+COPY firmware/versao.json  pacotes/aplicacao/public/firmware-versao.json
 
 # Compila o SPA com Vite
 RUN npm run compilar --workspace=pacotes/aplicacao
