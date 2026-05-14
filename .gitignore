@@ -11,3 +11,4 @@ test-results.xml
 # Firmware binário gerado pelo CI
 pacotes/aplicacao/public/firmware.bin
 pacotes/aplicacao/public/firmware-versao.json
+balancaGFIGv1/
