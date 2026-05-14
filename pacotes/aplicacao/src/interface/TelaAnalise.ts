@@ -1,8 +1,8 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import type { ArmazenamentoLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento, MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import { analisarMotor } from '@balancagfig/analise';
-import { gerarPDF } from '@balancagfig/relatorio';
-import { exportarCSV } from '@balancagfig/relatorio';
+import { gerarPDF, exportarCSV, exportarENG } from '@balancagfig/relatorio';
+import type { MetadadosENG, MetadadosPDF } from '@balancagfig/relatorio';
 import ApexCharts from 'apexcharts';
 
 export interface DadosAnalise {
@@ -12,20 +12,19 @@ export interface DadosAnalise {
   idSessao?:  string;
 }
 
-// índices no array leituras correspondentes ao início/fim da queima
 let instanciaAtual: TelaAnalise | null = null;
 
 export class TelaAnalise {
   private overlay:        HTMLElement;
   private chart:          ApexCharts | null = null;
-  private burnInicio      = 0;   // índice
-  private burnFim         = 0;   // índice
+  private burnInicio      = 0;
+  private burnFim         = 0;
   private nomeSessao:     string;
   private leiturasMutadas = false;
 
   constructor(
     private dados: DadosAnalise,
-    private armazenamento: ArmazenamentoLocal,
+    private armazenamento: IArmazenamento,
     private onFechar: () => void,
   ) {
     instanciaAtual?.destruir();
@@ -41,6 +40,74 @@ export class TelaAnalise {
     this.detectarQueima();
     setTimeout(() => { this.renderizarGrafico(); this.atualizarStats(); }, 80);
     this.bindEventos();
+
+    if (dados.modo === 'revisao' && dados.idSessao) {
+      this.carregarMetadados(dados.idSessao);
+    }
+  }
+
+  private async carregarMetadados(idSessao: string) {
+    try {
+      const meta = await this.armazenamento.obterMetadados(idSessao);
+      if (meta) {
+        this.preencherFormularioMetadados(meta);
+        this.atualizarIsp();
+      }
+    } catch { /* metadados indisponíveis */ }
+  }
+
+  private preencherFormularioMetadados(meta: MetadadosLocal) {
+    const set = (id: string, v: string | number | undefined) => {
+      const el = this.overlay.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`);
+      if (el && v != null) el.value = String(v);
+    };
+    set('meta-fabricante',  meta.fabricante);
+    set('meta-diametro',    meta.diametro_mm);
+    set('meta-comprimento', meta.comprimento_mm);
+    set('meta-massa-prop',  meta.massaPropelente_g);
+    set('meta-massa-total', meta.massaTotal_g);
+    set('meta-descricao',   meta.descricao);
+    set('meta-observacoes', meta.observacoes);
+  }
+
+  private lerMetadadosFormulario(): MetadadosLocal {
+    const num = (id: string): number | undefined => {
+      const v = parseFloat((this.overlay.querySelector<HTMLInputElement>(`#${id}`)?.value ?? ''));
+      return isNaN(v) ? undefined : v;
+    };
+    const txt = (id: string): string | undefined => {
+      const v = (this.overlay.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)?.value ?? '').trim();
+      return v || undefined;
+    };
+    const meta: MetadadosLocal = {};
+    const fabricante = txt('meta-fabricante');        if (fabricante        !== undefined) meta.fabricante        = fabricante;
+    const diametro   = num('meta-diametro');          if (diametro          !== undefined) meta.diametro_mm       = diametro;
+    const comprimento = num('meta-comprimento');      if (comprimento       !== undefined) meta.comprimento_mm    = comprimento;
+    const massaProp  = num('meta-massa-prop');        if (massaProp         !== undefined) meta.massaPropelente_g = massaProp;
+    const massaTotal = num('meta-massa-total');       if (massaTotal        !== undefined) meta.massaTotal_g      = massaTotal;
+    const descricao  = txt('meta-descricao');         if (descricao         !== undefined) meta.descricao         = descricao;
+    const observacoes = txt('meta-observacoes');      if (observacoes       !== undefined) meta.observacoes       = observacoes;
+    return meta;
+  }
+
+  private atualizarIsp() {
+    const massaProp = parseFloat(
+      (this.overlay.querySelector<HTMLInputElement>('#meta-massa-prop')?.value ?? ''),
+    );
+    if (isNaN(massaProp) || massaProp <= 0) {
+      const el = this.overlay.querySelector('#st-isp');
+      if (el) el.textContent = '—';
+      return;
+    }
+    try {
+      const analise = analisarMotor(this.dados.leituras, { massaPropelente_g: massaProp });
+      const isp = analise.impulsoEspecifico_s;
+      const el  = this.overlay.querySelector('#st-isp');
+      if (el) el.textContent = isp != null ? `${isp.toFixed(1)} s` : '—';
+    } catch {
+      const el = this.overlay.querySelector('#st-isp');
+      if (el) el.textContent = '—';
+    }
   }
 
   private normalizarLeiturasPorTempo() {
@@ -98,6 +165,42 @@ export class TelaAnalise {
                 </div>
               </div>
 
+              <div class="stats-secao">
+                <h3>Propelente / Motor</h3>
+                <div class="stat-item">
+                  <span class="stat-label">Fabricante</span>
+                  <input type="text" class="stat-input meta-text" id="meta-fabricante" placeholder="—">
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Diâmetro (mm)</span>
+                  <input type="number" class="stat-input" id="meta-diametro" step="0.1" min="0" placeholder="—">
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Comprimento (mm)</span>
+                  <input type="number" class="stat-input" id="meta-comprimento" step="0.1" min="0" placeholder="—">
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Massa prop. (g)</span>
+                  <input type="number" class="stat-input" id="meta-massa-prop" step="0.01" min="0" placeholder="—">
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Massa total (g)</span>
+                  <input type="number" class="stat-input" id="meta-massa-total" step="0.01" min="0" placeholder="—">
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Isp</span>
+                  <span class="stat-valor" id="st-isp">—</span>
+                </div>
+              </div>
+
+              <div class="stats-secao">
+                <h3>Notas</h3>
+                <label class="meta-label">Descrição</label>
+                <textarea id="meta-descricao" class="meta-textarea" rows="2" placeholder="Descrição do propelente..."></textarea>
+                <label class="meta-label" style="margin-top:0.4rem">Observações</label>
+                <textarea id="meta-observacoes" class="meta-textarea" rows="2" placeholder="Condições do teste, problemas, etc."></textarea>
+              </div>
+
               <button id="btn-auto-detectar" class="btn-outline btn-sm" style="width:100%;margin-top:0.5rem">Auto-detectar queima</button>
               <button id="btn-recortar" class="btn-warning btn-sm" style="width:100%;margin-top:0.4rem" title="Remove amostras fora da região de queima">✂ Recortar fora da queima</button>
             </div>
@@ -106,8 +209,9 @@ export class TelaAnalise {
 
         <div class="modal-footer">
           <button id="btn-descartar" class="btn-secondary">Descartar</button>
-          <button id="btn-export-csv" class="btn-secondary">Exportar CSV</button>
-          <button id="btn-export-pdf" class="btn-secondary">Exportar PDF</button>
+          <button id="btn-export-csv" class="btn-secondary">CSV</button>
+          <button id="btn-export-eng" class="btn-secondary">ENG</button>
+          <button id="btn-export-pdf" class="btn-secondary">PDF</button>
           <button id="btn-salvar-sessao" class="btn-success">Salvar Sessão</button>
         </div>
       </div>
@@ -118,7 +222,6 @@ export class TelaAnalise {
     const ls = this.dados.leituras;
     if (ls.length === 0) return;
 
-    // Usa emQueima quando disponível
     const priInicio = ls.findIndex(l => l.emQueima);
     const ultFim    = ls.map(l => l.emQueima).lastIndexOf(true);
 
@@ -128,7 +231,6 @@ export class TelaAnalise {
       return;
     }
 
-    // Fallback: threshold 5% do pico
     const pico = Math.max(...ls.map(l => l.forcaNewton));
     const thr  = pico * 0.05;
     this.burnInicio = ls.findIndex(l => l.forcaNewton >= thr);
@@ -229,7 +331,6 @@ export class TelaAnalise {
     setTxt('st-fmin',     `${fmt(fMin)} N`);
     setTxt('st-fmax',     `${fmt(fMax)} N`);
 
-    // stats de queima
     const inicio = this.burnInicio;
     const fim    = this.burnFim;
     const tInicio = (ls[inicio]?.marcaTemporal ?? t0) - t0;
@@ -243,9 +344,13 @@ export class TelaAnalise {
     setInput('st-t1', tFim / 1000);
     setTxt('st-tbq', `${fmt((tFim - tInicio) / 1000, 3)} s`);
 
-    // tenta analisarMotor usando os dados completos (emQueima vem do pipeline)
+    const massaProp = parseFloat(
+      this.overlay.querySelector<HTMLInputElement>('#meta-massa-prop')?.value ?? '',
+    );
+    const optsAnalise = isNaN(massaProp) || massaProp <= 0 ? {} : { massaPropelente_g: massaProp };
+
     try {
-      const analise = analisarMotor(ls, {});
+      const analise = analisarMotor(ls, optsAnalise);
       setTxt('st-impulso', `${fmt(analise.impulsoTotal_Ns)} N·s`);
       setTxt('st-fmed',    `${fmt(analise.forcaMedia_N)} N`);
       setTxt('st-fpico',   `${fmt(analise.forcaPico_N)} N`);
@@ -253,8 +358,8 @@ export class TelaAnalise {
       setTxt('st-perfil',  analise.perfilQueima);
       setTxt('st-nar',     analise.letraMotor);
       setTxt('st-nome-motor', analise.nomeComum);
+      setTxt('st-isp', analise.impulsoEspecifico_s != null ? `${analise.impulsoEspecifico_s.toFixed(1)} s` : '—');
 
-      // colore badge NAR
       const narEl = this.overlay.querySelector('#st-nar') as HTMLElement | null;
       if (narEl) {
         const cores: Record<string, string> = { A:'#2d7a2d', B:'#246624', C:'#1a7a4a', D:'#1a5a7a', E:'#2a4a9a', F:'#4a2a9a', G:'#7a2a9a', H:'#9a2a6a', I:'#9a2a2a', J:'#c05020', K:'#c08020', L:'#806020', M:'#506020', N:'#306040', O:'#206060' };
@@ -264,7 +369,6 @@ export class TelaAnalise {
         narEl.style.borderColor = cor;
       }
     } catch {
-      // sem emQueima=true nos dados: usa intervalo selecionado
       const queima = ls.slice(inicio, fim + 1);
       if (queima.length > 1) {
         const fMed = queima.reduce((s, l) => s + l.forcaNewton, 0) / queima.length;
@@ -274,6 +378,7 @@ export class TelaAnalise {
         setTxt('st-fpico',   `${fmt(fP)} N`);
         setTxt('st-impulso', `${fmt(impul)} N·s`);
       }
+      setTxt('st-isp', '—');
     }
   }
 
@@ -312,23 +417,57 @@ export class TelaAnalise {
   }
 
   private exportarCSV() {
+    const meta = this.lerMetadadosFormulario();
     const data = new Date().toLocaleDateString('pt-BR');
+    const optsAnalise = meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {};
+    let ispNum: number | undefined;
+    if (meta.massaPropelente_g) {
+      try { ispNum = analisarMotor(this.dados.leituras, optsAnalise).impulsoEspecifico_s ?? undefined; }
+      catch { /* sem queima */ }
+    }
+    const metaCSV = { nomeSessao: this.nomeSessao, data, ...(ispNum !== undefined ? { isp: ispNum } : {}) };
     try {
-      const analise = analisarMotor(this.dados.leituras, {});
-      const csv = exportarCSV(this.dados.leituras, analise, { nomeSessao: this.nomeSessao, data });
+      const analise = analisarMotor(this.dados.leituras, optsAnalise);
+      const csv = exportarCSV(this.dados.leituras, analise, metaCSV);
       this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${this.nomeSessao}.csv`);
     } catch {
-      const csv = exportarCSV(this.dados.leituras, undefined, { nomeSessao: this.nomeSessao, data });
+      const csv = exportarCSV(this.dados.leituras, undefined, metaCSV);
       this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${this.nomeSessao}.csv`);
+    }
+  }
+
+  private exportarENG() {
+    try {
+      const meta    = this.lerMetadadosFormulario();
+      const analise = analisarMotor(this.dados.leituras, meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {});
+      const metaENG: MetadadosENG = {};
+      if (meta.diametro_mm        !== undefined) metaENG.diametroMm        = meta.diametro_mm;
+      if (meta.comprimento_mm     !== undefined) metaENG.comprimentoMm     = meta.comprimento_mm;
+      if (meta.massaPropelente_g  !== undefined) metaENG.massaPropelente_g = meta.massaPropelente_g;
+      if (meta.massaTotal_g       !== undefined) metaENG.massaTotal_g      = meta.massaTotal_g;
+      if (meta.fabricante         !== undefined) metaENG.fabricante        = meta.fabricante;
+      const eng = exportarENG(this.dados.leituras, analise, metaENG);
+      this.baixarArquivo(new Blob([eng], { type: 'text/plain' }), `${this.nomeSessao}.eng`);
+    } catch (e) {
+      alert(`Não foi possível gerar o ENG: ${String(e)}\n\nA sessão precisa ter pelo menos uma leitura em queima.`);
     }
   }
 
   private exportarPDF() {
     try {
+      const meta    = this.lerMetadadosFormulario();
       const data    = new Date().toLocaleDateString('pt-BR');
-      const analise = analisarMotor(this.dados.leituras, {});
-      const blob    = gerarPDF(this.dados.leituras, analise, { nomeSessao: this.nomeSessao, data });
-      const url     = URL.createObjectURL(blob);
+      const analise = analisarMotor(this.dados.leituras, meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {});
+      const metaPDF: MetadadosPDF = { nomeSessao: this.nomeSessao, data };
+      if (meta.fabricante        !== undefined) metaPDF.fabricante        = meta.fabricante;
+      if (meta.diametro_mm       !== undefined) metaPDF.diametro_mm       = meta.diametro_mm;
+      if (meta.comprimento_mm    !== undefined) metaPDF.comprimento_mm    = meta.comprimento_mm;
+      if (meta.massaPropelente_g !== undefined) metaPDF.massaPropelente_g = meta.massaPropelente_g;
+      if (meta.massaTotal_g      !== undefined) metaPDF.massaTotal_g      = meta.massaTotal_g;
+      if (meta.descricao         !== undefined) metaPDF.descricao         = meta.descricao;
+      if (meta.observacoes       !== undefined) metaPDF.observacoes       = meta.observacoes;
+      const blob = gerarPDF(this.dados.leituras, analise, metaPDF);
+      const url  = URL.createObjectURL(blob);
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e) {
@@ -342,7 +481,9 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(); this.renderizarGrafico(); this.atualizarStats(); });
     this.overlay.querySelector('#btn-recortar')!.addEventListener('click',       () => this.recortarQueima());
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
+    this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
+    this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click',  () => this.salvarSessao());
 
     const inputNome = this.overlay.querySelector<HTMLInputElement>('#nome-sessao-analise')!;
     inputNome.addEventListener('input', () => { this.nomeSessao = inputNome.value.trim() || this.dados.nomeSessao; });
@@ -366,7 +507,7 @@ export class TelaAnalise {
       }
     });
 
-    this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click', () => this.salvarSessao());
+    this.overlay.querySelector('#meta-massa-prop')!.addEventListener('input', () => this.atualizarStats());
   }
 
   private async salvarSessao() {
@@ -377,10 +518,13 @@ export class TelaAnalise {
       await this.armazenamento.substituirLeituras(idSessao, this.dados.leituras);
     }
 
+    const meta = this.lerMetadadosFormulario();
     try {
       const analise = analisarMotor(this.dados.leituras, {});
-      await this.armazenamento.salvarMetadados(idSessao, { descricao: analise.nomeComum });
-    } catch { /* sem queima detectada — sem metadados extra */ }
+      if (!meta.descricao) meta.descricao = analise.nomeComum;
+    } catch { /* sem queima detectada */ }
+
+    await this.armazenamento.salvarMetadados(idSessao, meta);
 
     this.destruir();
   }

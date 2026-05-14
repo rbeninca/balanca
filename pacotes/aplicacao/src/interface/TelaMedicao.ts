@@ -1,7 +1,7 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 import type { GerenciadorSessao } from '../nucleo/GerenciadorSessao.js';
-import type { ArmazenamentoLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
 
@@ -67,7 +67,7 @@ export class TelaMedicao {
     container: HTMLElement,
     private fonte: Fonte,
     private gerenciador: GerenciadorSessao,
-    private armazenamento: ArmazenamentoLocal,
+    private armazenamento: IArmazenamento,
     private onSessoes: () => void,
     private onConfiguracoes: () => void,
   ) {
