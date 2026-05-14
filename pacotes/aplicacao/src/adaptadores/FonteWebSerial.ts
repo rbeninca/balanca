@@ -20,6 +20,7 @@ const CONFIG_PADRAO: ConfiguracaoPipeline = {
 
 export class FonteWebSerial {
   private porta: SerialPort | null = null;
+  private leitor: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private pipeline: PipelineProcessamento;
   private _status: StatusFonteWebSerial = { conectado: false, transporte: 'webserial' };
   private ouvintesDados: Array<Ouvinte<LeituraProcessada>> = [];
@@ -39,6 +40,7 @@ export class FonteWebSerial {
   private async _lerStream(): Promise<void> {
     const reader = (this.porta as any).readable?.getReader();
     if (!reader) return;
+    this.leitor = reader;
     try {
       while (true) {
         const { value, done } = await reader.read();
@@ -47,6 +49,7 @@ export class FonteWebSerial {
       }
     } finally {
       reader.releaseLock();
+      this.leitor = null;
     }
   }
 
@@ -63,7 +66,11 @@ export class FonteWebSerial {
   }
 
   async desconectar(): Promise<void> {
-    await (this.porta as any)?.close();
+    if (this.leitor) {
+      try { await this.leitor.cancel(); } catch { /* ignora */ }
+    }
+    await new Promise(r => setTimeout(r, 50));
+    try { await (this.porta as any)?.close(); } catch { /* ignora */ }
     this._status = { ...this._status, conectado: false };
     this.porta = null;
   }

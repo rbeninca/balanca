@@ -70,10 +70,11 @@ function renderizar() {
       break;
 
     case 'firmware':
-      telaFirmwareAtual = new TelaFirmware(
-        app,
-        () => navegar('configuracoes'),
-      );
+      if (fonteAtual?.desconectar) {
+        void fonteAtual.desconectar();
+        fonteAtual = null;
+      }
+      telaFirmwareAtual = new TelaFirmware(app, () => navegar('configuracoes'));
       break;
   }
 }
