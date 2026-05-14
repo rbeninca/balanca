@@ -75,8 +75,14 @@ export class ArmazenamentoApi implements IArmazenamento {
     return exportarCSV(leituras);
   }
 
-  async substituirLeituras(_idSessao: string, _leituras: LeituraProcessada[]): Promise<void> {
-    // API não suporta substituição — operação ignorada no modo gateway
+  async substituirLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void> {
+    const del = await fetch(`${this.base}/sessoes/${idSessao}/leituras`, {
+      method: 'DELETE',
+      headers: this.headers,
+    });
+    if (!del.ok && del.status !== 404) throw new Error(`Erro ao apagar leituras: ${del.status}`);
+    if (leituras.length === 0) return;
+    await this.adicionarLeituras(idSessao, leituras);
   }
 
   async salvarMetadados(idSessao: string, meta: MetadadosLocal): Promise<void> {
