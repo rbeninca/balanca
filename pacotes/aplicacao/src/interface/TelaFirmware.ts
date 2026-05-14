@@ -214,9 +214,9 @@ export class TelaFirmware {
       this.anexarLinha(container, 'Gravando...');
       await loader.writeFlash({
         fileArray:      [{ data: binStr, address: 0x0 }],
-        flashSize:      'detect',
+        flashSize:      '4MB',
         flashMode:      'dio',
-        flashFreq:      '80m',
+        flashFreq:      '40m',
         eraseAll:       false,
         compress:       true,
         reportProgress: (_i: number, written: number, total: number) => {
