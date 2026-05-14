@@ -27,8 +27,9 @@ COPY pacotes/aplicacao/index.html      pacotes/aplicacao/
 COPY pacotes/aplicacao/vite.config.ts  pacotes/aplicacao/
 COPY pacotes/aplicacao/tsconfig.json   pacotes/aplicacao/
 
-# Copia firmware pré-compilado para os assets da aplicação
+# Copia assets estáticos e firmware pré-compilado para a aplicação
 RUN mkdir -p pacotes/aplicacao/public
+COPY pacotes/aplicacao/public/imgs pacotes/aplicacao/public/imgs
 COPY firmware/firmware.bin pacotes/aplicacao/public/firmware.bin
 COPY firmware/versao.json  pacotes/aplicacao/public/firmware-versao.json
 

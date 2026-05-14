@@ -1,5 +1,6 @@
 import { FonteWebSocket } from '../adaptadores/FonteWebSocket.js';
 import { FonteWebSerial } from '../adaptadores/FonteWebSerial.js';
+import { navHtml, bindNav } from './navBar.js';
 
 type ModoConexao = 'tvbox' | 'webserial';
 
@@ -51,8 +52,13 @@ async function testarWs(ip: string): Promise<boolean> {
 export class TelaConexao {
   private cfg: ConfigSalva;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(container: HTMLElement, private onConectado: (fonte: any) => void, private onFirmware?: () => void) {
+  constructor(
+    container: HTMLElement,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private onConectado:  (fonte: any) => void,
+    private onSessoes:    () => void,
+    private onFirmware:   () => void,
+  ) {
     this.cfg = carregarConfig();
     this.renderizar(container);
   }
@@ -61,6 +67,8 @@ export class TelaConexao {
     const cfg = this.cfg;
 
     container.innerHTML = `
+      ${navHtml({ ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware })}
+
       <h1>BalançaGFIG</h1>
 
       <div class="card">
@@ -70,22 +78,26 @@ export class TelaConexao {
 
       <div class="card">
         <h2>Modo de Conexão</h2>
-        <div class="radio-group">
-          <label class="radio-label">
-            <input type="radio" name="modo" value="tvbox" ${cfg.modo === 'tvbox' ? 'checked' : ''}>
-            TVBox / Gateway (Cenário A)
-          </label>
-          <label class="radio-label">
-            <input type="radio" name="modo" value="webserial" ${cfg.modo === 'webserial' ? 'checked' : ''}>
-            WebSerial — Conexão Direta (Cenário C)
-          </label>
+
+        <div class="modo-selecao">
+          <div class="modo-card ${cfg.modo === 'tvbox' ? 'selecionado' : ''}" id="card-tvbox" data-modo="tvbox">
+            <div class="modo-card-titulo">TVBox / Gateway</div>
+            <div class="modo-card-sub">Cenário A</div>
+            <img src="/imgs/cenario-A.png" alt="Diagrama Cenário A — TVBox/Gateway"
+                 onerror="this.style.display='none'">
+          </div>
+          <div class="modo-card ${cfg.modo === 'webserial' ? 'selecionado' : ''}" id="card-webserial" data-modo="webserial">
+            <div class="modo-card-titulo">WebSerial — Conexão Direta</div>
+            <div class="modo-card-sub">Cenário C</div>
+            <img src="/imgs/cenario-C.png" alt="Diagrama Cenário C — WebSerial"
+                 onerror="this.style.display='none'">
+          </div>
         </div>
 
         <div id="campos-tvbox" class="${cfg.modo !== 'tvbox' ? 'hidden' : ''}">
           <label for="campo-ip">Endereço IP</label>
           <input id="campo-ip" type="text" placeholder="192.168.1.100" value="${cfg.ip}">
           <div id="gw-sugestoes"></div>
-
           <label for="campo-chave">Chave de API</label>
           <input id="campo-chave" type="password" placeholder="opcional" value="${cfg.chave}">
         </div>
@@ -99,14 +111,10 @@ export class TelaConexao {
         <div class="btn-row">
           <button id="btn-conectar" class="btn-primary">Conectar</button>
         </div>
-        ${this.onFirmware ? `<div style="text-align:center;margin-top:0.9rem">
-          <a href="#" id="link-firmware" style="font-size:0.8rem;color:#6b7280;text-decoration:none">
-            ⚡ Gravar firmware no ESP
-          </a>
-        </div>` : ''}
       </div>
     `;
 
+    bindNav(container, { ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware });
     this.bindEventos(container);
   }
 
@@ -118,12 +126,16 @@ export class TelaConexao {
     const inputChave  = container.querySelector<HTMLInputElement>('#campo-chave')!;
     const btnConectar = container.querySelector<HTMLButtonElement>('#btn-conectar')!;
     const sugestoesEl = container.querySelector<HTMLElement>('#gw-sugestoes')!;
-
-    const radios = container.querySelectorAll<HTMLInputElement>('input[name="modo"]');
+    const cardTvbox   = container.querySelector<HTMLElement>('#card-tvbox')!;
+    const cardSerial  = container.querySelector<HTMLElement>('#card-webserial')!;
 
     const atualizarModo = (modo: ModoConexao) => {
       this.cfg.modo = modo;
       salvarConfig(this.cfg);
+
+      cardTvbox.classList.toggle('selecionado',  modo === 'tvbox');
+      cardSerial.classList.toggle('selecionado', modo === 'webserial');
+
       if (modo === 'tvbox') {
         camposTVBox.classList.remove('hidden');
         listaPorts.classList.add('hidden');
@@ -146,11 +158,8 @@ export class TelaConexao {
       }
     };
 
-    radios.forEach(r => {
-      r.addEventListener('change', () => {
-        if (r.checked) atualizarModo(r.value as ModoConexao);
-      });
-    });
+    cardTvbox.addEventListener('click',  () => atualizarModo('tvbox'));
+    cardSerial.addEventListener('click', () => atualizarModo('webserial'));
 
     inputIP.addEventListener('input', () => {
       this.cfg.ip = inputIP.value;
@@ -196,12 +205,6 @@ export class TelaConexao {
       }
     });
 
-    if (this.onFirmware) {
-      container.querySelector('#link-firmware')!.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.onFirmware!();
-      });
-    }
   }
 
   private async varrerGateways(sugestoesEl: HTMLElement, inputIP: HTMLInputElement): Promise<void> {
