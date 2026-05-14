@@ -1,4 +1,5 @@
 import type { Fonte } from './TelaMedicao.js';
+import { TelaCreditos } from './TelaCreditos.js';
 
 interface ParamDef {
   id:        number;
@@ -83,6 +84,7 @@ export class TelaConfiguracoes {
         <a href="#" id="nav-sessoes">Sessões</a>
         <a href="#" id="nav-config" class="ativo">Configurações</a>
         <a href="#" id="nav-firmware" style="margin-left:auto">Firmware</a>
+        <a href="#" id="nav-creditos">Créditos</a>
       </div>
 
       <div class="card">
@@ -118,6 +120,9 @@ export class TelaConfiguracoes {
     });
     container.querySelector('#nav-firmware')!.addEventListener('click', (e) => {
       e.preventDefault(); this.onFirmware?.();
+    });
+    container.querySelector('#nav-creditos')!.addEventListener('click', (e) => {
+      e.preventDefault(); new TelaCreditos();
     });
     container.querySelector('#cfg-btn-atualizar')!.addEventListener('click', () => {
       this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
