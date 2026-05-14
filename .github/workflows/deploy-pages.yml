@@ -46,7 +46,7 @@ jobs:
           cp firmware/versao.json pacotes/aplicacao/public/firmware-versao.json
 
       - name: Instalar dependências Node
-        run: npm ci
+        run: npm install --prefer-offline
 
       - name: Build da aplicação
         run: npm run compilar --workspace=pacotes/aplicacao
