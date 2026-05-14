@@ -4,6 +4,7 @@ import type { GerenciadorSessao } from '../nucleo/GerenciadorSessao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
+import { navHtml, bindNav } from './navBar.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
@@ -68,8 +69,10 @@ export class TelaMedicao {
     private fonte: Fonte,
     private gerenciador: GerenciadorSessao,
     private armazenamento: IArmazenamento,
-    private onSessoes: () => void,
+    private onConexao:       () => void,
+    private onSessoes:       () => void,
     private onConfiguracoes: () => void,
+    private onFirmware:      () => void,
   ) {
     this.renderizar(container);
     this.fonte.on('dados',  (l) => this.onDados(l as LeituraProcessada));
@@ -80,11 +83,7 @@ export class TelaMedicao {
 
   private renderizar(container: HTMLElement) {
     container.innerHTML = `
-      <div class="nav-links">
-        <a href="#" id="nav-medir" class="ativo">Medição</a>
-        <a href="#" id="nav-sessoes">Sessões</a>
-        <a href="#" id="nav-config">Configurações</a>
-      </div>
+      ${navHtml({ ativo: 'medicao', onConexao: this.onConexao, onSessoes: this.onSessoes, onConfiguracoes: this.onConfiguracoes, onFirmware: this.onFirmware })}
 
       <div class="card">
         <div class="leitura-principal">
@@ -197,11 +196,13 @@ export class TelaMedicao {
 
     this.elUnidade?.addEventListener('click', () => this.alternarUnidade());
 
-    container.querySelector('#nav-sessoes')!.addEventListener('click', (e) => {
-      e.preventDefault(); this.destruir(); this.onSessoes();
-    });
-    container.querySelector('#nav-config')!.addEventListener('click', (e) => {
-      e.preventDefault(); this.destruir(); this.onConfiguracoes();
+    const navComDestruir = (cb: () => void) => () => { this.destruir(); cb(); };
+    bindNav(container, {
+      ativo:    'medicao',
+      onConexao: navComDestruir(this.onConexao),
+      onSessoes: navComDestruir(this.onSessoes),
+      onFirmware: navComDestruir(this.onFirmware),
+      ...(this.onConfiguracoes && { onConfiguracoes: navComDestruir(this.onConfiguracoes) }),
     });
 
     this.elBtnIniciar!.addEventListener('click', () => this.iniciarGravacao());

@@ -1,4 +1,5 @@
 import { ESPLoader, Transport } from 'esptool-js';
+import { navHtml, bindNav, type NavProps } from './navBar.js';
 
 const CHAVE_LS = 'balancagfig:conexao';
 
@@ -14,7 +15,7 @@ export class TelaFirmware {
   private webSerialDisponivel: boolean = false;
   private abortController: AbortController | null = null;
 
-  constructor(container: HTMLElement, private onVoltar: () => void) {
+  constructor(container: HTMLElement, private nav: Omit<NavProps, 'ativo'>) {
     this.urlAtualizador      = this.resolverUrlAtualizador();
     this.webSerialDisponivel = 'serial' in navigator;
     this.renderizar(container);
@@ -36,49 +37,55 @@ export class TelaFirmware {
   private renderizar(container: HTMLElement) {
     const temCenarioA = this.urlAtualizador !== null;
     const temCenarioC = this.webSerialDisponivel;
-    const semSuporte  = !temCenarioA && !temCenarioC;
+
+    const motGateway = temCenarioA
+      ? null
+      : 'Disponível somente quando a última conexão foi via TVBox/Gateway (Cenário A).';
+    const motBrowser = temCenarioC
+      ? null
+      : 'Requer Chrome ou Edge. WebSerial não está disponível neste navegador.';
 
     container.innerHTML = `
-      <div class="nav-links">
-        <a href="#" id="nav-voltar">← Voltar</a>
-        <a href="#" class="ativo">Firmware</a>
-      </div>
+      ${navHtml({ ativo: 'firmware', ...this.nav })}
 
       <div class="card">
         <h2>Atualização de Firmware</h2>
         <div id="fw-versao" class="status-box">Carregando informações...</div>
+        <img src="/imgs/upload-firmware.png" alt="Diagrama de upload de firmware"
+             class="cenario-img" style="margin-top:1rem" onerror="this.style.display='none'">
       </div>
 
-      ${semSuporte ? `
-        <div class="card">
-          <div class="status-box aviso">
-            Nenhum método de gravação disponível neste ambiente.<br>
-            Use Chrome/Edge com o dispositivo conectado via USB (Cenário C),
-            ou acesse via TVBox com Docker (Cenário A).
+      <div class="fw-opcoes">
+        <div class="card fw-opcao-card ${temCenarioA ? '' : 'fw-opcao-desativada'}">
+          <div class="fw-opcao-header">
+            <h3 style="margin:0">Via Gateway</h3>
+            <span class="fw-opcao-badge">Cenário A</span>
           </div>
-        </div>
-      ` : ''}
-
-      ${temCenarioA ? `
-        <div class="card">
-          <h2>Via Gateway — Cenário A</h2>
-          <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem">
+          <p class="fw-opcao-desc">
             O gateway pausa a conexão serial, grava o firmware e reconecta automaticamente.
+            Nenhum cabo USB necessário.
           </p>
-          <button id="btn-gravar-a" class="btn-primary">Gravar via Docker</button>
+          ${motGateway ? `<p class="fw-opcao-motivo">${motGateway}</p>` : ''}
+          <button id="btn-gravar-a" class="btn-primary" ${temCenarioA ? '' : 'disabled'}>
+            Gravar via Docker
+          </button>
         </div>
-      ` : ''}
 
-      ${temCenarioC ? `
-        <div class="card">
-          <h2>Via Browser — Cenário C</h2>
-          <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem">
-            Grava diretamente pelo browser usando WebSerial.
-            Qualquer sessão de leitura ativa deve ser encerrada antes.
+        <div class="card fw-opcao-card ${temCenarioC ? '' : 'fw-opcao-desativada'}">
+          <div class="fw-opcao-header">
+            <h3 style="margin:0">Via Browser</h3>
+            <span class="fw-opcao-badge">Cenário C</span>
+          </div>
+          <p class="fw-opcao-desc">
+            Grava diretamente pelo browser via WebSerial (USB).
+            Encerre qualquer sessão de leitura ativa antes de gravar.
           </p>
-          <button id="btn-gravar-c" class="btn-primary">Gravar via Browser</button>
+          ${motBrowser ? `<p class="fw-opcao-motivo">${motBrowser}</p>` : ''}
+          <button id="btn-gravar-c" class="btn-primary" ${temCenarioC ? '' : 'disabled'}>
+            Gravar via Browser
+          </button>
         </div>
-      ` : ''}
+      </div>
 
       <div class="card hidden" id="fw-log-card">
         <h2>Log de gravação</h2>
@@ -91,14 +98,16 @@ export class TelaFirmware {
       </div>
     `;
 
-    container.querySelector('#nav-voltar')
-      ?.addEventListener('click', (e) => { e.preventDefault(); this.onVoltar(); });
+    bindNav(container, { ativo: 'firmware', ...this.nav });
 
-    container.querySelector('#btn-gravar-a')
-      ?.addEventListener('click', () => void this.gravarViaGateway(container));
-
-    container.querySelector('#btn-gravar-c')
-      ?.addEventListener('click', () => void this.gravarViaBrowser(container));
+    if (temCenarioA) {
+      container.querySelector('#btn-gravar-a')!
+        .addEventListener('click', () => void this.gravarViaGateway(container));
+    }
+    if (temCenarioC) {
+      container.querySelector('#btn-gravar-c')!
+        .addEventListener('click', () => void this.gravarViaBrowser(container));
+    }
   }
 
   private async carregarVersao(container: HTMLElement): Promise<void> {

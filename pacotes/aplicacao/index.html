@@ -66,6 +66,32 @@
     .nav-links a { color: #2563eb; text-decoration: none; padding: 0.3rem 0; border-bottom: 2px solid transparent; }
     .nav-links a.ativo { border-bottom-color: #2563eb; color: #1a1a1a; font-weight: 600; }
     .nav-links a:hover { color: #1d4ed8; }
+    .nav-links .nav-desativado { color: #9ca3af; padding: 0.3rem 0; cursor: not-allowed; }
+
+    /* ── Imagem de cenário de conexão ───────────────────────────────────────── */
+    .cenario-img { display: block; width: 100%; max-width: 540px; margin: 0 auto 1rem; border-radius: 8px; border: 1px solid #e5e7eb; }
+
+    /* ── Cards de seleção de modo de conexão ────────────────────────────────── */
+    .modo-selecao { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+    .modo-card { border: 2px solid #e5e7eb; border-radius: 10px; padding: 1rem; cursor: pointer; text-align: center; transition: border-color 0.2s, background 0.2s; user-select: none; }
+    .modo-card:hover { border-color: #93c5fd; }
+    .modo-card.selecionado { border-color: #2563eb; background: #eff6ff; }
+    .modo-card-titulo { font-weight: 600; font-size: 0.95rem; color: #1a1a1a; margin-bottom: 0.2rem; }
+    .modo-card-sub { font-size: 0.78rem; color: #6b7280; margin-bottom: 0.75rem; }
+    .modo-card img { width: 100%; border-radius: 6px; filter: grayscale(1) opacity(0.45); transition: filter 0.25s; pointer-events: none; }
+    .modo-card.selecionado img { filter: none; }
+    @media (max-width: 540px) { .modo-selecao { grid-template-columns: 1fr; } }
+
+    /* ── Cards de opção de firmware ─────────────────────────────────────────── */
+    .fw-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .fw-opcao-card { display: flex; flex-direction: column; }
+    .fw-opcao-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+    .fw-opcao-badge { font-size: 0.72rem; font-weight: 600; background: #e0e7ff; color: #3730a3; padding: 0.15rem 0.5rem; border-radius: 999px; }
+    .fw-opcao-desc { font-size: 0.85rem; color: #374151; margin-bottom: 0.75rem; flex: 1; }
+    .fw-opcao-motivo { font-size: 0.8rem; color: #9ca3af; font-style: italic; margin-bottom: 0.75rem; }
+    .fw-opcao-desativada { opacity: 0.5; }
+    .fw-opcao-desativada .fw-opcao-badge { background: #f3f4f6; color: #9ca3af; }
+    @media (max-width: 540px) { .fw-opcoes { grid-template-columns: 1fr; } }
 
     /* ── Leitura principal (grande) ─────────────────────────────────────────── */
     .leitura-principal { display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; padding: 1.25rem 0 0.75rem; line-height: 1; }

@@ -20,7 +20,6 @@ let telaAtual:  Tela   = 'conexao';
 let fonteAtual: any    = null;
 let telaMedicaoAtual: TelaMedicao | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
-let voltarDoFirmware: Tela = 'configuracoes';
 
 function navegar(tela: Tela) {
   telaAtual = tela;
@@ -36,21 +35,26 @@ function renderizar() {
 
   switch (telaAtual) {
     case 'conexao':
-      new TelaConexao(app, (fonte) => {
-        fonteAtual = fonte;
-        if (fonte instanceof FonteWebSocket) {
-          try {
-            const cfg = JSON.parse(localStorage.getItem('balancagfig:conexao') ?? '{}') as { ip?: string; chave?: string };
-            armazenamento = new ArmazenamentoApi(cfg.ip || 'localhost', cfg.chave || '');
-          } catch {
+      new TelaConexao(
+        app,
+        (fonte) => {
+          fonteAtual = fonte;
+          if (fonte instanceof FonteWebSocket) {
+            try {
+              const cfg = JSON.parse(localStorage.getItem('balancagfig:conexao') ?? '{}') as { ip?: string; chave?: string };
+              armazenamento = new ArmazenamentoApi(cfg.ip || 'localhost', cfg.chave || '');
+            } catch {
+              armazenamento = new ArmazenamentoLocal();
+            }
+          } else {
             armazenamento = new ArmazenamentoLocal();
           }
-        } else {
-          armazenamento = new ArmazenamentoLocal();
-        }
-        gerenciador = new GerenciadorSessao(armazenamento);
-        navegar('medicao');
-      }, () => { voltarDoFirmware = 'conexao'; navegar('firmware'); });
+          gerenciador = new GerenciadorSessao(armazenamento);
+          navegar('medicao');
+        },
+        () => navegar('sessoes'),
+        () => navegar('firmware'),
+      );
       break;
 
     case 'medicao':
@@ -59,8 +63,10 @@ function renderizar() {
         fonteAtual,
         gerenciador,
         armazenamento,
+        () => navegar('conexao'),
         () => navegar('sessoes'),
         () => navegar('configuracoes'),
+        () => navegar('firmware'),
       );
       break;
 
@@ -68,8 +74,10 @@ function renderizar() {
       new TelaSessoes(
         app,
         armazenamento,
-        () => navegar('medicao'),
-        () => navegar('configuracoes'),
+        () => navegar('conexao'),
+        () => navegar('firmware'),
+        fonteAtual ? () => navegar('medicao')       : undefined,
+        fonteAtual ? () => navegar('configuracoes') : undefined,
       );
       break;
 
@@ -77,9 +85,10 @@ function renderizar() {
       new TelaConfiguracoes(
         app,
         fonteAtual,
+        () => navegar('conexao'),
         () => navegar('medicao'),
         () => navegar('sessoes'),
-        () => { voltarDoFirmware = 'configuracoes'; navegar('firmware'); },
+        () => navegar('firmware'),
       );
       break;
 
@@ -88,7 +97,11 @@ function renderizar() {
         void fonteAtual.desconectar();
         fonteAtual = null;
       }
-      telaFirmwareAtual = new TelaFirmware(app, () => navegar(voltarDoFirmware));
+      telaFirmwareAtual = new TelaFirmware(app, {
+        onConexao:  () => navegar('conexao'),
+        onSessoes:  () => navegar('sessoes'),
+        onFirmware: () => navegar('firmware'),
+      });
       break;
   }
 }

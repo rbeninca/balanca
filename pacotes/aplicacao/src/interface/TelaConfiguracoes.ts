@@ -1,5 +1,5 @@
 import type { Fonte } from './TelaMedicao.js';
-import { TelaCreditos } from './TelaCreditos.js';
+import { navHtml, bindNav } from './navBar.js';
 
 interface ParamDef {
   id:        number;
@@ -44,10 +44,11 @@ export class TelaConfiguracoes {
 
   constructor(
     container: HTMLElement,
-    private fonte: Fonte,
-    private onMedicao: () => void,
-    private onSessoes: () => void,
-    private onFirmware?: () => void,
+    private fonte:       Fonte,
+    private onConexao:   () => void,
+    private onMedicao:   () => void,
+    private onSessoes:   () => void,
+    private onFirmware:  () => void,
   ) {
     this.renderizar(container);
     this.ouvinte = (raw) => this.aplicarConfig(raw);
@@ -79,13 +80,7 @@ export class TelaConfiguracoes {
     `).join('');
 
     container.innerHTML = `
-      <div class="nav-links">
-        <a href="#" id="nav-medir">Medição</a>
-        <a href="#" id="nav-sessoes">Sessões</a>
-        <a href="#" id="nav-config" class="ativo">Configurações</a>
-        <a href="#" id="nav-firmware" style="margin-left:auto">Firmware</a>
-        <a href="#" id="nav-creditos">Créditos</a>
-      </div>
+      ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware })}
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -112,18 +107,7 @@ export class TelaConfiguracoes {
       </div>
     `;
 
-    container.querySelector('#nav-medir')!.addEventListener('click', (e) => {
-      e.preventDefault(); this.onMedicao();
-    });
-    container.querySelector('#nav-sessoes')!.addEventListener('click', (e) => {
-      e.preventDefault(); this.onSessoes();
-    });
-    container.querySelector('#nav-firmware')!.addEventListener('click', (e) => {
-      e.preventDefault(); this.onFirmware?.();
-    });
-    container.querySelector('#nav-creditos')!.addEventListener('click', (e) => {
-      e.preventDefault(); new TelaCreditos();
-    });
+    bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware });
     container.querySelector('#cfg-btn-atualizar')!.addEventListener('click', () => {
       this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
       this.mostrarStatus('info', 'Solicitando configuração ao firmware…');

@@ -6,6 +6,7 @@ import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
+import { navHtml, bindNav } from './navBar.js';
 
 // ── Formato JSON de exportação/importação ────────────────────────────────────
 
@@ -70,20 +71,18 @@ export class TelaSessoes {
 
   constructor(
     container: HTMLElement,
-    private armazenamento: IArmazenamento,
-    private onMedicao: () => void,
-    private onConfiguracoes: () => void,
+    private armazenamento:   IArmazenamento,
+    private onConexao:       () => void,
+    private onFirmware:      () => void,
+    private onMedicao?:      () => void,
+    private onConfiguracoes?: () => void,
   ) {
     this.renderizar(container);
   }
 
   private async renderizar(container: HTMLElement) {
     container.innerHTML = `
-      <div class="nav-links">
-        <a href="#" id="nav-medir">Medição</a>
-        <a href="#" id="nav-sessoes" class="ativo">Sessões</a>
-        <a href="#" id="nav-config">Configurações</a>
-      </div>
+      ${navHtml({ ativo: 'sessoes', onConexao: this.onConexao, onSessoes: () => {}, onFirmware: this.onFirmware, ...(this.onMedicao && { onMedicao: this.onMedicao }), ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }) })}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
           <h2 style="margin:0">Sessões Gravadas</h2>
@@ -100,13 +99,13 @@ export class TelaSessoes {
       </div>
     `;
 
-    container.querySelector('#nav-medir')!.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.onMedicao();
-    });
-    container.querySelector('#nav-config')!.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.onConfiguracoes();
+    bindNav(container, {
+      ativo:    'sessoes',
+      onConexao: this.onConexao,
+      onSessoes: () => {},
+      onFirmware: this.onFirmware,
+      ...(this.onMedicao      && { onMedicao:      this.onMedicao }),
+      ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }),
     });
 
     const lista = container.querySelector<HTMLElement>('#lista-conteudo')!;
