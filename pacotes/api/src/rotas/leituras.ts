@@ -77,6 +77,18 @@ export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }
       .send(linhas.join('\n'));
   });
 
+  app.delete<{ Params: { id: string } }>(
+    '/sessoes/:id/leituras',
+    { preHandler: verificarChave },
+    async (req, rep) => {
+      const sessao = db.consultarUm<{ id: string }>('SELECT id FROM sessoes WHERE id = ?', [req.params.id]);
+      if (!sessao) return rep.status(404).send({ erro: 'Sessão não encontrada' });
+      db.executar('DELETE FROM leituras WHERE id_sessao = ?', [req.params.id]);
+      db.executar('UPDATE sessoes SET duracao_ms = 0, forca_maxima_n = 0, impulso_total_ns = 0 WHERE id = ?', [req.params.id]);
+      return rep.status(204).send();
+    },
+  );
+
   app.post<{ Params: { id: string }; Body: LeituraInput[] }>(
     '/sessoes/:id/leituras',
     { preHandler: verificarChave },
