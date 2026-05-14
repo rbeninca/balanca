@@ -209,6 +209,7 @@ export class TelaAnalise {
 
         <div class="modal-footer">
           <button id="btn-descartar" class="btn-secondary">Descartar</button>
+          <button id="btn-export-json" class="btn-secondary">JSON</button>
           <button id="btn-export-csv" class="btn-secondary">CSV</button>
           <button id="btn-export-eng" class="btn-secondary">ENG</button>
           <button id="btn-export-pdf" class="btn-secondary">PDF</button>
@@ -407,6 +408,20 @@ export class TelaAnalise {
     this.atualizarStats();
   }
 
+  private exportarJSON() {
+    const meta = this.lerMetadadosFormulario();
+    const payload = {
+      versao:      2,
+      nome:        this.nomeSessao,
+      criadoEm:   new Date().toISOString(),
+      exportadoEm: new Date().toISOString(),
+      metadados:   meta,
+      leituras:    this.dados.leituras,
+    };
+    const json = JSON.stringify(payload, null, 2);
+    this.baixarArquivo(new Blob([json], { type: 'application/json' }), `${this.nomeSessao}.json`);
+  }
+
   private baixarArquivo(blob: Blob, nome: string) {
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
@@ -480,6 +495,7 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-descartar')!.addEventListener('click',      () => this.destruir());
     this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(); this.renderizarGrafico(); this.atualizarStats(); });
     this.overlay.querySelector('#btn-recortar')!.addEventListener('click',       () => this.recortarQueima());
+    this.overlay.querySelector('#btn-export-json')!.addEventListener('click',    () => this.exportarJSON());
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
     this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
