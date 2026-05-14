@@ -11,7 +11,7 @@ export class TelaEsquema {
           <button class="modal-fechar" id="btn-fechar-esquema">×</button>
         </div>
         <div class="modal-body" style="text-align:center">
-          <img src="/imgs/esquema-eletrico.png"
+          <img src="${import.meta.env.BASE_URL}imgs/esquema-eletrico.png"
                alt="Esquema elétrico de montagem da banca de teste estático"
                style="width:100%;max-width:860px;border-radius:8px;border:1px solid #e5e7eb"
                onerror="this.replaceWith(Object.assign(document.createElement('p'),{textContent:'Imagem não encontrada.',style:'color:#6b7280'}))">

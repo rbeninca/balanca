@@ -83,13 +83,13 @@ export class TelaConexao {
           <div class="modo-card ${cfg.modo === 'tvbox' ? 'selecionado' : ''}" id="card-tvbox" data-modo="tvbox">
             <div class="modo-card-titulo">TVBox / Gateway</div>
             <div class="modo-card-sub">Cenário A</div>
-            <img src="/imgs/cenario-A.png" alt="Diagrama Cenário A — TVBox/Gateway"
+            <img src="${import.meta.env.BASE_URL}imgs/cenario-A.png" alt="Diagrama Cenário A — TVBox/Gateway"
                  onerror="this.style.display='none'">
           </div>
           <div class="modo-card ${cfg.modo === 'webserial' ? 'selecionado' : ''}" id="card-webserial" data-modo="webserial">
             <div class="modo-card-titulo">WebSerial — Conexão Direta</div>
             <div class="modo-card-sub">Cenário C</div>
-            <img src="/imgs/cenario-C.png" alt="Diagrama Cenário C — WebSerial"
+            <img src="${import.meta.env.BASE_URL}imgs/cenario-C.png" alt="Diagrama Cenário C — WebSerial"
                  onerror="this.style.display='none'">
           </div>
         </div>
