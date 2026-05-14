@@ -1,30 +1,32 @@
-FROM node:24-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
-# Dependências nativas para serialport
+# Ferramentas de build para serialport (node-gyp)
 RUN apk add --no-cache python3 make g++ linux-headers eudev-dev
 
 # Copia package.json de TODOS os workspaces para satisfazer o lockfile
 COPY package.json package-lock.json tsconfig.base.json ./
-COPY pacotes/protocolo/package.json    pacotes/protocolo/
+COPY pacotes/protocolo/package.json     pacotes/protocolo/
 COPY pacotes/processamento/package.json pacotes/processamento/
-COPY pacotes/analise/package.json      pacotes/analise/
-COPY pacotes/relatorio/package.json    pacotes/relatorio/
-COPY pacotes/gateway/package.json      pacotes/gateway/
-COPY pacotes/api/package.json          pacotes/api/
-COPY pacotes/aplicacao/package.json    pacotes/aplicacao/
-COPY ponta-a-ponta/package.json        ponta-a-ponta/
+COPY pacotes/analise/package.json       pacotes/analise/
+COPY pacotes/relatorio/package.json     pacotes/relatorio/
+COPY pacotes/gateway/package.json       pacotes/gateway/
+COPY pacotes/api/package.json           pacotes/api/
+COPY pacotes/aplicacao/package.json     pacotes/aplicacao/
+COPY pacotes/atualizador/package.json   pacotes/atualizador/
+COPY ponta-a-ponta/package.json         ponta-a-ponta/
 
 # Instala deps dos workspaces necessários
-RUN npm ci --workspace=pacotes/protocolo --workspace=pacotes/processamento --workspace=pacotes/gateway
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace=pacotes/protocolo --workspace=pacotes/processamento --workspace=pacotes/gateway
 
 # Copia fontes e compila em ordem de dependência
-COPY pacotes/protocolo/src     pacotes/protocolo/src
+COPY pacotes/protocolo/src           pacotes/protocolo/src
 COPY pacotes/protocolo/tsconfig.json pacotes/protocolo/
-COPY pacotes/processamento/src pacotes/processamento/src
+COPY pacotes/processamento/src       pacotes/processamento/src
 COPY pacotes/processamento/tsconfig.json pacotes/processamento/
-COPY pacotes/gateway/src       pacotes/gateway/src
-COPY pacotes/gateway/tsconfig.json pacotes/gateway/
+COPY pacotes/gateway/src             pacotes/gateway/src
+COPY pacotes/gateway/tsconfig.json   pacotes/gateway/
 
 RUN npm run compilar --workspace=pacotes/protocolo && \
     npm run compilar --workspace=pacotes/processamento && \
@@ -34,18 +36,18 @@ RUN npm run compilar --workspace=pacotes/protocolo && \
 RUN npm prune --omit=dev
 
 # ── Imagem final ────────────────────────────────────────────────────────────
-FROM node:24-alpine
+FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache eudev
 
-COPY --from=base /app/node_modules                    ./node_modules
-COPY --from=base /app/pacotes/protocolo/dist          ./pacotes/protocolo/dist
-COPY --from=base /app/pacotes/processamento/dist      ./pacotes/processamento/dist
-COPY --from=base /app/pacotes/gateway/dist            ./pacotes/gateway/dist
-COPY --from=base /app/pacotes/protocolo/package.json  ./pacotes/protocolo/
+COPY --from=base /app/node_modules                       ./node_modules
+COPY --from=base /app/pacotes/protocolo/dist             ./pacotes/protocolo/dist
+COPY --from=base /app/pacotes/processamento/dist         ./pacotes/processamento/dist
+COPY --from=base /app/pacotes/gateway/dist               ./pacotes/gateway/dist
+COPY --from=base /app/pacotes/protocolo/package.json     ./pacotes/protocolo/
 COPY --from=base /app/pacotes/processamento/package.json ./pacotes/processamento/
-COPY --from=base /app/pacotes/gateway/package.json    ./pacotes/gateway/
-COPY --from=base /app/package.json                    ./
+COPY --from=base /app/pacotes/gateway/package.json       ./pacotes/gateway/
+COPY --from=base /app/package.json                       ./
 
 ENV PORTA_SERIAL=/dev/ttyUSB0
 ENV BAUD_SERIAL=921600
