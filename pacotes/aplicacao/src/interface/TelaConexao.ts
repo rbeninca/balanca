@@ -100,12 +100,11 @@ export class TelaConexao {
         if (paginaHttps) {
           statusEl.className = 'status-box aviso';
           statusEl.textContent = 'Esta página está em HTTPS. Browsers bloqueiam conexões ws:// a partir de HTTPS. Acesse a aplicação pelo endereço HTTP da TVBox (ex: http://192.168.1.100).';
-          btnConectar.disabled = true;
         } else {
           statusEl.className = 'status-box';
           statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
-          btnConectar.disabled = false;
         }
+        btnConectar.disabled = false;
       } else {
         camposTVBox.classList.add('hidden');
         listaPorts.classList.remove('hidden');
@@ -148,7 +147,6 @@ export class TelaConexao {
 
       try {
         if (this.cfg.modo === 'tvbox') {
-          if (paginaHttps) throw new Error('Modo Gateway requer acesso via HTTP. Use http://ip-da-tvbox no browser.');
           const ip = this.cfg.ip || 'localhost';
           const fonte = new FonteWebSocket(`ws://${ip}:8765`);
           statusEl.textContent = `Aguardando gateway em ${ip}:8765...`;
