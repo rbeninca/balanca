@@ -212,18 +212,17 @@ export class TelaFirmware {
       await loader.main();
 
       this.anexarLinha(container, 'Gravando...');
-      await loader.write_flash({
-        fileArray:        [{ data: binStr, address: 0x0 }],
-        flashSize:        'detect',
-        flashMode:        'dio',
-        flashFreq:        '80m',
-        eraseAll:         false,
-        compress:         true,
-        reportProgress:   (_i: number, written: number, total: number) => {
+      await loader.writeFlash({
+        fileArray:      [{ data: binStr, address: 0x0 }],
+        flashSize:      'detect',
+        flashMode:      'dio',
+        flashFreq:      '80m',
+        eraseAll:       false,
+        compress:       true,
+        reportProgress: (_i: number, written: number, total: number) => {
           this.anexarLinha(container,
             `  ${Math.round((written / total) * 100)}% — ${written}/${total} bytes`);
         },
-        calculateMD5Hash: () => '',
       });
 
       this.anexarLinha(container, 'Reiniciando ESP...');
