@@ -1,4 +1,4 @@
-import type { ArmazenamentoLocal, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
@@ -7,7 +7,7 @@ import { TelaAnalise } from './TelaAnalise.js';
 export class TelaSessoes {
   constructor(
     container: HTMLElement,
-    private armazenamento: ArmazenamentoLocal,
+    private armazenamento: IArmazenamento,
     private onMedicao: () => void,
     private onConfiguracoes: () => void,
   ) {
