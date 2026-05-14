@@ -20,6 +20,7 @@ let telaAtual:  Tela   = 'conexao';
 let fonteAtual: any    = null;
 let telaMedicaoAtual: TelaMedicao | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
+let voltarDoFirmware: Tela = 'configuracoes';
 
 function navegar(tela: Tela) {
   telaAtual = tela;
@@ -49,7 +50,7 @@ function renderizar() {
         }
         gerenciador = new GerenciadorSessao(armazenamento);
         navegar('medicao');
-      });
+      }, () => { voltarDoFirmware = 'conexao'; navegar('firmware'); });
       break;
 
     case 'medicao':
@@ -78,7 +79,7 @@ function renderizar() {
         fonteAtual,
         () => navegar('medicao'),
         () => navegar('sessoes'),
-        () => navegar('firmware'),
+        () => { voltarDoFirmware = 'configuracoes'; navegar('firmware'); },
       );
       break;
 
@@ -87,7 +88,7 @@ function renderizar() {
         void fonteAtual.desconectar();
         fonteAtual = null;
       }
-      telaFirmwareAtual = new TelaFirmware(app, () => navegar('configuracoes'));
+      telaFirmwareAtual = new TelaFirmware(app, () => navegar(voltarDoFirmware));
       break;
   }
 }

@@ -52,7 +52,7 @@ export class TelaConexao {
   private cfg: ConfigSalva;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(container: HTMLElement, private onConectado: (fonte: any) => void) {
+  constructor(container: HTMLElement, private onConectado: (fonte: any) => void, private onFirmware?: () => void) {
     this.cfg = carregarConfig();
     this.renderizar(container);
   }
@@ -99,6 +99,11 @@ export class TelaConexao {
         <div class="btn-row">
           <button id="btn-conectar" class="btn-primary">Conectar</button>
         </div>
+        ${this.onFirmware ? `<div style="text-align:center;margin-top:0.9rem">
+          <a href="#" id="link-firmware" style="font-size:0.8rem;color:#6b7280;text-decoration:none">
+            ⚡ Gravar firmware no ESP
+          </a>
+        </div>` : ''}
       </div>
     `;
 
@@ -190,6 +195,13 @@ export class TelaConexao {
         btnConectar.textContent = 'Conectar';
       }
     });
+
+    if (this.onFirmware) {
+      container.querySelector('#link-firmware')!.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.onFirmware!();
+      });
+    }
   }
 
   private async varrerGateways(sugestoesEl: HTMLElement, inputIP: HTMLInputElement): Promise<void> {
