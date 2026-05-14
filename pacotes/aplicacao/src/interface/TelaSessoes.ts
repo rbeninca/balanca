@@ -38,7 +38,7 @@ function converterV1(v1: SessaoExportadaV1): { nome: string; leituras: LeituraPr
   let impulsoAcumulado = 0;
   const leituras: LeituraProcessada[] = v1.dadosTabela.map((p, i, arr) => {
     if (i > 0) {
-      const dt = (p.tempo_esp - arr[i - 1]!.tempo_esp) * 1000; // s → ms
+      const dt = p.tempo_esp - arr[i - 1]!.tempo_esp; // segundos → N·s
       impulsoAcumulado += (arr[i - 1]!.newtons + p.newtons) / 2 * dt;
     }
     return {
