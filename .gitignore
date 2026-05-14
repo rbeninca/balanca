@@ -8,7 +8,10 @@ dist/
 coverage/
 test-results.xml
 
-# Firmware binário gerado pelo CI
+# Artefatos de build do PlatformIO
+firmware/.pio/
+
+# Copiados pelo CI a partir de firmware/firmware.bin — não rastrear
 pacotes/aplicacao/public/firmware.bin
 pacotes/aplicacao/public/firmware-versao.json
 balancaGFIGv1/

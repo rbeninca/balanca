@@ -27,23 +27,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Cache PlatformIO
-        uses: actions/cache@v4
-        with:
-          path: ~/.platformio
-          key: pio-${{ hashFiles('firmware/platformio.ini') }}
-
-      - name: Compilar firmware
-        run: |
-          pip install platformio
-          platformio run --environment nodemcuv2
-        working-directory: firmware
-
-      - name: Copiar firmware para assets da aplicação
+      - name: Copiar firmware pré-compilado para assets da aplicação
         run: |
           mkdir -p pacotes/aplicacao/public
-          cp firmware/.pio/build/nodemcuv2/firmware.bin pacotes/aplicacao/public/firmware.bin
-          cp firmware/versao.json pacotes/aplicacao/public/firmware-versao.json
+          cp firmware/firmware.bin pacotes/aplicacao/public/firmware.bin
+          cp firmware/versao.json  pacotes/aplicacao/public/firmware-versao.json
 
       - name: Instalar dependências Node
         run: npm install --prefer-offline
