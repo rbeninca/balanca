@@ -4,20 +4,20 @@ import type { IArmazenamento, SessaoLocal, MetadadosLocal } from './Armazenament
 
 export class ArmazenamentoApi implements IArmazenamento {
   private readonly base: string;
-  private readonly headers: Record<string, string>;
+  private readonly headersJson: Record<string, string>;  // POST/PUT com body JSON
+  private readonly headersAuth: Record<string, string>;  // DELETE/GET autenticados sem body
 
   constructor(ip: string, chave: string) {
     this.base = `http://${ip}:3000`;
-    this.headers = {
-      'Content-Type': 'application/json',
-      ...(chave ? { 'x-chave-api': chave } : {}),
-    };
+    const auth = chave ? { 'x-chave-api': chave } : {};
+    this.headersJson = { 'Content-Type': 'application/json', ...auth };
+    this.headersAuth = { ...auth };
   }
 
   async criarSessao(nome: string): Promise<SessaoLocal> {
     const res = await fetch(`${this.base}/sessoes`, {
       method: 'POST',
-      headers: this.headers,
+      headers: this.headersJson,
       body: JSON.stringify({ nome }),
     });
     if (!res.ok) throw new Error(`Erro ao criar sessão: ${res.status}`);
@@ -35,7 +35,7 @@ export class ArmazenamentoApi implements IArmazenamento {
   async excluirSessao(id: string): Promise<void> {
     const res = await fetch(`${this.base}/sessoes/${id}`, {
       method: 'DELETE',
-      headers: this.headers,
+      headers: this.headersAuth,
     });
     if (!res.ok && res.status !== 404) throw new Error(`Erro ao excluir sessão: ${res.status}`);
   }
@@ -49,7 +49,7 @@ export class ArmazenamentoApi implements IArmazenamento {
     }));
     const res = await fetch(`${this.base}/sessoes/${idSessao}/leituras`, {
       method: 'POST',
-      headers: this.headers,
+      headers: this.headersJson,
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`Erro ao adicionar leituras: ${res.status}`);
@@ -78,7 +78,7 @@ export class ArmazenamentoApi implements IArmazenamento {
   async substituirLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void> {
     const del = await fetch(`${this.base}/sessoes/${idSessao}/leituras`, {
       method: 'DELETE',
-      headers: this.headers,
+      headers: this.headersAuth,
     });
     if (!del.ok && del.status !== 404) throw new Error(`Erro ao apagar leituras: ${del.status}`);
     if (leituras.length === 0) return;
@@ -88,7 +88,7 @@ export class ArmazenamentoApi implements IArmazenamento {
   async salvarMetadados(idSessao: string, meta: MetadadosLocal): Promise<void> {
     const res = await fetch(`${this.base}/sessoes/${idSessao}/metadados`, {
       method: 'POST',
-      headers: this.headers,
+      headers: this.headersJson,
       body: JSON.stringify({
         massa_propelente_g: meta.massaPropelente_g ?? null,
         massa_total_g:      meta.massaTotal_g ?? null,

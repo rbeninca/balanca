@@ -89,17 +89,27 @@ export class TelaConexao {
 
     const radios = container.querySelectorAll<HTMLInputElement>('input[name="modo"]');
 
+    const paginaHttps = location.protocol === 'https:';
+
     const atualizarModo = (modo: ModoConexao) => {
       this.cfg.modo = modo;
       salvarConfig(this.cfg);
       if (modo === 'tvbox') {
         camposTVBox.classList.remove('hidden');
         listaPorts.classList.add('hidden');
-        statusEl.className = 'status-box';
-        statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
+        if (paginaHttps) {
+          statusEl.className = 'status-box aviso';
+          statusEl.textContent = 'Esta página está em HTTPS. Browsers bloqueiam conexões ws:// a partir de HTTPS. Acesse a aplicação pelo endereço HTTP da TVBox (ex: http://192.168.1.100).';
+          btnConectar.disabled = true;
+        } else {
+          statusEl.className = 'status-box';
+          statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
+          btnConectar.disabled = false;
+        }
       } else {
         camposTVBox.classList.add('hidden');
         listaPorts.classList.remove('hidden');
+        btnConectar.disabled = false;
         const webSerialOk = !!(navigator as unknown as Record<string, unknown>)['serial'];
         if (webSerialOk) {
           statusEl.className = 'status-box ok';
@@ -138,6 +148,7 @@ export class TelaConexao {
 
       try {
         if (this.cfg.modo === 'tvbox') {
+          if (paginaHttps) throw new Error('Modo Gateway requer acesso via HTTP. Use http://ip-da-tvbox no browser.');
           const ip = this.cfg.ip || 'localhost';
           const fonte = new FonteWebSocket(`ws://${ip}:8765`);
           statusEl.textContent = `Aguardando gateway em ${ip}:8765...`;
