@@ -195,9 +195,6 @@ export class TelaFirmware {
       this.anexarLinha(container, 'Selecione a porta USB do ESP8266...');
       const porta = await navigator.serial.requestPort();
 
-      // Fecha a porta se estiver aberta por uma sessão de leitura anterior
-      try { await porta.close(); } catch { /* já estava fechada */ }
-
       transport = new Transport(porta, false);
 
       const loader = new ESPLoader({
