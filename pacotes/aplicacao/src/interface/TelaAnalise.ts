@@ -483,7 +483,7 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
     this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
-    this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click',  () => this.salvarSessao());
+    this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click',  () => { void this.salvarSessao(); });
 
     const inputNome = this.overlay.querySelector<HTMLInputElement>('#nome-sessao-analise')!;
     inputNome.addEventListener('input', () => { this.nomeSessao = inputNome.value.trim() || this.dados.nomeSessao; });
@@ -514,6 +514,9 @@ export class TelaAnalise {
     const idSessao = this.dados.idSessao;
     if (!idSessao) { this.destruir(); return; }
 
+    const btnSalvar = this.overlay.querySelector<HTMLButtonElement>('#btn-salvar-sessao');
+    if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = 'Salvando…'; }
+
     // Lê os inputs diretamente — garante captura mesmo sem blur antes do clique
     const vT0 = parseFloat(this.overlay.querySelector<HTMLInputElement>('#st-t0')?.value ?? '');
     const vT1 = parseFloat(this.overlay.querySelector<HTMLInputElement>('#st-t1')?.value ?? '');
@@ -532,7 +535,13 @@ export class TelaAnalise {
     }
 
     if (this.leiturasMutadas || queimaAlterada) {
-      await this.armazenamento.substituirLeituras(idSessao, ls);
+      try {
+        await this.armazenamento.substituirLeituras(idSessao, ls);
+      } catch (e) {
+        if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar Sessão'; }
+        alert(`Não foi possível salvar as leituras:\n${String(e)}\n\nSe estiver usando o gateway, reconstrua o container da API:\n  docker compose build api && docker compose up -d api`);
+        return;
+      }
     }
 
     const meta = this.lerMetadadosFormulario();
