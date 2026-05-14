@@ -4,7 +4,7 @@ import type { GerenciadorSessao } from '../nucleo/GerenciadorSessao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
-import { navHtml, bindNav } from './navBar.js';
+import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
@@ -73,6 +73,7 @@ export class TelaMedicao {
     private onSessoes:       () => void,
     private onConfiguracoes: () => void,
     private onFirmware:      () => void,
+    private status?:         StatusConexao,
   ) {
     this.renderizar(container);
     this.fonte.on('dados',  (l) => this.onDados(l as LeituraProcessada));
@@ -83,7 +84,7 @@ export class TelaMedicao {
 
   private renderizar(container: HTMLElement) {
     container.innerHTML = `
-      ${navHtml({ ativo: 'medicao', onConexao: this.onConexao, onSessoes: this.onSessoes, onConfiguracoes: this.onConfiguracoes, onFirmware: this.onFirmware })}
+      ${navHtml({ ativo: 'medicao', onConexao: this.onConexao, onSessoes: this.onSessoes, onConfiguracoes: this.onConfiguracoes, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
 
       <div class="card">
         <div class="leitura-principal">
@@ -203,6 +204,7 @@ export class TelaMedicao {
       onSessoes: navComDestruir(this.onSessoes),
       onFirmware: navComDestruir(this.onFirmware),
       ...(this.onConfiguracoes && { onConfiguracoes: navComDestruir(this.onConfiguracoes) }),
+      ...(this.status && { status: this.status }),
     });
 
     this.elBtnIniciar!.addEventListener('click', () => this.iniciarGravacao());

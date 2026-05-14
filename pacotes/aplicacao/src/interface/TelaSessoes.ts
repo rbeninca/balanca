@@ -6,7 +6,7 @@ import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
-import { navHtml, bindNav } from './navBar.js';
+import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 
 // ── Formato JSON de exportação/importação ────────────────────────────────────
 
@@ -72,17 +72,18 @@ export class TelaSessoes {
   constructor(
     container: HTMLElement,
     private armazenamento:   IArmazenamento,
-    private onConexao:       () => void,
-    private onFirmware:      () => void,
-    private onMedicao?:      () => void,
+    private onConexao:        () => void,
+    private onFirmware:       () => void,
+    private onMedicao?:       () => void,
     private onConfiguracoes?: () => void,
+    private status?:          StatusConexao,
   ) {
     this.renderizar(container);
   }
 
   private async renderizar(container: HTMLElement) {
     container.innerHTML = `
-      ${navHtml({ ativo: 'sessoes', onConexao: this.onConexao, onSessoes: () => {}, onFirmware: this.onFirmware, ...(this.onMedicao && { onMedicao: this.onMedicao }), ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }) })}
+      ${navHtml({ ativo: 'sessoes', onConexao: this.onConexao, onSessoes: () => {}, onFirmware: this.onFirmware, ...(this.onMedicao && { onMedicao: this.onMedicao }), ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }), ...(this.status && { status: this.status }) })}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
           <h2 style="margin:0">Sessões Gravadas</h2>
@@ -104,8 +105,9 @@ export class TelaSessoes {
       onConexao: this.onConexao,
       onSessoes: () => {},
       onFirmware: this.onFirmware,
-      ...(this.onMedicao      && { onMedicao:      this.onMedicao }),
-      ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }),
+      ...(this.onMedicao       && { onMedicao:       this.onMedicao }),
+      ...(this.onConfiguracoes  && { onConfiguracoes:  this.onConfiguracoes }),
+      ...(this.status           && { status:           this.status }),
     });
 
     const lista = container.querySelector<HTMLElement>('#lista-conteudo')!;
