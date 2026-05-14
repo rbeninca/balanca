@@ -189,14 +189,32 @@ export class ArmazenamentoLocal implements IArmazenamento {
 
   async substituirLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void> {
     const db = await abrirBD();
-    await tx(db, ['leituras'], 'readwrite', async (t) => {
-      const store = t.objectStore('leituras');
-      const idx   = store.index('id_sessao');
-      await deleteByIndex(store, idx, idSessao);
-      for (const l of leituras) {
-        await add(store, { id_sessao: idSessao, ...l });
-      }
+
+    // Fase 1: apaga com cursor direto numa transação callback-only
+    // (evita auto-commit da transação IDB ao misturar Promise.all com await)
+    await new Promise<void>((resolve, reject) => {
+      const t = db.transaction(['leituras'], 'readwrite');
+      t.oncomplete = () => resolve();
+      t.onerror    = () => reject(t.error);
+      t.onabort    = () => reject(t.error);
+      const req = t.objectStore('leituras').index('id_sessao').openCursor(idSessao);
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) { cursor.delete(); cursor.continue(); }
+      };
+      req.onerror = () => reject(req.error);
     });
+
+    // Fase 2: insere novas leituras numa transação separada
+    if (leituras.length > 0) {
+      await tx(db, ['leituras'], 'readwrite', async (t) => {
+        const store = t.objectStore('leituras');
+        for (const l of leituras) {
+          await add(store, { id_sessao: idSessao, ...l });
+        }
+      });
+    }
+
     db.close();
   }
 
