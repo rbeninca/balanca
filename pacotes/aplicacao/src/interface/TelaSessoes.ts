@@ -1,4 +1,5 @@
 import type { IArmazenamento, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import { ArmazenamentoApi } from '../armazenamento/ArmazenamentoApi.js';
 import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
@@ -61,6 +62,11 @@ export class TelaSessoes {
     const li = document.createElement('li');
     li.className = 'sessao-item';
 
+    const isGateway = this.armazenamento instanceof ArmazenamentoApi;
+    const origemBadge = isGateway
+      ? `<span class="origem-badge origem-gateway" title="Gravado no banco de dados do gateway">&#9635; gateway</span>`
+      : `<span class="origem-badge origem-local"   title="Gravado no armazenamento local do browser">&#9632; local</span>`;
+
     const leituras = await this.armazenamento.obterLeituras(s.id);
     let motorBadge = '';
     let nomeMotor  = '';
@@ -77,7 +83,7 @@ export class TelaSessoes {
 
     li.innerHTML = `
       <div style="flex:1;min-width:0">
-        <div class="nome">${s.nome} ${motorBadge}</div>
+        <div class="nome">${s.nome} ${motorBadge} ${origemBadge}</div>
         <div class="meta">${dataFmt} — ${leituras.length} leituras${nomeMotor ? ' — ' + nomeMotor : ''}</div>
       </div>
       <div class="sessao-acoes">
