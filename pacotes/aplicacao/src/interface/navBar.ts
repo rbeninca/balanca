@@ -1,6 +1,11 @@
 import { TelaCreditos } from './TelaCreditos.js';
 import { TelaEsquema } from './TelaEsquema.js';
 
+export interface StatusConexao {
+  endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
+  conectado: boolean;
+}
+
 export interface NavProps {
   ativo:            'conexao' | 'medicao' | 'sessoes' | 'configuracoes' | 'firmware';
   onConexao:        () => void;
@@ -8,12 +13,19 @@ export interface NavProps {
   onSessoes:        () => void;
   onConfiguracoes?: () => void;
   onFirmware:       () => void;
+  status?:          StatusConexao;
 }
 
 function itemNav(id: string, label: string, isAtivo: boolean, cb: (() => void) | undefined, extra = ''): string {
   if (isAtivo)  return `<a href="#" id="${id}" class="ativo"${extra}>${label}</a>`;
   if (!cb)      return `<span class="nav-desativado"${extra}>${label}</span>`;
   return `<a href="#" id="${id}"${extra}>${label}</a>`;
+}
+
+function statusHtml(s: StatusConexao): string {
+  const classe = s.conectado ? 'conectado' : 'desconectado';
+  const texto  = s.conectado ? s.endereco  : `${s.endereco} — desconectado`;
+  return `<div class="nav-status"><span class="nav-status-chip ${classe}">${texto}</span></div>`;
 }
 
 export function navHtml(props: NavProps): string {
@@ -27,6 +39,7 @@ export function navHtml(props: NavProps): string {
       <a href="#" id="nav-montagem">Montagem</a>
       <a href="#" id="nav-creditos">Créditos</a>
     </div>
+    ${props.status ? statusHtml(props.status) : ''}
   `;
 }
 

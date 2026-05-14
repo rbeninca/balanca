@@ -67,6 +67,13 @@
     .nav-links a.ativo { border-bottom-color: #2563eb; color: #1a1a1a; font-weight: 600; }
     .nav-links a:hover { color: #1d4ed8; }
     .nav-links .nav-desativado { color: #9ca3af; padding: 0.3rem 0; cursor: not-allowed; }
+    .nav-status { margin-top: -0.9rem; margin-bottom: 0.75rem; }
+    .nav-status-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; padding: 0.15rem 0.6rem; border-radius: 999px; }
+    .nav-status-chip::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+    .nav-status-chip.conectado  { background: #dcfce7; color: #15803d; }
+    .nav-status-chip.conectado::before  { background: #22c55e; }
+    .nav-status-chip.desconectado { background: #fee2e2; color: #b91c1c; }
+    .nav-status-chip.desconectado::before { background: #ef4444; }
 
     /* ── Imagem de cenário de conexão ───────────────────────────────────────── */
     .cenario-img { display: block; width: 100%; max-width: 540px; margin: 0 auto 1rem; border-radius: 8px; border: 1px solid #e5e7eb; }

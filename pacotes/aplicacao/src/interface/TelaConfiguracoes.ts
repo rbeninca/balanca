@@ -1,5 +1,5 @@
 import type { Fonte } from './TelaMedicao.js';
-import { navHtml, bindNav } from './navBar.js';
+import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 
 interface ParamDef {
   id:        number;
@@ -49,6 +49,7 @@ export class TelaConfiguracoes {
     private onMedicao:   () => void,
     private onSessoes:   () => void,
     private onFirmware:  () => void,
+    private status?:     StatusConexao,
   ) {
     this.renderizar(container);
     this.ouvinte = (raw) => this.aplicarConfig(raw);
@@ -80,7 +81,7 @@ export class TelaConfiguracoes {
     `).join('');
 
     container.innerHTML = `
-      ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware })}
+      ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -107,7 +108,7 @@ export class TelaConfiguracoes {
       </div>
     `;
 
-    bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware });
+    bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) });
     container.querySelector('#cfg-btn-atualizar')!.addEventListener('click', () => {
       this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
       this.mostrarStatus('info', 'Solicitando configuração ao firmware…');
