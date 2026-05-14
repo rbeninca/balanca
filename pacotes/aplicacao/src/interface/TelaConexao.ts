@@ -36,7 +36,6 @@ function salvarGateway(ip: string): void {
 }
 
 async function testarWs(ip: string): Promise<boolean> {
-  if (location.protocol === 'https:') return false;
   return new Promise(resolve => {
     let done = false;
     const fim = (v: boolean) => { if (!done) { done = true; resolve(v); } };
@@ -117,21 +116,14 @@ export class TelaConexao {
 
     const radios = container.querySelectorAll<HTMLInputElement>('input[name="modo"]');
 
-    const paginaHttps = location.protocol === 'https:';
-
     const atualizarModo = (modo: ModoConexao) => {
       this.cfg.modo = modo;
       salvarConfig(this.cfg);
       if (modo === 'tvbox') {
         camposTVBox.classList.remove('hidden');
         listaPorts.classList.add('hidden');
-        if (paginaHttps) {
-          statusEl.className = 'status-box aviso';
-          statusEl.textContent = 'Esta página está em HTTPS. Browsers bloqueiam conexões ws:// a partir de HTTPS. Acesse a aplicação pelo endereço HTTP da TVBox (ex: http://192.168.1.100).';
-        } else {
-          statusEl.className = 'status-box';
-          statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
-        }
+        statusEl.className = 'status-box';
+        statusEl.textContent = 'Modo TVBox — insira o IP do gateway.';
         btnConectar.disabled = false;
         void this.varrerGateways(sugestoesEl, inputIP);
       } else {
@@ -201,8 +193,6 @@ export class TelaConexao {
   }
 
   private async varrerGateways(sugestoesEl: HTMLElement, inputIP: HTMLInputElement): Promise<void> {
-    if (location.protocol === 'https:') return;
-
     const candidatos: string[] = [];
 
     // Hostname da URL atual, se parecer um IP de rede local
