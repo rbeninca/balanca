@@ -42,6 +42,23 @@ export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }:
     return rep.status(201).send(sessao);
   });
 
+  app.patch<{ Params: { id: string } }>('/sessoes/:id', { preHandler: verificarChave }, async (req, rep) => {
+    const existente = db.consultarUm<Sessao>('SELECT * FROM sessoes WHERE id = ?', [req.params.id]);
+    if (!existente) return rep.status(404).send({ erro: 'Sessão não encontrada' });
+
+    const body = req.body as { nome?: string; criado_em?: string };
+    const campos: string[] = [];
+    const valores: unknown[] = [];
+    if (body.nome     != null) { campos.push('nome = ?');      valores.push(body.nome); }
+    if (body.criado_em != null) { campos.push('criado_em = ?'); valores.push(body.criado_em); }
+    if (campos.length === 0) return rep.status(400).send({ erro: 'Nenhum campo para atualizar' });
+
+    valores.push(req.params.id);
+    db.executar(`UPDATE sessoes SET ${campos.join(', ')} WHERE id = ?`, valores);
+    const atualizada = db.consultarUm<Sessao>('SELECT * FROM sessoes WHERE id = ?', [req.params.id]);
+    return rep.send(atualizada);
+  });
+
   app.delete<{ Params: { id: string } }>('/sessoes/:id', { preHandler: verificarChave }, async (req, rep) => {
     const existente = db.consultarUm<{ id: string }>('SELECT id FROM sessoes WHERE id = ?', [req.params.id]);
     if (!existente) return rep.status(404).send({ erro: 'Sessão não encontrada' });
