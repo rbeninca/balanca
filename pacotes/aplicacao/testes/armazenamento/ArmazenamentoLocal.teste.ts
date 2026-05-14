@@ -85,4 +85,38 @@ describe('ArmazenamentoLocal', () => {
     const meta = await armazenamento.obterMetadados(s.id);
     expect(meta).toBeNull();
   });
+
+  // UT-7.4.9
+  it('substituirLeituras() troca os dados e preserva emQueima', async () => {
+    const s = await armazenamento.criarSessao('Substituir');
+    const originais = makeLeituras(5);
+    await armazenamento.adicionarLeituras(s.id, originais);
+
+    const novas: LeituraProcessada[] = [
+      { marcaTemporal: 0,   forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 },
+      { marcaTemporal: 100, forcaNewton: 5, temperatura: 0, emQueima: true,  impulsoAcumuladoNs: 300 },
+      { marcaTemporal: 200, forcaNewton: 3, temperatura: 0, emQueima: true,  impulsoAcumuladoNs: 700 },
+    ];
+    await armazenamento.substituirLeituras(s.id, novas);
+
+    const resultado = await armazenamento.obterLeituras(s.id);
+    expect(resultado).toHaveLength(3);
+    expect(resultado[0]!.emQueima).toBe(false);
+    expect(resultado[1]!.emQueima).toBe(true);
+    expect(resultado[2]!.emQueima).toBe(true);
+  });
+
+  // UT-7.4.10
+  it('substituirLeituras() atualiza flags emQueima de sessão já existente', async () => {
+    const s = await armazenamento.criarSessao('Flags');
+    const ls = makeLeituras(6);
+    await armazenamento.adicionarLeituras(s.id, ls);
+
+    // Muda emQueima de todas para false
+    const alteradas = ls.map(l => ({ ...l, emQueima: false }));
+    await armazenamento.substituirLeituras(s.id, alteradas);
+
+    const resultado = await armazenamento.obterLeituras(s.id);
+    expect(resultado.every(l => l.emQueima === false)).toBe(true);
+  });
 });
