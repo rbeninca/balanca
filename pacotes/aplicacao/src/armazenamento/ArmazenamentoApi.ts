@@ -32,6 +32,20 @@ export class ArmazenamentoApi implements IArmazenamento {
     return lista.map(s => ({ id: s.id, nome: s.nome, criadoEm: s.criado_em }));
   }
 
+  async atualizarSessao(id: string, dados: Partial<Pick<SessaoLocal, 'nome' | 'criadoEm'>>): Promise<SessaoLocal> {
+    const body: Record<string, string> = {};
+    if (dados.nome     != null) body['nome']      = dados.nome;
+    if (dados.criadoEm != null) body['criado_em'] = dados.criadoEm;
+    const res = await fetch(`${this.base}/sessoes/${id}`, {
+      method: 'PATCH',
+      headers: this.headersJson,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Erro ao atualizar sessão: ${res.status}`);
+    const d = await res.json() as { id: string; nome: string; criado_em: string };
+    return { id: d.id, nome: d.nome, criadoEm: d.criado_em };
+  }
+
   async excluirSessao(id: string): Promise<void> {
     const res = await fetch(`${this.base}/sessoes/${id}`, {
       method: 'DELETE',

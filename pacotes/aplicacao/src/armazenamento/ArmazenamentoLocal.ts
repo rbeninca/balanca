@@ -20,6 +20,7 @@ export interface MetadadosLocal {
 export interface IArmazenamento {
   criarSessao(nome: string): Promise<SessaoLocal>;
   listarSessoes(): Promise<SessaoLocal[]>;
+  atualizarSessao(id: string, dados: Partial<Pick<SessaoLocal, 'nome' | 'criadoEm'>>): Promise<SessaoLocal>;
   excluirSessao(id: string): Promise<void>;
   adicionarLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void>;
   obterLeituras(idSessao: string): Promise<LeituraProcessada[]>;
@@ -146,6 +147,26 @@ export class ArmazenamentoLocal implements IArmazenamento {
     const lista = await tx(db, ['sessoes'], 'readonly', async (t) => getAll<SessaoLocal>(t.objectStore('sessoes')));
     db.close();
     return lista;
+  }
+
+  async atualizarSessao(id: string, dados: Partial<Pick<SessaoLocal, 'nome' | 'criadoEm'>>): Promise<SessaoLocal> {
+    const db = await abrirBD();
+    return new Promise<SessaoLocal>((resolve, reject) => {
+      const t     = db.transaction(['sessoes'], 'readwrite');
+      t.onerror   = () => { db.close(); reject(t.error); };
+      t.onabort   = () => { db.close(); reject(new Error('Transação abortada')); };
+      const store = t.objectStore('sessoes');
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const atual = getReq.result as SessaoLocal | undefined;
+        if (!atual) { db.close(); reject(new Error('Sessão não encontrada')); return; }
+        const atualizada: SessaoLocal = { ...atual, ...dados };
+        const putReq = store.put(atualizada);
+        putReq.onsuccess = () => { db.close(); resolve(atualizada); };
+        putReq.onerror   = () => { db.close(); reject(putReq.error); };
+      };
+      getReq.onerror = () => { db.close(); reject(getReq.error); };
+    });
   }
 
   async excluirSessao(id: string): Promise<void> {
