@@ -1,13 +1,15 @@
-import { ArmazenamentoLocal } from './armazenamento/ArmazenamentoLocal.js';
+import { ArmazenamentoLocal, type IArmazenamento } from './armazenamento/ArmazenamentoLocal.js';
+import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
 import { TelaConfiguracoes } from './interface/TelaConfiguracoes.js';
 import { TelaFirmware } from './interface/TelaFirmware.js';
+import { FonteWebSocket } from './adaptadores/FonteWebSocket.js';
 
-const armazenamento = new ArmazenamentoLocal();
-const gerenciador   = new GerenciadorSessao(armazenamento);
+let armazenamento: IArmazenamento = new ArmazenamentoLocal();
+let gerenciador = new GerenciadorSessao(armazenamento);
 
 const app = document.getElementById('app')!;
 
@@ -35,6 +37,17 @@ function renderizar() {
     case 'conexao':
       new TelaConexao(app, (fonte) => {
         fonteAtual = fonte;
+        if (fonte instanceof FonteWebSocket) {
+          try {
+            const cfg = JSON.parse(localStorage.getItem('balancagfig:conexao') ?? '{}') as { ip?: string; chave?: string };
+            armazenamento = new ArmazenamentoApi(cfg.ip || 'localhost', cfg.chave || '');
+          } catch {
+            armazenamento = new ArmazenamentoLocal();
+          }
+        } else {
+          armazenamento = new ArmazenamentoLocal();
+        }
+        gerenciador = new GerenciadorSessao(armazenamento);
         navegar('medicao');
       });
       break;

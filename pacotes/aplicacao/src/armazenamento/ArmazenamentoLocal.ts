@@ -15,6 +15,18 @@ export interface MetadadosLocal {
   descricao?: string;
 }
 
+export interface IArmazenamento {
+  criarSessao(nome: string): Promise<SessaoLocal>;
+  listarSessoes(): Promise<SessaoLocal[]>;
+  excluirSessao(id: string): Promise<void>;
+  adicionarLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void>;
+  obterLeituras(idSessao: string): Promise<LeituraProcessada[]>;
+  exportarCSV(idSessao: string): Promise<string>;
+  substituirLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void>;
+  salvarMetadados(idSessao: string, meta: MetadadosLocal): Promise<void>;
+  obterMetadados(idSessao: string): Promise<MetadadosLocal | null>;
+}
+
 const DB_NOME = 'balancaGFIG';
 const DB_VER  = 1;
 
@@ -117,7 +129,7 @@ function gerarUUID(): string {
   );
 }
 
-export class ArmazenamentoLocal {
+export class ArmazenamentoLocal implements IArmazenamento {
   async criarSessao(nome: string): Promise<SessaoLocal> {
     const id = gerarUUID();
     const sessao: SessaoLocal = { id, nome, criadoEm: new Date().toISOString() };
