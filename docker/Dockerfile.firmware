@@ -10,8 +10,8 @@ WORKDIR /app/pacotes/atualizador
 RUN --mount=type=cache,target=/root/.npm \
     npm install
 
-COPY pacotes/atualizador/src           pacotes/atualizador/src
-COPY pacotes/atualizador/tsconfig.json pacotes/atualizador/
+COPY pacotes/atualizador/src           ./src
+COPY pacotes/atualizador/tsconfig.json ./
 RUN npm run compilar
 
 # ── Stage 2: imagem final ─────────────────────────────────────────────────────
