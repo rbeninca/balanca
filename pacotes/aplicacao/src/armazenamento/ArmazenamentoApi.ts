@@ -85,10 +85,12 @@ export class ArmazenamentoApi implements IArmazenamento {
       headers: this.headers,
       body: JSON.stringify({
         massa_propelente_g: meta.massaPropelente_g ?? null,
+        massa_total_g:      meta.massaTotal_g ?? null,
         diametro_mm:        meta.diametro_mm ?? null,
         comprimento_mm:     meta.comprimento_mm ?? null,
         fabricante:         meta.fabricante ?? null,
         descricao:          meta.descricao ?? null,
+        observacoes:        meta.observacoes ?? null,
       }),
     });
     if (!res.ok) throw new Error(`Erro ao salvar metadados: ${res.status}`);
@@ -99,15 +101,18 @@ export class ArmazenamentoApi implements IArmazenamento {
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Erro ao obter metadados: ${res.status}`);
     const d = await res.json() as {
-      massa_propelente_g: number | null; diametro_mm: number | null;
-      comprimento_mm: number | null; fabricante: string | null; descricao: string | null;
+      massa_propelente_g: number | null; massa_total_g: number | null;
+      diametro_mm: number | null; comprimento_mm: number | null;
+      fabricante: string | null; descricao: string | null; observacoes: string | null;
     };
-    return {
-      massaPropelente_g: d.massa_propelente_g ?? undefined,
-      diametro_mm:       d.diametro_mm ?? undefined,
-      comprimento_mm:    d.comprimento_mm ?? undefined,
-      fabricante:        d.fabricante ?? undefined,
-      descricao:         d.descricao ?? undefined,
-    };
+    const meta: MetadadosLocal = {};
+    if (d.massa_propelente_g != null) meta.massaPropelente_g = d.massa_propelente_g;
+    if (d.massa_total_g      != null) meta.massaTotal_g      = d.massa_total_g;
+    if (d.diametro_mm        != null) meta.diametro_mm       = d.diametro_mm;
+    if (d.comprimento_mm     != null) meta.comprimento_mm    = d.comprimento_mm;
+    if (d.fabricante         != null) meta.fabricante        = d.fabricante;
+    if (d.descricao          != null) meta.descricao         = d.descricao;
+    if (d.observacoes        != null) meta.observacoes       = d.observacoes;
+    return meta;
   }
 }

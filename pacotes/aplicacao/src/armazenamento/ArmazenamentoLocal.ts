@@ -9,10 +9,12 @@ export interface SessaoLocal {
 
 export interface MetadadosLocal {
   massaPropelente_g?: number;
+  massaTotal_g?: number;
   diametro_mm?: number;
   comprimento_mm?: number;
   fabricante?: string;
   descricao?: string;
+  observacoes?: string;
 }
 
 export interface IArmazenamento {
