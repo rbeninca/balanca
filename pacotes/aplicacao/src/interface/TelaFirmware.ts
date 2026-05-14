@@ -51,7 +51,7 @@ export class TelaFirmware {
       <div class="card">
         <h2>Atualização de Firmware</h2>
         <div id="fw-versao" class="status-box">Carregando informações...</div>
-        <img src="/imgs/upload-firmware.png" alt="Diagrama de upload de firmware"
+        <img src="${import.meta.env.BASE_URL}imgs/upload-firmware.png" alt="Diagrama de upload de firmware"
              class="cenario-img" style="margin-top:1rem" onerror="this.style.display='none'">
       </div>
 

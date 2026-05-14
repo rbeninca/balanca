@@ -15,12 +15,12 @@ export class TelaCreditos {
 
   private html(): string {
     const logos = [
-      { src: '/imgs/logo_campusGaspar.png', alt: 'IFSC Campus Gaspar' },
-      { src: '/imgs/logo_compSteam.png',    alt: 'CompSteam' },
-      { src: '/imgs/logo_gfig.png',         alt: 'GFIG' },
-      { src: '/imgs/logo_gfig_pb.png',      alt: 'GFIG' },
-      { src: '/imgs/logo_receita.png',      alt: 'Receita' },
-      { src: '/imgs/logo-bar.png',          alt: 'BAR' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo_campusGaspar.png`, alt: 'IFSC Campus Gaspar' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo_compSteam.png`,    alt: 'CompSteam' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo_gfig.png`,         alt: 'GFIG' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo_gfig_pb.png`,      alt: 'GFIG' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo_receita.png`,      alt: 'Receita' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo-bar.png`,          alt: 'BAR' },
     ];
 
     return `
