@@ -109,9 +109,17 @@ function deleteByIndex(store: IDBObjectStore, index: IDBIndex, key: IDBValidKey)
   });
 }
 
+function gerarUUID(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  // crypto.randomUUID exige HTTPS; fallback via getRandomValues (funciona em HTTP)
+  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
+    (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0]! & (15 >> (+c / 4)))).toString(16),
+  );
+}
+
 export class ArmazenamentoLocal {
   async criarSessao(nome: string): Promise<SessaoLocal> {
-    const id = crypto.randomUUID();
+    const id = gerarUUID();
     const sessao: SessaoLocal = { id, nome, criadoEm: new Date().toISOString() };
     const db = await abrirBD();
     await tx(db, ['sessoes'], 'readwrite', async (t) => put(t.objectStore('sessoes'), sessao));
