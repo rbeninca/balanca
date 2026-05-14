@@ -514,6 +514,12 @@ export class TelaAnalise {
     const idSessao = this.dados.idSessao;
     if (!idSessao) { this.destruir(); return; }
 
+    // Lê os inputs diretamente — garante captura mesmo sem blur antes do clique
+    const vT0 = parseFloat(this.overlay.querySelector<HTMLInputElement>('#st-t0')?.value ?? '');
+    const vT1 = parseFloat(this.overlay.querySelector<HTMLInputElement>('#st-t1')?.value ?? '');
+    if (!isNaN(vT0)) this.burnInicio = Math.min(this.encontrarIndiceMaisProximo(vT0), this.burnFim);
+    if (!isNaN(vT1)) this.burnFim   = Math.max(this.encontrarIndiceMaisProximo(vT1), this.burnInicio);
+
     // Aplica burnInicio/burnFim de volta nos flags emQueima
     const ls = this.dados.leituras;
     let queimaAlterada = false;
