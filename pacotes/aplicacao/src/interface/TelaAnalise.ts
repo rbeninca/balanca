@@ -246,20 +246,33 @@ export class TelaAnalise {
     return ls.map(l => ({ x: (l.marcaTemporal - t0) / 1000, y: l.forcaNewton }));
   }
 
+  private anotacoesQueima(): ApexCharts.ApexAnnotations {
+    const ls = this.dados.leituras;
+    const t0 = ls[0]?.marcaTemporal ?? 0;
+    const ti = ((ls[this.burnInicio]?.marcaTemporal ?? t0) - t0) / 1000;
+    const tf = ((ls[this.burnFim]?.marcaTemporal   ?? t0) - t0) / 1000;
+    return {
+      xaxis: [
+        { x: ti, x2: tf, fillColor: '#ff7040', opacity: 0.12, label: { text: '' } },
+        { x: ti, borderColor: '#4caf50', label: { borderColor: '#4caf50', style: { color: '#fff', background: '#4caf50', fontSize: '11px' }, text: 'Início' } },
+        { x: tf, borderColor: '#ffa040', label: { borderColor: '#ffa040', style: { color: '#fff', background: '#ffa040', fontSize: '11px' }, text: 'Fim'    } },
+      ],
+    };
+  }
+
+  private atualizarMarcadores() {
+    this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, false, false);
+    this.atualizarStats();
+  }
+
   private renderizarGrafico() {
     this.chart?.destroy();
     const el = this.overlay.querySelector<HTMLElement>('#analise-chart');
     if (!el || this.dados.leituras.length === 0) return;
 
-    const linha = this.seriesGrafico();
-    const ls = this.dados.leituras;
-    const t0 = ls[0]?.marcaTemporal ?? 0;
-    const ti = ((ls[this.burnInicio]?.marcaTemporal ?? t0) - t0) / 1000;
-    const tf = ((ls[this.burnFim]?.marcaTemporal   ?? t0) - t0) / 1000;
-
     const options: ApexCharts.ApexOptions = {
       series: [
-        { name: 'Força (N)', type: 'line', data: linha },
+        { name: 'Força (N)', type: 'line', data: this.seriesGrafico() },
       ],
       chart: {
         height: 320,
@@ -268,8 +281,8 @@ export class TelaAnalise {
         animations: { enabled: false },
         toolbar: { show: true, tools: { download: false, selection: false, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
         events: {
-          dataPointSelection: (_ev: Event, _ctx: unknown, cfg: { dataPointIndex: number }) => {
-            const idx = cfg.dataPointIndex;
+          click: (_ev: MouseEvent, _ctx: unknown, cfg?: { dataPointIndex?: number }) => {
+            const idx = cfg?.dataPointIndex ?? -1;
             if (idx < 0) return;
             const dI = Math.abs(idx - this.burnInicio);
             const dF = Math.abs(idx - this.burnFim);
@@ -278,8 +291,7 @@ export class TelaAnalise {
             } else {
               this.burnFim = Math.max(idx, this.burnInicio);
             }
-            this.renderizarGrafico();
-            this.atualizarStats();
+            this.atualizarMarcadores();
           },
         },
       },
@@ -296,13 +308,7 @@ export class TelaAnalise {
         title: { text: 'Força (N)', style: { color: '#6b7280' } },
         labels: { style: { colors: '#6b7280' }, formatter: (v) => v.toFixed(1) },
       },
-      annotations: {
-        xaxis: [
-          { x: ti, x2: tf, fillColor: '#ff7040', opacity: 0.12, label: { text: '' } },
-          { x: ti, borderColor: '#4caf50', label: { borderColor: '#4caf50', style: { color: '#fff', background: '#4caf50', fontSize: '11px' }, text: 'Início' } },
-          { x: tf, borderColor: '#ffa040', label: { borderColor: '#ffa040', style: { color: '#fff', background: '#ffa040', fontSize: '11px' }, text: 'Fim'    } },
-        ],
-      },
+      annotations: this.anotacoesQueima(),
       grid: { borderColor: '#e5e7eb' },
       legend: { show: false },
       tooltip: { theme: 'light', x: { formatter: (v) => `${(+v).toFixed(3)} s` } },
@@ -510,16 +516,14 @@ export class TelaAnalise {
       const v = parseFloat(inputT0.value);
       if (!isNaN(v)) {
         this.burnInicio = Math.min(this.encontrarIndiceMaisProximo(v), this.burnFim);
-        this.renderizarGrafico();
-        this.atualizarStats();
+        this.atualizarMarcadores();
       }
     });
     inputT1.addEventListener('change', () => {
       const v = parseFloat(inputT1.value);
       if (!isNaN(v)) {
         this.burnFim = Math.max(this.encontrarIndiceMaisProximo(v), this.burnInicio);
-        this.renderizarGrafico();
-        this.atualizarStats();
+        this.atualizarMarcadores();
       }
     });
 
