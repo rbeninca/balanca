@@ -12,3 +12,4 @@ test-results.xml
 pacotes/aplicacao/public/firmware.bin
 pacotes/aplicacao/public/firmware-versao.json
 balancaGFIGv1/
+dist-web/
