@@ -98,8 +98,6 @@ export class TelaConexao {
           <label for="campo-ip">Endereço IP</label>
           <input id="campo-ip" type="text" placeholder="192.168.1.100" value="${cfg.ip}">
           <div id="gw-sugestoes"></div>
-          <label for="campo-chave">Chave de API</label>
-          <input id="campo-chave" type="password" placeholder="opcional" value="${cfg.chave}">
         </div>
 
         <div id="lista-portas" data-testid="lista-portas" class="${cfg.modo !== 'webserial' ? 'hidden' : ''}">
@@ -123,7 +121,6 @@ export class TelaConexao {
     const camposTVBox = container.querySelector<HTMLElement>('#campos-tvbox')!;
     const listaPorts  = container.querySelector<HTMLElement>('#lista-portas')!;
     const inputIP     = container.querySelector<HTMLInputElement>('#campo-ip')!;
-    const inputChave  = container.querySelector<HTMLInputElement>('#campo-chave')!;
     const btnConectar = container.querySelector<HTMLButtonElement>('#btn-conectar')!;
     const sugestoesEl = container.querySelector<HTMLElement>('#gw-sugestoes')!;
     const cardTvbox   = container.querySelector<HTMLElement>('#card-tvbox')!;
@@ -163,11 +160,6 @@ export class TelaConexao {
 
     inputIP.addEventListener('input', () => {
       this.cfg.ip = inputIP.value;
-      salvarConfig(this.cfg);
-    });
-
-    inputChave.addEventListener('input', () => {
-      this.cfg.chave = inputChave.value;
       salvarConfig(this.cfg);
     });
 
