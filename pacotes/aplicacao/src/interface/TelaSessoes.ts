@@ -5,6 +5,7 @@ import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
 import { TelaAnalise } from './TelaAnalise.js';
+import { TelaComparacao } from './TelaComparacao.js';
 
 // ── Formato JSON de exportação/importação ────────────────────────────────────
 
@@ -64,6 +65,9 @@ function converterV1(v1: SessaoExportadaV1): { nome: string; leituras: LeituraPr
 }
 
 export class TelaSessoes {
+  private selecionadas = new Set<string>();
+  private barraComp:   HTMLElement | null = null;
+
   constructor(
     container: HTMLElement,
     private armazenamento: IArmazenamento,
@@ -89,6 +93,10 @@ export class TelaSessoes {
           </div>
         </div>
         <div id="lista-conteudo"><div class="vazio">Carregando...</div></div>
+        <div id="barra-comparacao" class="barra-comparacao hidden">
+          <span id="barra-comp-info"></span>
+          <button id="btn-comparar" class="btn-primary btn-sm">Comparar selecionadas</button>
+        </div>
       </div>
     `;
 
@@ -102,6 +110,11 @@ export class TelaSessoes {
     });
 
     const lista = container.querySelector<HTMLElement>('#lista-conteudo')!;
+    this.barraComp = container.querySelector<HTMLElement>('#barra-comparacao')!;
+
+    container.querySelector<HTMLButtonElement>('#btn-comparar')!.addEventListener('click', () => {
+      void this.abrirComparacao();
+    });
 
     // Importar JSON
     const btnImportar = container.querySelector<HTMLButtonElement>('#btn-importar-json')!;
@@ -141,6 +154,42 @@ export class TelaSessoes {
     lista.appendChild(ul);
   }
 
+  private atualizarBarraComparacao() {
+    const barra   = this.barraComp;
+    const infoEl  = barra?.querySelector<HTMLElement>('#barra-comp-info');
+    if (!barra || !infoEl) return;
+
+    const n = this.selecionadas.size;
+    if (n < 2) {
+      barra.classList.add('hidden');
+      return;
+    }
+
+    barra.classList.remove('hidden');
+    const aviso = n > 6 ? ' ⚠ Muitas sessões podem tornar o gráfico ilegível.' : '';
+    infoEl.textContent = `${n} sessões selecionadas.${aviso}`;
+  }
+
+  private async abrirComparacao() {
+    const btn = this.barraComp?.querySelector<HTMLButtonElement>('#btn-comparar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Carregando…'; }
+
+    try {
+      const sessoes = await this.armazenamento.listarSessoes();
+      const selecionadas = sessoes.filter(s => this.selecionadas.has(s.id));
+
+      const itens = await Promise.all(selecionadas.map(async s => ({
+        sessao:    s,
+        leituras:  await this.armazenamento.obterLeituras(s.id),
+        metadados: await this.armazenamento.obterMetadados(s.id),
+      })));
+
+      new TelaComparacao(itens);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Comparar selecionadas'; }
+    }
+  }
+
   private async criarItem(s: SessaoLocal): Promise<HTMLLIElement> {
     const li = document.createElement('li');
     li.className = 'sessao-item';
@@ -165,9 +214,16 @@ export class TelaSessoes {
     const dataFmt = new Date(s.criadoEm).toLocaleString('pt-BR');
 
     li.innerHTML = `
+      <label class="sessao-check-label" title="Selecionar para comparar">
+        <input type="checkbox" class="sessao-check" data-id="${s.id}">
+      </label>
       <div style="flex:1;min-width:0">
         <div class="nome">${s.nome} ${motorBadge} ${origemBadge}</div>
-        <div class="meta">${dataFmt} — ${leituras.length} leituras${nomeMotor ? ' — ' + nomeMotor : ''}</div>
+        <div class="meta">
+          <span class="sessao-data-texto">${dataFmt}</span>
+          <button class="btn-editar-data" title="Editar data">✎</button>
+          <span class="sessao-meta-resto"> — ${leituras.length} leituras${nomeMotor ? ' — ' + nomeMotor : ''}</span>
+        </div>
       </div>
       <div class="sessao-acoes">
         <button class="btn-outline btn-sm btn-analisar" data-id="${s.id}" title="Analisar sessão">Analisar</button>
@@ -177,6 +233,69 @@ export class TelaSessoes {
         <button class="btn-secondary btn-sm btn-excluir" data-id="${s.id}" title="Excluir sessão" style="color:#ef5350">Excluir</button>
       </div>
     `;
+
+    li.querySelector<HTMLInputElement>('.sessao-check')!.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      if (checked) this.selecionadas.add(s.id);
+      else         this.selecionadas.delete(s.id);
+      this.atualizarBarraComparacao();
+    });
+
+    // Editar data
+    li.querySelector('.btn-editar-data')!.addEventListener('click', () => {
+      const meta       = li.querySelector<HTMLElement>('.meta')!;
+      const textoEl    = meta.querySelector<HTMLElement>('.sessao-data-texto')!;
+      const btnEditar  = meta.querySelector<HTMLButtonElement>('.btn-editar-data')!;
+      const restoEl    = meta.querySelector<HTMLElement>('.sessao-meta-resto')!;
+
+      const isoParaInput = (iso: string) => {
+        const d = new Date(iso);
+        const p = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      };
+
+      const input = document.createElement('input');
+      input.type  = 'datetime-local';
+      input.value = isoParaInput(s.criadoEm);
+      input.className = 'input-editar-data';
+
+      const btnSalvar   = document.createElement('button');
+      btnSalvar.textContent = '✓';
+      btnSalvar.className   = 'btn-salvar-data';
+      btnSalvar.title       = 'Salvar';
+
+      const btnCancelar   = document.createElement('button');
+      btnCancelar.textContent = '✕';
+      btnCancelar.className   = 'btn-cancelar-data';
+      btnCancelar.title       = 'Cancelar';
+
+      textoEl.replaceWith(input);
+      btnEditar.replaceWith(btnSalvar, btnCancelar);
+
+      const restaurar = () => {
+        input.replaceWith(textoEl);
+        btnSalvar.replaceWith(btnEditar);
+        btnCancelar.remove();
+      };
+
+      btnCancelar.addEventListener('click', restaurar);
+
+      btnSalvar.addEventListener('click', async () => {
+        btnSalvar.disabled = true;
+        try {
+          if (!input.value) throw new Error('Data não preenchida.');
+          const novaData = new Date(input.value).toISOString();
+          if (isNaN(new Date(novaData).getTime())) throw new Error('Data inválida.');
+          const atualizada = await this.armazenamento.atualizarSessao(s.id, { criadoEm: novaData });
+          s.criadoEm = atualizada.criadoEm;
+          textoEl.textContent = new Date(atualizada.criadoEm).toLocaleString('pt-BR');
+        } catch (e) {
+          alert(`Erro ao salvar data:\n${String(e)}`);
+        } finally {
+          restaurar();
+        }
+      });
+    });
 
     // Analisar
     li.querySelector('.btn-analisar')!.addEventListener('click', async () => {
