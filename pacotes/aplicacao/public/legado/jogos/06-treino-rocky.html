@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏋️ Treino do Rocky</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #ff0000;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .workout-area {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid rgba(255,0,0,0.5);
+        }
+
+        .exercise-card {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #ff0000;
+        }
+
+        .exercise-title {
+            font-size: 2rem;
+            color: #ffff00;
+            margin-bottom: 15px;
+        }
+
+        .exercise-target {
+            font-size: 1.3rem;
+            color: #00ff00;
+            margin: 10px 0;
+        }
+
+        .progress-section {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff8800);
+            transition: width 0.2s;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .reps-display {
+            font-size: 4rem;
+            color: #ff0000;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            min-height: 50px;
+            margin: 15px 0;
+        }
+
+        button {
+            font-size: 1.3rem;
+            padding: 15px 30px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        @keyframes rep-complete {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); color: #00ff00; }
+            100% { transform: scale(1); }
+        }
+
+        .rep-animation {
+            animation: rep-complete 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏋️ TREINO DO ROCKY 🏋️</h1>
+        <div class="subtitle">"Não é sobre quão forte você bate, é sobre quantas vezes consegue levantar!"</div>
+        
+        <div class="workout-area">
+            <div class="exercise-card">
+                <div class="exercise-title" id="exerciseTitle">🥊 Série 1 - Aquecimento</div>
+                <div class="exercise-target" id="exerciseTarget">
+                    Meta: 5 repetições acima de 25 kg
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                        <div class="progress-text" id="progressText">0 / 5</div>
+                    </div>
+                </div>
+                
+                <div class="reps-display" id="repsDisplay">0 / 5</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">SÉRIE ATUAL</div>
+                    <div class="stat-value" id="currentSet" style="color: #ff0000;">1</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">FORÇA ATUAL</div>
+                    <div class="stat-value" id="currentForceDisplay" style="color: #ffff00;">0 kg</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">TOTAL REPS</div>
+                    <div class="stat-value" id="totalReps" style="color: #00ff00;">0</div>
+                </div>
+            </div>
+
+            <div class="message" id="message">💪 Prepare-se para treinar! 💪</div>
+        </div>
+
+        <div>
+            <button onclick="startWorkout()" id="startBtn">▶️ Começar Treino</button>
+            <button onclick="skipSet()">⏭️ Pular Série</button>
+            <button onclick="resetWorkout()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Série: <span id="debugSet">1</span> | Reps: <span id="debugReps">0</span></div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const WORKOUT_SETS = [
+            { name: "🥊 Série 1 - Aquecimento", target: 25, reps: 5, rest: 3000 },
+            { name: "💪 Série 2 - Intenso", target: 35, reps: 10, rest: 5000 },
+            { name: "🔥 Série 3 - Pesado", target: 45, reps: 8, rest: 5000 },
+            { name: "⚡ Série 4 - Explosivo", target: 55, reps: 5, rest: 7000 },
+            { name: "🏆 Série 5 - FINAL!", target: 60, reps: 3, rest: 0 }
+        ];
+
+        const CONFIG = {
+            minForce: 5, // Força mínima para contar repetição
+            tolerance: 5, // Margem de erro (kg)
+            cooldownBetweenReps: 500, // Tempo entre reps (ms)
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let isConnected = false;
+        let isTraining = false;
+        let currentSetIndex = 0;
+        let currentReps = 0;
+        let totalRepsCompleted = 0;
+        let lastRepTime = 0;
+        let hasRepCounted = false;
+        let isResting = false;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const exerciseTitle = document.getElementById('exerciseTitle');
+        const exerciseTarget = document.getElementById('exerciseTarget');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const repsDisplay = document.getElementById('repsDisplay');
+        const currentSetDisplay = document.getElementById('currentSet');
+        const currentForceDisplay = document.getElementById('currentForceDisplay');
+        const totalRepsDisplay = document.getElementById('totalReps');
+        const messageElement = document.getElementById('message');
+        const startBtn = document.getElementById('startBtn');
+        const debugForce = document.getElementById('debugForce');
+        const debugSet = document.getElementById('debugSet');
+        const debugReps = document.getElementById('debugReps');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🏋️ Treino do Rocky iniciado!');
+            startForcePolling();
+            updateSetDisplay();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                            
+                            if (isTraining && !isResting) {
+                                checkRep();
+                            }
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDisplay();
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // LÓGICA DO TREINO
+        // ==========================================
+        
+        function startWorkout() {
+            if (!isTraining) {
+                isTraining = true;
+                startBtn.disabled = true;
+                messageElement.textContent = "💪 TREINO INICIADO! Vamos lá!";
+                messageElement.style.color = "#00ff00";
+            }
+        }
+
+        function checkRep() {
+            const currentSet = WORKOUT_SETS[currentSetIndex];
+            const now = Date.now();
+            
+            // Verifica se atingiu a força alvo
+            const targetMet = currentForce >= (currentSet.target - CONFIG.tolerance);
+            
+            if (targetMet && !hasRepCounted) {
+                if (now - lastRepTime > CONFIG.cooldownBetweenReps) {
+                    // Contou uma rep!
+                    currentReps++;
+                    totalRepsCompleted++;
+                    lastRepTime = now;
+                    hasRepCounted = true;
+                    
+                    repsDisplay.classList.add('rep-animation');
+                    messageElement.textContent = `💥 BOA! Rep ${currentReps}/${currentSet.reps}`;
+                    messageElement.style.color = "#00ff00";
+                    
+                    setTimeout(() => {
+                        repsDisplay.classList.remove('rep-animation');
+                    }, 500);
+                    
+                    // Verifica se completou a série
+                    if (currentReps >= currentSet.reps) {
+                        completeSet();
+                    }
+                }
+            }
+            
+            // Reseta flag quando solta
+            if (currentForce < CONFIG.minForce) {
+                hasRepCounted = false;
+            }
+        }
+
+        function completeSet() {
+            const currentSet = WORKOUT_SETS[currentSetIndex];
+            
+            messageElement.textContent = `✅ SÉRIE ${currentSetIndex + 1} COMPLETA!`;
+            messageElement.style.color = "#ffff00";
+            
+            // Verifica se tem mais séries
+            if (currentSetIndex < WORKOUT_SETS.length - 1) {
+                // Descanso
+                isResting = true;
+                const restTime = currentSet.rest;
+                let restRemaining = restTime / 1000;
+                
+                const restInterval = setInterval(() => {
+                    restRemaining--;
+                    messageElement.textContent = `😮‍💨 DESCANSE! Próxima série em ${restRemaining}s`;
+                    
+                    if (restRemaining <= 0) {
+                        clearInterval(restInterval);
+                        nextSet();
+                    }
+                }, 1000);
+                
+            } else {
+                // Treino completo!
+                workoutComplete();
+            }
+        }
+
+        function nextSet() {
+            currentSetIndex++;
+            currentReps = 0;
+            isResting = false;
+            updateSetDisplay();
+            messageElement.textContent = "💪 NOVA SÉRIE! Vamos lá!";
+            messageElement.style.color = "#00ff00";
+        }
+
+        function skipSet() {
+            if (!isTraining || currentSetIndex >= WORKOUT_SETS.length - 1) return;
+            
+            currentSetIndex++;
+            currentReps = 0;
+            isResting = false;
+            updateSetDisplay();
+            messageElement.textContent = "⏭️ Série pulada! Próxima série!";
+            messageElement.style.color = "#ffff00";
+        }
+
+        function workoutComplete() {
+            isTraining = false;
+            startBtn.disabled = false;
+            messageElement.innerHTML = "🏆 TREINO COMPLETO! Você é um campeão! 🏆";
+            messageElement.style.color = "#ffff00";
+            
+            setTimeout(() => {
+                alert(`🥇 PARABÉNS!\n\nVocê completou o Treino do Rocky!\nTotal de repetições: ${totalRepsCompleted}`);
+            }, 500);
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE DISPLAYS
+        // ==========================================
+        
+        function updateSetDisplay() {
+            const currentSet = WORKOUT_SETS[currentSetIndex];
+            
+            exerciseTitle.textContent = currentSet.name;
+            exerciseTarget.textContent = `Meta: ${currentSet.reps} repetições acima de ${currentSet.target} kg`;
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const currentSet = WORKOUT_SETS[currentSetIndex];
+            const percentage = (currentReps / currentSet.reps) * 100;
+            
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `${currentReps} / ${currentSet.reps}`;
+            repsDisplay.textContent = `${currentReps} / ${currentSet.reps}`;
+        }
+
+        function updateDisplay() {
+            currentForceDisplay.textContent = currentForce.toFixed(1) + ' kg';
+            currentSetDisplay.textContent = currentSetIndex + 1;
+            totalRepsDisplay.textContent = totalRepsCompleted;
+            
+            updateProgress();
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(1);
+            debugSet.textContent = currentSetIndex + 1;
+            debugReps.textContent = currentReps;
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        function resetWorkout() {
+            isTraining = false;
+            isResting = false;
+            currentSetIndex = 0;
+            currentReps = 0;
+            totalRepsCompleted = 0;
+            startBtn.disabled = false;
+            
+            updateSetDisplay();
+            messageElement.textContent = "💪 Prepare-se para treinar! 💪";
+            messageElement.style.color = "#ffffff";
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - WORKOUT_SETS: adicione/modifique séries
+           - CONFIG.tolerance: margem de erro
+           - CONFIG.cooldownBetweenReps: velocidade das reps
+           
+        2. ONDE MODIFICAR:
+           - checkRep(): lógica de contagem de repetições
+           - WORKOUT_SETS: crie treinos personalizados
+           - completeSet(): o que acontece entre séries
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Diferentes treinos (peito, costas, pernas)
+           - Sistema de pontos baseado em velocidade
+           - Gráfico de progresso por treino
+           - Modo "Drop Set" (diminui peso a cada série)
+           - Modo "Pirâmide" (aumenta e diminui peso)
+           - Salvar histórico de treinos
+           - Calculadora de 1RM (força máxima)
+           
+        4. DESAFIOS:
+           - Implementar "tempo sob tensão"
+           - Criar sistema de fadiga progressiva
+           - Adicionar exercícios isométricos (manter força por X segundos)
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = 20 + Math.random() * 40; }, 1000);
+    </script>
+</body>
+</html>

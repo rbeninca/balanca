@@ -1,0 +1,112 @@
+{
+  "forcas": [
+    {
+      "nivel": "fraca",
+      "intervalo": "0-20%",
+      "frases": [
+        {"texto": "Você apertou ou pediu desculpa pra célula de carga?", "voz": "sarcasmo_calmo", "efeito": "trombone_fail", "emoji": "😅🫥"},
+        {"texto": "Nem o barulho do clique teve vontade de existir.", "voz": "sarcasmo_calmo", "efeito": "silencio_curtinho", "emoji": "🤫🦗"},
+        {"texto": "Força detectada: 3% de preguiça, 97% de constrangimento.", "voz": "meme_internet", "efeito": "risada", "emoji": "😂📉"},
+        {"texto": "Se fosse uma guerra, você seria a bandeira branca.", "voz": "narrador_anime", "efeito": "fanfarra_fail", "emoji": "🏳️😔"},
+        {"texto": "O sensor perguntou: 'isso foi um toque ou um afeto?'", "voz": "arcade_overdrive", "efeito": "bip_suave", "emoji": "🤨💅"},
+        {"texto": "Tá tudo bem em casa? Porque força não tem.", "voz": "sarcasmo_calmo", "efeito": "risada_sarcastica", "emoji": "🫠🏡"},
+        {"texto": "Você apertou com mais medo que o Frodo segurando o anel.", "voz": "meme_internet", "efeito": "harpa_nerd", "emoji": "🧙‍♂️😬"},
+        {"texto": "A balança te respondeu: 'ai, para... cosquinha!'", "voz": "meme_internet", "efeito": "risada_curtinha", "emoji": "🤣🪶"},
+        {"texto": "O vento passou e o sensor pensou que era você tentando de novo.", "voz": "meme_internet", "efeito": "vento", "emoji": "💨😅"},
+        {"texto": "Força tão fraca que o sensor abriu o LinkedIn procurando outro emprego.", "voz": "sarcasmo_calmo", "efeito": "teclado", "emoji": "💻📄"},
+        {"texto": "Nem o Goku te colocaria no modo treino, te colocaria no modo tutorial.", "voz": "narrador_anime", "efeito": "anime_power_fail", "emoji": "🟦🐣"},
+        {"texto": "O sensor está confuso, ele achou que era um mosquito.", "voz": "meme_internet", "efeito": "mosquito", "emoji": "🦟❓"},
+        {"texto": "Cuidado! Pode quebrar a... calma, nada vai quebrar com isso.", "voz": "sarcasmo_calmo", "efeito": "silencio_curtinho", "emoji": "😏🫳"},
+        {"texto": "Isso foi um aperto ou uma tentativa de carinho?", "voz": "meme_internet", "efeito": "kiss_pop", "emoji": "😘🤏"},
+        {"texto": "O sensor disse: 'ufa, achei que ia trabalhar hoje!'", "voz": "sarcasmo_calmo", "efeito": "suspiro", "emoji": "😮‍💨👍"},
+        {"texto": "Essa força pareceu uma tentativa de apertar o botão de elevador com medo de acordar alguém.", "voz": "meme_internet", "efeito": "ding_suave", "emoji": "🛗🤫"}
+      ]
+    },
+    {
+      "nivel": "media",
+      "intervalo": "20-50%",
+      "frases": [
+        {"texto": "Agora sim, parece alguém abrindo um pote de maionese.", "voz": "sarcasmo_calmo", "efeito": "pop_tampa", "emoji": "🥫💪"},
+        {"texto": "Daria pra assustar um gato com essa força, talvez.", "voz": "meme_internet", "efeito": "miado", "emoji": "🐱😳"},
+        {"texto": "Isso é treino ou alongamento?", "voz": "arcade_overdrive", "efeito": "bip_arcade", "emoji": "🧘‍♂️🎮"},
+        {"texto": "Força detectada: modo tutorial.", "voz": "sarcasmo_calmo", "efeito": "notificacao", "emoji": "📚🍼"},
+        {"texto": "Parabéns! Quebra de recorde pessoal: 3 newtons e uma lágrima.", "voz": "meme_internet", "efeito": "aplausos_fracos", "emoji": "👏😭"},
+        {"texto": "A força do amor é maior... mas não a sua.", "voz": "sarcasmo_calmo", "efeito": "violino_triste", "emoji": "💘📉"},
+        {"texto": "Nem o Piccolo soltaria um Makankosappo tão fraco.", "voz": "narrador_anime", "efeito": "anime_ray_fail", "emoji": "🟣😒"},
+        {"texto": "Isso já dá pra abrir um pacote de salgadinho sem tesoura.", "voz": "meme_internet", "efeito": "salgadinho_rasga", "emoji": "🍟👐"},
+        {"texto": "Ok, o sensor acordou. Ainda cansado, mas acordou.", "voz": "sarcasmo_calmo", "efeito": "bocejo", "emoji": "🥱📟"},
+        {"texto": "Força de quem tá tentando impressionar e falhou bonito.", "voz": "meme_internet", "efeito": "risada_plateia", "emoji": "😆📸"},
+        {"texto": "Isso foi quase força, mas ainda cheira a procrastinação.", "voz": "sarcasmo_calmo", "efeito": "relogio_tick", "emoji": "🕒😴"},
+        {"texto": "O sensor piscou e achou que era lag.", "voz": "meme_internet", "efeito": "glitch_suave", "emoji": "🖥️🫥"},
+        {"texto": "Parabéns! Subiu de nível: agora é quase útil.", "voz": "arcade_overdrive", "efeito": "level_up", "emoji": "⬆️🟡"},
+        {"texto": "Parece força de quem tenta abrir o pote de Nescau e desiste.", "voz": "meme_internet", "efeito": "fail_curto", "emoji": "🍫😮‍💨"},
+        {"texto": "Nem o Naruto em modo preguiça faria menos esforço.", "voz": "narrador_anime", "efeito": "naruto_run_fail", "emoji": "🍜😴"}
+      ]
+    },
+    {
+      "nivel": "alta",
+      "intervalo": "50-80%",
+      "frases": [
+        {"texto": "Alguém brigou no trânsito hoje, hein?", "voz": "meme_internet", "efeito": "buzina", "emoji": "🚗😤"},
+        {"texto": "Isso já abre pote de azeitona sem ajuda.", "voz": "sarcasmo_calmo", "efeito": "pop_vidro", "emoji": "🫒🫳"},
+        {"texto": "O Thanos levantou uma sobrancelha.", "voz": "arcade_overdrive", "efeito": "whoosh", "emoji": "🟣🧐"},
+        {"texto": "A balança pensou que era o The Rock... por 0,2 segundos.", "voz": "meme_internet", "efeito": "risada", "emoji": "🪨🤣"},
+        {"texto": "Treina mais e chega no nível 'pai que mata barata de chinelo'.", "voz": "meme_internet", "efeito": "chinelo", "emoji": "🩴💥"},
+        {"texto": "O narrador de anime gritou: 'ELE ESTÁ AUMENTANDO O PODER!'", "voz": "narrador_anime", "efeito": "anime_power_up", "emoji": "⚡📈"},
+        {"texto": "Força boa, mas dava pra ter colocado mais drama.", "voz": "sarcasmo_calmo", "efeito": "suspiro", "emoji": "🎭😌"},
+        {"texto": "Isso sim é força de quem recebeu o boleto da faculdade.", "voz": "meme_internet", "efeito": "alerta_boleto", "emoji": "📄😱"},
+        {"texto": "O sensor tá suando frio, e não é de calor.", "voz": "sarcasmo_calmo", "efeito": "ping_suor", "emoji": "🥵💧"},
+        {"texto": "Força digna de quem joga Mario Kart e perde no final.", "voz": "meme_internet", "efeito": "kart_fail", "emoji": "🏎️🍌"},
+        {"texto": "Tá quase, campeão! Mais um pouco e o sensor pede férias.", "voz": "arcade_overdrive", "efeito": "aplausos_medios", "emoji": "🏅📆"},
+        {"texto": "A energia dessa força é igual à raiva contida numa fila de banco.", "voz": "meme_internet", "efeito": "fila_murmurio", "emoji": "🏦😤"},
+        {"texto": "Força detectada: 60% músculo, 40% drama.", "voz": "sarcasmo_calmo", "efeito": "violino_comedia", "emoji": "💪🎻"},
+        {"texto": "Essa força daria pra derrotar um chefe de fase nível médio.", "voz": "narrador_anime", "efeito": "arcade_hit", "emoji": "🕹️👾"},
+        {"texto": "A célula de carga te olhou e pensou: 'respeito parcial'.", "voz": "sarcasmo_calmo", "efeito": "hmm", "emoji": "🤨👍"}
+      ]
+    },
+    {
+      "nivel": "muito_alta",
+      "intervalo": "80-95%",
+      "frases": [
+        {"texto": "MEU DEUS, o chão vibrou — e a autoestima também!", "voz": "gritador_caótico", "efeito": "tremor", "emoji": "🌋😱"},
+        {"texto": "Sensor em estado crítico! Chamando reforços da Nasa.", "voz": "arcade_overdrive", "efeito": "alerta_sci_fi", "emoji": "🛰️🚨"},
+        {"texto": "Cuidado! A célula de carga mandou pedido de aposentadoria.", "voz": "meme_internet", "efeito": "carimbo", "emoji": "📄🧓"},
+        {"texto": "A força de quem recebeu um e-mail do SIGAA às 23h59.", "voz": "meme_internet", "efeito": "notificacao", "emoji": "📧🤬"},
+        {"texto": "Bruce Banner ligou pedindo parceria.", "voz": "narrador_anime", "efeito": "hulk_punch", "emoji": "💚💥"},
+        {"texto": "Essa veio direto do chakra da humilhação.", "voz": "meme_internet", "efeito": "whoosh_rapido", "emoji": "🌀💀"},
+        {"texto": "O sensor agora te respeita e te teme.", "voz": "sarcasmo_calmo", "efeito": "reverencia", "emoji": "🙇‍♂️😨"},
+        {"texto": "Isso foi tão forte que o Windows pediu pra atualizar.", "voz": "meme_internet", "efeito": "windows_popup", "emoji": "🪟🔁"},
+        {"texto": "Força nível 'empregado ouvindo feedback do chefe'.", "voz": "sarcasmo_calmo", "efeito": "tensao", "emoji": "🧑‍💼😬"},
+        {"texto": "A balança disse: 'não precisava me agredir!'", "voz": "meme_internet", "efeito": "ai_dor", "emoji": "😵‍💫🧊"},
+        {"texto": "O narrador gritou: 'ELE DESPERTOU O TERCEIRO OLHO!'", "voz": "narrador_anime", "efeito": "reverb_épico", "emoji": "👁️🔥"},
+        {"texto": "Força digna de final de novela mexicana.", "voz": "sarcasmo_calmo", "efeito": "tchaaan", "emoji": "🎭🌹"},
+        {"texto": "Cuidado! Essa força liberou DLC de respeito.", "voz": "arcade_overdrive", "efeito": "dlc_unlock", "emoji": "🆕🛡️"},
+        {"texto": "Sensor detectou vibração... ou será o medo?", "voz": "meme_internet", "efeito": "vibracao_baixa", "emoji": "📟😨"},
+        {"texto": "Você desbloqueou o modo 'aqui é Brasil!'", "voz": "gritador_caótico", "efeito": "torcida", "emoji": "🇧🇷🔥"}
+      ]
+    },
+    {
+      "nivel": "epica",
+      "intervalo": "95-100%",
+      "frases": [
+        {"texto": "CARACA! Isso não foi força, foi exorcismo!", "voz": "gritador_caótico", "efeito": "exorcismo_boom", "emoji": "💥🧿"},
+        {"texto": "Explodiu o multímetro, o sensor e a paciência de Deus.", "voz": "gritador_caótico", "efeito": "explosao", "emoji": "💣🙏"},
+        {"texto": "Força de quem ouviu 'vamos conversar'.", "voz": "meme_internet", "efeito": "batimento", "emoji": "💔🗣️"},
+        {"texto": "A célula de carga renunciou oficialmente ao emprego.", "voz": "sarcasmo_calmo", "efeito": "assinatura", "emoji": "🧾🚪"},
+        {"texto": "Parabéns! Você quebrou a balança e a linha do tempo.", "voz": "arcade_overdrive", "efeito": "tempo_quebra", "emoji": "⏳🌀"},
+        {"texto": "Modo Kratos: ligado. Sensor: desligado.", "voz": "narrador_anime", "efeito": "machado", "emoji": "🪓💀"},
+        {"texto": "A célula de carga tá em silêncio… isso é medo.", "voz": "sarcasmo_calmo", "efeito": "silencio_tenso", "emoji": "🤐👻"},
+        {"texto": "NASA entrou em contato: querem te estudar.", "voz": "meme_internet", "efeito": "radio", "emoji": "🛰️🧪"},
+        {"texto": "A Terra deslocou o eixo em 0,001° depois dessa.", "voz": "sarcasmo_calmo", "efeito": "rumble_profundo", "emoji": "🌎📐"},
+        {"texto": "Zeus gritou lá de cima: 'ABAIXA ESSA FORÇA, MORTAL!'", "voz": "gritador_caótico", "efeito": "trovao", "emoji": "⚡🧔‍♂️"},
+        {"texto": "A célula de carga viu Deus e pediu férias eternas.", "voz": "meme_internet", "efeito": "harpa_celestial", "emoji": "😇📦"},
+        {"texto": "Essa força foi tão absurda que gerou um novo CPF.", "voz": "sarcasmo_calmo", "efeito": "impresora", "emoji": "🖨️🆔"},
+        {"texto": "O universo travou e apareceu 'não respondendo'.", "voz": "meme_internet", "efeito": "erro_windows", "emoji": "🖥️⛔"},
+        {"texto": "Você atingiu o nível 'instabilidade quântica'.", "voz": "arcade_overdrive", "efeito": "glitch_pesado", "emoji": "🧬⚠️"},
+        {"texto": "O narrador de anime tá sem voz. Você venceu o roteirista.", "voz": "narrador_anime", "efeito": "fade_out_voz", "emoji": "🎙️💀"},
+        {"texto": "Parabéns, você é oficialmente o boss final.", "voz": "gritador_caótico", "efeito": "boss_theme", "emoji": "👑🔥"},
+        {"texto": "Explosão detectada! A balança foi pra Nárnia.", "voz": "meme_internet", "efeito": "portal", "emoji": "🌀🦁"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Beat Smasher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .game-area {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .beat-track {
+            width: 100%;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .beat-note {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: #ff00ff;
+            border-radius: 50%;
+            top: 10px;
+            box-shadow: 0 0 20px #ff00ff;
+            transition: left 0.05s linear;
+        }
+
+        .hit-zone {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 80px;
+            border: 3px dashed #00ff00;
+            border-radius: 10px;
+            background: rgba(0,255,0,0.1);
+        }
+
+        .score-display {
+            font-size: 3rem;
+            color: #ffff00;
+            margin: 20px 0;
+        }
+
+        .combo-display {
+            font-size: 2rem;
+            color: #ff00ff;
+            margin: 10px 0;
+        }
+
+        .status {
+            font-size: 1.5rem;
+            margin: 15px 0;
+            min-height: 40px;
+        }
+
+        button {
+            font-size: 1.3rem;
+            padding: 15px 30px;
+            background: #ff00ff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #cc00cc;
+            transform: scale(1.1);
+        }
+
+        .controls {
+            margin: 20px 0;
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        @keyframes perfect-hit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); color: #00ff00; }
+            100% { transform: scale(1); }
+        }
+
+        .perfect {
+            animation: perfect-hit 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 BEAT SMASHER 🎵</h1>
+        
+        <div class="game-area">
+            <div class="score-display">SCORE: <span id="score">0</span></div>
+            <div class="combo-display">COMBO: <span id="combo">0</span>x</div>
+            
+            <div class="beat-track">
+                <div class="hit-zone"></div>
+                <div class="beat-note" id="beatNote"></div>
+            </div>
+            
+            <div class="status" id="status">Aperte no ritmo! 🎶</div>
+        </div>
+
+        <div class="controls">
+            <button onclick="startGame()">▶️ Iniciar</button>
+            <button onclick="stopGame()">⏸️ Pausar</button>
+            <button onclick="resetGame()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Meta: <span id="debugTarget">-</span> kg</div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+            <div>Game: <span id="debugGame">Pausado</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            targetForce: 30, // Força alvo em kg
+            tolerance: 10, // Margem de erro em kg
+            bpm: 120, // Batidas por minuto
+            noteSpeed: 2, // Velocidade da nota (pixels por frame)
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let isConnected = false;
+        let isGameRunning = false;
+        let score = 0;
+        let combo = 0;
+        let notePosition = 0;
+        let lastHitTime = 0;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const scoreElement = document.getElementById('score');
+        const comboElement = document.getElementById('combo');
+        const statusElement = document.getElementById('status');
+        const beatNote = document.getElementById('beatNote');
+        const debugForce = document.getElementById('debugForce');
+        const debugTarget = document.getElementById('debugTarget');
+        const debugConnection = document.getElementById('debugConnection');
+        const debugGame = document.getElementById('debugGame');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎵 Beat Smasher iniciado!');
+            startForcePolling();
+            debugTarget.textContent = GAME_CONFIG.targetForce;
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81; // Converter para kg
+                            isConnected = true;
+                            
+                            // Verifica se acertou a nota
+                            if (isGameRunning) {
+                                checkHit();
+                            }
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // GAME LOOP
+        // ==========================================
+        
+        let gameInterval;
+
+        function startGame() {
+            if (isGameRunning) return;
+            
+            isGameRunning = true;
+            notePosition = -60; // Começa fora da tela à esquerda
+            
+            gameInterval = setInterval(() => {
+                if (isGameRunning) {
+                    // Move a nota
+                    notePosition += GAME_CONFIG.noteSpeed;
+                    beatNote.style.left = notePosition + 'px';
+                    
+                    // Se a nota passou da tela, reseta
+                    if (notePosition > window.innerWidth) {
+                        notePosition = -60;
+                        
+                        // Perdeu combo se não acertou
+                        if (Date.now() - lastHitTime > 2000) {
+                            combo = 0;
+                            updateCombo();
+                            statusElement.textContent = "❌ Perdeu o ritmo!";
+                        }
+                    }
+                }
+            }, 16); // ~60fps
+            
+            statusElement.textContent = "🎶 Tocando!";
+            debugGame.textContent = "▶️ Rodando";
+        }
+
+        function stopGame() {
+            isGameRunning = false;
+            clearInterval(gameInterval);
+            statusElement.textContent = "⏸️ Pausado";
+            debugGame.textContent = "⏸️ Pausado";
+        }
+
+        function resetGame() {
+            stopGame();
+            score = 0;
+            combo = 0;
+            notePosition = -60;
+            updateScore();
+            updateCombo();
+            statusElement.textContent = "Aperte no ritmo! 🎶";
+            beatNote.style.left = '-60px';
+        }
+
+        // ==========================================
+        // LÓGICA DE HIT
+        // ==========================================
+        
+        function checkHit() {
+            // Zona de acerto (centro da tela ±50px)
+            const hitZoneCenter = window.innerWidth / 2;
+            const hitZoneSize = 100;
+            
+            const isInZone = Math.abs(notePosition - hitZoneCenter) < hitZoneSize;
+            const hasForce = currentForce > 5; // Força mínima para detectar
+            
+            if (isInZone && hasForce) {
+                // Calcula precisão
+                const distance = Math.abs(notePosition - hitZoneCenter);
+                const precision = 1 - (distance / hitZoneSize);
+                
+                // Calcula força
+                const forceDiff = Math.abs(currentForce - GAME_CONFIG.targetForce);
+                const forceAccuracy = Math.max(0, 1 - (forceDiff / GAME_CONFIG.tolerance));
+                
+                // Pontuação baseada em precisão e força
+                const hitScore = Math.round(100 * precision * forceAccuracy);
+                
+                if (hitScore > 0) {
+                    score += hitScore * (combo + 1);
+                    combo++;
+                    lastHitTime = Date.now();
+                    
+                    updateScore();
+                    updateCombo();
+                    
+                    // Feedback visual
+                    if (hitScore > 80) {
+                        statusElement.textContent = "🌟 PERFEITO! +" + hitScore;
+                        statusElement.classList.add('perfect');
+                    } else if (hitScore > 50) {
+                        statusElement.textContent = "👍 BOM! +" + hitScore;
+                    } else {
+                        statusElement.textContent = "😐 OK... +" + hitScore;
+                    }
+                    
+                    setTimeout(() => {
+                        statusElement.classList.remove('perfect');
+                    }, 500);
+                    
+                    // Reseta nota
+                    notePosition = -60;
+                }
+            }
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE UI
+        // ==========================================
+        
+        function updateScore() {
+            scoreElement.textContent = score;
+        }
+
+        function updateCombo() {
+            comboElement.textContent = combo;
+            if (combo > 0) {
+                comboElement.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    comboElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(1);
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES DO JOGO:
+           - GAME_CONFIG.targetForce: força que o jogador deve aplicar
+           - GAME_CONFIG.bpm: velocidade da música
+           - GAME_CONFIG.noteSpeed: velocidade das notas
+           
+        2. ONDE MODIFICAR:
+           - checkHit(): lógica de detecção de acerto
+           - GAME_CONFIG: dificuldade e velocidade
+           - CSS: visual das notas e animações
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Adicionar múltiplas pistas
+           - Criar diferentes tipos de notas (longas, curtas)
+           - Sistema de vidas
+           - Power-ups
+           - Carregar músicas reais
+           - Modo multiplayer
+           
+        4. TESTANDO SEM CÉLULA:
+           - Simule força aleatória ou use teclado
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = Math.random() * 50; }, 100);
+    </script>
+</body>
+</html>
