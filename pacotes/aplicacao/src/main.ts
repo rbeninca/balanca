@@ -12,6 +12,34 @@ import type { StatusConexao } from './interface/navBar.js';
 let armazenamento: IArmazenamento = new ArmazenamentoLocal();
 let gerenciador = new GerenciadorSessao(armazenamento);
 
+class ContadorHz {
+  private contagem = 0;
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private handler = () => { this.contagem++; };
+
+  iniciar(fonte: { on: (e: string, cb: () => void) => void; off?: (e: string, cb: () => void) => void }) {
+    this.parar();
+    fonte.on('dados', this.handler);
+    this.timer = setInterval(() => {
+      const el = document.getElementById('nav-hz');
+      if (el) el.textContent = this.contagem > 0 ? `· ${this.contagem} Hz` : '';
+      this.contagem = 0;
+    }, 1000);
+    this.fonte = fonte;
+  }
+
+  parar() {
+    if (this.timer !== null) { clearInterval(this.timer); this.timer = null; }
+    this.fonte?.off?.('dados', this.handler);
+    this.fonte = null;
+    const el = document.getElementById('nav-hz');
+    if (el) el.textContent = '';
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private fonte: any = null;
+}
+
 const app = document.getElementById('app')!;
 
 type Tela = 'conexao' | 'medicao' | 'sessoes' | 'configuracoes' | 'firmware';
@@ -22,6 +50,7 @@ let fonteAtual:      any               = null;
 let enderecoAtual:   string | null     = null;
 let telaMedicaoAtual:  TelaMedicao  | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
+const contadorHz = new ContadorHz();
 
 function statusConexao(): StatusConexao | undefined {
   return enderecoAtual ? { endereco: enderecoAtual, conectado: true } : undefined;
@@ -41,6 +70,7 @@ function renderizar() {
 
   switch (telaAtual) {
     case 'conexao':
+      contadorHz.parar();
       new TelaConexao(
         app,
         (fonte) => {
@@ -60,6 +90,7 @@ function renderizar() {
             enderecoAtual = 'WebSerial';
           }
           gerenciador = new GerenciadorSessao(armazenamento);
+          contadorHz.iniciar(fonte);
           navegar('medicao');
         },
         () => navegar('sessoes'),
@@ -106,6 +137,7 @@ function renderizar() {
       break;
 
     case 'firmware':
+      contadorHz.parar();
       if (fonteAtual?.desconectar) {
         void fonteAtual.desconectar();
         fonteAtual = null;
