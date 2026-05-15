@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Reflexo Relâmpago</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: #000000;
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #ffff00;
+            text-shadow: 0 0 20px #ffff00;
+        }
+
+        .game-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .signal-light {
+            width: 300px;
+            height: 300px;
+            margin: 30px auto;
+            border-radius: 50%;
+            border: 5px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            font-weight: bold;
+            transition: all 0.1s;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .signal-red {
+            background: radial-gradient(circle, #ff0000, #880000);
+            box-shadow: 0 0 100px #ff0000;
+            animation: pulse-red 1s infinite;
+        }
+
+        .signal-green {
+            background: radial-gradient(circle, #00ff00, #008800);
+            box-shadow: 0 0 100px #00ff00;
+            animation: pulse-green 0.5s infinite;
+        }
+
+        .signal-waiting {
+            background: radial-gradient(circle, #333, #111);
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+        }
+
+        .instruction {
+            font-size: 1.8rem;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .reaction-time {
+            font-size: 3rem;
+            color: #00ffff;
+            margin: 20px 0;
+        }
+
+        button {
+            font-size: 1.3rem;
+            padding: 15px 30px;
+            background: #ffff00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #cccc00;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        .history {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .history-item {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .history-good {
+            background: rgba(0,255,0,0.3);
+            border: 1px solid #00ff00;
+        }
+
+        .history-ok {
+            background: rgba(255,255,0,0.3);
+            border: 1px solid #ffff00;
+        }
+
+        .history-bad {
+            background: rgba(255,0,0,0.3);
+            border: 1px solid #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ REFLEXO RELÂMPAGO ⚡</h1>
+        
+        <div class="game-area">
+            <div class="signal-light signal-waiting" id="signalLight">
+                <span id="lightText">AGUARDE</span>
+            </div>
+            
+            <div class="instruction" id="instruction">Aperte RÁPIDO quando ficar VERDE!</div>
+            
+            <div class="reaction-time" id="reactionTime">--- ms</div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">MELHOR TEMPO</div>
+                    <div class="stat-value" id="bestTime" style="color: #00ff00;">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">MÉDIA</div>
+                    <div class="stat-value" id="avgTime" style="color: #ffff00;">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">TENTATIVAS</div>
+                    <div class="stat-value" id="attempts" style="color: #00ffff;">0</div>
+                </div>
+            </div>
+
+            <div class="history" id="history"></div>
+        </div>
+
+        <div>
+            <button onclick="startTest()" id="startBtn">▶️ Começar Teste</button>
+            <button onclick="resetGame()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Estado: <span id="debugState">Aguardando</span></div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            minWaitTime: 2000, // Tempo mínimo de espera (ms)
+            maxWaitTime: 5000, // Tempo máximo de espera (ms)
+            minForce: 15, // Força mínima para detectar (kg)
+            falseStartPenalty: 500, // Penalidade por largada falsa (ms)
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let isConnected = false;
+        let gameState = 'waiting'; // 'waiting', 'red', 'green', 'result'
+        let greenTime = 0;
+        let reactionTime = 0;
+        let bestTime = Infinity;
+        let attempts = 0;
+        let reactionTimes = [];
+        let waitTimeout = null;
+        let hasPressed = false;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const signalLight = document.getElementById('signalLight');
+        const lightText = document.getElementById('lightText');
+        const instruction = document.getElementById('instruction');
+        const reactionTimeDisplay = document.getElementById('reactionTime');
+        const bestTimeDisplay = document.getElementById('bestTime');
+        const avgTimeDisplay = document.getElementById('avgTime');
+        const attemptsDisplay = document.getElementById('attempts');
+        const historyContainer = document.getElementById('history');
+        const startBtn = document.getElementById('startBtn');
+        const debugForce = document.getElementById('debugForce');
+        const debugState = document.getElementById('debugState');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('⚡ Reflexo Relâmpago iniciado!');
+            startForcePolling();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                            
+                            // Detecta pressão
+                            checkPress();
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDebug();
+            }, 10); // Polling rápido para precisão
+        }
+
+        // ==========================================
+        // LÓGICA DO JOGO
+        // ==========================================
+        
+        function startTest() {
+            if (gameState !== 'waiting') return;
+            
+            gameState = 'red';
+            hasPressed = false;
+            startBtn.disabled = true;
+            
+            // Sinal vermelho
+            signalLight.className = 'signal-light signal-red';
+            lightText.textContent = 'VERMELHO';
+            instruction.textContent = '🛑 NÃO APERTE AINDA!';
+            instruction.style.color = '#ff0000';
+            
+            // Aguarda tempo aleatório
+            const waitTime = Math.random() * (GAME_CONFIG.maxWaitTime - GAME_CONFIG.minWaitTime) + GAME_CONFIG.minWaitTime;
+            
+            waitTimeout = setTimeout(() => {
+                if (gameState === 'red') {
+                    // Sinal verde!
+                    gameState = 'green';
+                    greenTime = Date.now();
+                    
+                    signalLight.className = 'signal-light signal-green';
+                    lightText.textContent = 'VERDE!';
+                    instruction.textContent = '⚡ APERTE AGORA!';
+                    instruction.style.color = '#00ff00';
+                }
+            }, waitTime);
+        }
+
+        function checkPress() {
+            if (hasPressed || currentForce < GAME_CONFIG.minForce) return;
+            
+            hasPressed = true;
+            
+            if (gameState === 'red') {
+                // Largada falsa!
+                clearTimeout(waitTimeout);
+                reactionTime = -1;
+                attempts++;
+                
+                signalLight.className = 'signal-light signal-waiting';
+                lightText.textContent = 'FALSA!';
+                instruction.textContent = '❌ LARGADA FALSA! Apertou antes do verde!';
+                instruction.style.color = '#ff0000';
+                reactionTimeDisplay.textContent = 'FALSA!';
+                reactionTimeDisplay.style.color = '#ff0000';
+                
+                addToHistory(-1);
+                
+                setTimeout(() => {
+                    resetRound();
+                }, 2000);
+                
+            } else if (gameState === 'green') {
+                // Tempo de reação válido!
+                reactionTime = Date.now() - greenTime;
+                attempts++;
+                reactionTimes.push(reactionTime);
+                
+                // Atualiza melhor tempo
+                if (reactionTime < bestTime) {
+                    bestTime = reactionTime;
+                }
+                
+                // Feedback
+                let feedback = '';
+                let color = '';
+                
+                if (reactionTime < 200) {
+                    feedback = '🏆 INCRÍVEL! Reflexo de ninja!';
+                    color = '#00ff00';
+                } else if (reactionTime < 300) {
+                    feedback = '⚡ EXCELENTE! Muito rápido!';
+                    color = '#88ff00';
+                } else if (reactionTime < 400) {
+                    feedback = '👍 BOM! Tempo sólido!';
+                    color = '#ffff00';
+                } else if (reactionTime < 500) {
+                    feedback = '😐 OK... Dá pra melhorar!';
+                    color = '#ff8800';
+                } else {
+                    feedback = '🐌 DEVAGAR! Acorda aí!';
+                    color = '#ff0000';
+                }
+                
+                signalLight.className = 'signal-light signal-waiting';
+                lightText.textContent = reactionTime + 'ms';
+                instruction.textContent = feedback;
+                instruction.style.color = color;
+                reactionTimeDisplay.textContent = reactionTime + ' ms';
+                reactionTimeDisplay.style.color = color;
+                
+                addToHistory(reactionTime);
+                updateStats();
+                
+                setTimeout(() => {
+                    resetRound();
+                }, 2000);
+            }
+        }
+
+        function resetRound() {
+            gameState = 'waiting';
+            hasPressed = false;
+            startBtn.disabled = false;
+            
+            signalLight.className = 'signal-light signal-waiting';
+            lightText.textContent = 'AGUARDE';
+            instruction.textContent = 'Aperte RÁPIDO quando ficar VERDE!';
+            instruction.style.color = '#ffffff';
+        }
+
+        function addToHistory(time) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            if (time === -1) {
+                item.textContent = 'FALSA';
+                item.classList.add('history-bad');
+            } else if (time < 300) {
+                item.textContent = time + 'ms';
+                item.classList.add('history-good');
+            } else if (time < 400) {
+                item.textContent = time + 'ms';
+                item.classList.add('history-ok');
+            } else {
+                item.textContent = time + 'ms';
+                item.classList.add('history-bad');
+            }
+            
+            historyContainer.insertBefore(item, historyContainer.firstChild);
+            
+            // Mantém só os últimos 10
+            while (historyContainer.children.length > 10) {
+                historyContainer.removeChild(historyContainer.lastChild);
+            }
+        }
+
+        function updateStats() {
+            attemptsDisplay.textContent = attempts;
+            
+            if (bestTime < Infinity) {
+                bestTimeDisplay.textContent = bestTime + 'ms';
+            }
+            
+            if (reactionTimes.length > 0) {
+                const avg = reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length;
+                avgTimeDisplay.textContent = Math.round(avg) + 'ms';
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(1);
+            debugState.textContent = gameState;
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        function resetGame() {
+            clearTimeout(waitTimeout);
+            gameState = 'waiting';
+            hasPressed = false;
+            attempts = 0;
+            bestTime = Infinity;
+            reactionTimes = [];
+            reactionTime = 0;
+            
+            resetRound();
+            
+            bestTimeDisplay.textContent = '-';
+            avgTimeDisplay.textContent = '-';
+            attemptsDisplay.textContent = '0';
+            reactionTimeDisplay.textContent = '--- ms';
+            reactionTimeDisplay.style.color = '#00ffff';
+            historyContainer.innerHTML = '';
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - GAME_CONFIG.minWaitTime: tempo mínimo antes do verde
+           - GAME_CONFIG.maxWaitTime: tempo máximo antes do verde
+           - GAME_CONFIG.minForce: sensibilidade de detecção
+           
+        2. ONDE MODIFICAR:
+           - checkPress(): lógica de detecção e feedback
+           - Thresholds de tempo: mude os valores de "rápido/lento"
+           - CSS: cores e animações dos sinais
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Modo "Sequência": múltiplos sinais seguidos
+           - Modo "Força Variável": exigir forças diferentes
+           - Ranking online
+           - Modo multiplayer (quem reage primeiro)
+           - Adicionar sons
+           - Modo treino com avisos
+           - Gráfico de evolução
+           
+        4. DESAFIOS:
+           - Implementar sistema de vidas (3 falsas = game over)
+           - Criar diferentes níveis de dificuldade
+           - Adicionar distrações visuais
+        */
+        
+        // SIMULAÇÃO (descomente para testar com teclado):
+        // document.addEventListener('keydown', () => { currentForce = 30; });
+        // document.addEventListener('keyup', () => { currentForce = 0; });
+    </script>
+</body>
+</html>

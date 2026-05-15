@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Martelo de Thor</title>
+    <link rel="stylesheet" href="martelo-estilo.css">
+</head>
+<body>
+    <div id="vertical-force-bar"></div>
+    
+    <!-- Indicadores de força na barra vertical -->
+    <div class="force-indicator">
+        <div id="force-marker-current" class="force-marker-current">
+            <div class="force-label-current">⬤ Atual: <span id="label-force-current">0 kg</span></div>
+        </div>
+        <div id="force-marker-max" class="force-marker-max">
+            <div class="force-label-max">▲ Máxima: <span id="label-force-max">0 kg</span></div>
+        </div>
+    </div>
+
+    <!-- Ranking Markers -->
+    <div id="ranking-markers-container">
+        <div id="rank-marker-1" class="rank-marker"></div>
+        <div id="rank-marker-2" class="rank-marker"></div>
+        <div id="rank-marker-3" class="rank-marker"></div>
+    </div>
+    
+    <div class="container" id="gameContainer">
+
+        <!-- Tela de Início -->
+        <div id="start-screen" class="screen active">
+            <button id="settingsButton" class="btn-settings">⚙️</button>
+            <h1 id="title">⚡ MARTELO DE THOR ⚡</h1>
+            <input type="text" id="playerName" placeholder="Digite seu nome, Viking!">
+            <button id="startButton">INICIAR DESAFIO</button>
+        </div>
+
+        <!-- Tela de Configurações -->
+        <div id="settings-screen" class="screen">
+            <h2>⚙️ Configurações do Jogo</h2>
+            <div class="settings-container">
+                <div class="setting-item">
+                    <label for="maxForceInput">Força Máxima do Display (kg):</label>
+                    <input type="number" id="maxForceInput" class="settings-input">
+                    <div class="dynamic-max-container">
+                        <input type="checkbox" id="dynamicMaxForceCheckbox">
+                        <label for="dynamicMaxForceCheckbox">Usar valor máximo do ranking (dinâmico)</label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Níveis de Deboche (% da Força Máxima):</label>
+                    <div class="threshold-grid">
+                        <span>Fraca:</span><input type="number" id="threshold-fraca" class="settings-input-small" placeholder="0-20">
+                        <span>Média:</span><input type="number" id="threshold-media" class="settings-input-small" placeholder="20-50">
+                        <span>Alta:</span><input type="number" id="threshold-alta" class="settings-input-small" placeholder="50-80">
+                        <span>Muito Alta:</span><input type="number" id="threshold-muito_alta" class="settings-input-small" placeholder="80-95">
+                        <span>Épica:</span><input type="number" id="threshold-epica" class="settings-input-small" placeholder="95-100">
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button id="saveSettingsButton">Salvar e Voltar</button>
+            </div>
+        </div>
+
+        <!-- Tela do Jogo -->
+        <div id="game-screen" class="screen">
+            <div id="countdown"></div>
+            <div id="game-ui">
+                <div id="currentPlayer"></div>
+                <div id="forceContainer">
+                    <div id="forceDisplay">0.0 kg</div>
+                    <div id="newtonDisplay">(≈ 0.0 N)</div>
+                </div>
+                <div id="progressBarContainer">
+                    <div id="progressBar"></div>
+                </div>
+                <div id="attempt-message"></div> <!-- New element for attempt message -->
+            </div>
+            <!-- Gráfico de curva de força -->
+            <div id="graphContainer">
+                <canvas id="forceGraphCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Tela de Resultados -->
+        <div id="results-screen" class="screen">
+            <h2>FORÇA MÁXIMA</h2>
+            <div id="resultForce"></div>
+            <div id="motivationalMessage"></div>
+            <div class="player-name-edit" style="margin: 20px 0;">
+                <input type="text" id="playerNameResult" placeholder="Edite seu nome" style="padding: 10px; font-size: 1.2rem; text-align: center; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+            <div class="action-buttons">
+                <button id="playAgainButton">Tentar Novamente</button>
+                <button id="showRankingButton">Ver Ranking</button>
+            </div>
+        </div>
+
+        <!-- Tela de Ranking -->
+        <div id="ranking-screen" class="screen">
+            <h2>RANKING DE ASGARD</h2>
+            <div class="ranking-table-container">
+                <table id="rankingTable">
+                    <thead>
+                        <tr>
+                            <th>Pos.</th>
+                            <th>Nome</th>
+                            <th>Força</th>
+                            <th>Curva</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas do ranking serão inseridas aqui -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="ranking-actions">
+                <button id="clearRankingButton" class="btn-small-perigo">🗑️ Limpar Ranking</button>
+            </div>
+            <div class="action-buttons">
+                <button id="backToStartButton">Voltar ao Início</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Efeitos Sonoros -->
+    <audio id="sound-countdown" src="sounds/launches/rlaunch.wav"></audio> <!-- Placeholder -->
+    <audio id="sound-go" src="sounds/nivel3_trovao-medio.mp3"></audio> <!-- Placeholder -->
+    <audio id="sound-level-1" src="sounds/launches/iceball.wav"></audio> <!-- Placeholder -->
+    <audio id="sound-level-2" src="sounds/nivel2_metalico.mp3"></audio>
+    <audio id="sound-level-3" src="sounds/nivel3_trovao-medio.mp3"></audio>
+    <audio id="sound-level-4" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
+    <audio id="sound-level-5" src="sounds/launches/slimeball.wav"></audio> <!-- Placeholder -->
+    <audio id="sound-level-6" src="sounds/launches/flaunch.wav"></audio> <!-- Placeholder -->
+    <audio id="sound-result"></audio> <!-- Placeholder, just to have a file -->
+
+    <script src="martelo-do-thor.js"></script>
+
+    <!-- Modal de Alerta de Sobrecarga -->
+    <div id="modal-alerta-sobrecarga-martelo" class="modal-sobrecarga">
+        <div class="modal-sobrecarga-content">
+            <div class="modal-sobrecarga-header">
+                <span class="modal-sobrecarga-icone">⚠️</span>
+                <h2 id="modal-sobrecarga-titulo-martelo">ATENÇÃO: APROXIMANDO DO LIMITE!</h2>
+            </div>
+            <div class="modal-sobrecarga-body">
+                <div class="modal-sobrecarga-display">
+                    <div class="modal-sobrecarga-valor">
+                        <span class="modal-sobrecarga-label">Carga Atual:</span>
+                        <span id="modal-sobrecarga-valor-atual-martelo" class="modal-sobrecarga-numero">---</span>
+                    </div>
+                    <div class="modal-sobrecarga-barra">
+                        <div id="modal-sobrecarga-barra-progresso-martelo" class="modal-sobrecarga-barra-fill"></div>
+                        <span id="modal-sobrecarga-percentual-martelo" class="modal-sobrecarga-percentual-texto">0%</span>
+                    </div>
+                    <div class="modal-sobrecarga-limite">
+                        <span class="modal-sobrecarga-label">Limite Máximo:</span>
+                        <span id="modal-sobrecarga-valor-limite-martelo" class="modal-sobrecarga-numero">---</span>
+                    </div>
+                </div>
+                <div class="modal-sobrecarga-aviso">
+                    <p id="modal-sobrecarga-mensagem-martelo">
+                        ⚠️ Você está próximo do limite da célula de carga!<br>
+                        <strong>RISCO DE DANOS PERMANENTES AO EQUIPAMENTO!</strong>
+                    </p>
+                    <p class="modal-sobrecarga-instrucao">
+                        Reduza a carga imediatamente para evitar a destruição da célula.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-sobrecarga-footer">
+                <button onclick="fecharModalSobrecargaMartelo()" class="btn-modal-sobrecarga-ok">
+                    Entendi - Fechar Alerta
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
