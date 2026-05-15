@@ -72,6 +72,7 @@ export class TelaMedicao {
     private onConexao:       () => void,
     private onSessoes:       () => void,
     private onConfiguracoes: () => void,
+    private onJogos:         () => void,
     private onFirmware:      () => void,
     private status?:         StatusConexao,
   ) {
@@ -84,7 +85,7 @@ export class TelaMedicao {
 
   private renderizar(container: HTMLElement) {
     container.innerHTML = `
-      ${navHtml({ ativo: 'medicao', onConexao: this.onConexao, onSessoes: this.onSessoes, onConfiguracoes: this.onConfiguracoes, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
+      ${navHtml({ ativo: 'medicao', onConexao: this.onConexao, onMedicao: () => {}, onJogos: this.onJogos, onSessoes: this.onSessoes, onConfiguracoes: this.onConfiguracoes, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
 
       <div class="card">
         <div class="leitura-principal">
@@ -201,6 +202,8 @@ export class TelaMedicao {
     bindNav(container, {
       ativo:    'medicao',
       onConexao: navComDestruir(this.onConexao),
+      onMedicao: () => {},
+      onJogos: navComDestruir(this.onJogos),
       onSessoes: navComDestruir(this.onSessoes),
       onFirmware: navComDestruir(this.onFirmware),
       ...(this.onConfiguracoes && { onConfiguracoes: navComDestruir(this.onConfiguracoes) }),

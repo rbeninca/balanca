@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⛰️ Escalada do Jaraguá</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #654321 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .mountain-area {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(180deg, #87CEEB 0%, #8B7355 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .mountain-path {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 100%;
+            background: linear-gradient(180deg, #FFD700 0%, #8B4513 100%);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .climber {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            transition: bottom 0.3s ease-out;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+        }
+
+        .checkpoint {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: white;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkpoint-label {
+            position: absolute;
+            right: 70px;
+            color: white;
+            font-size: 1rem;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .stamina-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .stamina-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+            transition: width 0.3s;
+        }
+
+        .stamina-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .message {
+            font-size: 1.3rem;
+            min-height: 40px;
+            margin: 15px 0;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 12px 25px;
+            background: #228B22;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #1a6b1a;
+            transform: scale(1.05);
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⛰️ ESCALADA DO PICO DO JARAGUÁ ⛰️</h1>
+        
+        <div class="mountain-area">
+            <div class="mountain-path"></div>
+            
+            <!-- Checkpoints -->
+            <div class="checkpoint" style="bottom: 20%;">
+                <div class="checkpoint-label">250m 🚩</div>
+            </div>
+            <div class="checkpoint" style="bottom: 40%;">
+                <div class="checkpoint-label">500m 🚩</div>
+            </div>
+            <div class="checkpoint" style="bottom: 60%;">
+                <div class="checkpoint-label">750m 🚩</div>
+            </div>
+            <div class="checkpoint" style="bottom: 80%;">
+                <div class="checkpoint-label">1000m 🏆</div>
+            </div>
+            
+            <!-- Escalador -->
+            <div class="climber" id="climber">🧗</div>
+        </div>
+
+        <div class="stamina-bar">
+            <div class="stamina-fill" id="staminaFill"></div>
+            <div class="stamina-text" id="staminaText">100%</div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-box">
+                <div class="stat-label">ALTITUDE</div>
+                <div class="stat-value" id="altitude" style="color: #ffff00;">0m</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">FORÇA</div>
+                <div class="stat-value" id="force" style="color: #00ff00;">0 kg</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">STAMINA</div>
+                <div class="stat-value" id="stamina" style="color: #ff6b00;">100%</div>
+            </div>
+        </div>
+
+        <div class="message" id="message">Aperte para escalar! ⛰️</div>
+
+        <div>
+            <button onclick="startClimb()">🏔️ Começar Escalada</button>
+            <button onclick="resetClimb()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Altitude: <span id="debugAltitude">0</span>m | Stamina: <span id="debugStamina">100</span>%</div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            maxAltitude: 1000, // Altura máxima em metros
+            minForce: 10, // Força mínima para escalar (kg)
+            climbRate: 0.5, // Metros por kg de força
+            staminaDecay: 0.3, // Stamina perdida por segundo
+            staminaRecovery: 0.5, // Stamina recuperada por segundo (sem escalar)
+            maxStamina: 100,
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let altitude = 0;
+        let stamina = 100;
+        let isClimbing = false;
+        let isConnected = false;
+        let startTime = 0;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const climber = document.getElementById('climber');
+        const altitudeDisplay = document.getElementById('altitude');
+        const forceDisplay = document.getElementById('force');
+        const staminaDisplay = document.getElementById('stamina');
+        const staminaFill = document.getElementById('staminaFill');
+        const staminaText = document.getElementById('staminaText');
+        const messageElement = document.getElementById('message');
+        const debugForce = document.getElementById('debugForce');
+        const debugAltitude = document.getElementById('debugAltitude');
+        const debugStamina = document.getElementById('debugStamina');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('⛰️ Escalada do Jaraguá iniciada!');
+            startForcePolling();
+            startGameLoop();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // GAME LOOP
+        // ==========================================
+        
+        function startGameLoop() {
+            setInterval(() => {
+                if (isClimbing && stamina > 0) {
+                    updateClimbing();
+                    updateStamina();
+                    updateDisplay();
+                    checkVictory();
+                }
+            }, 50); // 20 FPS
+        }
+
+        function updateClimbing() {
+            if (currentForce >= GAME_CONFIG.minForce && stamina > 0) {
+                // Escala baseado na força
+                const climbSpeed = (currentForce - GAME_CONFIG.minForce) * GAME_CONFIG.climbRate * 0.05;
+                altitude = Math.min(GAME_CONFIG.maxAltitude, altitude + climbSpeed);
+                
+                // Consome stamina ao escalar
+                stamina -= GAME_CONFIG.staminaDecay * 0.05;
+                stamina = Math.max(0, stamina);
+                
+            } else if (currentForce < 5) {
+                // Recupera stamina quando não está escalando
+                stamina += GAME_CONFIG.staminaRecovery * 0.05;
+                stamina = Math.min(GAME_CONFIG.maxStamina, stamina);
+            }
+        }
+
+        function updateStamina() {
+            if (stamina <= 0) {
+                messageElement.textContent = "😫 Sem stamina! Descanse um pouco!";
+                messageElement.style.color = "#ff0000";
+            } else if (stamina < 30) {
+                messageElement.textContent = "⚠️ Stamina baixa! Vá devagar!";
+                messageElement.style.color = "#ff8800";
+            } else if (currentForce >= GAME_CONFIG.minForce) {
+                messageElement.textContent = "🧗 Escalando! Continue!";
+                messageElement.style.color = "#00ff00";
+            } else if (currentForce < 5) {
+                messageElement.textContent = "😌 Descansando... Stamina recuperando";
+                messageElement.style.color = "#00ffff";
+            }
+        }
+
+        function updateDisplay() {
+            // Atualiza posição do escalador (0-480px)
+            const percentage = altitude / GAME_CONFIG.maxAltitude;
+            const position = 20 + (percentage * 460); // 20px a 480px
+            climber.style.bottom = position + 'px';
+            
+            // Atualiza displays
+            altitudeDisplay.textContent = Math.floor(altitude) + 'm';
+            forceDisplay.textContent = currentForce.toFixed(1) + ' kg';
+            staminaDisplay.textContent = Math.floor(stamina) + '%';
+            
+            // Atualiza barra de stamina
+            staminaFill.style.width = stamina + '%';
+            staminaText.textContent = Math.floor(stamina) + '%';
+            
+            // Cor da stamina
+            if (stamina > 60) {
+                staminaFill.style.background = 'linear-gradient(90deg, #00ff00, #88ff00)';
+            } else if (stamina > 30) {
+                staminaFill.style.background = 'linear-gradient(90deg, #ffff00, #ffaa00)';
+            } else {
+                staminaFill.style.background = 'linear-gradient(90deg, #ff0000, #ff6600)';
+            }
+        }
+
+        function checkVictory() {
+            if (altitude >= GAME_CONFIG.maxAltitude) {
+                isClimbing = false;
+                const time = ((Date.now() - startTime) / 1000).toFixed(1);
+                messageElement.innerHTML = `🏆 VITÓRIA! Você conquistou o pico em ${time}s! 🏆`;
+                messageElement.style.color = "#ffff00";
+                climber.textContent = '🏆';
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(2);
+            debugAltitude.textContent = Math.floor(altitude);
+            debugStamina.textContent = Math.floor(stamina);
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        // ==========================================
+        // CONTROLES
+        // ==========================================
+        
+        function startClimb() {
+            if (!isClimbing) {
+                isClimbing = true;
+                startTime = Date.now();
+                messageElement.textContent = "🏔️ Escalada iniciada! Vamos lá!";
+                messageElement.style.color = "#ffffff";
+            }
+        }
+
+        function resetClimb() {
+            isClimbing = false;
+            altitude = 0;
+            stamina = 100;
+            climber.style.bottom = '20px';
+            climber.textContent = '🧗';
+            messageElement.textContent = "Aperte para escalar! ⛰️";
+            messageElement.style.color = "#ffffff";
+            updateDisplay();
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - GAME_CONFIG.climbRate: velocidade de escalada
+           - GAME_CONFIG.staminaDecay: quão rápido cansa
+           - GAME_CONFIG.staminaRecovery: velocidade de recuperação
+           - GAME_CONFIG.minForce: força mínima para mover
+           
+        2. ONDE MODIFICAR:
+           - updateClimbing(): mecânica de escalada e stamina
+           - checkVictory(): condição de vitória
+           - CSS: visual da montanha e escalador
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Obstáculos na montanha (pedras, vento)
+           - Diferentes tipos de terreno (gelo, rocha, terra)
+           - Power-ups (energia extra, boost)
+           - Modo multiplayer (corrida)
+           - Diferentes montanhas (fácil/médio/difícil)
+           - Sistema de quedas
+           - Clima variável (chuva, neve)
+           
+        4. DESAFIOS:
+           - Implementar quedas se força for muito alta repentinamente
+           - Criar sistema de pontos baseado em tempo
+           - Adicionar "avalanches" aleatórias
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = 10 + Math.random() * 30; }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Precisão Extrema</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .game-area {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+        }
+
+        .target-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ff6b00;
+            text-shadow: 0 0 30px #ff6b00;
+            margin: 20px 0;
+        }
+
+        .current-force {
+            font-size: 3rem;
+            margin: 20px 0;
+        }
+
+        .precision-bar {
+            width: 100%;
+            height: 40px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            position: relative;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+
+        .precision-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.1s;
+            border-radius: 20px;
+        }
+
+        .precision-marker {
+            position: absolute;
+            width: 4px;
+            height: 100%;
+            background: white;
+            box-shadow: 0 0 10px white;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .score-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .score-item {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            min-height: 50px;
+            margin: 20px 0;
+        }
+
+        button {
+            font-size: 1.3rem;
+            padding: 15px 30px;
+            background: #ff6b00;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #cc5500;
+            transform: scale(1.1);
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        @keyframes bullseye {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5) rotate(360deg); }
+            100% { transform: scale(1); }
+        }
+
+        .bullseye-animation {
+            animation: bullseye 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 PRECISÃO EXTREMA 🎯</h1>
+        
+        <div class="game-area">
+            <div style="font-size: 1.5rem; margin-bottom: 10px;">ALVO:</div>
+            <div class="target-display" id="targetDisplay">25.0 kg</div>
+            
+            <div style="font-size: 1.2rem; margin-top: 20px;">SUA FORÇA:</div>
+            <div class="current-force" id="currentForce">0.0 kg</div>
+            
+            <div class="precision-bar">
+                <div class="precision-fill" id="precisionFill"></div>
+                <div class="precision-marker"></div>
+            </div>
+            
+            <div class="message" id="message">Tente acertar o alvo! 🎯</div>
+            
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-label">ACERTOS</div>
+                    <div class="score-value" id="hits" style="color: #00ff00;">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">TENTATIVAS</div>
+                    <div class="score-value" id="attempts" style="color: #ffff00;">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">PRECISÃO</div>
+                    <div class="score-value" id="accuracy" style="color: #ff6b00;">--%</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <button onclick="newTarget()">🎲 Novo Alvo</button>
+            <button onclick="resetGame()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Alvo: <span id="debugTarget">0</span> kg | Diferença: <span id="debugDiff">0</span> kg</div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            minTarget: 10, // Alvo mínimo em kg
+            maxTarget: 80, // Alvo máximo em kg
+            tolerance: 2.0, // Margem de erro para acerto (±2 kg)
+            cooldown: 1000, // Tempo entre tentativas (ms)
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let targetForce = 25;
+        let isConnected = false;
+        let hits = 0;
+        let attempts = 0;
+        let lastAttemptTime = 0;
+        let hasAttempted = false;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const targetDisplay = document.getElementById('targetDisplay');
+        const currentForceDisplay = document.getElementById('currentForce');
+        const precisionFill = document.getElementById('precisionFill');
+        const messageElement = document.getElementById('message');
+        const hitsElement = document.getElementById('hits');
+        const attemptsElement = document.getElementById('attempts');
+        const accuracyElement = document.getElementById('accuracy');
+        const debugForce = document.getElementById('debugForce');
+        const debugTarget = document.getElementById('debugTarget');
+        const debugDiff = document.getElementById('debugDiff');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎯 Precisão Extrema iniciado!');
+            startForcePolling();
+            updateTargetDisplay();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                            
+                            updateDisplay();
+                            checkPrecision();
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // LÓGICA DO JOGO
+        // ==========================================
+        
+        function checkPrecision() {
+            const diff = Math.abs(currentForce - targetForce);
+            const now = Date.now();
+            
+            // Verifica se está aplicando força significativa
+            if (currentForce > 5 && !hasAttempted) {
+                if (now - lastAttemptTime > GAME_CONFIG.cooldown) {
+                    hasAttempted = true;
+                    attempts++;
+                    lastAttemptTime = now;
+                    
+                    // Verifica se acertou
+                    if (diff <= GAME_CONFIG.tolerance) {
+                        // ACERTOU! 🎯
+                        hits++;
+                        messageElement.innerHTML = "🎯 PERFEITO! Diferença: " + diff.toFixed(2) + " kg";
+                        messageElement.style.color = "#00ff00";
+                        targetDisplay.classList.add('bullseye-animation');
+                        
+                        setTimeout(() => {
+                            targetDisplay.classList.remove('bullseye-animation');
+                            newTarget();
+                        }, 1500);
+                        
+                    } else {
+                        // Errou
+                        const direction = currentForce > targetForce ? "MUITA" : "POUCA";
+                        messageElement.innerHTML = `❌ ${direction} força! Diferença: ${diff.toFixed(2)} kg`;
+                        messageElement.style.color = "#ff0000";
+                    }
+                    
+                    updateScores();
+                }
+            }
+            
+            // Reseta flag quando solta
+            if (currentForce < 1) {
+                hasAttempted = false;
+            }
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE DISPLAYS
+        // ==========================================
+        
+        function updateDisplay() {
+            currentForceDisplay.textContent = currentForce.toFixed(1) + ' kg';
+            
+            // Atualiza barra de precisão
+            const percentage = Math.min(100, (currentForce / (GAME_CONFIG.maxTarget * 1.2)) * 100);
+            precisionFill.style.width = percentage + '%';
+            
+            // Cor baseada na proximidade do alvo
+            const diff = Math.abs(currentForce - targetForce);
+            if (diff <= GAME_CONFIG.tolerance) {
+                currentForceDisplay.style.color = '#00ff00';
+            } else if (diff <= GAME_CONFIG.tolerance * 2) {
+                currentForceDisplay.style.color = '#ffff00';
+            } else {
+                currentForceDisplay.style.color = '#ffffff';
+            }
+        }
+
+        function updateTargetDisplay() {
+            targetDisplay.textContent = targetForce.toFixed(1) + ' kg';
+            debugTarget.textContent = targetForce.toFixed(1);
+        }
+
+        function updateScores() {
+            hitsElement.textContent = hits;
+            attemptsElement.textContent = attempts;
+            
+            if (attempts > 0) {
+                const accuracy = (hits / attempts * 100).toFixed(0);
+                accuracyElement.textContent = accuracy + '%';
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(2);
+            const diff = Math.abs(currentForce - targetForce);
+            debugDiff.textContent = diff.toFixed(2);
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        // ==========================================
+        // CONTROLES DO JOGO
+        // ==========================================
+        
+        function newTarget() {
+            targetForce = Math.random() * (GAME_CONFIG.maxTarget - GAME_CONFIG.minTarget) + GAME_CONFIG.minTarget;
+            targetForce = Math.round(targetForce * 2) / 2; // Arredonda para 0.5
+            updateTargetDisplay();
+            messageElement.textContent = "Tente acertar o novo alvo! 🎯";
+            messageElement.style.color = "#ffffff";
+        }
+
+        function resetGame() {
+            hits = 0;
+            attempts = 0;
+            hasAttempted = false;
+            newTarget();
+            updateScores();
+            messageElement.textContent = "Jogo resetado! Boa sorte! 🎯";
+            messageElement.style.color = "#ffffff";
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - GAME_CONFIG.tolerance: quão preciso precisa ser (menor = mais difícil)
+           - GAME_CONFIG.minTarget/maxTarget: faixa de alvos
+           - GAME_CONFIG.cooldown: tempo entre tentativas
+           
+        2. ONDE MODIFICAR:
+           - checkPrecision(): lógica de acerto/erro
+           - newTarget(): como gerar novos alvos
+           - CSS: cores e animações
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Modo progressivo (alvos cada vez menores)
+           - Tempo limite por alvo
+           - Ranking de melhores precisões
+           - Modos de dificuldade (fácil/médio/difícil)
+           - Alvos em movimento (mudam com o tempo)
+           - Sistema de vidas
+           - Sequências de alvos (mini-game)
+           
+        4. DESAFIOS AVANÇADOS:
+           - Criar modo "Contra o Relógio"
+           - Implementar alvos aleatórios a cada X segundos
+           - Fazer alvos que exigem manter a força por X tempo
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = Math.random() * 60; }, 200);
+    </script>
+</body>
+</html>

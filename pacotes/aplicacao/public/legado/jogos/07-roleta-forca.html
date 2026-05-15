@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Roleta da Força</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #8e0e00 0%, #1f1c18 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+        }
+
+        .casino-area {
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            border: 3px solid #ffd700;
+        }
+
+        .roulette-wheel {
+            width: 400px;
+            height: 400px;
+            margin: 30px auto;
+            border-radius: 50%;
+            border: 10px solid #ffd700;
+            position: relative;
+            background: conic-gradient(
+                #ff0000 0deg 72deg,
+                #00ff00 72deg 144deg,
+                #0000ff 144deg 216deg,
+                #ffff00 216deg 288deg,
+                #ff00ff 288deg 360deg
+            );
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        .roulette-pointer {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid #ffd700;
+            filter: drop-shadow(0 0 10px #ffd700);
+        }
+
+        .roulette-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #333, #000);
+            border-radius: 50%;
+            border: 5px solid #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .prize-table {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .prize-box {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid;
+            font-size: 1.2rem;
+        }
+
+        .prize-red { background: rgba(255,0,0,0.2); border-color: #ff0000; }
+        .prize-green { background: rgba(0,255,0,0.2); border-color: #00ff00; }
+        .prize-blue { background: rgba(0,0,255,0.2); border-color: #0000ff; }
+        .prize-yellow { background: rgba(255,255,0,0.2); border-color: #ffff00; }
+        .prize-magenta { background: rgba(255,0,255,0.2); border-color: #ff00ff; }
+
+        .force-meter {
+            width: 100%;
+            height: 50px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 25px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .force-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+            transition: width 0.1s;
+        }
+
+        .force-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ffd700;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .message {
+            font-size: 1.8rem;
+            min-height: 60px;
+            margin: 20px 0;
+        }
+
+        button {
+            font-size: 1.5rem;
+            padding: 15px 40px;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        @keyframes jackpot {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .jackpot-animation {
+            animation: jackpot 0.5s ease-out 3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 ROLETA DA FORÇA 🎰</h1>
+        
+        <div class="casino-area">
+            <div style="position: relative;">
+                <div class="roulette-pointer"></div>
+                <div class="roulette-wheel" id="roulette">
+                    <div class="roulette-center">🎲</div>
+                </div>
+            </div>
+
+            <div class="force-meter">
+                <div class="force-fill" id="forceFill"></div>
+                <div class="force-text" id="forceText">0 kg</div>
+            </div>
+
+            <div class="message" id="message">💪 Aperte para girar a roleta! 💪</div>
+
+            <div class="prize-table">
+                <div class="prize-box prize-red">
+                    <div>0-20%</div>
+                    <div>😭 5 pts</div>
+                </div>
+                <div class="prize-box prize-green">
+                    <div>20-40%</div>
+                    <div>😐 10 pts</div>
+                </div>
+                <div class="prize-box prize-blue">
+                    <div>40-60%</div>
+                    <div>😊 25 pts</div>
+                </div>
+                <div class="prize-box prize-yellow">
+                    <div>60-80%</div>
+                    <div>😄 50 pts</div>
+                </div>
+                <div class="prize-box prize-magenta">
+                    <div>80-100%</div>
+                    <div>🎰 JACKPOT!</div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">PONTOS</div>
+                    <div class="stat-value" id="points">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">RODADAS</div>
+                    <div class="stat-value" id="spins">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">JACKPOTS</div>
+                    <div class="stat-value" id="jackpots" style="color: #ff00ff;">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <button onclick="spin()" id="spinBtn">🎰 GIRAR (Aperte!)</button>
+            <button onclick="resetGame()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Rodando: <span id="debugSpinning">Não</span></div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            maxForce: 80, // Força máxima para 100%
+            spinDuration: 3000, // Duração do giro (ms)
+            minForceToSpin: 10, // Força mínima para girar
+        };
+
+        const PRIZES = [
+            { min: 0, max: 20, points: 5, color: '#ff0000', name: 'Fracote', emoji: '😭' },
+            { min: 20, max: 40, points: 10, color: '#00ff00', name: 'Fraquinho', emoji: '😐' },
+            { min: 40, max: 60, points: 25, color: '#0000ff', name: 'Normal', emoji: '😊' },
+            { min: 60, max: 80, points: 50, color: '#ffff00', name: 'Forte!', emoji: '😄' },
+            { min: 80, max: 100, points: 100, color: '#ff00ff', name: 'JACKPOT!', emoji: '🎰' }
+        ];
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let isConnected = false;
+        let isSpinning = false;
+        let points = 0;
+        let spins = 0;
+        let jackpots = 0;
+        let maxForceThisSpin = 0;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const roulette = document.getElementById('roulette');
+        const forceFill = document.getElementById('forceFill');
+        const forceText = document.getElementById('forceText');
+        const messageElement = document.getElementById('message');
+        const pointsDisplay = document.getElementById('points');
+        const spinsDisplay = document.getElementById('spins');
+        const jackpotsDisplay = document.getElementById('jackpots');
+        const spinBtn = document.getElementById('spinBtn');
+        const debugForce = document.getElementById('debugForce');
+        const debugSpinning = document.getElementById('debugSpinning');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎰 Roleta da Força iniciada!');
+            startForcePolling();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                            
+                            // Monitora força durante o giro
+                            if (isSpinning && currentForce > maxForceThisSpin) {
+                                maxForceThisSpin = currentForce;
+                            }
+                            
+                            updateForceDisplay();
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // LÓGICA DO JOGO
+        // ==========================================
+        
+        function spin() {
+            if (isSpinning || currentForce < GAME_CONFIG.minForceToSpin) {
+                if (!isSpinning && currentForce < GAME_CONFIG.minForceToSpin) {
+                    messageElement.textContent = "⚠️ Aperte com mais força para girar!";
+                    messageElement.style.color = "#ff8800";
+                }
+                return;
+            }
+            
+            isSpinning = true;
+            maxForceThisSpin = 0;
+            spinBtn.disabled = true;
+            
+            messageElement.textContent = "🎰 GIRANDO! Continue apertando!";
+            messageElement.style.color = "#ffff00";
+            
+            // Gira a roleta
+            const spinsAmount = 3 + Math.random() * 3; // 3-6 voltas
+            const degrees = spinsAmount * 360;
+            roulette.style.transform = `rotate(${degrees}deg)`;
+            
+            // Após o giro, calcula prêmio
+            setTimeout(() => {
+                calculatePrize();
+            }, GAME_CONFIG.spinDuration);
+        }
+
+        function calculatePrize() {
+            spins++;
+            
+            // Calcula porcentagem baseada na força máxima durante o giro
+            const percentage = Math.min(100, (maxForceThisSpin / GAME_CONFIG.maxForce) * 100);
+            
+            // Encontra o prêmio
+            let prize = PRIZES[0];
+            for (let p of PRIZES) {
+                if (percentage >= p.min && percentage < p.max) {
+                    prize = p;
+                    break;
+                }
+            }
+            
+            points += prize.points;
+            
+            // Jackpot?
+            if (prize.points === 100) {
+                jackpots++;
+                messageElement.innerHTML = `${prize.emoji} JACKPOT! ${prize.points} PONTOS! ${prize.emoji}`;
+                messageElement.style.color = prize.color;
+                messageElement.classList.add('jackpot-animation');
+                
+                setTimeout(() => {
+                    messageElement.classList.remove('jackpot-animation');
+                }, 1500);
+                
+            } else {
+                messageElement.innerHTML = `${prize.emoji} ${prize.name}! +${prize.points} pontos`;
+                messageElement.style.color = prize.color;
+            }
+            
+            updateStats();
+            
+            isSpinning = false;
+            spinBtn.disabled = false;
+            maxForceThisSpin = 0;
+            
+            // Reseta rotação para próximo giro
+            setTimeout(() => {
+                roulette.style.transition = 'none';
+                roulette.style.transform = 'rotate(0deg)';
+                setTimeout(() => {
+                    roulette.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+                }, 50);
+            }, 1000);
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE DISPLAYS
+        // ==========================================
+        
+        function updateForceDisplay() {
+            const percentage = Math.min(100, (currentForce / GAME_CONFIG.maxForce) * 100);
+            forceFill.style.width = percentage + '%';
+            forceText.textContent = currentForce.toFixed(1) + ' kg';
+            
+            if (!isSpinning && currentForce < GAME_CONFIG.minForceToSpin) {
+                forceText.textContent = currentForce.toFixed(1) + ' kg (mínimo: ' + GAME_CONFIG.minForceToSpin + ' kg)';
+            }
+        }
+
+        function updateStats() {
+            pointsDisplay.textContent = points;
+            spinsDisplay.textContent = spins;
+            jackpotsDisplay.textContent = jackpots;
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(1);
+            debugSpinning.textContent = isSpinning ? 'Sim' : 'Não';
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        function resetGame() {
+            if (isSpinning) return;
+            
+            points = 0;
+            spins = 0;
+            jackpots = 0;
+            maxForceThisSpin = 0;
+            
+            updateStats();
+            
+            roulette.style.transition = 'none';
+            roulette.style.transform = 'rotate(0deg)';
+            setTimeout(() => {
+                roulette.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+            }, 50);
+            
+            messageElement.textContent = "💪 Aperte para girar a roleta! 💪";
+            messageElement.style.color = "#ffffff";
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - GAME_CONFIG.maxForce: força para atingir 100%
+           - PRIZES: customize valores e faixas
+           - GAME_CONFIG.spinDuration: tempo do giro
+           
+        2. ONDE MODIFICAR:
+           - calculatePrize(): lógica de premiação
+           - PRIZES array: adicione/remova prêmios
+           - CSS da roleta: personalize visual
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Multiplicadores de pontos
+           - Sistema de apostas (gastar pontos para ganhar mais)
+           - Diferentes tipos de roleta
+           - Modo "Risco Duplo" (dobra ou perde tudo)
+           - Prêmios especiais aleatórios
+           - Ranking de melhores jogadas
+           - Modo campeonato
+           
+        4. DESAFIOS AVANÇADOS:
+           - Implementar "mini-games" dentro dos prêmios
+           - Sistema de conquistas
+           - Criar roletas temáticas
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = Math.random() * 60; }, 200);
+    </script>
+</body>
+</html>

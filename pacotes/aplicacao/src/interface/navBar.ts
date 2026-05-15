@@ -7,9 +7,10 @@ export interface StatusConexao {
 }
 
 export interface NavProps {
-  ativo:            'conexao' | 'medicao' | 'sessoes' | 'configuracoes' | 'firmware';
+  ativo:            'conexao' | 'medicao' | 'jogos' | 'sessoes' | 'configuracoes' | 'firmware';
   onConexao:        () => void;
   onMedicao?:       () => void;
+  onJogos?:         () => void;
   onSessoes:        () => void;
   onConfiguracoes?: () => void;
   onFirmware:       () => void;
@@ -33,6 +34,7 @@ export function navHtml(props: NavProps): string {
     <div class="nav-links">
       ${itemNav('nav-conexao',  'Conexão',       props.ativo === 'conexao',       props.onConexao)}
       ${itemNav('nav-medir',    'Medição',        props.ativo === 'medicao',       props.onMedicao)}
+      ${itemNav('nav-jogos',    'Jogos',          props.ativo === 'jogos',         props.onJogos)}
       ${itemNav('nav-sessoes',  'Sessões',        props.ativo === 'sessoes',       props.onSessoes)}
       ${itemNav('nav-config',   'Configurações',  props.ativo === 'configuracoes', props.onConfiguracoes)}
       ${itemNav('nav-firmware', 'Firmware',       props.ativo === 'firmware',      props.onFirmware, ' style="margin-left:auto"')}
@@ -53,6 +55,7 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
 
   bind('nav-conexao',  props.onConexao);
   bind('nav-medir',    props.onMedicao);
+  bind('nav-jogos',    props.onJogos);
   bind('nav-sessoes',  props.onSessoes);
   bind('nav-config',   props.onConfiguracoes);
   bind('nav-firmware', props.onFirmware);

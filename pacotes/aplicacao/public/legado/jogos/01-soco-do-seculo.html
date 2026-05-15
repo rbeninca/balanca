@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥊 Soco do Século</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .force-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 20px #00ff00;
+            margin: 20px 0;
+        }
+
+        .punch-type {
+            font-size: 2rem;
+            color: #ffff00;
+            margin: 15px 0;
+            min-height: 60px;
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            min-height: 30px;
+        }
+
+        button {
+            font-size: 1.5rem;
+            padding: 15px 40px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        /* Animação de soco */
+        @keyframes punch {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .punching {
+            animation: punch 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥊 SOCO DO SÉCULO 🥊</h1>
+        
+        <div class="info-box">
+            <div class="force-display" id="forceDisplay">0.0 kg</div>
+            <div class="punch-type" id="punchType">Pronto para socar!</div>
+            <div class="status" id="status">Aperte a célula de carga!</div>
+        </div>
+
+        <button onclick="resetGame()">🔄 Resetar</button>
+
+        <!-- Debug (pode remover em produção) -->
+        <div class="debug">
+            <div>Debug - Força atual: <span id="debugForce">0</span> N</div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        // Tipos de soco baseados na força (em kg)
+        const PUNCH_TYPES = [
+            { min: 0, max: 10, name: "Tapinha de Bebê 👶", color: "#888888" },
+            { min: 10, max: 20, name: "Jab Fraquinho 🤜", color: "#00ff00" },
+            { min: 20, max: 40, name: "Direto Médio 👊", color: "#ffff00" },
+            { min: 40, max: 60, name: "Cruzado Forte 💪", color: "#ff8800" },
+            { min: 60, max: 80, name: "Uppercut Poderoso 🔥", color: "#ff0000" },
+            { min: 80, max: 999, name: "HADOUKEN!!! ⚡💥", color: "#ff00ff" }
+        ];
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0; // Força atual em Newtons
+        let maxForce = 0; // Força máxima registrada
+        let isConnected = false;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const forceDisplay = document.getElementById('forceDisplay');
+        const punchType = document.getElementById('punchType');
+        const statusElement = document.getElementById('status');
+        const debugForce = document.getElementById('debugForce');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🥊 Soco do Século iniciado!');
+            startForcePolling();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            // Tenta ler a força a cada 50ms
+            setInterval(() => {
+                try {
+                    // A força vem de window.opener.sharedState.forcaAtual
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual;
+                            isConnected = true;
+                            
+                            // Atualiza displays
+                            updateDisplay();
+                            checkPunchType();
+                            
+                            // Atualiza força máxima
+                            if (currentForce > maxForce) {
+                                maxForce = currentForce;
+                            }
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                    console.error('Erro ao ler força:', e);
+                }
+                
+                // Atualiza debug
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE DISPLAY
+        // ==========================================
+        
+        function updateDisplay() {
+            // Converte Newtons para kg (1 kg ≈ 9.81 N)
+            const forceKg = currentForce / 9.81;
+            forceDisplay.textContent = forceKg.toFixed(1) + ' kg';
+            
+            // Anima quando há força
+            if (forceKg > 5) {
+                forceDisplay.classList.add('punching');
+                setTimeout(() => {
+                    forceDisplay.classList.remove('punching');
+                }, 300);
+            }
+        }
+
+        function checkPunchType() {
+            const forceKg = currentForce / 9.81;
+            
+            // Encontra o tipo de soco baseado na força
+            for (let type of PUNCH_TYPES) {
+                if (forceKg >= type.min && forceKg < type.max) {
+                    punchType.textContent = type.name;
+                    punchType.style.color = type.color;
+                    
+                    // Mensagem de status
+                    if (forceKg > 1) {
+                        statusElement.textContent = `💪 Força máxima: ${(maxForce / 9.81).toFixed(1)} kg`;
+                    }
+                    break;
+                }
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(2);
+            debugConnection.textContent = isConnected ? '✅ Conectado' : '❌ Desconectado';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        // ==========================================
+        // FUNÇÕES DE CONTROLE
+        // ==========================================
+        
+        function resetGame() {
+            maxForce = 0;
+            punchType.textContent = "Pronto para socar!";
+            statusElement.textContent = "Aperte a célula de carga!";
+            console.log('Jogo resetado');
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. LEITURA DA FORÇA:
+           - window.opener.sharedState.forcaAtual = força em Newtons
+           - Converter para kg: dividir por 9.81
+           
+        2. ONDE MODIFICAR:
+           - PUNCH_TYPES: adicione mais tipos de soco
+           - checkPunchType(): mude a lógica de classificação
+           - CSS: personalize cores e animações
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Adicionar sistema de combos
+           - Criar ranking de melhores socos
+           - Adicionar efeitos sonoros
+           - Fazer animações de personagens
+           - Sistema de conquistas
+           
+        4. TESTANDO SEM CÉLULA:
+           - Simule força: currentForce = Math.random() * 500;
+           - Descomente a linha abaixo para testar:
+        */
+        
+        // currentForce = Math.random() * 500; // DESCOMENTE PARA TESTAR SEM CÉLULA
+    </script>
+</body>
+</html>
