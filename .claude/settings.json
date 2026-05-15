@@ -53,7 +53,8 @@
       "Bash(node_modules/.bin/tsc --noEmit)",
       "Bash(../../node_modules/.bin/tsc --noEmit)",
       "Bash(PATH=/home/rbeninca/.nvm/versions/node/v24.15.0/bin:__TRACKED_VAR__ node_modules/.bin/vite build)",
-      "Bash(PATH=/home/rbeninca/.nvm/versions/node/v24.15.0/bin:__TRACKED_VAR__ ../../node_modules/.bin/vite build)"
+      "Bash(PATH=/home/rbeninca/.nvm/versions/node/v24.15.0/bin:__TRACKED_VAR__ ../../node_modules/.bin/vite build)",
+      "Bash(git -C /home/rbeninca/projetos/balancaGFIG2 diff --cached --stat -- pacotes/aplicacao/src/interface/TelaMarteloThor.ts pacotes/aplicacao/index.html)"
     ],
     "additionalDirectories": [
       "/home/rbeninca/projetos/balancaGFIG2/balancaGFIGv1/data/imgs"
