@@ -25,7 +25,7 @@ function itemNav(id: string, label: string, isAtivo: boolean, cb: (() => void) |
 function statusHtml(s: StatusConexao): string {
   const classe = s.conectado ? 'conectado' : 'desconectado';
   const texto  = s.conectado ? s.endereco  : `${s.endereco} — desconectado`;
-  return `<div class="nav-status"><span class="nav-status-chip ${classe}">${texto}</span></div>`;
+  return `<div class="nav-status"><span class="nav-status-chip ${classe}">${texto}<span id="nav-hz" class="nav-hz"></span></span></div>`;
 }
 
 export function navHtml(props: NavProps): string {
