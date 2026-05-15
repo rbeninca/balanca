@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Templates de Jogos - Célula de Carga</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
+            border: 2px solid rgba(255,255,255,0.2);
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .game-description {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .game-difficulty {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .easy { background: rgba(0,255,0,0.3); border: 1px solid #00ff00; }
+        .medium { background: rgba(255,255,0,0.3); border: 1px solid #ffff00; }
+        .hard { background: rgba(255,0,0,0.3); border: 1px solid #ff0000; }
+
+        .info-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 40px 0;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .info-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .info-section p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .info-section code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .force-monitor {
+            background: rgba(0,0,0,0.5);
+            border: 3px solid #00ff00;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .force-value {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 20px #00ff00;
+            margin: 20px 0;
+        }
+
+        .force-bar {
+            width: 100%;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .force-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.1s;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1s infinite;
+        }
+
+        .status-connected {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-disconnected {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .code-box {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-box pre {
+            margin: 0;
+            color: #00ff00;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .code-comment {
+            color: #888;
+        }
+
+        .code-keyword {
+            color: #ff00ff;
+        }
+
+        .code-string {
+            color: #ffff00;
+        }
+
+        .code-number {
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 TEMPLATES DE JOGOS</h1>
+            <p class="subtitle">Coleção de jogos interativos usando célula de carga</p>
+        </header>
+
+        <!-- MONITOR DE FORÇA EM TEMPO REAL -->
+        <div class="force-monitor">
+            <h2 style="margin-bottom: 20px;">
+                <span class="status-indicator" id="statusIndicator"></span>
+                Monitor de Célula de Carga
+            </h2>
+            <div class="force-value" id="forceValue">-- kg</div>
+            <div style="font-size: 1.2rem; color: #aaa;">
+                (<span id="forceNewtons">--</span> N)
+            </div>
+            <div class="force-bar">
+                <div class="force-bar-fill" id="forceBarFill"></div>
+            </div>
+            <div style="color: #aaa; margin-top: 10px;">
+                Status: <span id="connectionStatus" style="font-weight: bold;">Verificando...</span>
+            </div>
+        </div>
+
+        <!-- EXPLICAÇÃO GRÁFICA DE FUNCIONAMENTO -->
+        <div class="info-section" style="background: rgba(100, 150, 255, 0.15); border: 2px solid rgba(100, 200, 255, 0.5);">
+            <h2 style="color: #87CEEB; text-align: center;">🔗 Como os Jogos Recebem os Dados de Força</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; margin: 30px 0;">
+                <!-- Lado Esquerdo -->
+                <div style="background: rgba(76, 175, 80, 0.2); padding: 20px; border-radius: 10px; border: 2px solid #4CAF50;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #4CAF50; margin-bottom: 10px;">✅ JANELA PRINCIPAL</div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; line-height: 1.6; color: #90EE90;">
+                        <div style="color: #FFD700;">index.html</div>
+                        <div style="margin-top: 8px; color: #87CEEB;">window.sharedState {</div>
+                        <div style="margin-left: 15px; color: #98FB98;">forcaAtual: 45.3 N</div>
+                        <div style="margin-left: 15px; color: #98FB98;">overloadAlert: {...}</div>
+                        <div style="color: #87CEEB;">}</div>
+                        <div style="margin-top: 10px; color: #FFB6C1;">▶ Atualizada em tempo real</div>
+                    </div>
+                </div>
+
+                <!-- Seta de Conexão -->
+                <div style="text-align: center; font-size: 2rem;">
+                    <div style="color: #FFD700; animation: pulse 1s infinite;">⬇️ ⬇️ ⬇️</div>
+                    <div style="color: #87CEEB; font-weight: bold; margin: 10px 0;">window.open()</div>
+                    <div style="color: #FFD700; animation: pulse 1s infinite;">⬇️ ⬇️ ⬇️</div>
+                </div>
+
+                <!-- Lado Direito -->
+                <div style="background: rgba(255, 87, 34, 0.2); padding: 20px; border-radius: 10px; border: 2px solid #FF5722;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #FF5722; margin-bottom: 10px;">🎮 POPUP DO JOGO</div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; line-height: 1.6; color: #FFB6C1;">
+                        <div style="color: #FFD700;">jogo.html</div>
+                        <div style="margin-top: 8px; color: #87CEEB;">window.opener ✅</div>
+                        <div style="margin-left: 15px; color: #98FB98;">window.opener.sharedState</div>
+                        <div style="margin-left: 15px; color: #98FB98;">.forcaAtual</div>
+                        <div style="margin-top: 10px; color: #FFB6C1;">▶ Lê dados em tempo real</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: rgba(255, 235, 59, 0.15); padding: 15px; border-radius: 8px; border-left: 4px solid #FFD700; margin: 20px 0;">
+                <div style="color: #FFD700; font-weight: bold;">⚠️ IMPORTANTE:</div>
+                <div style="color: rgba(255,255,255,0.9); margin-top: 8px;">
+                    Os jogos <strong>DEVEM</strong> ser abertos via <code style="background: rgba(0,0,0,0.4); padding: 3px 6px;">window.open()</code> da página principal. 
+                    Acessar diretamente a URL do jogo resultará em <strong>SIMULAÇÃO</strong> em vez de dados reais.
+                </div>
+            </div>
+
+            <style>
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+            </style>
+        </div>
+
+        <!-- CÓDIGO DE EXEMPLO -->
+        <div class="info-section">
+            <h2>💻 Como Ler a Célula de Carga</h2>
+            <p>Este é o código básico que <strong>TODOS os 8 templates</strong> usam para ler a força:</p>
+            
+            <div class="code-box">
+                <pre><code><span class="code-comment">// ==========================================
+// LEITURA DA CÉLULA DE CARGA
+// ==========================================</span>
+
+<span class="code-keyword">let</span> currentForce = <span class="code-number">0</span>; <span class="code-comment">// Força em kg</span>
+<span class="code-keyword">let</span> isConnected = <span class="code-keyword">false</span>;
+
+<span class="code-keyword">function</span> startForcePolling() {
+    setInterval(() => {
+        <span class="code-keyword">try</span> {
+            <span class="code-comment">// Lê a força da célula (em Newtons)</span>
+            <span class="code-keyword">if</span> (window.opener && window.opener.sharedState) {
+                <span class="code-keyword">if</span> (<span class="code-keyword">typeof</span> window.opener.sharedState.forcaAtual === <span class="code-string">'number'</span>) {
+                    
+                    <span class="code-comment">// Converte Newtons para kg (1 kg ≈ 9.81 N)</span>
+                    currentForce = window.opener.sharedState.forcaAtual / <span class="code-number">9.81</span>;
+                    isConnected = <span class="code-keyword">true</span>;
+                    
+                    <span class="code-comment">// Aqui você usa a força no seu jogo!</span>
+                    <span class="code-comment">// Exemplo: if (currentForce > 20) { ... }</span>
+                }
+            } <span class="code-keyword">else</span> {
+                isConnected = <span class="code-keyword">false</span>;
+            }
+        } <span class="code-keyword">catch</span> (e) {
+            isConnected = <span class="code-keyword">false</span>;
+        }
+    }, <span class="code-number">50</span>); <span class="code-comment">// Lê a cada 50ms (20 vezes por segundo)</span>
+}
+
+<span class="code-comment">// Inicia a leitura quando a página carrega</span>
+document.addEventListener(<span class="code-string">'DOMContentLoaded'</span>, () => {
+    startForcePolling();
+});</code></pre>
+            </div>
+
+            <h3 style="margin-top: 30px;">📊 Valores Importantes:</h3>
+            <ul class="feature-list">
+                <li><code>window.opener.sharedState.forcaAtual</code> - Força em <strong>Newtons</strong></li>
+                <li>Para converter em kg: <code>força / 9.81</code></li>
+                <li>Leitura recomendada: a cada 50ms (20 Hz)</li>
+                <li><code>isConnected</code> - Verifica se célula está disponível</li>
+            </ul>
+
+            <h3 style="margin-top: 30px;">🎮 Exemplo de Uso no Jogo:</h3>
+            <div class="code-box">
+                <pre><code><span class="code-comment">// Detectar quando jogador aperta</span>
+<span class="code-keyword">if</span> (currentForce > <span class="code-number">20</span>) {
+    console.log(<span class="code-string">"Jogador apertou com "</span> + currentForce + <span class="code-string">" kg!"</span>);
+    <span class="code-comment">// Faça algo no jogo...</span>
+}
+
+<span class="code-comment">// Classificar intensidade</span>
+<span class="code-keyword">if</span> (currentForce < <span class="code-number">10</span>) {
+    message = <span class="code-string">"Fraco"</span>;
+} <span class="code-keyword">else if</span> (currentForce < <span class="code-number">30</span>) {
+    message = <span class="code-string">"Médio"</span>;
+} <span class="code-keyword">else</span> {
+    message = <span class="code-string">"Forte!"</span>;
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2>📖 Sobre os Templates</h2>
+            <p>
+                Esta coleção contém <strong>8 jogos completos</strong> e prontos para uso com célula de carga. 
+                Cada template é um arquivo HTML único, autocontido e totalmente funcional.
+            </p>
+            <p>
+                Todos os jogos leem a força através de <code>window.opener.sharedState.forcaAtual</code> 
+                e incluem comentários explicativos para facilitar o aprendizado e modificação.
+            </p>
+            <ul class="feature-list">
+                <li>HTML + CSS + JavaScript em um único arquivo</li>
+                <li>Código comentado e documentado</li>
+                <li>Sistema de debug integrado</li>
+                <li>Fácil de personalizar</li>
+                <li>Exemplos de diferentes mecânicas de jogo</li>
+            </ul>
+        </div>
+
+        <h2 style="text-align: center; margin: 40px 0;">🎯 Escolha seu Jogo</h2>
+
+        <div class="games-grid">
+            <a href="../martelo-fullscreen.html" class="game-card">
+                <div class="game-icon">⚡</div>
+                <div class="game-title">Martelo do Thor</div>
+                <div class="game-description">
+                    O classicão! Mede sua força e compara com outros. Sistema de ranking dinâmico 
+                    com frases motivacionais geradas por IA baseadas na intensidade do seu soco.
+                </div>
+                <span class="game-difficulty hard">Difícil</span>
+            </a>
+
+            <a href="01-soco-do-seculo.html" class="game-card">
+                <div class="game-icon">🥊</div>
+                <div class="game-title">Soco do Século</div>
+                <div class="game-description">
+                    Classifica seus socos em diferentes tipos baseado na intensidade da força. 
+                    Do "Tapinha de Bebê" ao "HADOUKEN!!!"
+                </div>
+                <span class="game-difficulty easy">Fácil</span>
+            </a>
+
+            <a href="02-beat-smasher.html" class="game-card">
+                <div class="game-icon">🎵</div>
+                <div class="game-title">Beat Smasher</div>
+                <div class="game-description">
+                    Jogo de ritmo musical. Aperte a célula no tempo certo quando as notas 
+                    passarem pela zona de acerto. Sistema de combo!
+                </div>
+                <span class="game-difficulty medium">Médio</span>
+            </a>
+
+            <a href="03-precisao-extrema.html" class="game-card">
+                <div class="game-icon">🎯</div>
+                <div class="game-title">Precisão Extrema</div>
+                <div class="game-description">
+                    Teste de precisão onde você precisa acertar exatamente a força alvo. 
+                    Quanto mais preciso, maior a pontuação!
+                </div>
+                <span class="game-difficulty medium">Médio</span>
+            </a>
+
+            <a href="04-escalada-jaragua.html" class="game-card">
+                <div class="game-icon">⛰️</div>
+                <div class="game-title">Escalada do Jaraguá</div>
+                <div class="game-description">
+                    Escale 1000 metros gerenciando sua stamina. Aperte forte para escalar mais 
+                    rápido, mas cuidado para não ficar sem energia!
+                </div>
+                <span class="game-difficulty medium">Médio</span>
+            </a>
+
+            <a href="05-reflexo-relampago.html" class="game-card">
+                <div class="game-icon">⚡</div>
+                <div class="game-title">Reflexo Relâmpago</div>
+                <div class="game-description">
+                    Teste seu tempo de reação! Aperte O MAIS RÁPIDO possível quando o sinal 
+                    ficar verde. Cuidado com falsas largadas!
+                </div>
+                <span class="game-difficulty easy">Fácil</span>
+            </a>
+
+            <a href="06-treino-rocky.html" class="game-card">
+                <div class="game-icon">🏋️</div>
+                <div class="game-title">Treino do Rocky</div>
+                <div class="game-description">
+                    Complete 5 séries de exercícios progressivos. Cada série fica mais difícil, 
+                    com períodos de descanso entre elas.
+                </div>
+                <span class="game-difficulty hard">Difícil</span>
+            </a>
+
+            <a href="07-roleta-forca.html" class="game-card">
+                <div class="game-icon">🎰</div>
+                <div class="game-title">Roleta da Força</div>
+                <div class="game-description">
+                    Cassino onde sua força determina o prêmio! Gire a roleta e tente acertar 
+                    o JACKPOT aplicando 80-100% da força máxima.
+                </div>
+                <span class="game-difficulty easy">Fácil</span>
+            </a>
+
+            <a href="08-reacao-cadeia.html" class="game-card">
+                <div class="game-icon">⚡</div>
+                <div class="game-title">Reação em Cadeia</div>
+                <div class="game-description">
+                    Acerte 5 alvos em sequência o mais rápido possível. Sistema de combo 
+                    aumenta os pontos. O mais desafiador!
+                </div>
+                <span class="game-difficulty hard">Difícil</span>
+            </a>
+        </div>
+
+        <div class="info-section">
+            <h2>🔧 Como Usar</h2>
+            <p>
+                <strong>1. Escolha um jogo</strong> clicando em um dos cards acima<br>
+                <strong>2. Estude o código</strong> - cada arquivo é autocontido<br>
+                <strong>3. Modifique e experimente</strong> - todos os templates são totalmente customizáveis<br>
+                <strong>4. Teste sem célula</strong> - use as linhas comentadas de simulação
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="README.md" class="btn" download>📄 Baixar Documentação</a>
+<!--           <a href="#" onclick="alert('Selecione e copie todos os arquivos .html desta pasta!')" class="btn">📦 Download Todos</a>--> 
+        </div>
+
+        <footer>
+            <p>💡 <strong>Dica:</strong> Abra o código fonte de qualquer jogo para ver comentários detalhados e sugestões de expansão!</p>
+            <p style="margin-top: 20px;">Criado para fins educacionais | Livre para uso e modificação</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA EM TEMPO REAL
+        // ==========================================
+        
+        let currentForce = 0;
+        let currentForceNewtons = 0;
+        let isConnected = false;
+        let maxForceForBar = 80; // Força máxima para a barra (kg)
+
+        // Elementos DOM
+        const forceValue = document.getElementById('forceValue');
+        const forceNewtons = document.getElementById('forceNewtons');
+        const forceBarFill = document.getElementById('forceBarFill');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusIndicator = document.getElementById('statusIndicator');
+
+        // Inicia leitura da célula
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    // Tenta ler a força da célula
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForceNewtons = window.opener.sharedState.forcaAtual;
+                            currentForce = currentForceNewtons / 9.81; // Converte para kg
+                            isConnected = true;
+                            simulationMode = false; // Desativa simulação se conectado
+                        } else {
+                            isConnected = false;
+                        }
+                    } else {
+                        // Se não há window.opener, ativa modo de simulação
+                        simulationMode = true;
+                        isConnected = true; // Considera "conectado" para simulação
+                    }
+                } catch (e) {
+                    isConnected = false;
+                    simulationMode = true; // Ativa simulação em caso de erro
+                }
+
+                if (simulationMode) {
+                    // Simula uma força que varia entre 0 e 70kg
+                    simulatedForce += simulatedForceDirection * (Math.random() * 2); // Variação aleatória
+                    if (simulatedForce > 70) {
+                        simulatedForce = 70;
+                        simulatedForceDirection = -1;
+                    } else if (simulatedForce < 0) {
+                        simulatedForce = 0;
+                        simulatedForceDirection = 1;
+                    }
+                    currentForce = simulatedForce;
+                    currentForceNewtons = simulatedForce * 9.81;
+                }
+                
+                updateDisplay();
+            }, 50); // Atualiza a cada 50ms
+        }
+
+        // Atualiza o display
+        function updateDisplay() {
+            if (isConnected) {
+                // Valores
+                forceValue.textContent = currentForce.toFixed(3) + ' kg';
+                forceNewtons.textContent = currentForceNewtons.toFixed(1);
+                
+                // Barra de progresso
+                const percentage = Math.min(100, (currentForce / maxForceForBar) * 100);
+                forceBarFill.style.width = percentage + '%';
+                
+                // Status
+                if (simulationMode) {
+                    connectionStatus.textContent = '⚙️ Simulação Ativa';
+                    connectionStatus.style.color = '#ffcc00'; // Amarelo para simulação
+                    statusIndicator.className = 'status-indicator'; // Sem animação de pulso para simulação
+                    statusIndicator.style.backgroundColor = '#ffcc00';
+                } else {
+                    connectionStatus.textContent = '✅ Conectado';
+                    connectionStatus.style.color = '#00ff00';
+                    statusIndicator.className = 'status-indicator status-connected';
+                }
+                
+            } else {
+                // Desconectado
+                forceValue.textContent = '-- kg';
+                forceNewtons.textContent = '--';
+                forceBarFill.style.width = '0%';
+                connectionStatus.textContent = '❌ Desconectado';
+                connectionStatus.style.color = '#ff0000';
+                statusIndicator.className = 'status-indicator status-disconnected';
+            }
+        }
+
+        // Inicia quando a página carrega
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎮 Index carregado - Iniciando monitor de célula');
+            startForcePolling();
+        });
+    </script>
+</body>
+</html>

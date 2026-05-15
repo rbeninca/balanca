@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Reação em Cadeia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d2ff, #928dab);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .game-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid rgba(0,210,255,0.3);
+        }
+
+        .targets-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            gap: 10px;
+        }
+
+        .target {
+            width: 150px;
+            height: 180px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            border: 3px solid #666;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .target.active {
+            border-color: #00ff00;
+            box-shadow: 0 0 30px #00ff00;
+            transform: scale(1.1);
+        }
+
+        .target.hit {
+            border-color: #ffff00;
+            background: rgba(255,255,0,0.2);
+        }
+
+        .target.missed {
+            border-color: #ff0000;
+            background: rgba(255,0,0,0.2);
+        }
+
+        .target-number {
+            font-size: 1rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .target-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .target-timer {
+            font-size: 1rem;
+            color: #ff8800;
+            margin-top: 10px;
+        }
+
+        .current-force-display {
+            font-size: 3rem;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+
+        .combo-display {
+            font-size: 2.5rem;
+            color: #ffff00;
+            margin: 15px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            min-height: 50px;
+            margin: 15px 0;
+        }
+
+        button {
+            font-size: 1.3rem;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .debug {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        @keyframes perfect-combo {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5) rotate(360deg); }
+            100% { transform: scale(1); }
+        }
+
+        .perfect-animation {
+            animation: perfect-combo 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ REAÇÃO EM CADEIA ⚡</h1>
+        <div class="subtitle">Acerte os alvos em sequência o mais rápido possível!</div>
+        
+        <div class="game-area">
+            <div class="current-force-display" id="forceDisplay">
+                Sua Força: <span style="color: #00ff00;">0.0 kg</span>
+            </div>
+
+            <div class="targets-container" id="targetsContainer">
+                <!-- Alvos serão criados aqui -->
+            </div>
+
+            <div class="combo-display" id="comboDisplay">COMBO: 0x</div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">PONTOS</div>
+                    <div class="stat-value" id="score" style="color: #00ff00;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">ACERTOS</div>
+                    <div class="stat-value" id="hits" style="color: #ffff00;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">ERROS</div>
+                    <div class="stat-value" id="misses" style="color: #ff0000;">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">TEMPO</div>
+                    <div class="stat-value" id="time" style="color: #00ffff;">0.0s</div>
+                </div>
+            </div>
+
+            <div class="message" id="message">Pressione INICIAR para começar!</div>
+        </div>
+
+        <div>
+            <button onclick="startGame()" id="startBtn">▶️ INICIAR</button>
+            <button onclick="resetGame()">🔄 Resetar</button>
+        </div>
+
+        <!-- Debug -->
+        <div class="debug">
+            <div>Força: <span id="debugForce">0</span> kg | Alvo: <span id="debugTarget">-</span> kg | Tempo: <span id="debugTimer">-</span>s</div>
+            <div>Conexão: <span id="debugConnection">Verificando...</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES
+        // ==========================================
+        
+        const GAME_CONFIG = {
+            targetCount: 5, // Número de alvos
+            targetTime: 3000, // Tempo por alvo (ms)
+            tolerance: 5, // Margem de erro (kg)
+            minForce: 10,
+            maxForce: 60,
+            comboBonus: 10, // Bônus por combo
+        };
+
+        // ==========================================
+        // VARIÁVEIS GLOBAIS
+        // ==========================================
+        
+        let currentForce = 0;
+        let isConnected = false;
+        let isPlaying = false;
+        let targets = [];
+        let currentTargetIndex = 0;
+        let score = 0;
+        let hits = 0;
+        let misses = 0;
+        let combo = 0;
+        let startTime = 0;
+        let targetTimer = 0;
+        let timerInterval = null;
+        let hasAttempted = false;
+
+        // ==========================================
+        // ELEMENTOS DOM
+        // ==========================================
+        
+        const targetsContainer = document.getElementById('targetsContainer');
+        const forceDisplay = document.getElementById('forceDisplay');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const scoreDisplay = document.getElementById('score');
+        const hitsDisplay = document.getElementById('hits');
+        const missesDisplay = document.getElementById('misses');
+        const timeDisplay = document.getElementById('time');
+        const messageElement = document.getElementById('message');
+        const startBtn = document.getElementById('startBtn');
+        const debugForce = document.getElementById('debugForce');
+        const debugTarget = document.getElementById('debugTarget');
+        const debugTimer = document.getElementById('debugTimer');
+        const debugConnection = document.getElementById('debugConnection');
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('⚡ Reação em Cadeia iniciada!');
+            startForcePolling();
+            createTargets();
+        });
+
+        // ==========================================
+        // LEITURA DA CÉLULA DE CARGA
+        // ==========================================
+        
+        function startForcePolling() {
+            setInterval(() => {
+                try {
+                    if (window.opener && window.opener.sharedState) {
+                        if (typeof window.opener.sharedState.forcaAtual === 'number') {
+                            currentForce = window.opener.sharedState.forcaAtual / 9.81;
+                            isConnected = true;
+                            
+                            if (isPlaying) {
+                                checkHit();
+                            }
+                        }
+                    } else {
+                        isConnected = false;
+                    }
+                } catch (e) {
+                    isConnected = false;
+                }
+                
+                updateForceDisplay();
+                updateDebug();
+            }, 50);
+        }
+
+        // ==========================================
+        // CRIAÇÃO DOS ALVOS
+        // ==========================================
+        
+        function createTargets() {
+            targetsContainer.innerHTML = '';
+            targets = [];
+            
+            for (let i = 0; i < GAME_CONFIG.targetCount; i++) {
+                const targetValue = Math.round(Math.random() * (GAME_CONFIG.maxForce - GAME_CONFIG.minForce) + GAME_CONFIG.minForce);
+                
+                const targetDiv = document.createElement('div');
+                targetDiv.className = 'target';
+                targetDiv.innerHTML = `
+                    <div class="target-number">ALVO ${i + 1}</div>
+                    <div class="target-value">${targetValue} kg</div>
+                    <div class="target-timer">---</div>
+                `;
+                
+                targetsContainer.appendChild(targetDiv);
+                targets.push({ value: targetValue, element: targetDiv, hit: false });
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DO JOGO
+        // ==========================================
+        
+        function startGame() {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            startBtn.disabled = true;
+            currentTargetIndex = 0;
+            score = 0;
+            hits = 0;
+            misses = 0;
+            combo = 0;
+            startTime = Date.now();
+            hasAttempted = false;
+            
+            createTargets();
+            activateTarget(0);
+            startTimer();
+            
+            messageElement.textContent = "⚡ Acerte os alvos rapidamente!";
+            messageElement.style.color = "#00ff00";
+            
+            updateStats();
+        }
+
+        function activateTarget(index) {
+            if (index >= targets.length) {
+                gameComplete();
+                return;
+            }
+            
+            // Desativa alvos anteriores
+            targets.forEach(t => t.element.classList.remove('active'));
+            
+            // Ativa alvo atual
+            targets[index].element.classList.add('active');
+            targetTimer = GAME_CONFIG.targetTime / 1000;
+            hasAttempted = false;
+            
+            // Timer do alvo
+            const timerElement = targets[index].element.querySelector('.target-timer');
+            const timerInterval = setInterval(() => {
+                targetTimer -= 0.1;
+                timerElement.textContent = targetTimer.toFixed(1) + 's';
+                
+                if (targetTimer <= 0) {
+                    clearInterval(timerInterval);
+                    missTarget();
+                }
+            }, 100);
+            
+            targets[index].timerInterval = timerInterval;
+        }
+
+        function checkHit() {
+            if (!isPlaying || hasAttempted || currentTargetIndex >= targets.length) return;
+            
+            const currentTarget = targets[currentTargetIndex];
+            const diff = Math.abs(currentForce - currentTarget.value);
+            
+            if (currentForce > 5) {
+                hasAttempted = true;
+                clearInterval(currentTarget.timerInterval);
+                
+                if (diff <= GAME_CONFIG.tolerance) {
+                    // ACERTOU!
+                    hitTarget();
+                } else {
+                    // ERROU!
+                    missTarget();
+                }
+            }
+        }
+
+        function hitTarget() {
+            const currentTarget = targets[currentTargetIndex];
+            
+            hits++;
+            combo++;
+            
+            // Pontuação baseada em velocidade e combo
+            const timeBonus = Math.max(0, Math.floor(targetTimer * 10));
+            const comboBonus = combo * GAME_CONFIG.comboBonus;
+            const points = 100 + timeBonus + comboBonus;
+            
+            score += points;
+            
+            currentTarget.element.classList.remove('active');
+            currentTarget.element.classList.add('hit');
+            currentTarget.hit = true;
+            
+            messageElement.textContent = `✅ ACERTOU! +${points} pontos (Combo ${combo}x)`;
+            messageElement.style.color = "#00ff00";
+            
+            if (combo >= GAME_CONFIG.targetCount) {
+                messageElement.classList.add('perfect-animation');
+                setTimeout(() => {
+                    messageElement.classList.remove('perfect-animation');
+                }, 1000);
+            }
+            
+            updateStats();
+            
+            setTimeout(() => {
+                currentTargetIndex++;
+                activateTarget(currentTargetIndex);
+            }, 500);
+        }
+
+        function missTarget() {
+            const currentTarget = targets[currentTargetIndex];
+            
+            misses++;
+            combo = 0;
+            
+            currentTarget.element.classList.remove('active');
+            currentTarget.element.classList.add('missed');
+            
+            const diff = Math.abs(currentForce - currentTarget.value);
+            const direction = currentForce > currentTarget.value ? "MUITA" : "POUCA";
+            
+            messageElement.textContent = `❌ ERROU! ${direction} força (${diff.toFixed(1)} kg de diferença)`;
+            messageElement.style.color = "#ff0000";
+            
+            updateStats();
+            
+            setTimeout(() => {
+                currentTargetIndex++;
+                activateTarget(currentTargetIndex);
+            }, 500);
+        }
+
+        function gameComplete() {
+            isPlaying = false;
+            startBtn.disabled = false;
+            clearInterval(timerInterval);
+            
+            const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+            const accuracy = targets.length > 0 ? ((hits / targets.length) * 100).toFixed(0) : 0;
+            
+            let message = '';
+            if (hits === targets.length) {
+                message = `🏆 PERFEITO! Tempo: ${totalTime}s | Pontos: ${score}`;
+                messageElement.style.color = "#ffff00";
+            } else {
+                message = `✅ COMPLETO! Acertos: ${hits}/${targets.length} (${accuracy}%) | Tempo: ${totalTime}s`;
+                messageElement.style.color = "#00ff00";
+            }
+            
+            messageElement.textContent = message;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (isPlaying) {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                    timeDisplay.textContent = elapsed + 's';
+                }
+            }, 100);
+        }
+
+        // ==========================================
+        // ATUALIZAÇÃO DE DISPLAYS
+        // ==========================================
+        
+        function updateForceDisplay() {
+            forceDisplay.innerHTML = `Sua Força: <span style="color: ${getForceColor()};">${currentForce.toFixed(1)} kg</span>`;
+        }
+
+        function getForceColor() {
+            if (!isPlaying || currentTargetIndex >= targets.length) return '#00ff00';
+            
+            const currentTarget = targets[currentTargetIndex];
+            const diff = Math.abs(currentForce - currentTarget.value);
+            
+            if (diff <= GAME_CONFIG.tolerance) return '#00ff00';
+            if (diff <= GAME_CONFIG.tolerance * 2) return '#ffff00';
+            return '#ff8800';
+        }
+
+        function updateStats() {
+            scoreDisplay.textContent = score;
+            hitsDisplay.textContent = hits;
+            missesDisplay.textContent = misses;
+            comboDisplay.textContent = `COMBO: ${combo}x`;
+            
+            if (combo > 0) {
+                comboDisplay.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    comboDisplay.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
+        function updateDebug() {
+            debugForce.textContent = currentForce.toFixed(1);
+            debugTarget.textContent = currentTargetIndex < targets.length ? targets[currentTargetIndex].value : '-';
+            debugTimer.textContent = targetTimer.toFixed(1);
+            debugConnection.textContent = isConnected ? '✅ OK' : '❌ OFF';
+            debugConnection.style.color = isConnected ? '#00ff00' : '#ff0000';
+        }
+
+        function resetGame() {
+            isPlaying = false;
+            startBtn.disabled = false;
+            clearInterval(timerInterval);
+            
+            targets.forEach(t => {
+                if (t.timerInterval) clearInterval(t.timerInterval);
+            });
+            
+            score = 0;
+            hits = 0;
+            misses = 0;
+            combo = 0;
+            currentTargetIndex = 0;
+            
+            createTargets();
+            updateStats();
+            
+            timeDisplay.textContent = '0.0s';
+            messageElement.textContent = "Pressione INICIAR para começar!";
+            messageElement.style.color = "#ffffff";
+        }
+
+        // ==========================================
+        // DICAS PARA OS ALUNOS
+        // ==========================================
+        
+        /* 
+        📚 GUIA PARA ADAPTAÇÃO:
+        
+        1. CONFIGURAÇÕES:
+           - GAME_CONFIG.targetCount: número de alvos
+           - GAME_CONFIG.targetTime: tempo por alvo
+           - GAME_CONFIG.tolerance: dificuldade
+           - GAME_CONFIG.comboBonus: pontos por combo
+           
+        2. ONDE MODIFICAR:
+           - hitTarget()/missTarget(): sistema de pontuação
+           - createTargets(): geração de alvos
+           - checkHit(): detecção de acerto
+           
+        3. IDEIAS DE EXPANSÃO:
+           - Alvos em movimento
+           - Diferentes tipos de alvo (bônus, bomba)
+           - Modo infinito
+           - Power-ups (tempo extra, força dupla)
+           - Leaderboard online
+           - Modo multiplayer competitivo
+           - Diferentes níveis de dificuldade
+           - Alvos que exigem manter força por X tempo
+           
+        4. DESAFIOS AVANÇADOS:
+           - Criar padrões de alvos (crescente, decrescente)
+           - Implementar física de "ricochet" (erro afeta próximo alvo)
+           - Sistema de conquistas
+           - Modo "Boss Fight" (alvo único com múltiplas fases)
+        */
+        
+        // SIMULAÇÃO (descomente para testar):
+        // setInterval(() => { currentForce = 10 + Math.random() * 50; }, 500);
+    </script>
+</body>
+</html>

@@ -75,6 +75,7 @@ export class TelaSessoes {
     private onConexao:        () => void,
     private onFirmware:       () => void,
     private onMedicao?:       () => void,
+    private onJogos?:         () => void,
     private onConfiguracoes?: () => void,
     private status?:          StatusConexao,
   ) {
@@ -83,7 +84,7 @@ export class TelaSessoes {
 
   private async renderizar(container: HTMLElement) {
     container.innerHTML = `
-      ${navHtml({ ativo: 'sessoes', onConexao: this.onConexao, onSessoes: () => {}, onFirmware: this.onFirmware, ...(this.onMedicao && { onMedicao: this.onMedicao }), ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }), ...(this.status && { status: this.status }) })}
+      ${navHtml({ ativo: 'sessoes', onConexao: this.onConexao, onSessoes: () => {}, onFirmware: this.onFirmware, ...(this.onMedicao && { onMedicao: this.onMedicao }), ...(this.onJogos && { onJogos: this.onJogos }), ...(this.onConfiguracoes && { onConfiguracoes: this.onConfiguracoes }), ...(this.status && { status: this.status }) })}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
           <h2 style="margin:0">Sessões Gravadas</h2>
@@ -106,6 +107,7 @@ export class TelaSessoes {
       onSessoes: () => {},
       onFirmware: this.onFirmware,
       ...(this.onMedicao       && { onMedicao:       this.onMedicao }),
+      ...(this.onJogos         && { onJogos:         this.onJogos }),
       ...(this.onConfiguracoes  && { onConfiguracoes:  this.onConfiguracoes }),
       ...(this.status           && { status:           this.status }),
     });

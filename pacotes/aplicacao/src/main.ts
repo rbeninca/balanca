@@ -3,14 +3,18 @@ import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
+import { TelaJogos } from './interface/TelaJogos.js';
+import { TelaMarteloThor } from './interface/TelaMarteloThor.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
 import { TelaConfiguracoes } from './interface/TelaConfiguracoes.js';
 import { TelaFirmware } from './interface/TelaFirmware.js';
 import { FonteWebSocket } from './adaptadores/FonteWebSocket.js';
 import type { StatusConexao } from './interface/navBar.js';
+import { PonteJogosLegados } from './jogos/PonteJogosLegados.js';
 
 let armazenamento: IArmazenamento = new ArmazenamentoLocal();
 let gerenciador = new GerenciadorSessao(armazenamento);
+const ponteJogos = new PonteJogosLegados(globalThis.window as Window, globalThis.document);
 
 class ContadorHz {
   private contagem = 0;
@@ -42,13 +46,16 @@ class ContadorHz {
 
 const app = document.getElementById('app')!;
 
-type Tela = 'conexao' | 'medicao' | 'sessoes' | 'configuracoes' | 'firmware';
+type Tela = 'conexao' | 'medicao' | 'jogos' | 'martelo-thor' | 'sessoes' | 'configuracoes' | 'firmware';
 
 let telaAtual:       Tela              = 'conexao';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let fonteAtual:      any               = null;
 let enderecoAtual:   string | null     = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let fontePonteAtual: any               = null;
 let telaMedicaoAtual:  TelaMedicao  | null = null;
+let telaMarteloAtual:  TelaMarteloThor | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
 const contadorHz = new ContadorHz();
 
@@ -61,9 +68,42 @@ function navegar(tela: Tela) {
   renderizar();
 }
 
+function atualizarStatusPonteJogos(conectado: boolean): void {
+  ponteJogos.atualizarConexao({
+    conectado,
+    endereco: enderecoAtual,
+    transporte: fonteAtual?.obterStatus?.().transporte ?? 'desconhecido',
+  });
+
+  if (!conectado) {
+    ponteJogos.limparLeitura();
+  }
+}
+
+function conectarPonteJogos(fonte: any): void {
+  if (!fonte || fonte === fontePonteAtual) return;
+  fontePonteAtual = fonte;
+
+  fonte.on('dados', (leitura: { forcaNewton: number; marcaTemporal: number }) => {
+    ponteJogos.atualizarLeitura(leitura);
+  });
+  fonte.on('config', (config: unknown) => {
+    ponteJogos.atualizarConfiguracao(config);
+  });
+  fonte.on('status', (evento: unknown) => {
+    if (!evento || typeof evento !== 'object') return;
+    const conectado = (evento as Record<string, unknown>)['conectado'];
+    if (typeof conectado === 'boolean') {
+      atualizarStatusPonteJogos(conectado);
+    }
+  });
+}
+
 function renderizar() {
   telaMedicaoAtual?.destruir();
   telaMedicaoAtual = null;
+  telaMarteloAtual?.destruir();
+  telaMarteloAtual = null;
   telaFirmwareAtual?.destruir();
   telaFirmwareAtual = null;
   app.innerHTML = '';
@@ -74,6 +114,12 @@ function renderizar() {
       new TelaConexao(
         app,
         (fonte) => {
+          if (fonteAtual?.desconectar) {
+            void fonteAtual.desconectar();
+          } else if (fonteAtual?.fechar) {
+            fonteAtual.fechar();
+          }
+
           fonteAtual = fonte;
           if (fonte instanceof FonteWebSocket) {
             try {
@@ -91,6 +137,8 @@ function renderizar() {
           }
           gerenciador = new GerenciadorSessao(armazenamento);
           contadorHz.iniciar(fonte);
+          conectarPonteJogos(fonteAtual);
+          atualizarStatusPonteJogos(true);
           navegar('medicao');
         },
         () => navegar('sessoes'),
@@ -107,6 +155,41 @@ function renderizar() {
         () => navegar('conexao'),
         () => navegar('sessoes'),
         () => navegar('configuracoes'),
+        () => navegar('jogos'),
+        () => navegar('firmware'),
+        statusConexao(),
+      );
+      break;
+
+    case 'jogos':
+      if (!fonteAtual) {
+        navegar('conexao');
+        return;
+      }
+      new TelaJogos(
+        app,
+        () => navegar('conexao'),
+        () => navegar('medicao'),
+        (idJogo) => navegar(idJogo as Tela),
+        () => navegar('sessoes'),
+        () => navegar('configuracoes'),
+        () => navegar('firmware'),
+        statusConexao(),
+      );
+      break;
+
+    case 'martelo-thor':
+      if (!fonteAtual) {
+        navegar('conexao');
+        return;
+      }
+      telaMarteloAtual = new TelaMarteloThor(
+        app,
+        () => navegar('conexao'),
+        () => navegar('medicao'),
+        () => navegar('jogos'),
+        () => navegar('sessoes'),
+        () => navegar('configuracoes'),
         () => navegar('firmware'),
         statusConexao(),
       );
@@ -119,6 +202,7 @@ function renderizar() {
         () => navegar('conexao'),
         () => navegar('firmware'),
         fonteAtual ? () => navegar('medicao')       : undefined,
+        fonteAtual ? () => navegar('jogos')         : undefined,
         fonteAtual ? () => navegar('configuracoes') : undefined,
         statusConexao(),
       );
@@ -130,6 +214,7 @@ function renderizar() {
         fonteAtual,
         () => navegar('conexao'),
         () => navegar('medicao'),
+        () => navegar('jogos'),
         () => navegar('sessoes'),
         () => navegar('firmware'),
         statusConexao(),
@@ -140,9 +225,13 @@ function renderizar() {
       contadorHz.parar();
       if (fonteAtual?.desconectar) {
         void fonteAtual.desconectar();
-        fonteAtual = null;
+      } else if (fonteAtual?.fechar) {
+        fonteAtual.fechar();
       }
+      fonteAtual = null;
       enderecoAtual = null;
+      fontePonteAtual = null;
+      atualizarStatusPonteJogos(false);
       telaFirmwareAtual = new TelaFirmware(app, {
         onConexao:  () => navegar('conexao'),
         onSessoes:  () => navegar('sessoes'),

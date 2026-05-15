@@ -47,6 +47,7 @@ export class TelaConfiguracoes {
     private fonte:       Fonte,
     private onConexao:   () => void,
     private onMedicao:   () => void,
+    private onJogos:     () => void,
     private onSessoes:   () => void,
     private onFirmware:  () => void,
     private status?:     StatusConexao,
@@ -81,7 +82,7 @@ export class TelaConfiguracoes {
     `).join('');
 
     container.innerHTML = `
-      ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
+      ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onJogos: this.onJogos, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -108,7 +109,7 @@ export class TelaConfiguracoes {
       </div>
     `;
 
-    bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) });
+    bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onJogos: this.onJogos, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) });
     container.querySelector('#cfg-btn-atualizar')!.addEventListener('click', () => {
       this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
       this.mostrarStatus('info', 'Solicitando configuração ao firmware…');
