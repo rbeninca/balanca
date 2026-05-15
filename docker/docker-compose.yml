@@ -3,8 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.gateway
-    devices:
-      - /dev/ttyUSB0:/dev/ttyUSB0
+    privileged: true
     ports:
       - "8765:8765"
       - "8766:8766"
@@ -59,8 +58,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.firmware
-    devices:
-      - /dev/ttyUSB0:/dev/ttyUSB0
+    privileged: true
     ports:
       - "8767:8767"
     environment:
