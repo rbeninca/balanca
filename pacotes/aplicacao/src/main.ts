@@ -58,6 +58,50 @@ let telaMedicaoAtual:  TelaMedicao  | null = null;
 let telaMarteloAtual:  TelaMarteloThor | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
 const contadorHz = new ContadorHz();
+let autoConectouJa = false;
+
+async function tentarAutoConectar(): Promise<boolean> {
+  if (autoConectouJa) return false;
+  autoConectouJa = true;
+
+  const host = location.hostname;
+  if (!host) return false;
+
+  const ok = await new Promise<boolean>(resolve => {
+    let done = false;
+    const fim = (v: boolean) => { if (!done) { done = true; resolve(v); } };
+    try {
+      const ws = new WebSocket(`ws://${host}:8765`);
+      const t = setTimeout(() => { ws.close(); fim(false); }, 2000);
+      ws.addEventListener('open', () => { clearTimeout(t); ws.close(); fim(true); });
+      ws.addEventListener('error', () => { clearTimeout(t); fim(false); });
+    } catch { fim(false); }
+  });
+
+  if (!ok) return false;
+
+  try {
+    const cfg = (() => {
+      try { return JSON.parse(localStorage.getItem('balancagfig:conexao') ?? '{}') as { chave?: string }; }
+      catch { return {}; }
+    })();
+    const fonte = new FonteWebSocket(`ws://${host}:8765`);
+    await fonte.aguardarConexao(3000);
+    armazenamento = new ArmazenamentoApi(host, cfg.chave ?? '');
+    enderecoAtual = host;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fonteAtual = fonte as any;
+    gerenciador = new GerenciadorSessao(armazenamento);
+    contadorHz.iniciar(fonte);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    conectarPonteJogos(fonteAtual as any);
+    atualizarStatusPonteJogos(true);
+    navegar('medicao');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function statusConexao(): StatusConexao | undefined {
   return enderecoAtual ? { endereco: enderecoAtual, conectado: true } : undefined;
@@ -241,4 +285,5 @@ function renderizar() {
   }
 }
 
-renderizar();
+app.innerHTML = '<div class="auto-conectando">Detectando gateway...</div>';
+void tentarAutoConectar().then(conectou => { if (!conectou) renderizar(); });
