@@ -1,4 +1,7 @@
 import { EventEmitter } from 'node:events';
+import { watch, type FSWatcher } from 'node:fs';
+import { access } from 'node:fs/promises';
+import { dirname, basename } from 'node:path';
 import { SerialPort } from 'serialport';
 import { decodificar } from '@balancagfig/protocolo';
 import type { PacoteESP32 } from '@balancagfig/protocolo';
@@ -15,6 +18,7 @@ export class PortaSerial extends EventEmitter {
   private porta: SerialPort | null = null;
   private buffer  = Buffer.alloc(0);
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private watcherDev: FSWatcher | null = null;
   private tentativa = 0;
   private abortado  = false;
   private pausado   = false;
@@ -26,6 +30,29 @@ export class PortaSerial extends EventEmitter {
 
   iniciar(): void {
     this.conectar();
+  }
+
+  private pararWatcher(): void {
+    this.watcherDev?.close();
+    this.watcherDev = null;
+  }
+
+  private observarDispositivo(): void {
+    if (this.watcherDev || this.abortado || this.pausado) return;
+    const dir  = dirname(this.opcoes.caminho);
+    const alvo = basename(this.opcoes.caminho);
+    try {
+      this.watcherDev = watch(dir, (_, arquivo) => {
+        if (arquivo !== alvo) return;
+        void access(this.opcoes.caminho).then(() => {
+          if (this.abortado || this.pausado || this.conectado) return;
+          this.pararWatcher();
+          if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+          // pequena espera para o SO terminar de enumerar o dispositivo
+          this.timer = setTimeout(() => this.conectar(), 300);
+        }).catch(() => { /* dispositivo ainda ausente */ });
+      });
+    } catch { /* fs.watch não suportado neste ambiente */ }
   }
 
   private conectar(): void {
@@ -42,6 +69,7 @@ export class PortaSerial extends EventEmitter {
         this.agendarReconexao(`Erro ao abrir: ${err.message}`);
         return;
       }
+      this.pararWatcher();
       this.tentativa = 0;
       this.conectado = true;
       this.buffer    = Buffer.alloc(0);
@@ -105,6 +133,7 @@ export class PortaSerial extends EventEmitter {
     const delay = BACKOFF_MS[Math.min(this.tentativa, BACKOFF_MS.length - 1)] ?? 30000;
     this.tentativa++;
     this.timer = setTimeout(() => this.conectar(), delay);
+    this.observarDispositivo();
   }
 
   enviar(dados: Buffer): Promise<void> {
@@ -122,6 +151,7 @@ export class PortaSerial extends EventEmitter {
 
   pausar(): Promise<void> {
     this.pausado = true;
+    this.pararWatcher();
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -144,6 +174,7 @@ export class PortaSerial extends EventEmitter {
 
   fechar(): Promise<void> {
     this.abortado = true;
+    this.pararWatcher();
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
