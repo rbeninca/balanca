@@ -31,7 +31,8 @@ function converterForca(valorN: number, unidade: Unidade): number {
 }
 
 export class TelaMedicao {
-  private gravando       = false;
+  private gravando          = false;
+  private inicioGravacaoMs  = 0;
   private dadosGravados: LeituraProcessada[] = [];
   private dadosGrafico: { valor: number; tempo: number }[] = [];
   private unidade: Unidade   = 'N';
@@ -63,6 +64,8 @@ export class TelaMedicao {
   private elBtnParar:      HTMLButtonElement | null = null;
   private elBadge:         HTMLElement | null = null;
   private elStatus:        HTMLElement | null = null;
+  private elStatsTempo:    HTMLElement | null = null;
+  private elStatsAmostras: HTMLElement | null = null;
   private elNome:          HTMLInputElement | null = null;
   private elBtnPausar:     HTMLButtonElement | null = null;
   private elBtnTelaCheia:  HTMLButtonElement | null = null;
@@ -546,9 +549,19 @@ export class TelaMedicao {
   private iniciarLoop() {
     const loop = () => {
       this.renderizarGrafico();
+      this.atualizarTempoGravacao();
       this.animFrameId = requestAnimationFrame(loop);
     };
     this.animFrameId = requestAnimationFrame(loop);
+  }
+
+  private atualizarTempoGravacao(): void {
+    if (!this.gravando || !this.elStatsTempo || !this.elStatsAmostras) return;
+    const elapsed  = Date.now() - this.inicioGravacaoMs;
+    const s        = Math.floor(elapsed / 1000);
+    const ms       = elapsed % 1000;
+    this.elStatsTempo.textContent    = `${s}s ${String(ms).padStart(3, '0')}ms`;
+    this.elStatsAmostras.textContent = `${this.dadosGravados.length} amostras`;
   }
 
   private renderizarGrafico() {
@@ -754,10 +767,11 @@ export class TelaMedicao {
   }
 
   private async iniciarGravacao() {
-    this.nomeSessao    = this.elNome?.value.trim() ||
+    this.nomeSessao       = this.elNome?.value.trim() ||
       `Sessão ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
-    this.dadosGravados = [];
-    this.dadosGrafico  = [];
+    this.dadosGravados    = [];
+    this.dadosGrafico     = [];
+    this.inicioGravacaoMs = Date.now();
     await this.gerenciador.iniciarGravacao(this.nomeSessao);
     this.gravando = true;
 
@@ -767,21 +781,40 @@ export class TelaMedicao {
 
     if (this.elStatus) {
       this.elStatus.className = 'status-box ok';
-      this.elStatus.textContent = `Gravando: ${this.nomeSessao}`;
       this.elStatus.classList.remove('hidden');
+      this.elStatus.innerHTML = '';
+
+      const nomeEl = document.createElement('div');
+      nomeEl.textContent = `Gravando: ${this.nomeSessao}`;
+
+      const statsEl = document.createElement('div');
+      statsEl.style.cssText = 'margin-top:4px;font-size:0.82rem;opacity:0.85;font-variant-numeric:tabular-nums';
+
+      const spanTempo    = document.createElement('span');
+      const spanAmostras = document.createElement('span');
+      statsEl.appendChild(spanTempo);
+      statsEl.appendChild(document.createTextNode(' · '));
+      statsEl.appendChild(spanAmostras);
+
+      this.elStatus.appendChild(nomeEl);
+      this.elStatus.appendChild(statsEl);
+      this.elStatsTempo    = spanTempo;
+      this.elStatsAmostras = spanAmostras;
     }
   }
 
   private async pararGravacao() {
     this.gravando = false;
     const sessao = await this.gerenciador.pararGravacao();
+    this.elStatsTempo    = null;
+    this.elStatsAmostras = null;
 
     this.elBtnIniciar?.classList.remove('hidden');
     this.elBtnParar?.classList.add('hidden');
     this.elBadge?.classList.add('hidden');
 
     if (this.elStatus) {
-      this.elStatus.className = 'status-box aviso';
+      this.elStatus.className  = 'status-box aviso';
       this.elStatus.textContent = `Sessão salva — ${sessao.totalLeituras} leituras, F_máx ${sessao.forcaMaximaN.toFixed(1)} N`;
     }
 
