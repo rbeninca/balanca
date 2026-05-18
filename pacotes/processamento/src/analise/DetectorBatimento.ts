@@ -9,7 +9,7 @@ import { EstimadorBpmAutocorrelacao } from './EstimadorBpmAutocorrelacao.js';
 
 export type QualidadeSinal = 'boa' | 'razoavel' | 'instavel' | 'sem-sinal';
 export type TipoCamada1 = 'nenhum' | 'mediana' | 'mediaMovel';
-export type TipoCamada2 = 'iir' | 'fir';
+export type TipoCamada2 = 'iir' | 'fir' | 'bypass';
 export type ModoPico = 'limiar' | 'panTompkins';
 export type ModoBpm  = 'ibi' | 'autocorrelacao' | 'ambos';
 
@@ -197,7 +197,9 @@ export class DetectorBatimento {
     // Camada 2: filtro de banda cardíaca
     const sinalFiltrado = this.cfg.tipoCamada2 === 'fir'
       ? this.c2FIR.aplicar(c1Resp)
-      : this.c2IIR.aplicar(c1Resp);
+      : this.cfg.tipoCamada2 === 'iir'
+        ? this.c2IIR.aplicar(c1Resp)
+        : c1Resp; // bypass
 
     // Estimador por autocorrelação (sempre alimentado)
     const { bpm: bpmAuto, confianca: confiancaAuto } =
