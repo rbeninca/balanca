@@ -387,6 +387,131 @@
 
     @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+    /* ── Botão de tema ──────────────────────────────────────────────────────── */
+    .nav-tema-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.4rem; border-radius: 4px; line-height: 1; color: #9ca3af; transition: background 0.15s, color 0.15s; }
+    .nav-tema-btn:hover { background: rgba(0,0,0,0.07); color: #374151; }
+
+    /* ── Modo escuro ────────────────────────────────────────────────────────── */
+    [data-tema="escuro"] { color-scheme: dark; }
+    [data-tema="escuro"] body { background: #0f172a; color: #e2e8f0; }
+    [data-tema="escuro"] h1, [data-tema="escuro"] h2 { color: #f1f5f9; }
+    [data-tema="escuro"] h3 { color: #94a3b8; }
+    [data-tema="escuro"] label { color: #64748b; }
+    [data-tema="escuro"] input[type="text"],
+    [data-tema="escuro"] input[type="password"],
+    [data-tema="escuro"] input[type="number"] { background: #0f172a; border-color: #475569; color: #e2e8f0; }
+    [data-tema="escuro"] .radio-label { border-color: #334155; }
+    [data-tema="escuro"] .radio-label:has(input:checked) { border-color: #3b82f6; background: rgba(59,130,246,0.15); }
+    [data-tema="escuro"] .card { background: #1e293b; border-color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    [data-tema="escuro"] .card:fullscreen { background: #1e293b; }
+    [data-tema="escuro"] .btn-secondary { background: #334155; color: #94a3b8; border-color: #475569; }
+    [data-tema="escuro"] .btn-secondary:hover:not(:disabled) { background: #475569; }
+    [data-tema="escuro"] .btn-outline { color: #60a5fa; border-color: #3b82f6; }
+    [data-tema="escuro"] .btn-outline:hover:not(:disabled) { background: rgba(59,130,246,0.1); }
+    [data-tema="escuro"] .status-box { background: #0f172a; color: #94a3b8; border-color: #334155; }
+    [data-tema="escuro"] .status-box.ok    { background: rgba(22,163,74,0.12); color: #4ade80; border-color: #166534; }
+    [data-tema="escuro"] .status-box.aviso { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: #92400e; }
+    [data-tema="escuro"] .status-box.erro  { background: rgba(220,38,38,0.12); color: #f87171; border-color: #991b1b; }
+    [data-tema="escuro"] .nav-links a { color: #60a5fa; }
+    [data-tema="escuro"] .nav-links a.ativo { color: #f1f5f9; border-bottom-color: #60a5fa; }
+    [data-tema="escuro"] .nav-links a:hover { color: #93c5fd; }
+    [data-tema="escuro"] .nav-links .nav-desativado { color: #475569; }
+    [data-tema="escuro"] .nav-tema-btn { color: #64748b; }
+    [data-tema="escuro"] .nav-tema-btn:hover { background: rgba(255,255,255,0.07); color: #94a3b8; }
+    [data-tema="escuro"] .nav-status-chip.conectado { background: rgba(22,163,74,0.15); color: #4ade80; }
+    [data-tema="escuro"] .nav-status-chip.desconectado { background: rgba(239,68,68,0.15); color: #f87171; }
+    [data-tema="escuro"] .auto-conectando { color: #475569; }
+    [data-tema="escuro"] .chart-container { background: #0a1628; border-color: #1e293b; }
+    [data-tema="escuro"] .ctrl-grupo { border-color: #334155; }
+    [data-tema="escuro"] .ctrl-grupo .ctrl-btn + .ctrl-btn { border-left-color: #334155; }
+    [data-tema="escuro"] .ctrl-btn { background: #1e293b; color: #64748b; }
+    [data-tema="escuro"] .ctrl-btn:hover { background: #334155; color: #94a3b8; }
+    [data-tema="escuro"] .ctrl-btn.ativo { background: rgba(37,99,235,0.2); color: #60a5fa; }
+    [data-tema="escuro"] .ctrl-btn-solo { border-color: #334155; }
+    [data-tema="escuro"] .ctrl-btn-solo.ativo { background: rgba(194,65,12,0.2); color: #fb923c; border-color: #7c2d12; }
+    [data-tema="escuro"] .ctrl-btn-tela-cheia.ativo { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+    [data-tema="escuro"] .filtros-painel { border-color: #334155; }
+    [data-tema="escuro"] .filtros-header { background: #1e293b; color: #94a3b8; }
+    [data-tema="escuro"] .filtros-header:hover { background: #334155; }
+    [data-tema="escuro"] .filtros-corpo { border-top-color: #334155; }
+    [data-tema="escuro"] .filtros-badge { background: rgba(22,163,74,0.15); color: #4ade80; }
+    [data-tema="escuro"] .filtros-badge.parcial { background: rgba(234,179,8,0.15); color: #eab308; }
+    [data-tema="escuro"] .filtros-badge.inativo { background: rgba(239,68,68,0.15); color: #f87171; }
+    [data-tema="escuro"] .filtros-origem { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+    [data-tema="escuro"] .filtros-origem.gateway { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    [data-tema="escuro"] .filtros-seta { color: #64748b; }
+    [data-tema="escuro"] .filtro-chk { color: #94a3b8; }
+    [data-tema="escuro"] .filtro-params { color: #64748b; }
+    [data-tema="escuro"] .filtro-num { border-color: #475569; color: #e2e8f0; background: #0f172a; }
+    [data-tema="escuro"] .status-bar { color: #64748b; }
+    [data-tema="escuro"] .info-row { color: #64748b; }
+    [data-tema="escuro"] .info-row span:last-child { color: #94a3b8; }
+    [data-tema="escuro"] .modal { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .modal-header { border-bottom-color: #334155; }
+    [data-tema="escuro"] .modal-header h2 { color: #f1f5f9; }
+    [data-tema="escuro"] .modal-footer { border-top-color: #334155; }
+    [data-tema="escuro"] .modal-fechar { color: #64748b; }
+    [data-tema="escuro"] .modal-fechar:hover { color: #94a3b8; }
+    [data-tema="escuro"] .modo-card { border-color: #334155; }
+    [data-tema="escuro"] .modo-card:hover { border-color: #60a5fa; }
+    [data-tema="escuro"] .modo-card.selecionado { border-color: #3b82f6; background: rgba(59,130,246,0.12); }
+    [data-tema="escuro"] .modo-card-titulo { color: #e2e8f0; }
+    [data-tema="escuro"] .modo-card-sub { color: #64748b; }
+    [data-tema="escuro"] .fw-opcao-badge { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+    [data-tema="escuro"] .fw-opcao-desc { color: #94a3b8; }
+    [data-tema="escuro"] .fw-opcao-motivo { color: #64748b; }
+    [data-tema="escuro"] .sessao-item { border-bottom-color: #334155; }
+    [data-tema="escuro"] .sessao-item .nome { color: #e2e8f0; }
+    [data-tema="escuro"] .sessao-item .meta { color: #64748b; }
+    [data-tema="escuro"] .jogo-card { border-color: #334155; background: #1e293b; }
+    [data-tema="escuro"] .jogo-card-header h3 { color: #f1f5f9; }
+    [data-tema="escuro"] .jogo-desc { color: #94a3b8; }
+    [data-tema="escuro"] .jogo-tag { background: #0f172a; color: #64748b; border-color: #334155; }
+    [data-tema="escuro"] .origem-gateway { background: rgba(37,99,235,0.12); color: #60a5fa; border-color: #1d4ed8; }
+    [data-tema="escuro"] .origem-local { background: #1e293b; color: #64748b; border-color: #334155; }
+    [data-tema="escuro"] .motor-badge { background: rgba(22,163,74,0.1); color: #4ade80; border-color: #166534; }
+    [data-tema="escuro"] .motor-classificacao { background: rgba(22,163,74,0.1); color: #4ade80; border-color: #166534; }
+    [data-tema="escuro"] .cfg-table th { color: #64748b; border-bottom-color: #334155; }
+    [data-tema="escuro"] .cfg-linha { border-bottom-color: #1e293b; }
+    [data-tema="escuro"] .cfg-linha:hover { background: #0f172a; }
+    [data-tema="escuro"] .cfg-nome { color: #e2e8f0; }
+    [data-tema="escuro"] .cfg-desc { color: #64748b; }
+    [data-tema="escuro"] .stats-secao h3 { color: #64748b; border-bottom-color: #334155; }
+    [data-tema="escuro"] .stat-label { color: #64748b; }
+    [data-tema="escuro"] .stat-valor { color: #e2e8f0; }
+    [data-tema="escuro"] .stat-input { border-color: #475569; background: #0f172a; color: #e2e8f0; }
+    [data-tema="escuro"] .stat-input:focus { background: #1e293b; }
+    [data-tema="escuro"] .meta-textarea { border-color: #475569; background: #0f172a; color: #e2e8f0; }
+    [data-tema="escuro"] .meta-textarea:focus { background: #1e293b; }
+    [data-tema="escuro"] .wizard-dot { background: #334155; border-color: #475569; }
+    [data-tema="escuro"] .wizard-dot.ativo { background: #3b82f6; border-color: #3b82f6; }
+    [data-tema="escuro"] .wizard-linha { background: #334155; }
+    [data-tema="escuro"] .wizard-passo h3 { color: #f1f5f9; }
+    [data-tema="escuro"] .wizard-passo p { color: #64748b; }
+    [data-tema="escuro"] .wizard-leitura-live { background: #0f172a; border-color: #334155; }
+    [data-tema="escuro"] .wizard-leitura-live .valor { color: #60a5fa; }
+    [data-tema="escuro"] .wizard-leitura-live .label { color: #64748b; }
+    [data-tema="escuro"] .wizard-resultado { background: rgba(22,163,74,0.1); border-color: #166534; }
+    [data-tema="escuro"] .wizard-resultado p { color: #4ade80; }
+    [data-tema="escuro"] .wizard-aviso { background: rgba(245,158,11,0.1); border-color: #92400e; color: #fbbf24; }
+    [data-tema="escuro"] .gw-scan-msg { color: #64748b; }
+    [data-tema="escuro"] .gw-chip { background: rgba(59,130,246,0.15); color: #60a5fa; border-color: #1d4ed8; }
+    [data-tema="escuro"] .gw-chip:hover { background: rgba(59,130,246,0.25); }
+    [data-tema="escuro"] .input-editar-data { background: #0f172a; color: #e2e8f0; border-color: #3b82f6; }
+    [data-tema="escuro"] .barra-comparacao { background: rgba(59,130,246,0.12); border-color: #1d4ed8; color: #93c5fd; }
+    [data-tema="escuro"] .comparacao-card { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .comparacao-card-label { color: #64748b; }
+    [data-tema="escuro"] .comparacao-card-valor { color: #e2e8f0; }
+    [data-tema="escuro"] .vazio { color: #475569; }
+    [data-tema="escuro"] .ports-list { color: #475569; }
+    [data-tema="escuro"] .martelo-painel { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .martelo-painel .martelo-titulo-jogo { color: #f1f5f9; }
+    [data-tema="escuro"] .martelo-painel .martelo-eyebrow { color: #fb923c; }
+    [data-tema="escuro"] .martelo-resumo-item { background: rgba(255,255,255,0.04); border-color: #334155; }
+    [data-tema="escuro"] .martelo-resumo-item strong { color: #e2e8f0; }
+    [data-tema="escuro"] .martelo-ranking-item { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+    [data-tema="escuro"] .martelo-ranking-item.lider { background: linear-gradient(180deg, rgba(251,146,60,0.08) 0%, #1e293b 100%); }
+
     /* ── Responsivo ─────────────────────────────────────────────────────────── */
     @media (max-width: 640px) {
       body { padding: 0.5rem; }
