@@ -1,8 +1,9 @@
 export interface ResultadoCalibracao {
-  calibrado:  boolean;
-  pesoRef:    number;   // N — média da força em repouso
-  massaEst:   number;   // kg — pesoRef / 9.81
-  progresso:  number;   // 0–1 — progresso da janela de estabilidade
+  calibrado:    boolean;
+  pesoRef:      number;   // N — média da força em repouso
+  massaEst:     number;   // kg — pesoRef / 9.81
+  progresso:    number;   // 0–1 — progresso da janela de estabilidade
+  mediaAtualN:  number;   // média corrente da janela (0 se vazia)
 }
 
 export interface ConfigCalibradorBarra {
@@ -34,7 +35,7 @@ export class CalibradorBarra {
 
   processar(forcaN: number): ResultadoCalibracao {
     if (this._calibrado) {
-      return { calibrado: true, pesoRef: this._pesoRef, massaEst: this._massaEst, progresso: 1 };
+      return { calibrado: true, pesoRef: this._pesoRef, massaEst: this._massaEst, progresso: 1, mediaAtualN: this._pesoRef };
     }
 
     // Aceita amostra apenas se dentro da faixa esperada de "pendurado"
@@ -50,26 +51,26 @@ export class CalibradorBarra {
 
     const n = this.janela.length;
     const progresso = n / this.capacidade;
+    const mediaAtualN = n > 0 ? this.janela.reduce((s, v) => s + v, 0) / n : 0;
 
     if (n < this.capacidade) {
-      return { calibrado: false, pesoRef: 0, massaEst: 0, progresso };
+      return { calibrado: false, pesoRef: 0, massaEst: 0, progresso, mediaAtualN };
     }
 
     // Janela cheia — verifica estabilidade
-    const media = this.janela.reduce((s, v) => s + v, 0) / n;
-    const variancia = this.janela.reduce((s, v) => s + (v - media) ** 2, 0) / n;
+    const variancia = this.janela.reduce((s, v) => s + (v - mediaAtualN) ** 2, 0) / n;
     const desvio = Math.sqrt(variancia);
 
     if (desvio > this.cfg.desvioPadraoMaxN) {
       // Instável — remove amostra mais antiga e continua
       this.janela.shift();
-      return { calibrado: false, pesoRef: 0, massaEst: 0, progresso: n / this.capacidade };
+      return { calibrado: false, pesoRef: 0, massaEst: 0, progresso: (n - 1) / this.capacidade, mediaAtualN };
     }
 
-    this._pesoRef  = media;
-    this._massaEst = media / 9.81;
+    this._pesoRef  = mediaAtualN;
+    this._massaEst = mediaAtualN / 9.81;
     this._calibrado = true;
-    return { calibrado: true, pesoRef: this._pesoRef, massaEst: this._massaEst, progresso: 1 };
+    return { calibrado: true, pesoRef: this._pesoRef, massaEst: this._massaEst, progresso: 1, mediaAtualN: this._pesoRef };
   }
 
   reiniciar(): void {

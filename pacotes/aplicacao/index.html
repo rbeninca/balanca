@@ -628,15 +628,23 @@
     .barra-canvas-container { position: relative; flex: 1; min-height: 0; background: #1a1a2e; }
     .barra-canvas { display: block; width: 100%; height: 100%; }
     .barra-hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 0.75rem; }
-    .barra-hud-calib { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; background: rgba(15,23,42,0.85); border-radius: 10px; padding: 1rem 1.5rem; align-self: center; margin-top: auto; margin-bottom: auto; }
+    .barra-hud-calib { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; background: rgba(15,23,42,0.88); border-radius: 10px; padding: 1rem 1.5rem; align-self: center; margin-top: auto; margin-bottom: auto; }
     .barra-calib-titulo { font-size: 0.85rem; color: #94a3b8; text-align: center; }
+    .barra-calib-valores { display: flex; align-items: center; gap: 0.5rem; font-variant-numeric: tabular-nums; }
+    .barra-calib-vlabel { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .barra-calib-vval { font-size: 0.85rem; font-weight: 700; color: #e2e8f0; }
+    .barra-calib-sep { font-size: 0.75rem; color: #334155; }
     .barra-prog-outer { width: 200px; height: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; }
     .barra-prog-inner { height: 100%; width: 0; background: #4fc3f7; border-radius: 999px; transition: width 0.15s linear; }
     .barra-hud-metricas { display: flex; flex-wrap: wrap; gap: 0.4rem 0.75rem; align-self: flex-end; pointer-events: none; }
     .barra-metric { background: rgba(15,23,42,0.8); border-radius: 6px; padding: 0.3rem 0.55rem; display: flex; flex-direction: column; align-items: center; min-width: 70px; }
     .barra-label { font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
     .barra-val { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; font-variant-numeric: tabular-nums; }
-    .barra-controles { display: flex; gap: 0.5rem; justify-content: flex-end; padding: 0.5rem 0.75rem; background: #0f172a; border-top: 1px solid #1e293b; }
+    .barra-controles { display: flex; align-items: center; gap: 0.75rem; justify-content: flex-end; padding: 0.45rem 0.75rem; background: #0f172a; border-top: 1px solid #1e293b; flex-wrap: wrap; }
+    .barra-cfg-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: #94a3b8; }
+    .barra-cfg-nome { white-space: nowrap; }
+    .barra-cfg-input { width: 3.2rem; padding: 0.2rem 0.3rem; background: #1e293b; border: 1px solid #334155; border-radius: 4px; color: #e2e8f0; font-size: 0.75rem; text-align: center; }
+    .barra-cfg-unidade { color: #64748b; }
   </style>
 </head>
 <body>
