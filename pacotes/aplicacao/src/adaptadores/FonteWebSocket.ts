@@ -68,6 +68,7 @@ export class FonteWebSocket {
         break;
       case 'PIPELINE_ESTADO':
         this.cfgGateway = msg.carga as EstadoPipeline;
+        this._emitir('config', msg.carga);
         break;
       case 'SERIAL_OFF':
         this._status = { ...this._status, conectado: false };
