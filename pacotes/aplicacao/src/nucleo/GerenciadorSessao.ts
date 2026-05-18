@@ -58,7 +58,8 @@ export class GerenciadorSessao {
 
   private async _flush(): Promise<void> {
     if (!this.idSessaoAtual || this.buffer.length === 0) return;
-    await this.armazenamento.adicionarLeituras(this.idSessaoAtual, this.buffer);
+    const lote = this.buffer;
     this.buffer = [];
+    await this.armazenamento.adicionarLeituras(this.idSessaoAtual, lote);
   }
 }

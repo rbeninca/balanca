@@ -55,18 +55,22 @@ export class ArmazenamentoApi implements IArmazenamento {
   }
 
   async adicionarLeituras(idSessao: string, leituras: LeituraProcessada[]): Promise<void> {
-    const body = leituras.map(l => ({
-      marca_temporal:       l.marcaTemporal,
-      forca_newton:         l.forcaNewton,
-      em_queima:            l.emQueima,
-      impulso_acumulado_ns: l.impulsoAcumuladoNs,
-    }));
-    const res = await fetch(`${this.base}/sessoes/${idSessao}/leituras`, {
-      method: 'POST',
-      headers: this.headersJson,
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`Erro ao adicionar leituras: ${res.status}`);
+    const CHUNK = 500;
+    for (let i = 0; i < leituras.length; i += CHUNK) {
+      const fatia = leituras.slice(i, i + CHUNK);
+      const body = fatia.map(l => ({
+        marca_temporal:       l.marcaTemporal,
+        forca_newton:         l.forcaNewton,
+        em_queima:            l.emQueima,
+        impulso_acumulado_ns: l.impulsoAcumuladoNs,
+      }));
+      const res = await fetch(`${this.base}/sessoes/${idSessao}/leituras`, {
+        method: 'POST',
+        headers: this.headersJson,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Erro ao adicionar leituras: ${res.status}`);
+    }
   }
 
   async obterLeituras(idSessao: string): Promise<LeituraProcessada[]> {
