@@ -46,9 +46,11 @@ export class TelaMedicao {
   private impulsoOffset      = 0;
 
   // Controles do gráfico
-  private modoPontos     = false;
-  private modoAcumulado  = false;
-  private pausado        = false;
+  private modoPontos        = false;
+  private modoAcumulado     = false;
+  private pausado           = false;
+  private exibirSinalBruto  = false;
+  private dadosBrutos: { valor: number; tempo: number }[] = [];
 
   // refs DOM
   private elValor:      HTMLElement | null = null;
@@ -64,6 +66,7 @@ export class TelaMedicao {
   private elNome:          HTMLInputElement | null = null;
   private elBtnPausar:     HTMLButtonElement | null = null;
   private elBtnTelaCheia:  HTMLButtonElement | null = null;
+  private elBtnSinalBruto: HTMLButtonElement | null = null;
   private cardMedicao:     HTMLElement | null = null;
   private hoverPos:        { x: number; y: number } | null = null;
 
@@ -111,6 +114,9 @@ export class TelaMedicao {
           </div>
           <button id="ctrl-pausar"     class="ctrl-btn ctrl-btn-solo" title="Pausar/continuar atualização do gráfico">⏸ Pausar</button>
           <button id="ctrl-limpar"     class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
+          <button id="ctrl-sinal-bruto" class="ctrl-btn ctrl-btn-solo" title="Exibir sinal bruto junto com o filtrado" disabled>Bruto</button>
+          <button id="btn-tarar"    class="ctrl-btn ctrl-btn-solo" title="Zerar leitura atual (tara)">Tarar</button>
+          <button id="btn-calibrar" class="ctrl-btn ctrl-btn-solo" title="Abrir assistente de calibração">Calibração</button>
           <button id="ctrl-tela-cheia" class="ctrl-btn ctrl-btn-solo ctrl-btn-tela-cheia" title="Tela cheia (F11)">⛶</button>
         </div>
 
@@ -152,6 +158,58 @@ export class TelaMedicao {
                 <span>ms</span>
               </div>
             </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-notch">
+                Notch
+              </label>
+              <div class="filtro-params">
+                <input type="number" id="in-notch-freq" class="filtro-num" value="60" min="1" max="500" step="1" title="Frequência a rejeitar (Hz)">
+                <span>Hz</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-mediana">
+                Mediana
+              </label>
+              <div class="filtro-params">
+                <input type="number" id="in-mediana-jan" class="filtro-num" value="5" min="1" max="21" step="2" title="Janela (amostras)">
+                <span>am</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-ema">
+                EMA
+              </label>
+              <div class="filtro-params">
+                <input type="number" id="in-ema-alpha" class="filtro-num" value="0.20" min="0.01" max="1" step="0.01" title="Fator α (0–1)">
+                <span>α</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-sg">
+                Sav-Golay
+              </label>
+              <div class="filtro-params">
+                <input type="number" id="in-sg-jan" class="filtro-num" value="7" min="5" max="11" step="2" title="Janela (amostras, 5-11)">
+                <span>am</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
+                <input type="checkbox" id="ck-kalman">
+                Kalman
+              </label>
+              <div class="filtro-params">
+                <span title="Q: ruído de processo">Q</span>
+                <input type="number" id="in-kalman-q" class="filtro-num" value="0.01" min="0.0001" max="100" step="0.001" title="Ruído de processo (Q)">
+                <span title="R: ruído de medição">R</span>
+                <input type="number" id="in-kalman-r" class="filtro-num" value="1.0" min="0.01" max="1000" step="0.1" title="Ruído de medição (R)">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -174,10 +232,8 @@ export class TelaMedicao {
           <input id="nome-sessao" type="text" placeholder="Sessão ${new Date().toLocaleDateString('pt-BR')}">
         </div>
         <div class="controles">
-          <button id="btn-iniciar"  class="btn-primary">Iniciar</button>
-          <button id="btn-parar"    class="btn-danger hidden">Parar</button>
-          <button id="btn-tarar"    class="btn-secondary">Tarar</button>
-          <button id="btn-calibrar" class="btn-secondary">Calibração</button>
+          <button id="btn-iniciar" class="btn-primary">Iniciar</button>
+          <button id="btn-parar"   class="btn-danger hidden">Parar</button>
         </div>
         <div id="status-grav" class="status-box hidden" style="margin-top:0.75rem"></div>
       </div>
@@ -199,6 +255,7 @@ export class TelaMedicao {
     this.elNome          = container.querySelector('#nome-sessao');
     this.elBtnPausar     = container.querySelector('#ctrl-pausar');
     this.elBtnTelaCheia  = container.querySelector('#ctrl-tela-cheia');
+    this.elBtnSinalBruto = container.querySelector('#ctrl-sinal-bruto');
     this.cardMedicao     = container.querySelector('.card');
 
     this.elUnidade?.addEventListener('click', () => this.alternarUnidade());
@@ -251,6 +308,11 @@ export class TelaMedicao {
     });
     container.querySelector('#ctrl-limpar')!.addEventListener('click', () => this.limpar());
 
+    container.querySelector('#ctrl-sinal-bruto')!.addEventListener('click', () => {
+      this.exibirSinalBruto = !this.exibirSinalBruto;
+      this.elBtnSinalBruto?.classList.toggle('ativo', this.exibirSinalBruto);
+    });
+
     this.dimensionarCanvas();
     window.addEventListener('resize', this.onResize);
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
@@ -295,25 +357,42 @@ export class TelaMedicao {
       seta.classList.toggle('aberto', !aberto);
     });
 
+    const num = (id: string, fb: number) =>
+      Math.max(0, +(container.querySelector<HTMLInputElement>(id)!.value) || fb);
+    const chk = (id: string) =>
+      container.querySelector<HTMLInputElement>(id)!.checked;
+
     const aplicar = () => {
-      const ckZona   = container.querySelector<HTMLInputElement>('#ck-zona-morta')!;
-      const ckMedia  = container.querySelector<HTMLInputElement>('#ck-media-movel')!;
-      const ckQueima = container.querySelector<HTMLInputElement>('#ck-det-queima')!;
       const patch: PipelinePatch = {
-        ativoZonaMorta:      ckZona.checked,
-        limiarZonaMortaN:    Math.max(0, +(container.querySelector<HTMLInputElement>('#in-zona-morta')!.value) || 0.05),
-        ativoMediaMovel:     ckMedia.checked,
-        janelaMediaMovel:    Math.max(1, +(container.querySelector<HTMLInputElement>('#in-media-movel')!.value) || 5),
-        ativoDetectorQueima: ckQueima.checked,
-        tempoMinFimMs:       Math.max(0, +(container.querySelector<HTMLInputElement>('#in-det-hister')!.value) || 100),
+        ativoZonaMorta:      chk('#ck-zona-morta'),
+        limiarZonaMortaN:    num('#in-zona-morta', 0.05),
+        ativoMediaMovel:     chk('#ck-media-movel'),
+        janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
+        ativoDetectorQueima: chk('#ck-det-queima'),
+        tempoMinFimMs:       num('#in-det-hister', 100),
+        ativoNotch:          chk('#ck-notch'),
+        freqNotchHz:         Math.max(1, num('#in-notch-freq', 60)),
+        ativoMediana:        chk('#ck-mediana'),
+        janelaMediana:       Math.max(1, num('#in-mediana-jan', 5)),
+        ativoEMA:            chk('#ck-ema'),
+        alphaEMA:            Math.min(1, Math.max(0.001, num('#in-ema-alpha', 0.2))),
+        ativoSG:             chk('#ck-sg'),
+        janelaSG:            Math.max(5, num('#in-sg-jan', 7)),
+        ativoKalman:         chk('#ck-kalman'),
+        kalmanQ:             Math.max(0.0001, num('#in-kalman-q', 0.01)),
+        kalmanR:             Math.max(0.01,   num('#in-kalman-r', 1.0)),
       };
       this.fonte.atualizarConfigPipeline?.(patch);
       this.atualizarBadgeFiltros(container);
+      this.atualizarBotaoSinalBruto(patch);
     };
 
-    ['#ck-zona-morta','#ck-media-movel','#ck-det-queima'].forEach(id =>
+    ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
+     '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister'].forEach(id =>
+    ['#in-zona-morta','#in-media-movel','#in-det-hister',
+     '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
+     '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
 
     this.atualizarBadgeFiltros(container);
@@ -322,13 +401,28 @@ export class TelaMedicao {
   private atualizarBadgeFiltros(container: HTMLElement) {
     const badge = container.querySelector<HTMLElement>('#filtros-badge');
     if (!badge) return;
-    const ativos = [
-      container.querySelector<HTMLInputElement>('#ck-zona-morta')?.checked,
-      container.querySelector<HTMLInputElement>('#ck-media-movel')?.checked,
-      container.querySelector<HTMLInputElement>('#ck-det-queima')?.checked,
-    ].filter(Boolean).length;
-    badge.textContent = ativos === 3 ? '3 ativos' : ativos === 0 ? 'inativo' : `${ativos}/3 ativos`;
-    badge.className = 'filtros-badge' + (ativos === 3 ? '' : ativos === 0 ? ' inativo' : ' parcial');
+    const ids = ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
+                 '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'];
+    const total  = ids.length;
+    const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length;
+    badge.textContent = ativos === total ? `${total} ativos` : ativos === 0 ? 'inativo' : `${ativos}/${total} ativos`;
+    badge.className   = 'filtros-badge' + (ativos === total ? '' : ativos === 0 ? ' inativo' : ' parcial');
+  }
+
+  private atualizarBotaoSinalBruto(patch: PipelinePatch) {
+    const algumNovo = patch.ativoNotch || patch.ativoMediana || patch.ativoEMA || patch.ativoSG || patch.ativoKalman;
+    if (this.elBtnSinalBruto) {
+      this.elBtnSinalBruto.disabled = !algumNovo;
+      if (!algumNovo) {
+        this.exibirSinalBruto = false;
+        this.elBtnSinalBruto.classList.remove('ativo');
+        this.dadosBrutos = [];
+      }
+    }
+  }
+
+  private get escuro(): boolean {
+    return document.documentElement.dataset['tema'] === 'escuro';
   }
 
   private onCanvasMouseMove = (e: MouseEvent) => {
@@ -382,9 +476,14 @@ export class TelaMedicao {
     }
 
     if (!this.pausado) {
-      this.dadosGrafico.push({ valor: l.forcaNewton, tempo: l.marcaTemporal });
       const limite = this.modoAcumulado ? MAX_ACUMULADO : MAX_FLUXO;
+      this.dadosGrafico.push({ valor: l.forcaNewton, tempo: l.marcaTemporal });
       if (this.dadosGrafico.length > limite) this.dadosGrafico.shift();
+
+      if (l.forcaNewtonBruta !== undefined) {
+        this.dadosBrutos.push({ valor: l.forcaNewtonBruta, tempo: l.marcaTemporal });
+        if (this.dadosBrutos.length > limite) this.dadosBrutos.shift();
+      }
     }
 
     if (this.gravando) {
@@ -439,6 +538,7 @@ export class TelaMedicao {
 
   private limpar() {
     this.dadosGrafico  = [];
+    this.dadosBrutos   = [];
     this.impulsoOffset = this.ultimaLeitura?.impulsoAcumuladoNs ?? 0;
     if (this.elImpulso) this.elImpulso.textContent = '0.000 N·s';
   }
@@ -463,7 +563,7 @@ export class TelaMedicao {
     ctx.clearRect(0, 0, W, H);
 
     if (this.dadosGrafico.length === 0) {
-      ctx.fillStyle    = '#c0c8d4';
+      ctx.fillStyle    = this.escuro ? '#334155' : '#c0c8d4';
       ctx.font         = '13px system-ui, sans-serif';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
@@ -482,14 +582,16 @@ export class TelaMedicao {
     const ph = H - mg.top  - mg.bottom;
 
     // grade horizontal
-    const numLinhas = 5;
-    ctx.strokeStyle  = '#e5e7eb';
+    const numLinhas  = 5;
+    const corGrade   = this.escuro ? '#1e293b' : '#e5e7eb';
+    const corRotulo  = this.escuro ? '#64748b' : '#9ca3af';
+    ctx.strokeStyle  = corGrade;
     ctx.lineWidth    = 1;
     for (let i = 0; i <= numLinhas; i++) {
       const y = mg.top + (ph / numLinhas) * i;
       ctx.beginPath(); ctx.moveTo(mg.left, y); ctx.lineTo(W - mg.right, y); ctx.stroke();
       const vLinha = (maxVal * 1.15) - (range * (i / numLinhas));
-      ctx.fillStyle    = '#9ca3af';
+      ctx.fillStyle    = corRotulo;
       ctx.font         = '10px system-ui, sans-serif';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'middle';
@@ -502,7 +604,7 @@ export class TelaMedicao {
       const tN = this.dadosGrafico[this.dadosGrafico.length - 1]!.tempo;
       const durS = (tN - t0) / 1000;
       const numTicks = Math.min(6, Math.floor(pw / 60));
-      ctx.fillStyle    = '#9ca3af';
+      ctx.fillStyle    = corRotulo;
       ctx.font         = '10px system-ui, sans-serif';
       ctx.textBaseline = 'top';
       for (let i = 0; i <= numTicks; i++) {
@@ -517,7 +619,7 @@ export class TelaMedicao {
     // linha de zero
     if (minVal < 0) {
       const zy = mg.top + ph - ((0 - minVal) / range) * ph;
-      ctx.strokeStyle = '#d1d5db';
+      ctx.strokeStyle = this.escuro ? '#334155' : '#d1d5db';
       ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(mg.left, zy); ctx.lineTo(W - mg.right, zy); ctx.stroke();
       ctx.setLineDash([]);
@@ -526,6 +628,22 @@ export class TelaMedicao {
     const cor = this.ultimaLeitura?.emQueima ? '#ff7040' : '#4a9eff';
     const n   = this.dadosGrafico.length;
     const den = Math.max(n - 1, 1);
+
+    // Linha do sinal bruto (atrás da linha filtrada)
+    if (this.exibirSinalBruto && this.dadosBrutos.length > 1) {
+      const nb   = this.dadosBrutos.length;
+      const denB = Math.max(nb - 1, 1);
+      ctx.beginPath();
+      ctx.strokeStyle = this.escuro ? 'rgba(148,163,184,0.35)' : 'rgba(100,116,139,0.40)';
+      ctx.lineWidth   = 1;
+      this.dadosBrutos.forEach((d, i) => {
+        const v = converterForca(d.valor, this.unidade);
+        const x = mg.left + (i / denB) * pw;
+        const y = mg.top + ph - ((v - minVal) / range) * ph;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
 
     const posX = (i: number) => mg.left + (i / den) * pw;
     const posY = (v: number) => mg.top + ph - ((v - minVal) / range) * ph;
