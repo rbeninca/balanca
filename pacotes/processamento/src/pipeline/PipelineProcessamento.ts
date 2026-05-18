@@ -45,9 +45,9 @@ export class PipelineProcessamento {
   private detector:    DetectorQueima;
   private calculador:  CalculadorImpulso;
 
-  private ativoZonaMorta      = true;
-  private ativoMediaMovel     = true;
-  private ativoDetectorQueima = true;
+  private ativoZonaMorta      = false;
+  private ativoMediaMovel     = false;
+  private ativoDetectorQueima = false;
   private ativoMediana        = false;
   private ativoEMA            = false;
   private ativoNotch          = false;
@@ -102,6 +102,7 @@ export class PipelineProcessamento {
       temperatura:       0,
       emQueima,
       impulsoAcumuladoNs,
+      forcaNewtonCrua:   bruta,
       ...(algumFiltroNovo && { forcaNewtonBruta: bruta }),
     };
   }

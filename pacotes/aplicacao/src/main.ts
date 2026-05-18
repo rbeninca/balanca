@@ -5,6 +5,7 @@ import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaJogos } from './interface/TelaJogos.js';
 import { TelaMarteloThor } from './interface/TelaMarteloThor.js';
+import { TelaMonitorCardiaco } from './interface/TelaMonitorCardiaco.js';
 import { TelaSessoes } from './interface/TelaSessoes.js';
 import { TelaConfiguracoes } from './interface/TelaConfiguracoes.js';
 import { TelaFirmware } from './interface/TelaFirmware.js';
@@ -50,7 +51,7 @@ class ContadorHz {
 
 const app = document.getElementById('app')!;
 
-type Tela = 'conexao' | 'medicao' | 'jogos' | 'martelo-thor' | 'sessoes' | 'configuracoes' | 'firmware';
+type Tela = 'conexao' | 'medicao' | 'jogos' | 'martelo-thor' | 'monitor-cardiaco' | 'sessoes' | 'configuracoes' | 'firmware';
 
 let telaAtual:       Tela              = 'conexao';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,7 +60,8 @@ let enderecoAtual:   string | null     = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let fontePonteAtual: any               = null;
 let telaMedicaoAtual:  TelaMedicao  | null = null;
-let telaMarteloAtual:  TelaMarteloThor | null = null;
+let telaMarteloAtual:   TelaMarteloThor    | null = null;
+let telaMonitorAtual:   TelaMonitorCardiaco | null = null;
 let telaFirmwareAtual: TelaFirmware | null = null;
 const contadorHz = new ContadorHz();
 let autoConectouJa = false;
@@ -152,6 +154,8 @@ function renderizar() {
   telaMedicaoAtual = null;
   telaMarteloAtual?.destruir();
   telaMarteloAtual = null;
+  telaMonitorAtual?.destruir();
+  telaMonitorAtual = null;
   telaFirmwareAtual?.destruir();
   telaFirmwareAtual = null;
   app.innerHTML = '';
@@ -237,6 +241,24 @@ function renderizar() {
       }
       telaMarteloAtual = new TelaMarteloThor(
         app,
+        () => navegar('conexao'),
+        () => navegar('medicao'),
+        () => navegar('jogos'),
+        () => navegar('sessoes'),
+        () => navegar('configuracoes'),
+        () => navegar('firmware'),
+        statusConexao(),
+      );
+      break;
+
+    case 'monitor-cardiaco':
+      if (!fonteAtual) {
+        navegar('conexao');
+        return;
+      }
+      telaMonitorAtual = new TelaMonitorCardiaco(
+        app,
+        fonteAtual,
         () => navegar('conexao'),
         () => navegar('medicao'),
         () => navegar('jogos'),

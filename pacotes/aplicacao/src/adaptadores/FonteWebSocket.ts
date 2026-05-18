@@ -14,16 +14,21 @@ export interface EventosDadosWS {
 
 type Ouvinte<T> = (detalhe: T) => void;
 
-// Espelha os defaults de principal.ts no gateway para inicialização síncrona do painel
+// Espelha os defaults de PipelineProcessamento para inicialização síncrona do painel
 const CFG_GATEWAY_PADRAO: EstadoPipeline = {
   limiarZonaMortaN:    0.5,
   janelaMediaMovel:    5,
   fatorCalibracao:     1.0,
   deslocamentoTara:    0,
   tempoMinFimMs:       100,
-  ativoZonaMorta:      true,
-  ativoMediaMovel:     true,
-  ativoDetectorQueima: true,
+  ativoZonaMorta:      false,
+  ativoMediaMovel:     false,
+  ativoDetectorQueima: false,
+  ativoMediana:        false,
+  ativoEMA:            false,
+  ativoNotch:          false,
+  ativoSG:             false,
+  ativoKalman:         false,
 };
 
 export class FonteWebSocket {
