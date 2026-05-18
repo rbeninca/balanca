@@ -57,12 +57,15 @@ export class TelaMedicao {
   private elHz:         HTMLElement | null = null;
   private elPonto:      HTMLElement | null = null;
   private elImpulso:    HTMLElement | null = null;
-  private elBtnIniciar: HTMLButtonElement | null = null;
-  private elBtnParar:   HTMLButtonElement | null = null;
-  private elBadge:      HTMLElement | null = null;
-  private elStatus:     HTMLElement | null = null;
-  private elNome:       HTMLInputElement | null = null;
-  private elBtnPausar:  HTMLButtonElement | null = null;
+  private elBtnIniciar:    HTMLButtonElement | null = null;
+  private elBtnParar:      HTMLButtonElement | null = null;
+  private elBadge:         HTMLElement | null = null;
+  private elStatus:        HTMLElement | null = null;
+  private elNome:          HTMLInputElement | null = null;
+  private elBtnPausar:     HTMLButtonElement | null = null;
+  private elBtnTelaCheia:  HTMLButtonElement | null = null;
+  private cardMedicao:     HTMLElement | null = null;
+  private hoverPos:        { x: number; y: number } | null = null;
 
   constructor(
     container: HTMLElement,
@@ -106,8 +109,9 @@ export class TelaMedicao {
             <button id="ctrl-fluxo"     class="ctrl-btn ativo" title="Janela deslizante dos últimos pontos">Fluxo</button>
             <button id="ctrl-acumulado" class="ctrl-btn"       title="Acumula todos os pontos desde o último limpar">Acumulado</button>
           </div>
-          <button id="ctrl-pausar" class="ctrl-btn ctrl-btn-solo" title="Pausar/continuar atualização do gráfico">⏸ Pausar</button>
-          <button id="ctrl-limpar" class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
+          <button id="ctrl-pausar"     class="ctrl-btn ctrl-btn-solo" title="Pausar/continuar atualização do gráfico">⏸ Pausar</button>
+          <button id="ctrl-limpar"     class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
+          <button id="ctrl-tela-cheia" class="ctrl-btn ctrl-btn-solo ctrl-btn-tela-cheia" title="Tela cheia (F11)">⛶</button>
         </div>
 
         <div class="filtros-painel" id="filtros-painel">
@@ -124,8 +128,7 @@ export class TelaMedicao {
                 Zona Morta
               </label>
               <div class="filtro-params">
-                <span>Limiar</span>
-                <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.01">
+                <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.01" title="Limiar (N)">
                 <span>N</span>
               </div>
             </div>
@@ -135,9 +138,8 @@ export class TelaMedicao {
                 Média Móvel
               </label>
               <div class="filtro-params">
-                <span>Janela</span>
-                <input type="number" id="in-media-movel" class="filtro-num" value="5" min="1" max="50" step="1">
-                <span>amostras</span>
+                <input type="number" id="in-media-movel" class="filtro-num" value="5" min="1" max="50" step="1" title="Janela (amostras)">
+                <span>am</span>
               </div>
             </div>
             <div class="filtro-linha">
@@ -146,8 +148,7 @@ export class TelaMedicao {
                 Det. Queima
               </label>
               <div class="filtro-params">
-                <span>Histerese</span>
-                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10">
+                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10" title="Histerese (ms)">
                 <span>ms</span>
               </div>
             </div>
@@ -182,19 +183,23 @@ export class TelaMedicao {
       </div>
     `;
 
-    this.canvas       = container.querySelector('#grafico-rt')!;
-    this.elValor      = container.querySelector('#leit-valor');
-    this.elUnidade    = container.querySelector('#leit-unidade');
-    this.elQueima     = container.querySelector('#txt-queima');
-    this.elHz         = container.querySelector('#txt-hz');
-    this.elPonto      = container.querySelector('#ponto-serial');
-    this.elImpulso    = container.querySelector('#val-impulso');
-    this.elBtnIniciar = container.querySelector('#btn-iniciar');
-    this.elBtnParar   = container.querySelector('#btn-parar');
-    this.elBadge      = container.querySelector('#badge-gravando');
-    this.elStatus     = container.querySelector('#status-grav');
-    this.elNome       = container.querySelector('#nome-sessao');
-    this.elBtnPausar  = container.querySelector('#ctrl-pausar');
+    this.canvas          = container.querySelector<HTMLCanvasElement>('#grafico-rt')!;
+    this.canvas.addEventListener('mousemove',  this.onCanvasMouseMove);
+    this.canvas.addEventListener('mouseleave', this.onCanvasMouseLeave);
+    this.elValor         = container.querySelector('#leit-valor');
+    this.elUnidade       = container.querySelector('#leit-unidade');
+    this.elQueima        = container.querySelector('#txt-queima');
+    this.elHz            = container.querySelector('#txt-hz');
+    this.elPonto         = container.querySelector('#ponto-serial');
+    this.elImpulso       = container.querySelector('#val-impulso');
+    this.elBtnIniciar    = container.querySelector('#btn-iniciar');
+    this.elBtnParar      = container.querySelector('#btn-parar');
+    this.elBadge         = container.querySelector('#badge-gravando');
+    this.elStatus        = container.querySelector('#status-grav');
+    this.elNome          = container.querySelector('#nome-sessao');
+    this.elBtnPausar     = container.querySelector('#ctrl-pausar');
+    this.elBtnTelaCheia  = container.querySelector('#ctrl-tela-cheia');
+    this.cardMedicao     = container.querySelector('.card');
 
     this.elUnidade?.addEventListener('click', () => this.alternarUnidade());
 
@@ -247,7 +252,10 @@ export class TelaMedicao {
     container.querySelector('#ctrl-limpar')!.addEventListener('click', () => this.limpar());
 
     this.dimensionarCanvas();
-    window.addEventListener('resize', () => this.dimensionarCanvas());
+    window.addEventListener('resize', this.onResize);
+    document.addEventListener('fullscreenchange', this.onFullscreenChange);
+
+    container.querySelector('#ctrl-tela-cheia')!.addEventListener('click', () => this.alternarTelaCheia());
 
     this.inicializarPainelFiltros(container);
   }
@@ -321,6 +329,35 @@ export class TelaMedicao {
     ].filter(Boolean).length;
     badge.textContent = ativos === 3 ? '3 ativos' : ativos === 0 ? 'inativo' : `${ativos}/3 ativos`;
     badge.className = 'filtros-badge' + (ativos === 3 ? '' : ativos === 0 ? ' inativo' : ' parcial');
+  }
+
+  private onCanvasMouseMove = (e: MouseEvent) => {
+    if (!this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    this.hoverPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  private onCanvasMouseLeave = () => { this.hoverPos = null; };
+
+  private onResize = () => this.dimensionarCanvas();
+
+  private onFullscreenChange = () => {
+    const ativo = !!document.fullscreenElement;
+    if (this.elBtnTelaCheia) {
+      this.elBtnTelaCheia.textContent = ativo ? '✕' : '⛶';
+      this.elBtnTelaCheia.title       = ativo ? 'Sair da tela cheia (Esc)' : 'Tela cheia';
+      this.elBtnTelaCheia.classList.toggle('ativo', ativo);
+    }
+    // Pequeno delay para o navegador terminar o resize antes de redimensionar o canvas
+    setTimeout(() => this.dimensionarCanvas(), 50);
+  };
+
+  private alternarTelaCheia() {
+    if (!document.fullscreenElement) {
+      this.cardMedicao?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
   }
 
   private dimensionarCanvas() {
@@ -534,6 +571,68 @@ export class TelaMedicao {
       ctx.fillStyle = cor;
       ctx.fill();
     }
+
+    // Crosshair + tooltip ao passar o mouse
+    if (this.hoverPos && n > 1) {
+      const mx = this.hoverPos.x;
+      if (mx >= mg.left && mx <= W - mg.right) {
+        const frac     = (mx - mg.left) / pw;
+        const idx      = Math.max(0, Math.min(n - 1, Math.round(frac * den)));
+        const d        = this.dadosGrafico[idx]!;
+        const v        = converterForca(d.valor, this.unidade);
+        const px       = posX(idx);
+        const py       = posY(v);
+
+        // Linhas cruzadas
+        ctx.save();
+        ctx.strokeStyle = 'rgba(100,116,139,0.35)';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(px, mg.top);       ctx.lineTo(px, mg.top + ph); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mg.left, py);      ctx.lineTo(W - mg.right, py); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Marcador no ponto
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fillStyle   = cor;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
+
+        // Caixa de tooltip
+        const decimais = this.unidade === 'N' ? 2 : 3;
+        let   label    = `${v.toFixed(decimais)} ${this.unidade}`;
+        if (this.modoAcumulado && n > 1) {
+          const t0 = this.dadosGrafico[0]!.tempo;
+          label    = `${label}  t=${((d.tempo - t0) / 1000).toFixed(2)}s`;
+        }
+
+        const padX = 8, padY = 4, bh = 22;
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        const tw = ctx.measureText(label).width;
+        const bw = tw + padX * 2;
+
+        let bx = px + 12;
+        if (bx + bw > W - mg.right - 2) bx = px - bw - 12;
+        let by = py - bh / 2;
+        if (by < mg.top) by = mg.top;
+        if (by + bh > mg.top + ph) by = mg.top + ph - bh;
+
+        ctx.fillStyle = 'rgba(15,23,42,0.80)';
+        ctx.beginPath();
+        (ctx as CanvasRenderingContext2D & { roundRect: (...a: unknown[]) => void })
+          .roundRect(bx, by, bw, bh, 4);
+        ctx.fill();
+
+        ctx.fillStyle    = '#f1f5f9';
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, bx + padX, by + bh / 2 + 1);
+        ctx.restore();
+      }
+    }
   }
 
   private async iniciarGravacao() {
@@ -582,6 +681,10 @@ export class TelaMedicao {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
-    window.removeEventListener('resize', () => this.dimensionarCanvas());
+    window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+    this.canvas?.removeEventListener('mousemove',  this.onCanvasMouseMove);
+    this.canvas?.removeEventListener('mouseleave', this.onCanvasMouseLeave);
+    if (document.fullscreenElement) document.exitFullscreen?.();
   }
 }

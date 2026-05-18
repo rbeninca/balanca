@@ -124,6 +124,24 @@
     .ctrl-btn.ativo { background: #eff6ff; color: #2563eb; font-weight: 600; }
     .ctrl-btn-solo { border: 1px solid #d1d5db; border-radius: 4px; }
     .ctrl-btn-solo.ativo { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .ctrl-btn-tela-cheia { margin-left: auto; font-size: 1rem; line-height: 1; padding: 0.28rem 0.6rem; }
+    .ctrl-btn-tela-cheia.ativo { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+
+    /* ── Modo tela cheia do card de medição ─────────────────────────────────── */
+    .card:fullscreen {
+      border-radius: 0; border: none; box-shadow: none;
+      margin: 0; padding: 0.75rem 1rem;
+      display: flex; flex-direction: column;
+      height: 100dvh; overflow: hidden;
+      background: #fff;
+    }
+    .card:fullscreen .leitura-principal { padding: 0.4rem 0 0.4rem; }
+    .card:fullscreen .chart-container { flex: 1; min-height: 0; margin-bottom: 0.5rem; }
+    .card:fullscreen canvas.grafico-realtime { height: 100% !important; max-height: none; }
+    .card:fullscreen .chart-controles { margin-bottom: 0.4rem; }
+    .card:fullscreen .filtros-painel { margin-bottom: 0.4rem; }
+    .card:fullscreen .status-bar { padding: 0.2rem 0 0.3rem; }
+    .card:fullscreen .info-row { padding: 0.1rem 0; }
 
     /* ── Painel de filtros de processamento ────────────────────────────────── */
     .filtros-painel { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.75rem; overflow: hidden; }
@@ -137,13 +155,13 @@
     .filtros-origem.gateway { background: #fef3c7; color: #92400e; }
     .filtros-seta { font-size: 0.65rem; color: #9ca3af; transition: transform 0.2s; }
     .filtros-seta.aberto { transform: rotate(180deg); }
-    .filtros-corpo { padding: 0.5rem 0.75rem; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 0.35rem; }
-    .filtro-linha { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; min-height: 1.9rem; }
-    .filtro-linha:has(.filtro-chk input:not(:checked)) { opacity: 0.5; }
-    .filtro-chk { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer; min-width: 130px; color: #374151; user-select: none; }
-    .filtro-chk input[type="checkbox"] { accent-color: #2563eb; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
-    .filtro-params { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #6b7280; flex-wrap: wrap; }
-    .filtro-num { width: 62px; padding: 0.22rem 0.4rem; border: 1px solid #d1d5db; border-radius: 3px; font-size: 0.8rem; color: #1a1a1a; background: #fff; text-align: right; }
+    .filtros-corpo { padding: 0.35rem 0.75rem; border-top: 1px solid #e5e7eb; display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.25rem 1.1rem; align-items: center; }
+    .filtro-linha { display: flex; align-items: center; gap: 0.3rem; }
+    .filtro-linha:has(.filtro-chk input:not(:checked)) { opacity: 0.45; }
+    .filtro-chk { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; cursor: pointer; color: #374151; user-select: none; white-space: nowrap; }
+    .filtro-chk input[type="checkbox"] { accent-color: #2563eb; width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+    .filtro-params { display: flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; color: #9ca3af; }
+    .filtro-num { width: 50px; padding: 0.15rem 0.3rem; border: 1px solid #d1d5db; border-radius: 3px; font-size: 0.75rem; color: #1a1a1a; background: #fff; text-align: right; }
     .filtro-num:focus { outline: none; border-color: #2563eb; }
 
     /* ── Barra de status ────────────────────────────────────────────────────── */

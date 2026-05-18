@@ -1,6 +1,6 @@
 import { FonteWebSocket } from '../adaptadores/FonteWebSocket.js';
 import { FonteWebSerial } from '../adaptadores/FonteWebSerial.js';
-import { navHtml, bindNav } from './navBar.js';
+import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 
 type ModoConexao = 'tvbox' | 'webserial';
 
@@ -55,9 +55,13 @@ export class TelaConexao {
   constructor(
     container: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private onConectado:  (fonte: any) => void,
-    private onSessoes:    () => void,
-    private onFirmware:   () => void,
+    private onConectado:       (fonte: any) => void,
+    private onSessoes:         () => void,
+    private onFirmware:        () => void,
+    private onMedicao?:        () => void,
+    private onJogos?:          () => void,
+    private onConfiguracoes?:  () => void,
+    private status?:           StatusConexao,
   ) {
     this.cfg = carregarConfig();
     this.renderizar(container);
@@ -67,7 +71,7 @@ export class TelaConexao {
     const cfg = this.cfg;
 
     container.innerHTML = `
-      ${navHtml({ ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware })}
+      ${navHtml({ ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware, onMedicao: this.onMedicao, onJogos: this.onJogos, onConfiguracoes: this.onConfiguracoes, status: this.status })}
 
       <h1>BalançaGFIG</h1>
 
@@ -112,7 +116,7 @@ export class TelaConexao {
       </div>
     `;
 
-    bindNav(container, { ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware });
+    bindNav(container, { ativo: 'conexao', onConexao: () => {}, onSessoes: this.onSessoes, onFirmware: this.onFirmware, onMedicao: this.onMedicao, onJogos: this.onJogos, onConfiguracoes: this.onConfiguracoes, status: this.status });
     this.bindEventos(container);
   }
 
