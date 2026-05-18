@@ -12,7 +12,7 @@ export interface OpcoesCriarApp {
 }
 
 export function criarApp(opcoes: OpcoesCriarApp) {
-  const app = Fastify({ logger: false });
+  const app = Fastify({ logger: false, bodyLimit: 10 * 1024 * 1024 }); // 10 MB
   const db = new ProvedorSQLite(opcoes.caminhoBanco);
   const verificarChave = criarVerificadorChaveAPI(opcoes.chaveAPI);
 
