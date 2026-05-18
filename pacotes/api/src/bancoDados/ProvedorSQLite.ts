@@ -19,6 +19,14 @@ export class ProvedorSQLite {
   private inicializarEsquema(): void {
     const sql = readFileSync(join(__dirname, 'esquema.sql'), 'utf-8');
     this.db.exec(sql);
+    this.migrar();
+  }
+
+  private migrar(): void {
+    const colunas = this.db.pragma('table_info(leituras)') as Array<{ name: string }>;
+    if (colunas.some(c => c.name === 'forca_newton')) {
+      this.db.exec('ALTER TABLE leituras RENAME COLUMN forca_newton TO forca_crua');
+    }
   }
 
   executar(sql: string, params: unknown[] = []): void {

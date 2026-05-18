@@ -35,8 +35,8 @@ describe('IT-6.2 Rotas de Leituras', () => {
   // IT-6.2.2
   it('POST /sessoes/:id/leituras insere lote e retorna contagem', async () => {
     const leituras = [
-      { marca_temporal: 100, forca_newton: 10.5, em_queima: true, impulso_acumulado_ns: 1050 },
-      { marca_temporal: 200, forca_newton: 20.0, em_queima: true, impulso_acumulado_ns: 2550 },
+      { marca_temporal: 100, forca_crua: 10.5, em_queima: true, impulso_acumulado_ns: 1050 },
+      { marca_temporal: 200, forca_crua: 20.0, em_queima: true, impulso_acumulado_ns: 2550 },
     ];
     const res = await app.inject({
       method: 'POST',
@@ -51,9 +51,9 @@ describe('IT-6.2 Rotas de Leituras', () => {
   // IT-6.2.3
   it('POST leituras atualiza métricas da sessão', async () => {
     const leituras = [
-      { marca_temporal: 0,   forca_newton: 5.0,  em_queima: false, impulso_acumulado_ns: 0 },
-      { marca_temporal: 500, forca_newton: 30.0, em_queima: true,  impulso_acumulado_ns: 8750 },
-      { marca_temporal: 900, forca_newton: 2.0,  em_queima: false, impulso_acumulado_ns: 9350 },
+      { marca_temporal: 0,   forca_crua: 5.0,  em_queima: false, impulso_acumulado_ns: 0 },
+      { marca_temporal: 500, forca_crua: 30.0, em_queima: true,  impulso_acumulado_ns: 8750 },
+      { marca_temporal: 900, forca_crua: 2.0,  em_queima: false, impulso_acumulado_ns: 9350 },
     ];
     await app.inject({
       method: 'POST',
@@ -75,7 +75,7 @@ describe('IT-6.2 Rotas de Leituras', () => {
       method: 'POST',
       url: `/sessoes/${idSessao}/leituras`,
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify([{ marca_temporal: 0, forca_newton: 1, em_queima: false, impulso_acumulado_ns: 0 }]),
+      body: JSON.stringify([{ marca_temporal: 0, forca_crua: 1, em_queima: false, impulso_acumulado_ns: 0 }]),
     });
     expect(res.statusCode).toBe(401);
   });
@@ -86,7 +86,7 @@ describe('IT-6.2 Rotas de Leituras', () => {
       method: 'POST',
       url: '/sessoes/nao-existe/leituras',
       headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
-      body: JSON.stringify([{ marca_temporal: 0, forca_newton: 1, em_queima: false, impulso_acumulado_ns: 0 }]),
+      body: JSON.stringify([{ marca_temporal: 0, forca_crua: 1, em_queima: false, impulso_acumulado_ns: 0 }]),
     });
     expect(res.statusCode).toBe(404);
   });
@@ -109,7 +109,7 @@ describe('IT-6.2 Rotas de Leituras', () => {
       url: `/sessoes/${idSessao}/leituras`,
       headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
       body: JSON.stringify([
-        { marca_temporal: 100, forca_newton: 10.5, em_queima: true, impulso_acumulado_ns: 1050 },
+        { marca_temporal: 100, forca_crua: 10.5, em_queima: true, impulso_acumulado_ns: 1050 },
       ]),
     });
 
@@ -117,7 +117,7 @@ describe('IT-6.2 Rotas de Leituras', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv');
     const linhas = res.body.split('\n');
-    expect(linhas[0]).toBe('marca_temporal,forca_newton,temperatura,em_queima,impulso_acumulado_ns');
+    expect(linhas[0]).toBe('marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns');
     expect(linhas[1]).toContain('100');
     expect(linhas[1]).toContain('10.5');
   });
@@ -135,8 +135,8 @@ describe('IT-6.2 Rotas de Leituras', () => {
       url: `/sessoes/${idSessao}/leituras`,
       headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
       body: JSON.stringify([
-        { marca_temporal: 100, forca_newton: 10, em_queima: true, impulso_acumulado_ns: 1000 },
-        { marca_temporal: 200, forca_newton: 20, em_queima: true, impulso_acumulado_ns: 2000 },
+        { marca_temporal: 100, forca_crua: 10, em_queima: true, impulso_acumulado_ns: 1000 },
+        { marca_temporal: 200, forca_crua: 20, em_queima: true, impulso_acumulado_ns: 2000 },
       ]),
     });
 
@@ -158,8 +158,8 @@ describe('IT-6.2 Rotas de Leituras', () => {
       url: `/sessoes/${idSessao}/leituras`,
       headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
       body: JSON.stringify([
-        { marca_temporal: 0,   forca_newton: 1, em_queima: false, impulso_acumulado_ns: 0 },
-        { marca_temporal: 100, forca_newton: 5, em_queima: true,  impulso_acumulado_ns: 300 },
+        { marca_temporal: 0,   forca_crua: 1, em_queima: false, impulso_acumulado_ns: 0 },
+        { marca_temporal: 100, forca_crua: 5, em_queima: true,  impulso_acumulado_ns: 300 },
       ]),
     });
 
@@ -174,8 +174,8 @@ describe('IT-6.2 Rotas de Leituras', () => {
       url: `/sessoes/${idSessao}/leituras`,
       headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
       body: JSON.stringify([
-        { marca_temporal: 0,   forca_newton: 1, em_queima: false, impulso_acumulado_ns: 0 },
-        { marca_temporal: 100, forca_newton: 5, em_queima: false, impulso_acumulado_ns: 300 },
+        { marca_temporal: 0,   forca_crua: 1, em_queima: false, impulso_acumulado_ns: 0 },
+        { marca_temporal: 100, forca_crua: 5, em_queima: false, impulso_acumulado_ns: 300 },
       ]),
     });
 

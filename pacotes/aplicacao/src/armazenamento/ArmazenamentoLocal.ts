@@ -186,7 +186,14 @@ export class ArmazenamentoLocal implements IArmazenamento {
     await tx(db, ['leituras'], 'readwrite', async (t) => {
       const store = t.objectStore('leituras');
       for (const l of leituras) {
-        await add(store, { id_sessao: idSessao, ...l });
+        await add(store, {
+          id_sessao:          idSessao,
+          marcaTemporal:      l.marcaTemporal,
+          forcaNewton:        l.forcaNewtonCrua ?? l.forcaNewton,
+          temperatura:        l.temperatura,
+          emQueima:           l.emQueima,
+          impulsoAcumuladoNs: l.impulsoAcumuladoNs,
+        });
       }
     });
     db.close();
@@ -231,7 +238,14 @@ export class ArmazenamentoLocal implements IArmazenamento {
       await tx(db, ['leituras'], 'readwrite', async (t) => {
         const store = t.objectStore('leituras');
         for (const l of leituras) {
-          await add(store, { id_sessao: idSessao, ...l });
+          await add(store, {
+            id_sessao:          idSessao,
+            marcaTemporal:      l.marcaTemporal,
+            forcaNewton:        l.forcaNewtonCrua ?? l.forcaNewton,
+            temperatura:        l.temperatura,
+            emQueima:           l.emQueima,
+            impulsoAcumuladoNs: l.impulsoAcumuladoNs,
+          });
         }
       });
     }

@@ -54,7 +54,7 @@ describe('ProvedorSQLite', () => {
   it('aplica cascade delete de leituras ao deletar sessão', () => {
     db.executar("INSERT INTO sessoes (id, nome) VALUES (?, ?)", ['s1', 'S1']);
     db.executar(
-      "INSERT INTO leituras (id_sessao, marca_temporal, forca_newton, em_queima, impulso_acumulado_ns) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO leituras (id_sessao, marca_temporal, forca_crua, em_queima, impulso_acumulado_ns) VALUES (?, ?, ?, ?, ?)",
       ['s1', 100, 10.5, 0, 1050],
     );
     db.executar('DELETE FROM sessoes WHERE id = ?', ['s1']);
