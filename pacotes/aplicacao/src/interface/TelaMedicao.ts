@@ -130,7 +130,7 @@ export class TelaMedicao {
           <div class="filtros-corpo hidden" id="filtros-corpo">
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-zona-morta" checked>
+                <input type="checkbox" id="ck-zona-morta">
                 Zona Morta
               </label>
               <div class="filtro-params">
@@ -140,7 +140,7 @@ export class TelaMedicao {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-media-movel" checked>
+                <input type="checkbox" id="ck-media-movel">
                 Média Móvel
               </label>
               <div class="filtro-params">
@@ -150,7 +150,7 @@ export class TelaMedicao {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-det-queima" checked>
+                <input type="checkbox" id="ck-det-queima">
                 Det. Queima
               </label>
               <div class="filtro-params">
