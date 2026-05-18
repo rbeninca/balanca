@@ -102,6 +102,7 @@ export class PipelineProcessamento {
       temperatura:       0,
       emQueima,
       impulsoAcumuladoNs,
+      forcaNewtonCrua:   bruta,
       ...(algumFiltroNovo && { forcaNewtonBruta: bruta }),
     };
   }
