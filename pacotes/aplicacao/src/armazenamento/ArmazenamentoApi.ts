@@ -60,7 +60,7 @@ export class ArmazenamentoApi implements IArmazenamento {
       const fatia = leituras.slice(i, i + CHUNK);
       const body = fatia.map(l => ({
         marca_temporal:       l.marcaTemporal,
-        forca_newton:         l.forcaNewton,
+        forca_crua:           l.forcaNewtonCrua ?? l.forcaNewton,
         em_queima:            l.emQueima,
         impulso_acumulado_ns: l.impulsoAcumuladoNs,
       }));
@@ -77,12 +77,12 @@ export class ArmazenamentoApi implements IArmazenamento {
     const res = await fetch(`${this.base}/sessoes/${idSessao}/leituras`);
     if (!res.ok) throw new Error(`Erro ao obter leituras: ${res.status}`);
     const lista = await res.json() as Array<{
-      marca_temporal: number; forca_newton: number;
+      marca_temporal: number; forca_crua: number;
       em_queima: number; impulso_acumulado_ns: number;
     }>;
     return lista.map(l => ({
       marcaTemporal:       l.marca_temporal,
-      forcaNewton:         l.forca_newton,
+      forcaNewton:         l.forca_crua,
       emQueima:            l.em_queima !== 0,
       impulsoAcumuladoNs:  l.impulso_acumulado_ns,
     } as LeituraProcessada));

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS leituras (
   id                   INTEGER PRIMARY KEY AUTOINCREMENT,
   id_sessao            TEXT    NOT NULL REFERENCES sessoes(id) ON DELETE CASCADE,
   marca_temporal       INTEGER NOT NULL,
-  forca_newton         REAL    NOT NULL,
+  forca_crua           REAL    NOT NULL,
   temperatura          REAL,
   em_queima            INTEGER NOT NULL DEFAULT 0,
   impulso_acumulado_ns REAL    NOT NULL DEFAULT 0
