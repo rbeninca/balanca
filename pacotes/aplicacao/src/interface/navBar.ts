@@ -30,6 +30,7 @@ function statusHtml(s: StatusConexao): string {
 }
 
 export function navHtml(props: NavProps): string {
+  const escuro = document.documentElement.dataset['tema'] === 'escuro';
   return `
     <div class="nav-links">
       ${itemNav('nav-conexao',  'Conexão',       props.ativo === 'conexao',       props.onConexao)}
@@ -40,6 +41,7 @@ export function navHtml(props: NavProps): string {
       ${itemNav('nav-firmware', 'Firmware',       props.ativo === 'firmware',      props.onFirmware, ' style="margin-left:auto"')}
       <a href="#" id="nav-montagem">Montagem</a>
       <a href="#" id="nav-creditos">Créditos</a>
+      <button id="nav-tema" class="nav-tema-btn" title="Alternar modo escuro/claro">${escuro ? '☀' : '🌙'}</button>
     </div>
     ${props.status ? statusHtml(props.status) : ''}
   `;
@@ -66,4 +68,15 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   container.querySelector('#nav-creditos')?.addEventListener('click', (e) => {
     e.preventDefault(); new TelaCreditos();
   });
+
+  const temaBtn = container.querySelector<HTMLButtonElement>('#nav-tema');
+  if (temaBtn) {
+    temaBtn.addEventListener('click', () => {
+      const escuro = document.documentElement.dataset['tema'] === 'escuro';
+      const novoTema = escuro ? '' : 'escuro';
+      document.documentElement.dataset['tema'] = novoTema;
+      localStorage.setItem('balancagfig:tema', novoTema);
+      temaBtn.textContent = novoTema === 'escuro' ? '☀' : '🌙';
+    });
+  }
 }

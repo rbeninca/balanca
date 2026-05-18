@@ -12,6 +12,10 @@ import { FonteWebSocket } from './adaptadores/FonteWebSocket.js';
 import type { StatusConexao } from './interface/navBar.js';
 import { PonteJogosLegados } from './jogos/PonteJogosLegados.js';
 
+// Restore persisted theme before first render
+const _temaGuardado = localStorage.getItem('balancagfig:tema') ?? '';
+if (_temaGuardado) document.documentElement.dataset['tema'] = _temaGuardado;
+
 let armazenamento: IArmazenamento = new ArmazenamentoLocal();
 let gerenciador = new GerenciadorSessao(armazenamento);
 const ponteJogos = new PonteJogosLegados(globalThis.window as Window, globalThis.document);
