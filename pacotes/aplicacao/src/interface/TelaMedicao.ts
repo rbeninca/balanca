@@ -71,6 +71,7 @@ export class TelaMedicao {
   private elBtnTelaCheia:  HTMLButtonElement | null = null;
   private elBtnSinalBruto: HTMLButtonElement | null = null;
   private cardMedicao:     HTMLElement | null = null;
+  private painelFiltros:   HTMLElement | null = null;
   private hoverPos:        { x: number; y: number } | null = null;
   private modalEl:         HTMLElement | null = null;
   private modalTitulo:     HTMLElement | null = null;
@@ -367,7 +368,38 @@ export class TelaMedicao {
     this.inicializarPainelFiltros(container);
   }
 
+  private sincronizarPainel(cfg: EstadoPipeline): void {
+    const c = this.painelFiltros;
+    if (!c) return;
+    const ck  = (id: string, v: boolean)        => { const el = c.querySelector<HTMLInputElement>(id);  if (el) el.checked = v; };
+    const inp = (id: string, v: number | undefined, fb: number) => { const el = c.querySelector<HTMLInputElement>(id); if (el) el.value = String(v ?? fb); };
+
+    ck('#ck-zona-morta',  cfg.ativoZonaMorta);
+    ck('#ck-media-movel', cfg.ativoMediaMovel);
+    ck('#ck-det-queima',  cfg.ativoDetectorQueima);
+    ck('#ck-notch',       cfg.ativoNotch);
+    ck('#ck-mediana',     cfg.ativoMediana);
+    ck('#ck-ema',         cfg.ativoEMA);
+    ck('#ck-sg',          cfg.ativoSG);
+    ck('#ck-kalman',      cfg.ativoKalman);
+
+    inp('#in-zona-morta',   cfg.limiarZonaMortaN,  0.05);
+    inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
+    inp('#in-det-hister',   cfg.tempoMinFimMs,     100);
+    inp('#in-notch-freq',   cfg.freqNotchHz,       60);
+    inp('#in-mediana-jan',  cfg.janelaMediana,     5);
+    inp('#in-ema-alpha',    cfg.alphaEMA,          0.2);
+    inp('#in-sg-jan',       cfg.janelaSG,          7);
+    inp('#in-kalman-q',     cfg.kalmanQ,           0.01);
+    inp('#in-kalman-r',     cfg.kalmanR,           1.0);
+
+    this.atualizarBadgeFiltros(c);
+    this.atualizarBotaoSinalBruto(cfg);
+  }
+
   private inicializarPainelFiltros(container: HTMLElement) {
+    this.painelFiltros = container;
+
     container.addEventListener('click', e => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>('.filtro-info-btn');
       if (btn?.dataset['filtro']) this.mostrarInfoFiltro(btn.dataset['filtro']!);
@@ -377,18 +409,7 @@ export class TelaMedicao {
     const cfgInicial = this.fonte.obterConfigPipeline?.();
     const origem = container.querySelector<HTMLElement>('#filtros-origem');
     if (cfgInicial) {
-      const ckZona   = container.querySelector<HTMLInputElement>('#ck-zona-morta')!;
-      const ckMedia  = container.querySelector<HTMLInputElement>('#ck-media-movel')!;
-      const ckQueima = container.querySelector<HTMLInputElement>('#ck-det-queima')!;
-      const inZona   = container.querySelector<HTMLInputElement>('#in-zona-morta')!;
-      const inMedia  = container.querySelector<HTMLInputElement>('#in-media-movel')!;
-      const inHister = container.querySelector<HTMLInputElement>('#in-det-hister')!;
-      ckZona.checked   = cfgInicial.ativoZonaMorta;
-      ckMedia.checked  = cfgInicial.ativoMediaMovel;
-      ckQueima.checked = cfgInicial.ativoDetectorQueima;
-      inZona.value     = String(cfgInicial.limiarZonaMortaN);
-      inMedia.value    = String(cfgInicial.janelaMediaMovel);
-      inHister.value   = String(cfgInicial.tempoMinFimMs);
+      this.sincronizarPainel(cfgInicial);
       // Indica se controla pipeline do gateway (WebSocket) ou local (WebSerial)
       if (origem) {
         const isGateway = cfgInicial.limiarZonaMortaN >= 0.5;
@@ -545,9 +566,10 @@ export class TelaMedicao {
   }
 
   private onConfig(raw: unknown) {
-    const c = raw as { capacidadeMaxGramas?: number } | null;
-    if (c?.capacidadeMaxGramas) {
-      // reservado para range futuro do gráfico
+    const c = raw as Partial<EstadoPipeline> & { capacidadeMaxGramas?: number } | null;
+    if (!c) return;
+    if (c.ativoZonaMorta !== undefined) {
+      this.sincronizarPainel(c as EstadoPipeline);
     }
   }
 
