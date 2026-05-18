@@ -65,7 +65,10 @@ export class TelaMonitorCardiaco {
   private handler = (leitura: any) => {
     if (this.destruido) return;
     const l = leitura as LeituraProcessada;
-    const r = this.detector.processar(l.forcaNewton, l.marcaTemporal);
+    // Usa forcaNewtonCrua (antes da zona morta) pois impulsos BCG são da
+    // ordem de 0.05–0.2 N, abaixo do limiar típico de zona morta (0.5 N).
+    const forcaEntrada = l.forcaNewtonCrua ?? l.forcaNewton;
+    const r = this.detector.processar(forcaEntrada, l.marcaTemporal);
     this.bufBruto.push(r.sinalBruto);
     this.bufFiltrado.push(r.sinalFiltrado);
     this.picoFlags.push(r.pico);
