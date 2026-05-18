@@ -170,7 +170,7 @@ export class TelaMonitorCardiaco {
             <div class="monitor-camada">
               <div class="monitor-camada-titulo">Banda cardíaca (C2)</div>
               <div class="monitor-tipo-grupo">
-                ${(['fir','iir'] as TipoCamada2[]).map(t =>
+                ${(['fir','iir','bypass'] as TipoCamada2[]).map(t =>
                   `<button class="monitor-tipo-btn${cfg.tipoCamada2 === t ? ' ativo' : ''}"
                     data-camada="2" data-tipo="${t}">${labelC2(t)}</button>`
                 ).join('')}
@@ -181,7 +181,7 @@ export class TelaMonitorCardiaco {
               ${this.htmlSlider({ id:'fc-baixa', nome:'Passa-baixa', val:cfg.fcBaixaHz.toFixed(1),
                 unidade:'Hz', min:'2', max:'20', step:'0.5', value:String(cfg.fcBaixaHz),
                 dica:'Corte superior — remove ruído de alta frequência.' })}
-              <div id="param-taps"${cfg.tipoCamada2 === 'iir' ? ' style="display:none"' : ''}>
+              <div id="param-taps"${cfg.tipoCamada2 !== 'fir' ? ' style="display:none"' : ''}>
                 ${this.htmlSlider({ id:'num-taps', nome:'Taps FIR', val:String(cfg.numTaps),
                   unidade:'', min:'15', max:'127', step:'2', value:String(cfg.numTaps),
                   dica:'Mais taps = roll-off melhor, mais latência.' })}
@@ -347,7 +347,7 @@ export class TelaMonitorCardiaco {
       const tipo = btn.dataset['tipo'] as TipoCamada2;
       c.btnC2.forEach(b => b.classList.toggle('ativo', b === btn));
       this.detector.atualizarConfig({ tipoCamada2: tipo });
-      c.paramTaps.style.display = tipo === 'iir' ? 'none' : '';
+      c.paramTaps.style.display = tipo === 'fir' ? '' : 'none';
       limpar();
     }));
 
@@ -434,7 +434,7 @@ export class TelaMonitorCardiaco {
       paramJanela.style.opacity = '1'; paramJanela.style.pointerEvents = '';
       c.janelaC1.value = String(p.janelaC1); c.valJanelaC1.textContent = String(p.janelaC1);
       c.btnC2.forEach(b => b.classList.toggle('ativo', b.dataset['tipo'] === p.tipoCamada2));
-      c.paramTaps.style.display = p.tipoCamada2 === 'iir' ? 'none' : '';
+      c.paramTaps.style.display = p.tipoCamada2 === 'fir' ? '' : 'none';
       c.fcAlta.value  = String(p.fcAltaHz);  c.valFcAlta.textContent  = p.fcAltaHz.toFixed(2);
       c.fcBaixa.value = String(p.fcBaixaHz); c.valFcBaixa.textContent = p.fcBaixaHz.toFixed(1);
       c.numTaps.value = String(p.numTaps);   c.valNumTaps.textContent = String(p.numTaps);
@@ -557,7 +557,7 @@ function labelC1(t: TipoCamada1): string {
   return t === 'nenhum' ? 'Nenhum' : t === 'mediana' ? 'Mediana' : 'Média Móv.';
 }
 function labelC2(t: TipoCamada2): string {
-  return t === 'fir' ? 'FIR ★' : 'IIR';
+  return t === 'fir' ? 'FIR ★' : t === 'iir' ? 'IIR' : 'Bypass';
 }
 function labelModoPico(t: ModoPico): string {
   return t === 'panTompkins' ? 'Pan-Tompkins' : 'Limiar';
