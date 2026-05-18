@@ -154,7 +154,7 @@ function renderizar() {
 
   switch (telaAtual) {
     case 'conexao':
-      contadorHz.parar();
+      if (!fonteAtual) contadorHz.parar();
       new TelaConexao(
         app,
         (fonte) => {
@@ -187,6 +187,10 @@ function renderizar() {
         },
         () => navegar('sessoes'),
         () => navegar('firmware'),
+        fonteAtual ? () => navegar('medicao')       : undefined,
+        fonteAtual ? () => navegar('jogos')         : undefined,
+        fonteAtual ? () => navegar('configuracoes') : undefined,
+        statusConexao(),
       );
       break;
 
