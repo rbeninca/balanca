@@ -53,7 +53,7 @@ export interface ConfigDetectorBatimento {
 }
 
 export const CONFIG_DETECTOR_PADRAO: ConfigDetectorBatimento = {
-  tipoCamada1: 'mediana',
+  tipoCamada1: 'nenhum',
   janelaC1:    5,
   tipoCamada2: 'fir',
   fcAltaHz:    0.5,
