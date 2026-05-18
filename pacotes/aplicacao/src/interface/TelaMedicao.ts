@@ -72,6 +72,14 @@ export class TelaMedicao {
   private elBtnSinalBruto: HTMLButtonElement | null = null;
   private cardMedicao:     HTMLElement | null = null;
   private hoverPos:        { x: number; y: number } | null = null;
+  private modalEl:         HTMLElement | null = null;
+  private modalTitulo:     HTMLElement | null = null;
+  private modalOque:       HTMLElement | null = null;
+  private modalComo:       HTMLElement | null = null;
+  private modalSvg:        HTMLElement | null = null;
+  private modalRefs:       HTMLElement | null = null;
+  private fecharModal = () => this.modalEl?.classList.add('hidden');
+  private onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') this.fecharModal(); };
 
   constructor(
     container: HTMLElement,
@@ -136,6 +144,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-zona-morta">
                 Zona Morta
               </label>
+              <button class="filtro-info-btn" data-filtro="zona-morta" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.01" title="Limiar (N)">
                 <span>N</span>
@@ -146,6 +155,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-media-movel">
                 Média Móvel
               </label>
+              <button class="filtro-info-btn" data-filtro="media-movel" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-media-movel" class="filtro-num" value="5" min="1" max="50" step="1" title="Janela (amostras)">
                 <span>am</span>
@@ -156,6 +166,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-det-queima">
                 Det. Queima
               </label>
+              <button class="filtro-info-btn" data-filtro="det-queima" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10" title="Histerese (ms)">
                 <span>ms</span>
@@ -166,6 +177,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-notch">
                 Notch
               </label>
+              <button class="filtro-info-btn" data-filtro="notch" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-notch-freq" class="filtro-num" value="60" min="1" max="500" step="1" title="Frequência a rejeitar (Hz)">
                 <span>Hz</span>
@@ -176,6 +188,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-mediana">
                 Mediana
               </label>
+              <button class="filtro-info-btn" data-filtro="mediana" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-mediana-jan" class="filtro-num" value="5" min="1" max="21" step="2" title="Janela (amostras)">
                 <span>am</span>
@@ -186,6 +199,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-ema">
                 EMA
               </label>
+              <button class="filtro-info-btn" data-filtro="ema" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-ema-alpha" class="filtro-num" value="0.20" min="0.01" max="1" step="0.01" title="Fator α (0–1)">
                 <span>α</span>
@@ -196,6 +210,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-sg">
                 Sav-Golay
               </label>
+              <button class="filtro-info-btn" data-filtro="sg" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <input type="number" id="in-sg-jan" class="filtro-num" value="7" min="5" max="11" step="2" title="Janela (amostras, 5-11)">
                 <span>am</span>
@@ -206,6 +221,7 @@ export class TelaMedicao {
                 <input type="checkbox" id="ck-kalman">
                 Kalman
               </label>
+              <button class="filtro-info-btn" data-filtro="kalman" type="button" title="Saiba mais">ℹ</button>
               <div class="filtro-params">
                 <span title="Q: ruído de processo">Q</span>
                 <input type="number" id="in-kalman-q" class="filtro-num" value="0.01" min="0.0001" max="100" step="0.001" title="Ruído de processo (Q)">
@@ -260,6 +276,32 @@ export class TelaMedicao {
     this.elBtnTelaCheia  = container.querySelector('#ctrl-tela-cheia');
     this.elBtnSinalBruto = container.querySelector('#ctrl-sinal-bruto');
     this.cardMedicao     = container.querySelector('.card');
+
+    const modal = document.createElement('div');
+    modal.className = 'fi-overlay hidden';
+    modal.innerHTML = `
+      <div class="fi-caixa">
+        <div class="fi-header">
+          <h3 class="fi-titulo"></h3>
+          <button class="fi-fechar" type="button" title="Fechar">✕</button>
+        </div>
+        <div class="fi-corpo">
+          <div class="fi-secao"><h4>O que é</h4><p class="fi-oque"></p></div>
+          <div class="fi-secao"><h4>Como funciona</h4><p class="fi-como"></p></div>
+          <div class="fi-secao"><h4>Exemplo visual</h4><div class="fi-svg"></div></div>
+          <div class="fi-secao"><h4>Referências</h4><ul class="fi-refs"></ul></div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    this.modalEl     = modal;
+    this.modalTitulo = modal.querySelector('.fi-titulo');
+    this.modalOque   = modal.querySelector('.fi-oque');
+    this.modalComo   = modal.querySelector('.fi-como');
+    this.modalSvg    = modal.querySelector('.fi-svg');
+    this.modalRefs   = modal.querySelector('.fi-refs');
+    modal.addEventListener('click', e => { if (e.target === modal) this.fecharModal(); });
+    modal.querySelector('.fi-fechar')!.addEventListener('click', this.fecharModal);
+    document.addEventListener('keydown', this.onEsc);
 
     this.elUnidade?.addEventListener('click', () => this.alternarUnidade());
 
@@ -326,6 +368,11 @@ export class TelaMedicao {
   }
 
   private inicializarPainelFiltros(container: HTMLElement) {
+    container.addEventListener('click', e => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('.filtro-info-btn');
+      if (btn?.dataset['filtro']) this.mostrarInfoFiltro(btn.dataset['filtro']!);
+    });
+
     // Ler estado inicial da fonte (se disponível)
     const cfgInicial = this.fonte.obterConfigPipeline?.();
     const origem = container.querySelector<HTMLElement>('#filtros-origem');
@@ -827,6 +874,26 @@ export class TelaMedicao {
     }
   }
 
+  private mostrarInfoFiltro(chave: string): void {
+    const info = FILTROS_INFO[chave];
+    if (!info || !this.modalEl) return;
+    if (this.modalTitulo) this.modalTitulo.textContent = info.nome;
+    if (this.modalOque)   this.modalOque.textContent   = info.oque;
+    if (this.modalComo)   this.modalComo.textContent   = info.como;
+    if (this.modalSvg)    this.modalSvg.innerHTML       = info.svg;
+    if (this.modalRefs) {
+      this.modalRefs.innerHTML = '';
+      for (const r of info.refs) {
+        const li = document.createElement('li');
+        const a  = document.createElement('a');
+        a.href = r.url; a.textContent = r.texto;
+        a.target = '_blank'; a.rel = 'noopener noreferrer';
+        li.appendChild(a); this.modalRefs.appendChild(li);
+      }
+    }
+    this.modalEl.classList.remove('hidden');
+  }
+
   destruir() {
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
@@ -834,8 +901,155 @@ export class TelaMedicao {
     }
     window.removeEventListener('resize', this.onResize);
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
+    document.removeEventListener('keydown', this.onEsc);
     this.canvas?.removeEventListener('mousemove',  this.onCanvasMouseMove);
     this.canvas?.removeEventListener('mouseleave', this.onCanvasMouseLeave);
     if (document.fullscreenElement) document.exitFullscreen?.();
+    this.modalEl?.remove();
+    this.modalEl = null;
   }
 }
+
+// ── Dados informativos de cada filtro ─────────────────────────────────────────
+
+interface FiltroInfo {
+  nome: string;
+  oque: string;
+  como: string;
+  svg:  string;
+  refs: { texto: string; url: string }[];
+}
+
+function _svg(entrada: number[], saida: number[]): string {
+  const W = 280, H = 92, mid = 46, amp = 38;
+  const d = (ys: number[]) =>
+    ys.map((y, i) =>
+      `${i === 0 ? 'M' : 'L'}${2 + (i / (ys.length - 1)) * (W - 4)},${mid - y * amp}`,
+    ).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:8px auto;border-radius:6px;max-width:100%">
+<rect width="${W}" height="${H}" fill="#0f172a" rx="6"/>
+<line x1="2" y1="${mid}" x2="${W - 2}" y2="${mid}" stroke="#1e293b" stroke-width="1"/>
+<path d="${d(entrada)}" stroke="rgba(148,163,184,0.5)" fill="none" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="${d(saida)}"   stroke="#22d3ee"               fill="none" stroke-width="2"   stroke-linejoin="round"/>
+<text x="6" y="11" font-size="9" fill="rgba(148,163,184,0.65)" font-family="system-ui,sans-serif">entrada</text>
+<text x="6" y="${H - 4}" font-size="9" fill="#22d3ee" font-family="system-ui,sans-serif">saída</text>
+</svg>`;
+}
+
+const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
+  const zm_e = [0.20,0.42,0.62,0.75,0.70,0.50,0.25,0.05,-0.10,-0.32,-0.55,-0.70,-0.75,-0.58,-0.38,-0.15,0.12,0.38,0.60,0.70];
+  const zm_s = zm_e.map(v => Math.abs(v) < 0.30 ? 0 : v);
+
+  const mm_e = [0.30,0.65,0.20,0.72,0.38,0.78,0.22,0.60,0.18,0.55,0.72,0.28,0.75,0.22,0.65,0.30,0.70,0.38,0.80,0.25];
+  const mm_s = mm_e.map((_, i, a) => {
+    const fatia = a.slice(Math.max(0, i - 4), i + 1);
+    return fatia.reduce((s, v) => s + v, 0) / fatia.length;
+  });
+
+  const med_e = [0.28,0.32,0.30,0.95,0.30,0.28,0.32,-0.90,0.30,0.32,0.28,0.30,0.95,0.30,0.28,0.32,-0.88,0.30,0.28,0.32];
+  const med_s = med_e.map((_, i, a) => {
+    const win = a.slice(Math.max(0, i - 1), i + 2).slice().sort((x, y) => x - y);
+    return win[Math.floor(win.length / 2)] ?? 0;
+  });
+
+  const ema_e = [0.20,0.55,0.10,0.70,0.30,0.80,0.20,0.60,0.10,0.50,0.75,0.25,0.70,0.15,0.60,0.20,0.65,0.30,0.75,0.20];
+  const ema_s = ema_e.reduce<number[]>((acc, v) => {
+    acc.push(acc.length === 0 ? v : 0.3 * v + 0.7 * acc[acc.length - 1]!);
+    return acc;
+  }, []);
+
+  return {
+    'zona-morta': {
+      nome: 'Zona Morta',
+      oque: 'Remove pequenas variações em torno do zero que correspondem ao ruído do sensor — e não a uma força real aplicada. Qualquer leitura com valor absoluto abaixo do limiar configurado é tratada como zero.',
+      como: 'Função de transferência: se |x| < limiar → y = 0; caso contrário y = x. O limiar deve ser calibrado para ficar ligeiramente acima do nível de ruído do sensor em repouso. No gráfico, observe que os trechos próximos ao zero da curva de entrada são suprimidos.',
+      svg: _svg(zm_e, zm_s),
+      refs: [
+        { texto: 'Wikipedia — Dead zone (control systems)', url: 'https://en.wikipedia.org/wiki/Dead_zone_(control_systems)' },
+        { texto: 'MathWorks — Dead Zone block (Simulink)', url: 'https://www.mathworks.com/help/simulink/slref/deadzone.html' },
+      ],
+    },
+    'media-movel': {
+      nome: 'Média Móvel',
+      oque: 'Suaviza o sinal calculando a média das últimas N amostras. Um dos filtros passa-baixa mais simples e eficazes para redução de ruído branco.',
+      como: 'y[n] = (x[n] + x[n−1] + … + x[n−N+1]) / N. Janelas maiores suavizam mais, mas introduzem mais atraso (latência = (N−1)/2 amostras). Fácil de implementar com custo computacional constante O(1) usando a técnica da soma deslizante.',
+      svg: _svg(mm_e, mm_s),
+      refs: [
+        { texto: 'Wikipedia — Moving average', url: 'https://en.wikipedia.org/wiki/Moving_average' },
+        { texto: 'DSP Guide — Chapter 15: Moving Average Filters', url: 'https://www.dspguide.com/ch15.htm' },
+      ],
+    },
+    'det-queima': {
+      nome: 'Detector de Queima',
+      oque: 'Identifica o início e fim da fase de propulsão de um motor foguete de maneira robusta, mesmo com ruído e oscilações de chama no final da queima.',
+      como: 'Usa histerese temporal: a força ultrapassa o limiar → queima ativa. A queima só é marcada como encerrada se a força permanecer abaixo do limiar por pelo menos T ms (configurável). Isso evita falsos términos causados por flutuações transitórias. A saída binária (cinza) indica o estado de queima.',
+      svg: _svg(
+        [0.00,0.00,0.08,0.58,0.88,0.95,0.90,0.82,0.78,0.84,0.80,0.72,0.55,0.30,0.10,0.02,0.00,0.00,0.00,0.00],
+        [0.00,0.00,0.00,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.00,0.00,0.00,0.00,0.00,0.00],
+      ),
+      refs: [
+        { texto: 'Wikipedia — Hysteresis (control systems)', url: 'https://en.wikipedia.org/wiki/Hysteresis#Control_systems' },
+        { texto: 'Wikipedia — Solid-fuel rocket', url: 'https://en.wikipedia.org/wiki/Solid-fuel_rocket' },
+      ],
+    },
+    'notch': {
+      nome: 'Filtro Notch (Rejeita-Banda)',
+      oque: 'Atenua uma frequência específica — tipicamente interferência eletromagnética da rede elétrica (50/60 Hz) — mantendo todas as demais frequências praticamente inalteradas.',
+      como: 'Implementado como filtro IIR biquad (2 polos, 2 zeros). Os zeros ficam exatamente na frequência de rejeição f₀; os polos próximos aos zeros controlam a largura da rejeição via fator Q (maior Q = banda mais estreita). Coeficientes calculados pela transformada bilinear a partir da frequência de amostragem.',
+      svg: _svg(
+        [0.28,0.62,0.20,0.58,0.02,0.50,0.10,0.60,0.15,0.50,0.05,0.42,-0.08,0.28,-0.18,0.18,-0.25,0.12,-0.30,0.08,-0.22,0.02,-0.15,-0.08,-0.05],
+        [0.30,0.46,0.50,0.48,0.40,0.30,0.20,0.10,0.02,-0.08,-0.14,-0.20,-0.26,-0.30,-0.28,-0.22,-0.14,-0.06,0.00,0.06,0.10,0.10,0.06,0.00,-0.06],
+      ),
+      refs: [
+        { texto: 'Wikipedia — Band-stop filter', url: 'https://en.wikipedia.org/wiki/Band-stop_filter' },
+        { texto: 'Audio EQ Cookbook — Notch filter coefficients', url: 'https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html' },
+      ],
+    },
+    'mediana': {
+      nome: 'Filtro de Mediana',
+      oque: 'Remove picos isolados (ruído impulsivo) sem borrar bordas do sinal. Ao contrário da média, é completamente robusto contra valores atípicos extremos. No gráfico, os spikes da entrada desaparecem na saída.',
+      como: 'Para cada amostra, ordena as N amostras vizinhas (janela) e retorna a do meio. Um pico isolado, por mais extremo que seja, não altera a mediana enquanto N for ímpar e ≥ 3. Ideal para eliminar leituras errôneas únicas do sensor.',
+      svg: _svg(med_e, med_s),
+      refs: [
+        { texto: 'Wikipedia — Median filter', url: 'https://en.wikipedia.org/wiki/Median_filter' },
+        { texto: 'Wikipedia — Nonlinear filter', url: 'https://en.wikipedia.org/wiki/Nonlinear_filter' },
+      ],
+    },
+    'ema': {
+      nome: 'EMA — Média Exponencial Móvel',
+      oque: 'Suaviza o sinal dando peso exponencialmente decrescente a amostras mais antigas. Mais responsivo que a média móvel simples para o mesmo grau de suavização, e usa menos memória (apenas a última saída).',
+      como: 'y[n] = α·x[n] + (1−α)·y[n−1]. O parâmetro α ∈ (0,1]: α=1 reproduz o sinal sem filtrar; α→0 suaviza muito com grande atraso. A constante de tempo equivalente é τ ≈ (1−α)/α amostras. Custo computacional O(1), ideal para sistemas embarcados.',
+      svg: _svg(ema_e, ema_s),
+      refs: [
+        { texto: 'Wikipedia — Exponential smoothing', url: 'https://en.wikipedia.org/wiki/Exponential_smoothing' },
+        { texto: 'Wikipedia — Moving average § Exponential moving average', url: 'https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average' },
+      ],
+    },
+    'sg': {
+      nome: 'Savitzky-Golay',
+      oque: 'Suaviza o sinal ajustando polinômios de grau baixo por mínimos quadrados a janelas sobrepostas. Preserva forma de picos e vales melhor que a média móvel — essencial quando a morfologia do sinal importa.',
+      como: 'Cada saída é obtida convoluindo o sinal com coeficientes pré-calculados derivados de regressão polinomial local. Janela maior ou grau menor = mais suavização; grau maior = melhor preservação de picos e bordas. Os coeficientes são simétricos para fase linear (sem atraso de grupo).',
+      svg: _svg(
+        [-0.05,0.02,0.20,0.32,0.62,0.70,0.95,0.78,0.68,0.40,0.22,0.08,0.15,-0.02,0.05,-0.04,0.20,0.35,0.60,0.72,0.95,0.80,0.62,0.38,0.15],
+        [-0.02,0.02,0.15,0.32,0.58,0.76,0.92,0.85,0.66,0.40,0.20,0.08,0.02,0.00,0.02,-0.02,0.15,0.32,0.58,0.76,0.92,0.85,0.65,0.40,0.15],
+      ),
+      refs: [
+        { texto: 'Wikipedia — Savitzky–Golay filter', url: 'https://en.wikipedia.org/wiki/Savitzky%E2%80%93Golay_filter' },
+        { texto: 'Savitzky & Golay (1964) — Artigo original, Anal. Chem.', url: 'https://pubs.acs.org/doi/10.1021/ac60214a047' },
+      ],
+    },
+    'kalman': {
+      nome: 'Filtro de Kalman',
+      oque: 'Estimador recursivo ótimo que combina um modelo dinâmico do sistema com medições ruidosas para obter a melhor estimativa do estado. Amplamente usado em navegação inercial, rastreamento e controle.',
+      como: 'Dois passos por amostra: (1) Predição — propaga o estado anterior pelo modelo; (2) Atualização — corrige com a nova medição, ponderada pelo ganho K = P/(P+R), onde P é a incerteza da predição e R é o ruído de medição. Q controla o quão livre o estado pode evoluir.',
+      svg: _svg(
+        [0.62,0.35,0.72,0.28,0.68,0.22,0.58,0.82,0.38,0.72,0.30,0.62,0.20,0.58,0.78,0.32,0.68,0.28,0.72,0.42],
+        [0.62,0.53,0.58,0.51,0.55,0.47,0.50,0.56,0.52,0.55,0.50,0.53,0.47,0.49,0.54,0.49,0.53,0.49,0.53,0.50],
+      ),
+      refs: [
+        { texto: 'Wikipedia — Kalman filter', url: 'https://en.wikipedia.org/wiki/Kalman_filter' },
+        { texto: 'Roger Labbe — Kalman and Bayesian Filters in Python (livro gratuito)', url: 'https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python' },
+      ],
+    },
+  };
+})();
