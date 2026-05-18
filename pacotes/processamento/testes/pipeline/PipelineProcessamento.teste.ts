@@ -25,6 +25,7 @@ const configBase = {
 describe('PipelineProcessamento', () => {
   it('UT-2.7.1 — ruído → zona morta elimina', () => {
     const p = new PipelineProcessamento(configBase);
+    p.atualizarConfig({ ativoZonaMorta: true });
     const r = p.processar(pacote(0.3));  // 0.3 < limiar 0.5 → zona morta → 0
     expect(r.forcaNewton).toBe(0);
     expect(r.emQueima).toBe(false);
@@ -55,6 +56,7 @@ describe('PipelineProcessamento', () => {
 
   it('UT-2.7.7 — reiniciar() zera estado', () => {
     const p = new PipelineProcessamento(configBase);
+    p.atualizarConfig({ ativoDetectorQueima: true });
     p.processar(pacote(200, 0));
     p.processar(pacote(200, 500));
     p.reiniciar();
@@ -71,6 +73,7 @@ describe('PipelineProcessamento', () => {
 
   it('UT-2.7.2 — sequência completa: emQueima alterna', () => {
     const p = new PipelineProcessamento(configBase);
+    p.atualizarConfig({ ativoDetectorQueima: true });
     expect(p.processar(pacote(0,     0)).emQueima).toBe(false);
     expect(p.processar(pacote(200, 100)).emQueima).toBe(true);
     expect(p.processar(pacote(0,   200)).emQueima).toBe(true);

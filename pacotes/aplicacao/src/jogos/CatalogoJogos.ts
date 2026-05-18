@@ -2,6 +2,17 @@ import type { JogoCatalogo } from './tipos.js';
 
 export const CATALOGO_JOGOS: JogoCatalogo[] = [
   {
+    id: 'monitor-cardiaco',
+    nome: 'Monitor Cardíaco',
+    descricao: 'Detecta batimentos cardíacos via BCG (ballistocardiografia) usando a célula de carga. Exibe BPM ao vivo com indicador de qualidade e pipeline de filtros configurável.',
+    categoria: 'Saúde',
+    origem: 'nativo',
+    modoExecucao: 'embutido',
+    requerConexao: true,
+    etiquetas: ['BCG', 'batimento', 'saúde', 'nativo'],
+    destaque: true,
+  },
+  {
     id: 'martelo-thor',
     nome: 'Martelo do Thor',
     descricao: 'Versão nativa reescrita para a plataforma atual, com fluxo leve, responsivo e muito mais estável.',

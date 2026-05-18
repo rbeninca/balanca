@@ -23,4 +23,5 @@ export interface LeituraProcessada {
   emQueima:            boolean;   // detector de queima
   impulsoAcumuladoNs:  number;    // integral trapezoidal da força (N·s)
   forcaNewtonBruta?:   number;    // valor antes dos filtros opcionais (presente quando ≥1 ativo)
+  forcaNewtonCrua?:    number;    // valor antes da zona morta — para BCG e análises de micro-sinal
 }
