@@ -219,6 +219,13 @@ export class TelaAnalise {
     `;
   }
 
+  private sincronizarEmQueima() {
+    const ls = this.dados.leituras;
+    for (let i = 0; i < ls.length; i++) {
+      ls[i]!.emQueima = i >= this.burnInicio && i <= this.burnFim;
+    }
+  }
+
   private detectarQueima() {
     const ls = this.dados.leituras;
     if (ls.length === 0) return;
@@ -229,6 +236,7 @@ export class TelaAnalise {
     if (priInicio >= 0 && ultFim >= priInicio) {
       this.burnInicio = priInicio;
       this.burnFim    = ultFim;
+      this.sincronizarEmQueima();
       return;
     }
 
@@ -238,6 +246,7 @@ export class TelaAnalise {
     const rev       = [...ls].reverse().findIndex(l => l.forcaNewton >= thr);
     this.burnFim    = rev >= 0 ? ls.length - 1 - rev : ls.length - 1;
     if (this.burnInicio < 0) this.burnInicio = 0;
+    this.sincronizarEmQueima();
   }
 
   private seriesGrafico(): { x: number; y: number }[] {
@@ -261,6 +270,7 @@ export class TelaAnalise {
   }
 
   private atualizarMarcadores() {
+    this.sincronizarEmQueima();
     this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, false, false);
     this.atualizarStats();
   }
