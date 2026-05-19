@@ -20,8 +20,9 @@ export class TelaAnalise {
   private burnInicio      = 0;
   private burnFim         = 0;
   private nomeSessao:     string;
-  private leiturasMutadas = false;
-  private hoveredIdx      = -1;
+  private leiturasMutadas  = false;
+  private queimaAlterada   = false;
+  private hoveredIdx       = -1;
 
   constructor(
     private dados: DadosAnalise,
@@ -274,6 +275,7 @@ export class TelaAnalise {
 
   private atualizarMarcadores() {
     this.sincronizarEmQueima();
+    this.queimaAlterada = true;
     this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, true, false);
     this.atualizarStats();
   }
@@ -561,20 +563,12 @@ export class TelaAnalise {
     if (!isNaN(vT0)) this.burnInicio = Math.min(this.encontrarIndiceMaisProximo(vT0), this.burnFim);
     if (!isNaN(vT1)) this.burnFim   = Math.max(this.encontrarIndiceMaisProximo(vT1), this.burnInicio);
 
-    // Aplica burnInicio/burnFim de volta nos flags emQueima
-    const ls = this.dados.leituras;
-    let queimaAlterada = false;
-    for (let i = 0; i < ls.length; i++) {
-      const deveQueimar = i >= this.burnInicio && i <= this.burnFim;
-      if (ls[i]!.emQueima !== deveQueimar) {
-        ls[i]!.emQueima = deveQueimar;
-        queimaAlterada = true;
-      }
-    }
+    // Garante que os flags emQueima refletem o intervalo atual
+    this.sincronizarEmQueima();
 
-    if (this.leiturasMutadas || queimaAlterada) {
+    if (this.leiturasMutadas || this.queimaAlterada) {
       try {
-        await this.armazenamento.substituirLeituras(idSessao, ls);
+        await this.armazenamento.substituirLeituras(idSessao, this.dados.leituras);
       } catch (e) {
         if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar Sessão'; }
         alert(`Não foi possível salvar as leituras:\n${String(e)}\n\nSe estiver usando o gateway, reconstrua o container da API:\n  docker compose build api && docker compose up -d api`);
