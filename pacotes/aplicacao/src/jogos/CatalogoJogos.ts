@@ -13,6 +13,17 @@ export const CATALOGO_JOGOS: JogoCatalogo[] = [
     destaque: true,
   },
   {
+    id: 'barra-fixa',
+    nome: 'Barra Fixa',
+    descricao: 'Treinamento interativo de barra fixa com estimativa de deslocamento vertical em tempo real. Exibe personagem subindo e descendo com métricas de força, trabalho e potência.',
+    categoria: 'Força funcional',
+    origem: 'nativo',
+    modoExecucao: 'embutido',
+    requerConexao: true,
+    etiquetas: ['barra fixa', 'pull-up', 'nativo', 'BCG'],
+    destaque: true,
+  },
+  {
     id: 'martelo-thor',
     nome: 'Martelo do Thor',
     descricao: 'Versão nativa reescrita para a plataforma atual, com fluxo leve, responsivo e muito mais estável.',

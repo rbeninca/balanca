@@ -219,17 +219,27 @@ export class TelaAnalise {
     `;
   }
 
-  private detectarQueima() {
+  private sincronizarEmQueima() {
+    const ls = this.dados.leituras;
+    for (let i = 0; i < ls.length; i++) {
+      ls[i]!.emQueima = i >= this.burnInicio && i <= this.burnFim;
+    }
+  }
+
+  private detectarQueima(forcar = false) {
     const ls = this.dados.leituras;
     if (ls.length === 0) return;
 
-    const priInicio = ls.findIndex(l => l.emQueima);
-    const ultFim    = ls.map(l => l.emQueima).lastIndexOf(true);
+    if (!forcar) {
+      const priInicio = ls.findIndex(l => l.emQueima);
+      const ultFim    = ls.map(l => l.emQueima).lastIndexOf(true);
 
-    if (priInicio >= 0 && ultFim >= priInicio) {
-      this.burnInicio = priInicio;
-      this.burnFim    = ultFim;
-      return;
+      if (priInicio >= 0 && ultFim >= priInicio) {
+        this.burnInicio = priInicio;
+        this.burnFim    = ultFim;
+        this.sincronizarEmQueima();
+        return;
+      }
     }
 
     const pico = Math.max(...ls.map(l => l.forcaNewton));
@@ -238,6 +248,7 @@ export class TelaAnalise {
     const rev       = [...ls].reverse().findIndex(l => l.forcaNewton >= thr);
     this.burnFim    = rev >= 0 ? ls.length - 1 - rev : ls.length - 1;
     if (this.burnInicio < 0) this.burnInicio = 0;
+    this.sincronizarEmQueima();
   }
 
   private seriesGrafico(): { x: number; y: number }[] {
@@ -261,6 +272,7 @@ export class TelaAnalise {
   }
 
   private atualizarMarcadores() {
+    this.sincronizarEmQueima();
     this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, false, false);
     this.atualizarStats();
   }
@@ -499,7 +511,7 @@ export class TelaAnalise {
   private bindEventos() {
     this.overlay.querySelector('#btn-fechar-analise')!.addEventListener('click', () => this.destruir());
     this.overlay.querySelector('#btn-descartar')!.addEventListener('click',      () => this.destruir());
-    this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(); this.renderizarGrafico(); this.atualizarStats(); });
+    this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(true); this.renderizarGrafico(); this.atualizarStats(); });
     this.overlay.querySelector('#btn-recortar')!.addEventListener('click',       () => this.recortarQueima());
     this.overlay.querySelector('#btn-export-json')!.addEventListener('click',    () => this.exportarJSON());
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
