@@ -42,14 +42,15 @@ export function analisarMotor(
   const variancia = forcas.reduce((s, v) => s + (v - forcaMedia) ** 2, 0) / n;
   const coefVariacao = Math.sqrt(variancia) / forcaMedia;
 
-  const impulsoTotal = emQueima[emQueima.length - 1]!.impulsoAcumuladoNs;
+  const impulsoInicial = emQueima[0]!.impulsoAcumuladoNs;
+  const impulsoTotal   = emQueima[emQueima.length - 1]!.impulsoAcumuladoNs - impulsoInicial;
   const tInicio = emQueima[0]!.marcaTemporal;
   const tFim    = emQueima[emQueima.length - 1]!.marcaTemporal;
   const duracaoQueima = (tFim - tInicio) / 1000;
 
-  // t10 e t90 — tempo em que o impulso atinge 10% e 90% do total
-  const i10 = impulsoTotal * 0.10;
-  const i90 = impulsoTotal * 0.90;
+  // t10 e t90 — tempo em que o impulso atinge 10% e 90% do total (relativo ao início da queima)
+  const i10 = impulsoInicial + impulsoTotal * 0.10;
+  const i90 = impulsoInicial + impulsoTotal * 0.90;
   const t10 = (emQueima.find(l => l.impulsoAcumuladoNs >= i10)?.marcaTemporal ?? tInicio) / 1000;
   const t90 = (emQueima.find(l => l.impulsoAcumuladoNs >= i90)?.marcaTemporal ?? tFim) / 1000;
   const tempoSubida = t90 - t10;
