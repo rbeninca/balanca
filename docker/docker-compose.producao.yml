@@ -1,0 +1,74 @@
+services:
+  gateway:
+    image: ghcr.io/rbeninca/balanca/gateway:${TAG:-latest}
+    privileged: true
+    ports:
+      - "8765:8765"
+      - "8766:8766"
+    environment:
+      PORTA_SERIAL: /dev/ttyUSB0
+      BAUD_SERIAL: "921600"
+      PORTA_WEBSOCKET: "8765"
+      PORTA_HTTP: "8766"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8766/saude"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  api:
+    image: ghcr.io/rbeninca/balanca/api:${TAG:-latest}
+    ports:
+      - "3000:3000"
+    volumes:
+      - dados_sqlite:/dados
+    environment:
+      CAMINHO_BANCO: /dados/balanca.db
+      PORTA_API: "3000"
+      CAMINHO_CHAVE_API: /dados/.chave-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/saude"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  webapp:
+    image: ghcr.io/rbeninca/balanca/webapp:${TAG:-latest}
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+  atualizador:
+    image: ghcr.io/rbeninca/balanca/atualizador:${TAG:-latest}
+    privileged: true
+    ports:
+      - "8767:8767"
+    environment:
+      PORTA_SERIAL: /dev/ttyUSB0
+      PORTA_HTTP: "8767"
+      PORTA_GATEWAY_HTTP: http://gateway:8766
+      CAMINHO_FIRMWARE: /firmware/balanca.bin
+      CAMINHO_VERSAO: /firmware/versao.json
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8767/saude"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  dados_sqlite:

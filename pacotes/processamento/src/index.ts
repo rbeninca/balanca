@@ -18,3 +18,7 @@ export * from './analise/PanTompkins.js';
 export * from './analise/EstimadorBpmAutocorrelacao.js';
 export * from './analise/DetectorBatimento.js';
 export * from './pipeline/PipelineProcessamento.js';
+export * from './analise/CalibradorBarra.js';
+export * from './analise/EstimadorMovimentoBarra.js';
+export * from './analise/DetectorRepeticaoBarra.js';
+export * from './analise/CalculadorMetricasBarra.js';
