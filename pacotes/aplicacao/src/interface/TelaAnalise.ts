@@ -21,6 +21,7 @@ export class TelaAnalise {
   private burnFim         = 0;
   private nomeSessao:     string;
   private leiturasMutadas = false;
+  private hoveredIdx      = -1;
 
   constructor(
     private dados: DadosAnalise,
@@ -273,7 +274,7 @@ export class TelaAnalise {
 
   private atualizarMarcadores() {
     this.sincronizarEmQueima();
-    this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, false, false);
+    this.chart?.updateOptions({ annotations: this.anotacoesQueima() }, true, false);
     this.atualizarStats();
   }
 
@@ -293,15 +294,20 @@ export class TelaAnalise {
         animations: { enabled: false },
         toolbar: { show: true, tools: { download: false, selection: false, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
         events: {
+          dataPointMouseEnter: (_ev: MouseEvent, _ctx: unknown, cfg?: { dataPointIndex?: number }) => {
+            const idx = cfg?.dataPointIndex ?? -1;
+            if (idx >= 0) this.hoveredIdx = idx;
+          },
           click: (_ev: MouseEvent, _ctx: unknown, cfg?: { dataPointIndex?: number }) => {
             const idx = cfg?.dataPointIndex ?? -1;
-            if (idx < 0) return;
-            const dI = Math.abs(idx - this.burnInicio);
-            const dF = Math.abs(idx - this.burnFim);
+            const alvo = idx >= 0 ? idx : this.hoveredIdx;
+            if (alvo < 0) return;
+            const dI = Math.abs(alvo - this.burnInicio);
+            const dF = Math.abs(alvo - this.burnFim);
             if (dI <= dF) {
-              this.burnInicio = Math.min(idx, this.burnFim);
+              this.burnInicio = Math.min(alvo, this.burnFim);
             } else {
-              this.burnFim = Math.max(idx, this.burnInicio);
+              this.burnFim = Math.max(alvo, this.burnInicio);
             }
             this.atualizarMarcadores();
           },
