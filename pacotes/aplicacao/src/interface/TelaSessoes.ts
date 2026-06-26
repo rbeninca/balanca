@@ -96,7 +96,10 @@ export class TelaSessoes {
         <div id="lista-conteudo"><div class="vazio">Carregando...</div></div>
         <div id="barra-comparacao" class="barra-comparacao hidden">
           <span id="barra-comp-info"></span>
-          <button id="btn-comparar" class="btn-primary btn-sm">Comparar selecionadas</button>
+          <button id="btn-comparar"    class="btn-primary btn-sm">Comparar selecionadas</button>
+          <button id="btn-baixar-csv"  class="btn-secondary btn-sm">Baixar CSV</button>
+          <button id="btn-baixar-pdf"  class="btn-secondary btn-sm">Baixar PDF</button>
+          <button id="btn-baixar-json" class="btn-secondary btn-sm">Baixar JSON</button>
         </div>
       </div>
     `;
@@ -118,6 +121,15 @@ export class TelaSessoes {
     container.querySelector<HTMLButtonElement>('#btn-comparar')!.addEventListener('click', () => {
       void this.abrirComparacao();
     });
+    container.querySelector<HTMLButtonElement>('#btn-baixar-csv')!.addEventListener('click', () => {
+      void this.baixarSelecionadas('csv');
+    });
+    container.querySelector<HTMLButtonElement>('#btn-baixar-pdf')!.addEventListener('click', () => {
+      void this.baixarSelecionadas('pdf');
+    });
+    container.querySelector<HTMLButtonElement>('#btn-baixar-json')!.addEventListener('click', () => {
+      void this.baixarSelecionadas('json');
+    });
 
     // Importar JSON
     const btnImportar = container.querySelector<HTMLButtonElement>('#btn-importar-json')!;
@@ -137,7 +149,9 @@ export class TelaSessoes {
       }
     });
 
-    const sessoes = await this.armazenamento.listarSessoes();
+    const sessoes = (await this.armazenamento.listarSessoes())
+      .slice()
+      .sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
 
     if (sessoes.length === 0) {
       lista.innerHTML = '<div class="vazio">Nenhuma sessão gravada.</div>';
@@ -163,14 +177,16 @@ export class TelaSessoes {
     if (!barra || !infoEl) return;
 
     const n = this.selecionadas.size;
-    if (n < 2) {
+    if (n < 1) {
       barra.classList.add('hidden');
       return;
     }
 
     barra.classList.remove('hidden');
+    const btnComparar = barra.querySelector<HTMLButtonElement>('#btn-comparar');
+    if (btnComparar) btnComparar.disabled = n < 2;
     const aviso = n > 6 ? ' ⚠ Muitas sessões podem tornar o gráfico ilegível.' : '';
-    infoEl.textContent = `${n} sessões selecionadas.${aviso}`;
+    infoEl.textContent = `${n} ${n === 1 ? 'sessão selecionada' : 'sessões selecionadas'}.${aviso}`;
   }
 
   private async abrirComparacao() {
@@ -190,6 +206,50 @@ export class TelaSessoes {
       new TelaComparacao(itens);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Comparar selecionadas'; }
+    }
+  }
+
+  private async baixarSelecionadas(formato: 'csv' | 'pdf' | 'json'): Promise<void> {
+    const sessoes = await this.armazenamento.listarSessoes();
+    const selecionadas = sessoes.filter(s => this.selecionadas.has(s.id));
+    if (selecionadas.length === 0) return;
+
+    const erros: string[] = [];
+
+    for (const s of selecionadas) {
+      try {
+        const ls = await this.armazenamento.obterLeituras(s.id);
+
+        if (formato === 'json') {
+          const meta = await this.armazenamento.obterMetadados(s.id) ?? {};
+          const payload: SessaoExportadaV2 = {
+            versao: 2, nome: s.nome, criadoEm: s.criadoEm,
+            exportadoEm: new Date().toISOString(), metadados: meta, leituras: ls,
+          };
+          this.baixarArquivo(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `${s.nome}.json`);
+        } else if (formato === 'csv') {
+          const data = new Date(s.criadoEm).toLocaleDateString('pt-BR');
+          let csv: string;
+          try {
+            const analise = analisarMotor(ls, {});
+            csv = exportarCSV(ls, analise, { nomeSessao: s.nome, data });
+          } catch {
+            csv = exportarCSV(ls, undefined, { nomeSessao: s.nome, data });
+          }
+          this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${s.nome}.csv`);
+        } else {
+          const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
+          const analise = analisarMotor(ls, {});
+          const blob    = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
+          this.baixarArquivo(blob, `${s.nome}.pdf`);
+        }
+      } catch (e) {
+        erros.push(`${s.nome}: ${String(e)}`);
+      }
+    }
+
+    if (erros.length > 0) {
+      alert(`Algumas sessões não puderam ser exportadas em ${formato.toUpperCase()}:\n\n${erros.join('\n')}`);
     }
   }
 
