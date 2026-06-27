@@ -479,7 +479,7 @@ export class TelaSessoes {
     iframe.style.left = '-10000px';
     iframe.style.top = '0';
     iframe.style.width = '794px';
-    iframe.style.height = '1123px';
+    iframe.style.height = '1px';
     iframe.style.border = '0';
 
     document.body.appendChild(iframe);
@@ -492,10 +492,21 @@ export class TelaSessoes {
       });
 
       // Dá tempo para scripts do relatório desenharem o gráfico no canvas.
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      const corpo = iframe.contentDocument?.body;
+      const documento = iframe.contentDocument;
+      const corpo = documento?.body;
       if (!corpo) throw new Error('Não foi possível acessar o conteúdo do relatório.');
+
+      const alturaConteudo = Math.max(
+        corpo.scrollHeight,
+        corpo.offsetHeight,
+        documento?.documentElement.scrollHeight ?? 0,
+        documento?.documentElement.offsetHeight ?? 0,
+      );
+      iframe.style.height = `${alturaConteudo + 40}px`;
+      corpo.style.overflow = 'visible';
+      corpo.style.maxWidth = 'none';
 
       const html2pdfModule = await import('html2pdf.js');
       const html2pdf = (html2pdfModule as unknown as { default?: unknown }).default ?? html2pdfModule;
@@ -508,10 +519,19 @@ export class TelaSessoes {
         };
       })()
         .set({
-          margin: 8,
+          margin: [8, 8, 8, 8],
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          html2canvas: {
+            scale: 1.5,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            windowWidth: corpo.scrollWidth,
+            windowHeight: alturaConteudo,
+            scrollX: 0,
+            scrollY: 0,
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'] },
         })
         .from(corpo)
         .outputPdf('blob');
