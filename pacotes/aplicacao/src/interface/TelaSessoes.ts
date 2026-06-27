@@ -240,10 +240,9 @@ export class TelaSessoes {
         } else {
           const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
           const analise = analisarMotor(ls, {});
-          const blob    = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
-          const url     = URL.createObjectURL(blob);
-          window.open(url, '_blank');
-          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          const htmlBlob = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
+          const pdfBlob  = await this.converterHtmlRelatorioParaPdf(htmlBlob);
+          this.baixarArquivo(pdfBlob, `${s.nome}.pdf`);
         }
       } catch (e) {
         erros.push(`${s.nome}: ${String(e)}`);
@@ -468,5 +467,58 @@ export class TelaSessoes {
     a.download = nome;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
+
+  private async converterHtmlRelatorioParaPdf(htmlBlob: Blob): Promise<Blob> {
+    const htmlOriginal = await htmlBlob.text();
+    const htmlSemPrint = htmlOriginal.replace(/setTimeout\(function\(\) \{ window\.print\(\); \}, 800\);\s*/g, '');
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '0';
+    iframe.style.width = '794px';
+    iframe.style.height = '1123px';
+    iframe.style.border = '0';
+
+    document.body.appendChild(iframe);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        iframe.onload = () => resolve();
+        iframe.onerror = () => reject(new Error('Falha ao preparar renderização do relatório.'));
+        iframe.srcdoc = htmlSemPrint;
+      });
+
+      // Dá tempo para scripts do relatório desenharem o gráfico no canvas.
+      await new Promise((resolve) => setTimeout(resolve, 350));
+
+      const corpo = iframe.contentDocument?.body;
+      if (!corpo) throw new Error('Não foi possível acessar o conteúdo do relatório.');
+
+      const html2pdfModule = await import('html2pdf.js');
+      const html2pdf = (html2pdfModule as unknown as { default?: unknown }).default ?? html2pdfModule;
+
+      const pdfBlob = await (html2pdf as {
+        (): {
+          set: (opts: unknown) => unknown;
+          from: (source: HTMLElement) => unknown;
+          outputPdf: (type: 'blob') => Promise<Blob>;
+        };
+      })()
+        .set({
+          margin: 8,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        })
+        .from(corpo)
+        .outputPdf('blob');
+
+      return pdfBlob;
+    } finally {
+      iframe.remove();
+    }
   }
 }
