@@ -4,6 +4,7 @@ import { ArmazenamentoApi } from '../armazenamento/ArmazenamentoApi.js';
 import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
+import { jsPDF } from 'jspdf';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
@@ -240,8 +241,7 @@ export class TelaSessoes {
         } else {
           const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
           const analise = analisarMotor(ls, {});
-          const htmlBlob = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
-          const pdfBlob  = await this.converterHtmlRelatorioParaPdf(htmlBlob);
+          const pdfBlob  = await this.gerarPdfLote(s.nome, data, ls, analise);
           this.baixarArquivo(pdfBlob, `${s.nome}.pdf`);
         }
       } catch (e) {
@@ -469,76 +469,180 @@ export class TelaSessoes {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
-  private async converterHtmlRelatorioParaPdf(htmlBlob: Blob): Promise<Blob> {
-    const htmlOriginal = await htmlBlob.text();
-    const htmlSemPrint = htmlOriginal.replace(/setTimeout\(function\(\) \{ window\.print\(\); \}, 800\);\s*/g, '');
+  private async gerarPdfLote(nomeSessao: string, data: string, leituras: LeituraProcessada[], analise: ReturnType<typeof analisarMotor>): Promise<Blob> {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const margem = 12;
+    const larguraPagina = 210;
+    const alturaPagina = 297;
+    const larguraUtil = larguraPagina - margem * 2;
+    let y = margem;
 
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-10000px';
-    iframe.style.top = '0';
-    iframe.style.width = '794px';
-    iframe.style.height = '1px';
-    iframe.style.border = '0';
+    const quebraPagina = (alturaNecessaria = 10) => {
+      if (y + alturaNecessaria > alturaPagina - margem) {
+        doc.addPage();
+        y = margem;
+      }
+    };
 
-    document.body.appendChild(iframe);
+    const titulo = (texto: string, tamanho = 14) => {
+      quebraPagina(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(tamanho);
+      doc.text(texto, margem, y);
+      y += tamanho >= 14 ? 8 : 6;
+      doc.setDrawColor(52, 152, 219);
+      doc.setLineWidth(0.4);
+      doc.line(margem, y, larguraPagina - margem, y);
+      y += 5;
+    };
 
-    try {
-      await new Promise<void>((resolve, reject) => {
-        iframe.onload = () => resolve();
-        iframe.onerror = () => reject(new Error('Falha ao preparar renderização do relatório.'));
-        iframe.srcdoc = htmlSemPrint;
-      });
+    const linha = (rotulo: string, valor: string) => {
+      quebraPagina(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(rotulo, margem, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(valor, margem + 56, y);
+      y += 5;
+    };
 
-      // Dá tempo para scripts do relatório desenharem o gráfico no canvas.
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+    const textoQuebrado = (texto: string, alturaMinima = 8) => {
+      const linhas = doc.splitTextToSize(texto, larguraUtil);
+      quebraPagina(Math.max(alturaMinima, linhas.length * 4.5));
+      doc.text(linhas, margem, y);
+      y += linhas.length * 4.5 + 1;
+    };
 
-      const documento = iframe.contentDocument;
-      const corpo = documento?.body;
-      if (!corpo) throw new Error('Não foi possível acessar o conteúdo do relatório.');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('balançaGFIG - RELATÓRIO DE TESTE ESTÁTICO', margem, y);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`${nomeSessao} • ${data}`, margem, y);
+    y += 6;
+    doc.text('GFIG / IFSC Campus Gaspar', margem, y);
+    y += 10;
 
-      const alturaConteudo = Math.max(
-        corpo.scrollHeight,
-        corpo.offsetHeight,
-        documento?.documentElement.scrollHeight ?? 0,
-        documento?.documentElement.offsetHeight ?? 0,
-      );
-      iframe.style.height = `${alturaConteudo + 40}px`;
-      corpo.style.overflow = 'visible';
-      corpo.style.maxWidth = 'none';
+    titulo('Resumo');
+    linha('Classe:', analise.letraMotor);
+    linha('Nome comum:', analise.nomeComum);
+    linha('Impulso total:', `${analise.impulsoTotal_Ns.toFixed(3)} N⋅s`);
+    linha('Força máxima:', `${analise.forcaPico_N.toFixed(3)} N`);
+    linha('Força média:', `${analise.forcaMedia_N.toFixed(3)} N`);
+    linha('Duração de queima:', `${analise.duracaoQueima_s.toFixed(3)} s`);
+    linha('Perfil:', analise.perfilQueima);
+    y += 2;
 
-      const html2pdfModule = await import('html2pdf.js');
-      const html2pdf = (html2pdfModule as unknown as { default?: unknown }).default ?? html2pdfModule;
+    titulo('Gráfico', 12);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1400;
+    canvas.height = 650;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const ordenadas = [...leituras].sort((a, b) => a.marcaTemporal - b.marcaTemporal);
+      const t0 = ordenadas[0]?.marcaTemporal ?? 0;
+      const dados = ordenadas.map(l => ({ t: (l.marcaTemporal - t0) / 1000, f: l.forcaNewton }));
+      const tempos = dados.map(d => d.t);
+      const valores = dados.map(d => d.f);
+      const w = canvas.width;
+      const h = canvas.height;
+      const gx = 95;
+      const gy = 70;
+      const gw = w - 150;
+      const gh = h - 150;
 
-      const pdfBlob = await (html2pdf as {
-        (): {
-          set: (opts: unknown) => unknown;
-          from: (source: HTMLElement) => unknown;
-          outputPdf: (type: 'blob') => Promise<Blob>;
-        };
-      })()
-        .set({
-          margin: [8, 8, 8, 8],
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 1.5,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            windowWidth: corpo.scrollWidth,
-            windowHeight: alturaConteudo,
-            scrollX: 0,
-            scrollY: 0,
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'] },
-        })
-        .from(corpo)
-        .outputPdf('blob');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#2c3e50';
+      ctx.font = 'bold 24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Curva de Propulsão - ${nomeSessao}`, w / 2, 34);
+      ctx.font = 'bold 16px Arial';
+      ctx.fillStyle = '#3498db';
+      ctx.fillText(`${analise.impulsoTotal_Ns.toFixed(2)} N⋅s`, w / 2, 58);
 
-      return pdfBlob;
-    } finally {
-      iframe.remove();
+      if (dados.length >= 2) {
+        const maxV = Math.max(...valores);
+        const minV = Math.min(0, ...valores);
+        const pad = (maxV - minV) * 0.12 || 0.1;
+        const yMin = minV - pad;
+        const yMax = maxV + pad;
+        const yRange = yMax - yMin || 1;
+        const maxT = Math.max(...tempos) || 1;
+
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(gx, gy, gw, gh);
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(gx, gy, gw, gh);
+
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 6; i++) {
+          const yy = gy + (gh / 6) * i;
+          const v = yMax - (yRange / 6) * i;
+          ctx.beginPath(); ctx.moveTo(gx, yy); ctx.lineTo(gx + gw, yy); ctx.stroke();
+          ctx.fillStyle = '#2c3e50'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
+          ctx.fillText(v.toFixed(1) + ' N', gx - 8, yy + 4);
+        }
+        for (let j = 0; j <= 8; j++) {
+          const xx = gx + (gw / 8) * j;
+          const t = (maxT / 8) * j;
+          ctx.beginPath(); ctx.moveTo(xx, gy); ctx.lineTo(xx, gy + gh); ctx.stroke();
+          ctx.fillStyle = '#2c3e50'; ctx.textAlign = 'center';
+          ctx.fillText(t.toFixed(2) + ' s', xx, gy + gh + 18);
+        }
+        ctx.setLineDash([]);
+
+        const px = (t: number) => gx + (t / maxT) * gw;
+        const py = (v: number) => gy + gh - ((v - yMin) / yRange) * gh;
+
+        ctx.fillStyle = 'rgba(52,152,219,0.25)';
+        ctx.beginPath();
+        ctx.moveTo(px(dados[0]!.t), py(0));
+        for (const d of dados) ctx.lineTo(px(d.t), py(d.f));
+        ctx.lineTo(px(dados[dados.length - 1]!.t), py(0));
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#3498db';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        dados.forEach((d, i) => {
+          if (i === 0) ctx.moveTo(px(d.t), py(d.f));
+          else ctx.lineTo(px(d.t), py(d.f));
+        });
+        ctx.stroke();
+
+        const maxIdx = valores.reduce((melhor, atual, idx, arr) => atual > arr[melhor]! ? idx : melhor, 0);
+        const pkx = px(dados[maxIdx]!.t);
+        const pky = py(valores[maxIdx]!);
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath(); ctx.arc(pkx, pky, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#2c3e50'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(`Fmax: ${valores[maxIdx]!.toFixed(2)} N`, pkx, pky - 12);
+      } else {
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Dados insuficientes para o gráfico', w / 2, h / 2);
+      }
     }
+
+    const imagem = canvas.toDataURL('image/png', 1.0);
+    quebraPagina(120);
+    doc.addImage(imagem, 'PNG', margem, y, larguraUtil, 120);
+    y += 126;
+
+    titulo('Métricas detalhadas', 12);
+    linha('Leituras:', `${leituras.length}`);
+    linha('Força RMS:', `${analise.forcaRms_N.toFixed(3)} N`);
+    linha('Coef. variação:', `${(analise.coefVariacao * 100).toFixed(1)} %`);
+    linha('Impulso específico:', analise.impulsoEspecifico_s != null ? `${analise.impulsoEspecifico_s.toFixed(2)} s` : 'Aguardando massa propelente');
+    linha('Perfil de queima:', analise.perfilQueima);
+
+    return new Blob([doc.output('blob')], { type: 'application/pdf' });
   }
 }
