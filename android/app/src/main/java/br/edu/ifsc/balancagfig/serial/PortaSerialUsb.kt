@@ -14,10 +14,10 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteESP
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import com.hoho.android.usbserial.util.SerialInputOutputManager
 import br.edu.ifsc.balancagfig.sistema.Root
 import java.io.IOException
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * Porta serial da balança sobre a USB Host API (usb-serial-for-android).
@@ -51,7 +51,21 @@ class PortaSerialUsb(
     private val enquadrador = Enquadrador(ouvinte::aoReceber, ouvinte::aoFalharDecodificacao)
 
     private var porta: UsbSerialPort? = null
-    private var io: SerialInputOutputManager? = null
+    private var leitor: LeitorUsb? = null
+
+    /**
+     * Bytes lidos da USB, entregues a outra thread para enquadrar/processar.
+     * O callback de leitura precisa voltar o mais rápido possível: a biblioteca
+     * só enfileira a próxima UsbRequest depois dele, e o CH340 descarta o que
+     * chega enquanto não há requisição pendente.
+     */
+    private val filaBytes = LinkedBlockingQueue<ByteArray>()
+    private val processador = Thread({
+        while (!Thread.currentThread().isInterrupted) {
+            val chunk = try { filaBytes.take() } catch (_: InterruptedException) { return@Thread }
+            enquadrador.alimentar(chunk)
+        }
+    }, "PortaSerialUsb-processador").apply { isDaemon = true }
     private var receptorRegistrado = false
 
     /** Conexão e chamadas a `su` bloqueiam; rodam fora da thread principal, uma por vez. */
@@ -91,6 +105,7 @@ class PortaSerialUsb(
 
     /** Registra os receptores e tenta a primeira conexão. */
     fun iniciar() {
+        if (!processador.isAlive) processador.start()
         if (!receptorRegistrado) {
             val filtro = IntentFilter().apply {
                 addAction(acaoPermissao)
@@ -109,6 +124,7 @@ class PortaSerialUsb(
     }
 
     fun parar() {
+        processador.interrupt()
         executor.shutdownNow()
         fecharPorta("encerrado")
         if (receptorRegistrado) {
@@ -187,21 +203,21 @@ class PortaSerialUsb(
             p.dtr = true
             p.rts = true
             porta = p
+            filaBytes.clear()
             enquadrador.limpar()
 
-            io = SerialInputOutputManager(p, object : SerialInputOutputManager.Listener {
-                override fun onNewData(data: ByteArray) = enquadrador.alimentar(data)
-                override fun onRunError(e: Exception) {
+            leitor = LeitorUsb(
+                conexao = conexao,
+                endpoint = p.readEndpoint,
+                aoReceber = { dados -> filaBytes.offer(dados) },
+                aoFalhar = { e ->
                     Log.w(TAG, "erro de leitura: ${e.message}")
                     fecharPorta(e.message ?: "erro de leitura")
                     ouvinte.aoMudarEstado(Estado.Erro(e.message ?: "erro de leitura"))
                     // Como o gateway TS: tenta de novo em vez de ficar parado em erro
                     executor.execute { Thread.sleep(ATRASO_RECONEXAO_MS); conectarAgora() }
-                }
-            }).also {
-                it.readTimeout = TIMEOUT_LEITURA_MS
-                it.start()
-            }
+                },
+            ).also { it.iniciar() }
             tentativasReenumeracao = 0
             ouvinte.aoMudarEstado(Estado.Conectado(driver.device))
             Log.i(TAG, "conectado a ${driver.device.deviceName} @ $baud")
@@ -214,9 +230,8 @@ class PortaSerialUsb(
 
     @Synchronized
     private fun fecharPorta(motivo: String) {
-        io?.listener = null
-        io?.stop()
-        io = null
+        leitor?.parar()
+        leitor = null
         try { porta?.close() } catch (_: IOException) { }
         if (porta != null) Log.i(TAG, "porta fechada: $motivo")
         porta = null
@@ -225,7 +240,6 @@ class PortaSerialUsb(
     private companion object {
         const val TAG = "PortaSerialUsb"
         const val TIMEOUT_ESCRITA_MS = 500
-        const val TIMEOUT_LEITURA_MS = 200
         const val ATRASO_APOS_ATTACH_MS = 1000L
         const val ATRASO_RECONEXAO_MS = 2000L
         const val MAX_REENUMERACOES = 2

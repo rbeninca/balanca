@@ -12,10 +12,20 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import br.edu.ifsc.balancagfig.processamento.ConfiguracaoPipeline
+import br.edu.ifsc.balancagfig.processamento.PipelineProcessamento
+import br.edu.ifsc.balancagfig.protocolo.Codificador
+import br.edu.ifsc.balancagfig.protocolo.ComandoHost
+import br.edu.ifsc.balancagfig.protocolo.ComandoObterConfig
+import br.edu.ifsc.balancagfig.protocolo.PacoteConfiguracao
 import br.edu.ifsc.balancagfig.protocolo.PacoteDados
 import br.edu.ifsc.balancagfig.protocolo.PacoteESP
+import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
+import br.edu.ifsc.balancagfig.servidor.Mensagens
 import br.edu.ifsc.balancagfig.servidor.ServidorHttp
+import br.edu.ifsc.balancagfig.servidor.ServidorSaude
+import br.edu.ifsc.balancagfig.servidor.ServidorWs
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.CoroutineScope
@@ -24,13 +34,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Serviço em primeiro plano que mantém a balança no ar enquanto o box estiver
- * ligado: porta serial USB, servidor do frontend e hotspot. Substitui os
- * containers gateway + webapp do Cenário A (api e WebSocket entram nas próximas fases).
+ * ligado: porta serial USB → pipeline → WebSocket, servidor do frontend,
+ * health-check e hotspot. Substitui os containers gateway + webapp do
+ * Cenário A (a api REST entra na próxima fase).
  */
 class ServicoBalanca : Service() {
 
@@ -39,6 +51,11 @@ class ServicoBalanca : Service() {
 
     private var porta: PortaSerialUsb? = null
     private var http: ServidorHttp? = null
+    private var ws: ServidorWs? = null
+    private var saude: ServidorSaude? = null
+
+    /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
+    private val pipeline = PipelineProcessamento(ConfiguracaoPipeline())
 
     private val pacotesNoIntervalo = AtomicLong(0)
 
@@ -52,6 +69,7 @@ class ServicoBalanca : Service() {
             .also { it.acquire() }
 
         iniciarHttp()
+        iniciarWebSocket()
         iniciarSerial()
         iniciarHotspot()
         iniciarContadorTaxa()
@@ -72,6 +90,8 @@ class ServicoBalanca : Service() {
         EstadoHost.definirServicoAtivo(false)
         EstadoHost.registrar("Serviço encerrado")
         porta?.parar()
+        ws?.encerrar()
+        saude?.stop()
         http?.stop()
         EstadoHost.definirPortaHttp(null)
         escopo.cancel()
@@ -98,6 +118,49 @@ class ServicoBalanca : Service() {
         }
     }
 
+    private fun iniciarWebSocket() {
+        try {
+            ws = ServidorWs(
+                estadoInicial = { Mensagens.pipelineEstado(pipeline.obterConfig()) },
+                aoReceber = ::tratarMensagemCliente,
+            ).also { it.iniciar() }
+            EstadoHost.registrar("WebSocket em :${ServidorWs.PORTA_PADRAO}")
+        } catch (e: IOException) {
+            Log.e(TAG, "WebSocket não subiu", e)
+            EstadoHost.registrar("WebSocket falhou: ${e.message}")
+        }
+        try {
+            saude = ServidorSaude {
+                JSONObject()
+                    .put("status", "ok")
+                    .put("serial", porta?.conectado == true)
+                    .put("clientes", ws?.numClientes ?: 0)
+            }.also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
+        } catch (e: IOException) {
+            Log.e(TAG, "/saude não subiu", e)
+        }
+    }
+
+    /** Mensagens vindas do frontend: config do pipeline fica aqui, comandos vão para o ESP. */
+    private fun tratarMensagemCliente(entrada: Mensagens.Entrada) {
+        when (entrada) {
+            is Mensagens.Entrada.ConfigPipeline -> {
+                pipeline.atualizarConfig(entrada.patch)
+                ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
+            }
+            is Mensagens.Entrada.Comando -> enviarAoEsp(entrada.comando)
+        }
+    }
+
+    private fun enviarAoEsp(comando: ComandoHost) {
+        try {
+            porta?.enviar(Codificador.codificar(comando))
+            EstadoHost.registrar("→ ESP: $comando")
+        } catch (e: IOException) {
+            EstadoHost.registrar("Comando $comando falhou: ${e.message}")
+        }
+    }
+
     private fun iniciarSerial() {
         porta = PortaSerialUsb(this, ouvinte = object : PortaSerialUsb.Ouvinte {
             override fun aoMudarEstado(estado: PortaSerialUsb.Estado) {
@@ -111,19 +174,42 @@ class ServicoBalanca : Service() {
                 EstadoHost.definirSerial(e)
                 EstadoHost.registrar("Serial: $e")
                 atualizarNotificacao()
+
+                when (e) {
+                    is EstadoSerial.Conectado -> {
+                        ws?.difundir(Mensagens.serialOk())
+                        // Como o gateway Node: pede a configuração atual ao ESP ao conectar
+                        enviarAoEsp(ComandoObterConfig)
+                    }
+                    EstadoSerial.SemDispositivo, is EstadoSerial.Erro -> ws?.difundir(Mensagens.serialOff())
+                    else -> Unit
+                }
             }
 
             override fun aoReceber(pacote: PacoteESP) {
-                if (pacote is PacoteDados) {
-                    pacotesNoIntervalo.incrementAndGet()
-                    EstadoHost.atualizarEstatisticas { it.copy(pacotes = it.pacotes + 1, ultimo = pacote) }
-                } else {
-                    EstadoHost.registrar("ESP: $pacote")
+                when (pacote) {
+                    is PacoteDados -> {
+                        pacotesNoIntervalo.incrementAndGet()
+                        val leitura = pipeline.processar(pacote)
+                        EstadoHost.atualizarEstatisticas { it.copy(pacotes = it.pacotes + 1, ultimo = pacote) }
+                        ws?.difundir(Mensagens.leitura(leitura))
+                    }
+                    is PacoteConfiguracao -> {
+                        EstadoHost.registrar("ESP: $pacote")
+                        ws?.difundir(Mensagens.config(pacote))
+                    }
+                    is PacoteStatus -> {
+                        EstadoHost.registrar("ESP: $pacote")
+                        ws?.difundir(Mensagens.status(pacote))
+                    }
                 }
             }
 
             override fun aoFalharDecodificacao(motivo: String) {
                 EstadoHost.atualizarEstatisticas { it.copy(errosCrc = it.errosCrc + 1) }
+                Log.w(TAG, "decodificação: $motivo")
+                // Pacotes que não são DADOS são raros — vale mostrar no painel
+                if (!motivo.startsWith("tipo 0x1 ")) EstadoHost.registrar("Descartado: $motivo")
             }
         }, baud = BAUD).also { it.iniciar() }
     }

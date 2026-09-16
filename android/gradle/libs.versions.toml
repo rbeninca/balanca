@@ -11,6 +11,7 @@ composeBom = "2023.09.01"
 usbSerial = "3.8.1"
 nanohttpd = "2.3.1"
 coroutines = "1.8.1"
+json = "20240303"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +31,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 usb-serial = { group = "com.github.mik3y", name = "usb-serial-for-android", version.ref = "usbSerial" }
 nanohttpd = { group = "org.nanohttpd", name = "nanohttpd", version.ref = "nanohttpd" }
 nanohttpd-websocket = { group = "org.nanohttpd", name = "nanohttpd-websocket", version.ref = "nanohttpd" }
+json = { group = "org.json", name = "json", version.ref = "json" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 
 [plugins]

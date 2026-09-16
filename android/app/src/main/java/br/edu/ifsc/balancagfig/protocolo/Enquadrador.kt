@@ -5,7 +5,7 @@ package br.edu.ifsc.balancagfig.protocolo
  * Espelho de PortaSerial.processarChunk em pacotes/gateway/src/PortaSerial.ts:
  * procura o magic, valida versão/tipo, espera o pacote completo e decodifica.
  *
- * Não é thread-safe: alimente sempre da mesma thread de leitura.
+ * [alimentar] e [limpar] são sincronizados: a leitura vem de uma thread e a reconexão de outra.
  */
 class Enquadrador(
     private val aoReceber: (PacoteESP) -> Unit,
@@ -16,6 +16,7 @@ class Enquadrador(
     /** Versões de protocolo aceitas (v1 tem o mesmo layout de v2). */
     private val versoesAceitas = setOf(0x01, 0x02)
 
+    @Synchronized
     fun alimentar(chunk: ByteArray, tamanho: Int = chunk.size) {
         buffer = buffer + chunk.copyOf(tamanho)
 
@@ -45,15 +46,19 @@ class Enquadrador(
             try {
                 aoReceber(Codificador.decodificar(pacote))
             } catch (e: ErroProtocolo) {
-                aoFalhar(e.message ?: "erro de decodificação")
+                // tipo e bytes ajudam a distinguir ruído de linha de erro de layout
+                aoFalhar("tipo 0x${tipo.toString(16)} (${tam}B): ${e.message} [${pacote.hex()}]")
             }
         }
     }
 
     /** Descarta o que estiver acumulado (ex.: ao reconectar a porta). */
+    @Synchronized
     fun limpar() {
         buffer = ByteArray(0)
     }
+
+    private fun ByteArray.hex() = joinToString(" ") { "%02x".format(it) }
 
     /** Posição do magic 0xA1B2 em little-endian (bytes 0xB2 0xA1), ou -1. */
     private fun indiceMagic(): Int {
