@@ -9,3 +9,5 @@
 .cxx
 # dist-web copiado do pacote aplicacao pela tarefa copiarFrontend
 /app/src/main/assets/web
+# esquema.sql copiado de pacotes/api pela tarefa copiarEsquema
+/app/src/main/assets/esquema.sql

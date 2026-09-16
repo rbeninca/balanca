@@ -22,7 +22,9 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteDados
 import br.edu.ifsc.balancagfig.protocolo.PacoteESP
 import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
+import br.edu.ifsc.balancagfig.armazenamento.BancoDados
 import br.edu.ifsc.balancagfig.servidor.Mensagens
+import br.edu.ifsc.balancagfig.servidor.ServidorApi
 import br.edu.ifsc.balancagfig.servidor.ServidorHttp
 import br.edu.ifsc.balancagfig.servidor.ServidorSaude
 import br.edu.ifsc.balancagfig.servidor.ServidorWs
@@ -35,6 +37,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
 
@@ -53,6 +56,8 @@ class ServicoBalanca : Service() {
     private var http: ServidorHttp? = null
     private var ws: ServidorWs? = null
     private var saude: ServidorSaude? = null
+    private var api: ServidorApi? = null
+    private var bd: BancoDados? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
     private val pipeline = PipelineProcessamento(ConfiguracaoPipeline())
@@ -70,6 +75,7 @@ class ServicoBalanca : Service() {
 
         iniciarHttp()
         iniciarWebSocket()
+        iniciarApi()
         iniciarSerial()
         iniciarHotspot()
         iniciarContadorTaxa()
@@ -92,6 +98,8 @@ class ServicoBalanca : Service() {
         porta?.parar()
         ws?.encerrar()
         saude?.stop()
+        api?.stop()
+        bd?.close()
         http?.stop()
         EstadoHost.definirPortaHttp(null)
         escopo.cancel()
@@ -138,6 +146,23 @@ class ServicoBalanca : Service() {
             }.also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
         } catch (e: IOException) {
             Log.e(TAG, "/saude não subiu", e)
+        }
+    }
+
+    /**
+     * API REST + SQLite em filesDir/balanca.db. A chave de API é opcional: se o
+     * arquivo filesDir/.chave-api existir, a escrita exige x-chave-api (mesma
+     * convenção de CAMINHO_CHAVE_API do pacote api); sem ele, acesso livre.
+     */
+    private fun iniciarApi() {
+        try {
+            val banco = BancoDados(this).also { bd = it }
+            val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
+            api = ServidorApi(banco, chave).also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
+            EstadoHost.registrar("API em :${ServidorApi.PORTA_PADRAO} (${if (chave != null) "com chave" else "sem chave"})")
+        } catch (e: Exception) {
+            Log.e(TAG, "API não subiu", e)
+            EstadoHost.registrar("API falhou: ${e.message}")
         }
     }
 
@@ -271,6 +296,7 @@ class ServicoBalanca : Service() {
         private const val ID_NOTIFICACAO = 1
         const val BAUD = 921600
         const val EXTRA_RECONECTAR_USB = "reconectar_usb"
+        const val ARQUIVO_CHAVE_API = ".chave-api"
 
         /** Instância viva (um só processo), para a Activity pedir reconexão. */
         @Volatile

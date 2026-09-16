@@ -92,7 +92,15 @@ val copiarFrontend = tasks.register<Sync>("copiarFrontend") {
     }
 }
 
-tasks.named("preBuild") { dependsOn(copiarFrontend) }
+// Esquema do banco: mesmo arquivo do pacote api, para não divergir.
+val copiarEsquema = tasks.register<Copy>("copiarEsquema") {
+    group = "balanca"
+    description = "Copia pacotes/api/src/bancoDados/esquema.sql para os assets."
+    from(rootProject.layout.projectDirectory.file("../pacotes/api/src/bancoDados/esquema.sql"))
+    into(layout.projectDirectory.dir("src/main/assets"))
+}
+
+tasks.named("preBuild") { dependsOn(copiarFrontend, copiarEsquema) }
 
 // ---------------------------------------------------------------------------
 // Tarefas de implantação no TX9 (grupo "tx9" no painel Gradle). O endereço
