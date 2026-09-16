@@ -80,10 +80,16 @@ dependencies {
 
 val distWeb = rootProject.layout.projectDirectory.dir("../pacotes/aplicacao/dist-web")
 
+val firmware = rootProject.layout.projectDirectory.dir("../firmware")
+
 val copiarFrontend = tasks.register<Sync>("copiarFrontend") {
     group = "balanca"
-    description = "Copia pacotes/aplicacao/dist-web para app/src/main/assets/web."
+    description = "Copia pacotes/aplicacao/dist-web (+ firmware.bin, como o Dockerfile.webapp) para app/src/main/assets/web."
     from(distWeb)
+    // Mesmos nomes que Dockerfile.webapp publica: a tela de firmware do frontend
+    // baixa BASE_URL/firmware.bin e BASE_URL/firmware-versao.json.
+    from(firmware.file("firmware.bin"))
+    from(firmware.file("versao.json")) { rename { "firmware-versao.json" } }
     into(layout.projectDirectory.dir("src/main/assets/web"))
     onlyIf {
         val existe = distWeb.asFile.exists()
