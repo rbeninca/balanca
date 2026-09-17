@@ -10,6 +10,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Backup automático em pendrive USB. Quando um pendrive está presente, mantém
@@ -22,12 +24,15 @@ import java.util.concurrent.Executors
  */
 class BackupPendrive(private val context: Context, private val bd: BancoDados) {
 
-    private val executor = Executors.newSingleThreadExecutor { r -> Thread(r, "BackupPendrive") }
+    // Um só agendador serializa backup e agendamentos; nunca concorre com a balança/API.
+    private val agendador = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "BackupPendrive") }
+    private var pendente: ScheduledFuture<*>? = null
     private val carimbo = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US)
     private val maxBackupsDb = 10
+    private val debounceSegundos = 4L
 
     /** Sincroniza tudo (backup do banco + todas as sessões faltantes). Chamar ao detectar o pendrive. */
-    fun sincronizarTudo() = executor.execute {
+    fun sincronizarTudo() = agendador.execute {
         val info = Pendrive.detectar()
         if (info == null) { EstadoHost.definirPendrive(null); return@execute }
         try {
@@ -47,21 +52,16 @@ class BackupPendrive(private val context: Context, private val bd: BancoDados) {
         }
     }
 
-    /** Exporta uma sessão específica + atualiza o backup do banco. Chamar ao salvar uma sessão. */
-    fun aoSalvarSessao(idSessao: String) = executor.execute {
-        val info = Pendrive.detectar() ?: return@execute
-        try {
-            val base = Pendrive.prepararPasta(info)
-            val sessao = bd.consultarUm("SELECT * FROM sessoes WHERE id = ?", idSessao) ?: return@execute
-            val exportou = exportarSessaoSeFalta(base, sessao)
-            backupBanco(base)
-            if (exportou) {
-                EstadoHost.definirPendrive(EstadoHost.Pendrive(info.id, info.livreBytes, contarSessoes(base)))
-                EstadoHost.registrar("Pendrive: sessão \"${sessao.optString("nome")}\" salva")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "backup da sessão falhou", e)
-        }
+    /**
+     * Sinaliza que uma sessão foi salva. Não faz o backup na hora: agenda uma
+     * sincronização com debounce, para não rodar (checkpoint + cópia + su) a
+     * cada chunk de leituras durante uma importação — o que saturava o box e
+     * podia travar o SQLite do próximo POST ("Failed to fetch" no cliente).
+     */
+    @Synchronized
+    fun aoSalvarSessao(idSessao: String) {
+        pendente?.cancel(false)
+        pendente = agendador.schedule({ sincronizarTudo() }, debounceSegundos, TimeUnit.SECONDS)
     }
 
     // ─── API do painel/tela de pendrive ──────────────────────────────────────
