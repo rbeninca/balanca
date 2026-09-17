@@ -26,12 +26,31 @@ export interface ResultadoAnalise {
 
 const G0 = 9.80665;
 
+/**
+ * Garante que haja leituras marcadas como em queima. Se nenhuma vier marcada
+ * (ex.: sessão capturada sem o detector ativo, ou restaurada de backup),
+ * detecta a janela de queima por limiar (5% do pico) — a mesma heurística da
+ * tela de análise — e devolve uma cópia com emQueima marcado. Não muta a
+ * entrada. Sem força significativa (pico ≈ 0), devolve as leituras como estão.
+ */
+export function garantirQueima(leituras: LeituraProcessada[]): LeituraProcessada[] {
+  if (leituras.length === 0 || leituras.some(l => l.emQueima)) return leituras;
+  const pico = Math.max(...leituras.map(l => l.forcaNewton));
+  if (!(pico > 0)) return leituras;
+  const thr = pico * 0.05;
+  const inicio = leituras.findIndex(l => l.forcaNewton >= thr);
+  if (inicio < 0) return leituras;
+  const fim = leituras.length - 1 - [...leituras].reverse().findIndex(l => l.forcaNewton >= thr);
+  return leituras.map((l, i) => (i >= inicio && i <= fim ? { ...l, emQueima: true } : l));
+}
+
 export function analisarMotor(
-  leituras: LeituraProcessada[],
+  leiturasEntrada: LeituraProcessada[],
   metadados?: MetadadosMotor,
 ): ResultadoAnalise {
+  const leituras = garantirQueima(leiturasEntrada);
   const emQueima = leituras.filter(l => l.emQueima);
-  if (emQueima.length === 0) throw new Error('Nenhuma leitura com emQueima=true');
+  if (emQueima.length === 0) throw new Error('Nenhuma leitura com força significativa');
 
   const forcas = emQueima.map(l => l.forcaNewton);
   const n = forcas.length;

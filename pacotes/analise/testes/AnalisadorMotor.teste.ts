@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { analisarMotor } from '../src/AnalisadorMotor.js';
+import { analisarMotor, garantirQueima } from '../src/AnalisadorMotor.js';
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 
 function makeLeituras(forcas: number[], emQueima = true, tInicio = 0): LeituraProcessada[] {
@@ -39,9 +39,31 @@ function sessaoFernanda(): LeituraProcessada[] {
 
 describe('AnalisadorMotor', () => {
   // UT-3.4.1
-  it('lança exceção quando não há leituras em queima', () => {
-    const ls = makeLeituras([1, 2, 3], false);
+  it('lança exceção quando não há força significativa (só ruído/zero)', () => {
+    const ls = makeLeituras([0, 0, 0], false);
     expect(() => analisarMotor(ls)).toThrow('Nenhuma leitura');
+  });
+
+  // UT-3.4.1b — sessão sem emQueima marcado (ex.: restaurada) é auto-detectada
+  it('auto-detecta a queima quando nenhuma leitura vem marcada', () => {
+    const ls = makeLeituras([0, 5, 10, 5, 0], false);   // emQueima=false em todas
+    const r = analisarMotor(ls);
+    expect(r.forcaPico_N).toBe(10);
+  });
+
+  it('garantirQueima não altera leituras que já têm emQueima marcado', () => {
+    const ls = makeLeituras([1, 2, 3], true);
+    expect(garantirQueima(ls)).toBe(ls);   // mesma referência, sem cópia
+  });
+
+  it('garantirQueima marca a janela por limiar de 5% do pico e não muta a entrada', () => {
+    const ls = makeLeituras([0, 0.1, 5, 10, 5, 0.1, 0], false);
+    const marcadas = garantirQueima(ls);
+    expect(ls.every(l => !l.emQueima)).toBe(true);          // entrada intacta
+    expect(marcadas.filter(l => l.emQueima).length).toBeGreaterThan(0);
+    // 0 (0% do pico) fica fora; os >= 0.5 (5% de 10) ficam dentro
+    expect(marcadas[0]!.emQueima).toBe(false);
+    expect(marcadas[3]!.emQueima).toBe(true);
   });
 
   // UT-3.4.2

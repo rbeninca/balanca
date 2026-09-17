@@ -7,7 +7,7 @@ export type { PerfilQueima } from './ClassificadorPerfil.js';
 export { detectarAnomalias } from './DetectorAnomalias.js';
 export type { Anomalia, NivelAnomalia, TipoAnomalia } from './DetectorAnomalias.js';
 
-export { analisarMotor } from './AnalisadorMotor.js';
+export { analisarMotor, garantirQueima } from './AnalisadorMotor.js';
 export type { ResultadoAnalise, MetadadosMotor } from './AnalisadorMotor.js';
 
 export { normalizar, gerarTabelaComparativa } from './ComparadorSessoes.js';
