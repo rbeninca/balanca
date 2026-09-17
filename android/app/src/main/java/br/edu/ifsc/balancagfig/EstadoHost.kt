@@ -39,6 +39,12 @@ object EstadoHost {
     private val _portaHttp = MutableStateFlow<Int?>(null)
     val portaHttp: StateFlow<Int?> = _portaHttp.asStateFlow()
 
+    /** Pendrive de backup, quando presente. */
+    data class Pendrive(val id: String, val livreBytes: Long, val sessoesSalvas: Int)
+    private val _pendrive = MutableStateFlow<Pendrive?>(null)
+    val pendrive: StateFlow<Pendrive?> = _pendrive.asStateFlow()
+    internal fun definirPendrive(p: Pendrive?) { _pendrive.value = p }
+
     private val _servicoAtivo = MutableStateFlow(false)
     val servicoAtivo: StateFlow<Boolean> = _servicoAtivo.asStateFlow()
 

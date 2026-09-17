@@ -27,6 +27,8 @@ class ServidorApi(
     private val bd: BancoDados,
     /** Chave de API; null desliga a autenticação. */
     private val chave: String?,
+    /** Notificado com o id da sessão após inserir leituras (para backup em pendrive). */
+    private val aoSalvarSessao: ((String) -> Unit)? = null,
     porta: Int = PORTA_PADRAO,
 ) : NanoHTTPD(porta) {
 
@@ -169,6 +171,7 @@ class ServidorApi(
             }
         }
         atualizarMetricasSessao(id)
+        aoSalvarSessao?.invoke(id)
         return json(Response.Status.CREATED, JSONObject().put("inseridas", lote.length()))
     }
 

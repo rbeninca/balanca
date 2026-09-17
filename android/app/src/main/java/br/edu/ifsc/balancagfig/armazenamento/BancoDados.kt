@@ -13,7 +13,7 @@ import org.json.JSONObject
  * os assets pela tarefa Gradle copiarEsquema; cada `CREATE ... IF NOT EXISTS`
  * roda em toda abertura, então tabelas novas aparecem sem migração.
  */
-class BancoDados(private val context: Context, nome: String = NOME_PADRAO) :
+class BancoDados(private val context: Context, private val nome: String = NOME_PADRAO) :
     SQLiteOpenHelper(context, nome, null, VERSAO) {
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -73,6 +73,18 @@ class BancoDados(private val context: Context, nome: String = NOME_PADRAO) :
     }
 
     // PRAGMA journal_mode "pode modificar o banco": o Android o recusa na conexão de leitura
+    /** Caminho absoluto do arquivo do banco (para o backup em pendrive). */
+    fun caminhoArquivo(): String = context.getDatabasePath(nome).absolutePath
+
+    /** Consolida o WAL no .db para o backup ficar consistente. */
+    fun checkpoint() {
+        try {
+            writableDatabase.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { it.moveToFirst() }
+        } catch (e: Exception) {
+            android.util.Log.w("BancoDados", "checkpoint falhou: ${e.message}")
+        }
+    }
+
     fun modoJournal(): String =
         writableDatabase.rawQuery("PRAGMA journal_mode", null).use { c -> if (c.moveToFirst()) c.getString(0) else "?" }
 

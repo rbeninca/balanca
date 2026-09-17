@@ -178,6 +178,7 @@ private fun ConteudoStatus(interno: PaddingValues) {
     val stats by EstadoHost.estatisticas.collectAsState()
     val portaHttp by EstadoHost.portaHttp.collectAsState()
     val registro by EstadoHost.registro.collectAsState()
+    val pendrive by EstadoHost.pendrive.collectAsState()
 
     var enderecosIP by remember { mutableStateOf(EnderecosRede.listarIPv4()) }
     var hotspotLigado by remember { mutableStateOf(HotspotManager.hotspotAtivo(contexto)) }
@@ -244,6 +245,15 @@ private fun ConteudoStatus(interno: PaddingValues) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Hotspot $SSID_HOTSPOT: ${if (hotspotLigado) "ligado (${HotspotManager.IP_HOTSPOT})" else "desligado"}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(4.dp))
+                val pd = pendrive
+                Text(
+                    if (pd != null)
+                        "Pendrive ${pd.id}: ${pd.sessoesSalvas} teste(s), ${pd.livreBytes / 1_000_000} MB livres"
+                    else "Pendrive: nenhum",
+                    color = if (pd != null) Color(0xFF81C784) else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

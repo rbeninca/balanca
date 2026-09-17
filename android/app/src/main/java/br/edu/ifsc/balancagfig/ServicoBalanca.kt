@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.IntentFilter
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -23,6 +25,7 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteESP
 import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
+import br.edu.ifsc.balancagfig.armazenamento.BackupPendrive
 import br.edu.ifsc.balancagfig.firmware.GravadorEsp8266
 import br.edu.ifsc.balancagfig.servidor.ServidorAtualizador
 import br.edu.ifsc.balancagfig.servidor.Mensagens
@@ -61,11 +64,23 @@ class ServicoBalanca : Service() {
     private var api: ServidorApi? = null
     private var atualizador: ServidorAtualizador? = null
     private var bd: BancoDados? = null
+    private var backup: BackupPendrive? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
     private val pipeline = PipelineProcessamento(ConfiguracaoPipeline())
 
     private val pacotesNoIntervalo = AtomicLong(0)
+
+    /** Reage a inserir/remover pendrive USB para (re)fazer o backup. */
+    private val receptorMidia = object : BroadcastReceiver() {
+        override fun onReceive(c: Context?, i: Intent?) {
+            when (i?.action) {
+                Intent.ACTION_MEDIA_MOUNTED -> backup?.sincronizarTudo()
+                Intent.ACTION_MEDIA_UNMOUNTED, Intent.ACTION_MEDIA_EJECT ->
+                    EstadoHost.definirPendrive(null)
+            }
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -104,6 +119,7 @@ class ServicoBalanca : Service() {
         saude?.stop()
         api?.stop()
         atualizador?.stop()
+        try { unregisterReceiver(receptorMidia) } catch (_: Exception) { }
         bd?.close()
         http?.stop()
         EstadoHost.definirPortaHttp(null)
@@ -162,8 +178,12 @@ class ServicoBalanca : Service() {
     private fun iniciarApi() {
         try {
             val banco = BancoDados(this).also { bd = it }
+            val bkp = BackupPendrive(this, banco).also { backup = it }
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
-            api = ServidorApi(banco, chave).also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
+            api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) })
+                .also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
+            registrarReceptorMidia()
+            bkp.sincronizarTudo()   // o pendrive pode já estar montado no boot
             EstadoHost.registrar("API em :${ServidorApi.PORTA_PADRAO} (${if (chave != null) "com chave" else "sem chave"})")
         } catch (e: Exception) {
             Log.e(TAG, "API não subiu", e)
@@ -199,6 +219,16 @@ class ServicoBalanca : Service() {
         registrar("Firmware gravado. Aguardando o ESP reiniciar (5 s)...")
         Thread.sleep(5000)
         registrar("Leituras retomadas.")
+    }
+
+    private fun registrarReceptorMidia() {
+        val filtro = IntentFilter().apply {
+            addAction(Intent.ACTION_MEDIA_MOUNTED)
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
+            addAction(Intent.ACTION_MEDIA_EJECT)
+            addDataScheme("file")
+        }
+        registerReceiver(receptorMidia, filtro)
     }
 
     private fun lerAsset(caminho: String): String? = try {
