@@ -18,6 +18,7 @@ export class TelaCreditos {
       { src: `${import.meta.env.BASE_URL}imgs/logo_campusGaspar.png`, alt: 'IFSC Campus Gaspar' },
       { src: `${import.meta.env.BASE_URL}imgs/logo_compSteam.png`,    alt: 'CompSteam' },
       { src: `${import.meta.env.BASE_URL}imgs/logo_gfig.png`,         alt: 'GFIG' },
+      { src: `${import.meta.env.BASE_URL}imgs/logo-gfcs.png`,         alt: 'Grupo de Foguetes Carl Sagan' },
       { src: `${import.meta.env.BASE_URL}imgs/logo_gfig_pb.png`,      alt: 'GFIG' },
       { src: `${import.meta.env.BASE_URL}imgs/logo_receita.png`,      alt: 'Receita' },
       { src: `${import.meta.env.BASE_URL}imgs/logo-bar.png`,          alt: 'BAR' },
@@ -40,6 +41,7 @@ export class TelaCreditos {
           <div style="background:#f8f9fa;border-radius:8px;padding:1rem 1.5rem;text-align:left;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;color:#374151">
             <p style="margin-bottom:0.5rem"><strong>Desenvolvido nos seguintes projetos:</strong></p>
             <p>• <strong>Grupo de Foguetes do Campus Gaspar (GFIG)</strong></p>
+            <p>• <strong>Grupo de Foguetes Carl Sagan (GFCS)</strong></p>
             <p>• <strong>Projeto de Ensino:</strong> Controle e Automação de Eletrodomésticos do Cotidiano</p>
             <p>• <strong>Grupo de Pesquisa CompSteam</strong></p>
             <p>• <strong>Projeto BoxSteam</strong> — Campus Gaspar</p>
