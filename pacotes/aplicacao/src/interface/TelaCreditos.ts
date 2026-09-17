@@ -60,7 +60,7 @@ export class TelaCreditos {
 
         </div>
         <div class="modal-footer" style="justify-content:center;flex-direction:column;gap:4px">
-          <span style="font-size:0.8rem;color:#9ca3af">© 2025 — Instituto Federal de Santa Catarina</span>
+          <span style="font-size:0.8rem;color:#9ca3af">© 2026 — Instituto Federal de Santa Catarina</span>
           <span style="font-size:0.75rem;color:#d1d5db">Todos os direitos reservados</span>
         </div>
       </div>
