@@ -91,7 +91,7 @@ export class TelaComparacao {
       xaxis: {
         type: 'numeric',
         title: { text: 'Tempo desde início da queima (s)', style: { color: '#6b7280' } },
-        labels: { style: { colors: '#6b7280' }, formatter: (v) => (+v).toFixed(2) },
+        labels: { style: { colors: '#6b7280' }, formatter: (v) => (+v).toFixed(3) },
       },
       yaxis: {
         title: { text: 'Força (N)', style: { color: '#6b7280' } },

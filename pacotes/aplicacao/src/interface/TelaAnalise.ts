@@ -322,7 +322,7 @@ export class TelaAnalise {
       xaxis: {
         type: 'numeric',
         title: { text: 'Tempo (s)', style: { color: '#6b7280' } },
-        labels: { style: { colors: '#6b7280' }, formatter: (v) => (+v).toFixed(2) },
+        labels: { style: { colors: '#6b7280' }, formatter: (v) => (+v).toFixed(3) },
       },
       yaxis: {
         title: { text: 'Força (N)', style: { color: '#6b7280' } },
@@ -354,7 +354,7 @@ export class TelaAnalise {
     };
 
     setTxt('st-leituras', `${ls.length}`);
-    setTxt('st-duracao',  `${fmt((tN - t0) / 1000, 2)} s`);
+    setTxt('st-duracao',  `${fmt((tN - t0) / 1000, 3)} s`);
     setTxt('st-fmin',     `${fmt(fMin)} N`);
     setTxt('st-fmax',     `${fmt(fMax)} N`);
 
