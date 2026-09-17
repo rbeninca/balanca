@@ -180,7 +180,7 @@ class ServicoBalanca : Service() {
             val banco = BancoDados(this).also { bd = it }
             val bkp = BackupPendrive(this, banco).also { backup = it }
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
-            api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) })
+            api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp)
                 .also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
             registrarReceptorMidia()
             bkp.sincronizarTudo()   // o pendrive pode já estar montado no boot

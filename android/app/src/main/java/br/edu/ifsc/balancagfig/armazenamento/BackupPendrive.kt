@@ -64,6 +64,35 @@ class BackupPendrive(private val context: Context, private val bd: BancoDados) {
         }
     }
 
+    // ─── API do painel/tela de pendrive ──────────────────────────────────────
+
+    fun status(): Pendrive.Info? = Pendrive.detectar()
+
+    fun listarArquivos(): List<Pendrive.Arquivo> = Pendrive.detectar()?.let { Pendrive.listarArquivos(it) } ?: emptyList()
+
+    /** Ejeta o pendrive pelo sistema (remoção segura). */
+    fun ejetar(): Boolean {
+        val info = Pendrive.detectar() ?: return false
+        val ok = Pendrive.ejetar(info.id)
+        if (ok) EstadoHost.definirPendrive(null)
+        return ok
+    }
+
+    /** Restaura sessões de um backup .db do pendrive para o banco atual. */
+    fun restaurar(nomeArquivo: String, modo: ModoRestauracao): RestauradorBackup.Resultado {
+        val info = Pendrive.detectar() ?: throw IllegalStateException("Pendrive ausente")
+        val tmp = File(context.cacheDir, "restore-${System.nanoTime()}.db")
+        try {
+            if (!Pendrive.copiarDoPendrive(info, "backups/$nomeArquivo", tmp))
+                throw IllegalStateException("Falha ao copiar $nomeArquivo do pendrive")
+            val r = RestauradorBackup(bd).restaurar(tmp, modo)
+            EstadoHost.registrar("Pendrive: restauração ${if (r.substituiu) "(substituição)" else "(mesclagem)"} — ${r.inseridas} sessão(ões)")
+            return r
+        } finally {
+            tmp.delete()
+        }
+    }
+
     // ─── Interno ──────────────────────────────────────────────────────────────
 
     private fun exportarSessaoSeFalta(base: String, sessao: JSONObject): Boolean {

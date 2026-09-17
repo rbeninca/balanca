@@ -2,6 +2,7 @@ package br.edu.ifsc.balancagfig.servidor
 
 import android.util.Log
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
+import br.edu.ifsc.balancagfig.armazenamento.ModoRestauracao
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
 import org.json.JSONException
@@ -29,6 +30,8 @@ class ServidorApi(
     private val chave: String?,
     /** Notificado com o id da sessão após inserir leituras (para backup em pendrive). */
     private val aoSalvarSessao: ((String) -> Unit)? = null,
+    /** Backup em pendrive, para as rotas /pendrive (null quando indisponível). */
+    private val backup: br.edu.ifsc.balancagfig.armazenamento.BackupPendrive? = null,
     porta: Int = PORTA_PADRAO,
 ) : NanoHTTPD(porta) {
 
@@ -59,6 +62,8 @@ class ServidorApi(
         if (uri == "/saude" && m == Method.GET) {
             return json(Response.Status.OK, JSONObject().put("status", "ok").put("modo", bd.modoJournal()))
         }
+
+        if (uri.startsWith("/pendrive")) return rotearPendrive(uri, m, s)
 
         if (uri == "/sessoes") return when (m) {
             Method.GET -> json(Response.Status.OK, bd.consultar("SELECT * FROM sessoes ORDER BY criado_em DESC"))
@@ -114,6 +119,45 @@ class ServidorApi(
         }
 
         return erro(Response.Status.NOT_FOUND, "Rota não encontrada")
+    }
+
+    private fun rotearPendrive(uri: String, m: Method, s: IHTTPSession): Response {
+        val bkp = backup ?: return erro(Response.Status.SERVICE_UNAVAILABLE, "Backup em pendrive indisponível")
+        return when {
+            uri == "/pendrive/status" && m == Method.GET -> {
+                val info = bkp.status()
+                json(Response.Status.OK, JSONObject().apply {
+                    put("presente", info != null)
+                    if (info != null) {
+                        put("id", info.id); put("livreBytes", info.livreBytes); put("totalBytes", info.totalBytes)
+                    }
+                })
+            }
+            uri == "/pendrive/arquivos" && m == Method.GET -> {
+                val arr = org.json.JSONArray()
+                bkp.listarArquivos().forEach {
+                    arr.put(JSONObject().put("nome", it.nome).put("tamanhoBytes", it.tamanhoBytes)
+                        .put("data", it.data).put("pasta", it.pasta))
+                }
+                json(Response.Status.OK, JSONObject().put("arquivos", arr))
+            }
+            uri == "/pendrive/backup" && m == Method.POST ->
+                autenticado(s) { bkp.sincronizarTudo(); json(Response.Status.OK, JSONObject().put("ok", true)) }
+            uri == "/pendrive/restaurar" && m == Method.POST -> autenticado(s) {
+                val body = corpoJson(s)
+                val nome = body.optString("arquivo").ifBlank { return@autenticado erro(Response.Status.BAD_REQUEST, "Campo \"arquivo\" obrigatório") }
+                val modo = if (body.optString("modo") == "substituir") ModoRestauracao.SUBSTITUIR else ModoRestauracao.MESCLAR
+                try {
+                    val r = bkp.restaurar(nome, modo)
+                    json(Response.Status.OK, JSONObject().put("inseridas", r.inseridas).put("substituiu", r.substituiu))
+                } catch (e: Exception) {
+                    erro(Response.Status.INTERNAL_ERROR, e.message ?: "falha na restauração")
+                }
+            }
+            uri == "/pendrive/ejetar" && m == Method.POST ->
+                autenticado(s) { json(Response.Status.OK, JSONObject().put("ok", bkp.ejetar())) }
+            else -> erro(Response.Status.NOT_FOUND, "Rota de pendrive não encontrada")
+        }
     }
 
     // ─── Sessões ────────────────────────────────────────────────────────────
