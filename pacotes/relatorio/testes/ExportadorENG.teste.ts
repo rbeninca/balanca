@@ -71,11 +71,33 @@ describe('ExportadorENG', () => {
   });
 
   // UT-4.3.6
-  it('tempo normalizado começa em 0', () => {
+  it('primeiro ponto tem tempo > 0 (RASP nao aceita t=0)', () => {
     const saida = exportarENG(leituras, analise);
     const linhasDados = saida.split('\n').filter(l => l.startsWith('   '));
-    const primeira = linhasDados[0]!;
-    expect(parseFloat(primeira.trim().split(/\s+/)[0]!)).toBeCloseTo(0.0, 4);
+    const t0 = parseFloat(linhasDados[0]!.trim().split(/\s+/)[0]!);
+    expect(t0).toBeGreaterThan(0);
+    expect(t0).toBeLessThan(0.01);
+  });
+
+  // OpenRocket: diametro, comprimento e massas devem ser > 0
+  it('cabecalho tem diametro, comprimento e massas positivos mesmo sem metadados', () => {
+    const saida = exportarENG(leituras, analise);
+    const h = saida.split('\n').find(l => !l.startsWith(';') && !l.startsWith(' ') && l.trim())!.trim().split(/\s+/);
+    const [, diam, comp, delays, mProp, mTot] = h;
+    expect(parseFloat(diam!)).toBeGreaterThan(0);
+    expect(parseFloat(comp!)).toBeGreaterThan(0);
+    expect(delays).toBe('P');
+    expect(parseFloat(mProp!)).toBeGreaterThan(0);
+    expect(parseFloat(mTot!)).toBeGreaterThan(parseFloat(mProp!));
+  });
+
+  it('respeita os metadados informados', () => {
+    const saida = exportarENG(leituras, analise, { diametroMm: 24, comprimentoMm: 70, massaPropelente_g: 12, massaTotal_g: 30, fabricante: 'GFIG' });
+    const h = saida.split('\n').find(l => !l.startsWith(';') && !l.startsWith(' ') && l.trim())!.trim().split(/\s+/);
+    expect(h[1]).toBe('24');
+    expect(h[2]).toBe('70');
+    expect(parseFloat(h[4]!)).toBeCloseTo(0.012, 4);
+    expect(parseFloat(h[5]!)).toBeCloseTo(0.030, 4);
   });
 
   // UT-4.3.7
