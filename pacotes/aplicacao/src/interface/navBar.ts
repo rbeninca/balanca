@@ -1,5 +1,6 @@
 import { TelaCreditos } from './TelaCreditos.js';
 import { TelaEsquema } from './TelaEsquema.js';
+import { TelaPendrive } from './TelaPendrive.js';
 
 export interface StatusConexao {
   endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
@@ -39,6 +40,7 @@ export function navHtml(props: NavProps): string {
       ${itemNav('nav-sessoes',  'Sessões',        props.ativo === 'sessoes',       props.onSessoes)}
       ${itemNav('nav-config',   'Configurações',  props.ativo === 'configuracoes', props.onConfiguracoes)}
       ${itemNav('nav-firmware', 'Firmware',       props.ativo === 'firmware',      props.onFirmware, ' style="margin-left:auto"')}
+      <a href="#" id="nav-pendrive">Pendrive</a>
       <a href="#" id="nav-montagem">Montagem</a>
       <a href="#" id="nav-creditos">Créditos</a>
       <button id="nav-tema" class="nav-tema-btn" title="Alternar modo escuro/claro">${escuro ? '☀' : '🌙'}</button>
@@ -62,6 +64,9 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   bind('nav-config',   props.onConfiguracoes);
   bind('nav-firmware', props.onFirmware);
 
+  container.querySelector('#nav-pendrive')?.addEventListener('click', (e) => {
+    e.preventDefault(); new TelaPendrive();
+  });
   container.querySelector('#nav-montagem')?.addEventListener('click', (e) => {
     e.preventDefault(); new TelaEsquema();
   });
