@@ -543,7 +543,7 @@ void setup() {
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.printf("   Versao: ESTAVEL V16 (Binary Protocol v%d)\n", PROTO_VERSION);
+  Serial.printf("   Versao: ESTAVEL V17 (Binary Protocol v%d)\n", PROTO_VERSION);
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -840,7 +840,7 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("V16 BINARY PROTO");
+  display.println("V17 BINARY PROTO");
   display.setCursor(0, 45);
   display.printf("Serial: 921600 Baud");
   display.setCursor(0, 55);
