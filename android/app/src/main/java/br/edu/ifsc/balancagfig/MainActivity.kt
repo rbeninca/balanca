@@ -94,6 +94,22 @@ private enum class Aba(val titulo: String) { STATUS("Status"), BALANCA("Balança
 @Composable
 fun AppComAbas() {
     var aba by remember { mutableStateOf(Aba.STATUS) }
+    var usuarioInteragiu by remember { mutableStateOf(false) }
+    var jaAutoTrocou by remember { mutableStateOf(false) }
+    val serial by EstadoHost.serial.collectAsState()
+
+    // Começa na aba Status; se a célula de carga estiver conectada, abre a
+    // Balança automaticamente após alguns segundos (uma única vez, e só se o
+    // usuário não tiver escolhido uma aba manualmente).
+    LaunchedEffect(serial is EstadoSerial.Conectado) {
+        if (NavegacaoInicial.deveAbrirBalanca(serial, jaAutoTrocou, usuarioInteragiu)) {
+            delay(NavegacaoInicial.ATRASO_ABRIR_BALANCA_MS)
+            if (NavegacaoInicial.deveAbrirBalanca(EstadoHost.serial.value, jaAutoTrocou, usuarioInteragiu)) {
+                aba = Aba.BALANCA
+                jaAutoTrocou = true
+            }
+        }
+    }
     Scaffold(
         topBar = {
             // Barra única: nome do app à esquerda + abas ao lado, para não gastar
@@ -118,7 +134,7 @@ fun AppComAbas() {
                     Aba.values().forEach { a ->
                         Tab(
                             selected = aba == a,
-                            onClick = { aba = a },
+                            onClick = { aba = a; usuarioInteragiu = true },
                             text = { Text(a.titulo) },
                         )
                     }
