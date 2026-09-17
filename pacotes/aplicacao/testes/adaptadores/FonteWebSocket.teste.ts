@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { FonteWebSocket } from '../../src/adaptadores/FonteWebSocket.js';
 
 class WebSocketSimulacro {
+  readyState = 1;   // WebSocket.OPEN — o source checa readyState antes de enviar
   onmessage: ((ev: any) => void) | null = null;
   onopen: (() => void) | null = null;
   onclose: (() => void) | null = null;
@@ -10,7 +11,7 @@ class WebSocketSimulacro {
   constructor(public readonly url: string) {}
 
   send(data: string) { this.envios.push(data); }
-  close() { this.onclose?.(); }
+  close() { this.readyState = 3; this.onclose?.(); }   // CLOSED
 
   simularMensagem(obj: object) {
     this.onmessage?.({ data: JSON.stringify(obj) });
