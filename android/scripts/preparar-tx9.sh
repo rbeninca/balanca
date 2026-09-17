@@ -45,14 +45,43 @@ echo "==> Liberando o app-op WRITE_SETTINGS"
 adb -s "$DEVICE" shell "su -c 'appops set $PACOTE WRITE_SETTINGS allow'"
 adb -s "$DEVICE" shell "su -c 'appops get $PACOTE WRITE_SETTINGS'"
 
-echo "==> Abrindo o app"
-adb -s "$DEVICE" shell monkey -p "$PACOTE" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+# ── Pré-aprovar a permissão USB da balança (zero-toque) ──────────────────────
+# O Android exige "usar por padrão para este dispositivo USB" na 1a vez que um
+# app acessa um device USB. Gravamos essa preferência no usb_device_manager.xml,
+# lendo os campos do conversor serial conectado (CH340/CP210x/FTDI). Requer a
+# balança plugada; efetiva após o reboot no fim do script.
+USB_XML="/data/system/users/0/usb_device_manager.xml"
+
+DEV_PATH=""
+for d in $(adb -s "$DEVICE" shell "su -c 'ls -d /sys/bus/usb/devices/*/'" | tr -d '\r'); do
+  vid=$(adb -s "$DEVICE" shell "su -c 'cat ${d}idVendor 2>/dev/null'" | tr -d '\r ')
+  case "$vid" in 1a86|10c4|0403) DEV_PATH="$d"; break ;; esac
+done
+
+if [ -z "$DEV_PATH" ]; then
+  echo "==> Balanca nao encontrada na USB; pulei a pre-aprovacao USB."
+else
+  rd() { adb -s "$DEVICE" shell "su -c 'cat ${DEV_PATH}$1 2>/dev/null'" | tr -d '\r '; }
+  VID=$((16#$(rd idVendor)));     PID=$((16#$(rd idProduct)))
+  CLS=$((16#$(rd bDeviceClass))); SUB=$((16#$(rd bDeviceSubClass))); PRO=$((16#$(rd bDeviceProtocol)))
+  PRODNAME=$(adb -s "$DEVICE" shell "su -c 'cat ${DEV_PATH}product 2>/dev/null'" | tr -d '\r')
+  printf '%s\n' \
+"<?xml version='1.0' encoding='utf-8' standalone='yes' ?>" \
+"<settings>" \
+"    <preference package=\"$PACOTE\">" \
+"        <usb-device vendor-id=\"$VID\" product-id=\"$PID\" class=\"$CLS\" subclass=\"$SUB\" protocol=\"$PRO\" product-name=\"$PRODNAME\" />" \
+"    </preference>" \
+"</settings>" | adb -s "$DEVICE" shell "su -c 'cat > /data/local/tmp/u.xml'"
+  adb -s "$DEVICE" shell "su -c 'cat /data/local/tmp/u.xml > $USB_XML; rm -f /data/local/tmp/u.xml; chown system:system $USB_XML; chmod 600 $USB_XML'"
+  echo "==> Permissao USB pre-aprovada para $PACOTE (device $VID:$PID)."
+fi
+
+echo "==> Reiniciando o box para efetivar root + USB..."
+adb -s "$DEVICE" reboot >/dev/null 2>&1 || true
 
 cat <<'FIM'
 
-==> Pronto.
-    Root pré-aprovado no Superuser: o app sobe sem pedir root na TV. Ele
-    inicia no boot, liga o hotspot balancaGFIG e serve tudo pela rede.
-    Obs.: na primeira conexao da balanca o Android pode pedir a permissao
-    USB uma vez ("usar por padrao para este dispositivo") — depois nao pergunta mais.
+==> Pronto. Root e permissao USB pre-aprovados: apos o reboot o app sobe
+    sozinho, liga o hotspot balancaGFIG, conecta a balanca e serve tudo pela
+    rede — sem nenhum toque na TV.
 FIM
