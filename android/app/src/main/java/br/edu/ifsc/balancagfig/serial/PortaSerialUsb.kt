@@ -45,6 +45,22 @@ class PortaSerialUsb(
         data class Conectando(val dispositivo: UsbDevice) : Estado
         data class Conectado(val dispositivo: UsbDevice) : Estado
         data class Erro(val mensagem: String) : Estado
+        /** Porta cedida ao gravador de firmware; leituras suspensas. */
+        data object Gravando : Estado
+    }
+
+    /**
+     * Acesso bruto à porta para o gravador de firmware, enquanto o
+     * enquadrador fica suspenso (equivalente a /pausar do gateway Node).
+     */
+    interface CanalBruto {
+        /** Próximo bloco de bytes recebido, ou null após [timeoutMs]. */
+        fun ler(timeoutMs: Long): ByteArray?
+        fun escrever(bytes: ByteArray)
+        fun definirBaud(baud: Int)
+        fun definirDtr(ativo: Boolean)
+        fun definirRts(ativo: Boolean)
+        fun descartarEntrada()
     }
 
     private val usb = context.getSystemService(Context.USB_SERVICE) as UsbManager
@@ -60,10 +76,15 @@ class PortaSerialUsb(
      * chega enquanto não há requisição pendente.
      */
     private val filaBytes = LinkedBlockingQueue<ByteArray>()
+
+    /** Quando não-nulo, os bytes vão para o gravador de firmware em vez do enquadrador. */
+    @Volatile private var desvio: LinkedBlockingQueue<ByteArray>? = null
+
     private val processador = Thread({
         while (!Thread.currentThread().isInterrupted) {
             val chunk = try { filaBytes.take() } catch (_: InterruptedException) { return@Thread }
-            enquadrador.alimentar(chunk)
+            val d = desvio
+            if (d != null) d.offer(chunk) else enquadrador.alimentar(chunk)
         }
     }, "PortaSerialUsb-processador").apply { isDaemon = true }
     private var receptorRegistrado = false
@@ -163,6 +184,39 @@ class PortaSerialUsb(
 
     val conectado: Boolean get() = porta?.isOpen == true
 
+    /**
+     * Cede a porta ao [bloco] (gravação de firmware) e a devolve ao pipeline
+     * no fim, restaurando baud e linhas de controle. Lança se a porta não
+     * estiver aberta.
+     */
+    fun <T> usarExclusivo(bloco: (CanalBruto) -> T): T {
+        val p = porta?.takeIf { it.isOpen } ?: throw IOException("Porta serial não está aberta")
+        val fila = LinkedBlockingQueue<ByteArray>()
+        desvio = fila
+        ouvinte.aoMudarEstado(Estado.Gravando)
+        try {
+            return bloco(object : CanalBruto {
+                override fun ler(timeoutMs: Long): ByteArray? = fila.poll(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                override fun escrever(bytes: ByteArray) = p.write(bytes, TIMEOUT_ESCRITA_GRAVACAO_MS)
+                override fun definirBaud(baud: Int) = p.setParameters(baud, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                override fun definirDtr(ativo: Boolean) { p.dtr = ativo }
+                override fun definirRts(ativo: Boolean) { p.rts = ativo }
+                override fun descartarEntrada() = fila.clear()
+            })
+        } finally {
+            try {
+                p.setParameters(baud, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                p.dtr = true
+                p.rts = true
+            } catch (e: Exception) {
+                Log.w(TAG, "falha ao restaurar a porta após gravação: ${e.message}")
+            }
+            desvio = null
+            enquadrador.limpar()
+            ouvinte.aoMudarEstado(if (p.isOpen) Estado.Conectado(p.device) else Estado.SemDispositivo)
+        }
+    }
+
     // ─── Interno ────────────────────────────────────────────────────────────
 
     /** Primeiro conversor USB-serial conhecido pelo prober padrão da biblioteca. */
@@ -240,6 +294,7 @@ class PortaSerialUsb(
     private companion object {
         const val TAG = "PortaSerialUsb"
         const val TIMEOUT_ESCRITA_MS = 500
+        const val TIMEOUT_ESCRITA_GRAVACAO_MS = 5000
         const val ATRASO_APOS_ATTACH_MS = 1000L
         const val ATRASO_RECONEXAO_MS = 2000L
         const val MAX_REENUMERACOES = 2

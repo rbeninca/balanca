@@ -139,6 +139,7 @@ fun PainelStatus() {
                         is EstadoSerial.Conectando -> "Conectando…" to Color(0xFFFFB74D)
                         is EstadoSerial.Conectado -> "Conectada — ${s.nomeDispositivo} @ ${s.baud}" to Color(0xFF81C784)
                         is EstadoSerial.Erro -> "Erro: ${s.mensagem}" to Color(0xFFE57373)
+                        EstadoSerial.Gravando -> "Gravando firmware…" to Color(0xFFFFB74D)
                     }
                     Text(texto, color = cor, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))

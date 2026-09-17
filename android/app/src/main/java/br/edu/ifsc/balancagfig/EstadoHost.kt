@@ -13,6 +13,7 @@ sealed interface EstadoSerial {
     data class Conectando(val nomeDispositivo: String) : EstadoSerial
     data class Conectado(val nomeDispositivo: String, val baud: Int) : EstadoSerial
     data class Erro(val mensagem: String) : EstadoSerial
+    data object Gravando : EstadoSerial
 }
 
 /** Estatísticas de leitura para o painel. */

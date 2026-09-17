@@ -23,6 +23,8 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteESP
 import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
+import br.edu.ifsc.balancagfig.firmware.GravadorEsp8266
+import br.edu.ifsc.balancagfig.servidor.ServidorAtualizador
 import br.edu.ifsc.balancagfig.servidor.Mensagens
 import br.edu.ifsc.balancagfig.servidor.ServidorApi
 import br.edu.ifsc.balancagfig.servidor.ServidorHttp
@@ -57,6 +59,7 @@ class ServicoBalanca : Service() {
     private var ws: ServidorWs? = null
     private var saude: ServidorSaude? = null
     private var api: ServidorApi? = null
+    private var atualizador: ServidorAtualizador? = null
     private var bd: BancoDados? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
@@ -76,6 +79,7 @@ class ServicoBalanca : Service() {
         iniciarHttp()
         iniciarWebSocket()
         iniciarApi()
+        iniciarAtualizador()
         iniciarSerial()
         iniciarHotspot()
         iniciarContadorTaxa()
@@ -99,6 +103,7 @@ class ServicoBalanca : Service() {
         ws?.encerrar()
         saude?.stop()
         api?.stop()
+        atualizador?.stop()
         bd?.close()
         http?.stop()
         EstadoHost.definirPortaHttp(null)
@@ -166,6 +171,42 @@ class ServicoBalanca : Service() {
         }
     }
 
+    /** Atualizador de firmware em :8767 — grava o firmware.bin embutido no APK pela porta da balança. */
+    private fun iniciarAtualizador() {
+        try {
+            atualizador = ServidorAtualizador(
+                versaoJson = { lerAsset("web/firmware-versao.json") },
+                gravar = ::gravarFirmware,
+            ).also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
+            EstadoHost.registrar("Atualizador em :${ServidorAtualizador.PORTA_PADRAO}")
+        } catch (e: IOException) {
+            Log.e(TAG, "atualizador não subiu", e)
+            EstadoHost.registrar("Atualizador falhou: ${e.message}")
+        }
+    }
+
+    private fun gravarFirmware(log: (String) -> Unit) {
+        val p = porta ?: throw IOException("Porta serial não iniciada")
+        val imagem = assets.open("web/firmware.bin").use { it.readBytes() }
+        val stub = lerAsset("firmware/stub_esp8266.json") ?: throw IOException("Stub flasher ausente no APK")
+        val registrar = { txt: String -> log(txt); EstadoHost.registrar("FW: $txt") }
+
+        registrar("Pausando leituras da balança...")
+        ws?.difundir(Mensagens.serialOff())
+        p.usarExclusivo { canal ->
+            GravadorEsp8266(canal, stub, registrar).gravar(imagem)
+        }
+        registrar("Firmware gravado. Aguardando o ESP reiniciar (5 s)...")
+        Thread.sleep(5000)
+        registrar("Leituras retomadas.")
+    }
+
+    private fun lerAsset(caminho: String): String? = try {
+        assets.open(caminho).bufferedReader().use { it.readText() }
+    } catch (_: IOException) {
+        null
+    }
+
     /** Mensagens vindas do frontend: config do pipeline fica aqui, comandos vão para o ESP. */
     private fun tratarMensagemCliente(entrada: Mensagens.Entrada) {
         when (entrada) {
@@ -195,6 +236,7 @@ class ServicoBalanca : Service() {
                     is PortaSerialUsb.Estado.Conectando -> EstadoSerial.Conectando(estado.dispositivo.deviceName)
                     is PortaSerialUsb.Estado.Conectado -> EstadoSerial.Conectado(estado.dispositivo.deviceName, BAUD)
                     is PortaSerialUsb.Estado.Erro -> EstadoSerial.Erro(estado.mensagem)
+                    PortaSerialUsb.Estado.Gravando -> EstadoSerial.Gravando
                 }
                 EstadoHost.definirSerial(e)
                 EstadoHost.registrar("Serial: $e")
@@ -285,6 +327,7 @@ class ServicoBalanca : Service() {
             is EstadoSerial.Conectando -> "Conectando à balança…"
             is EstadoSerial.Conectado -> "Balança conectada"
             is EstadoSerial.Erro -> "Erro: ${s.mensagem}"
+            EstadoSerial.Gravando -> "Gravando firmware…"
         }
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .notify(ID_NOTIFICACAO, montarNotificacao(texto))
