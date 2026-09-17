@@ -1,4 +1,4 @@
-import type { IArmazenamento, SessaoLocal, MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import { ArmazenamentoApi } from '../armazenamento/ArmazenamentoApi.js';
 import { analisarMotor } from '@balancagfig/analise';
@@ -8,63 +8,7 @@ import { jsPDF } from 'jspdf';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-
-// ── Formato JSON de exportação/importação ────────────────────────────────────
-
-interface SessaoExportadaV2 {
-  versao: 2;
-  nome: string;
-  criadoEm: string;
-  exportadoEm: string;
-  metadados: MetadadosLocal;
-  leituras: LeituraProcessada[];
-}
-
-// Formato legado v1 (balancaGFIGv1)
-interface SessaoExportadaV1 {
-  nome: string;
-  dadosTabela: Array<{ tempo_esp: number; newtons: number }>;
-  metadadosMotor?: {
-    diameter?: number | null; length?: number | null;
-    propweight?: number | null; totalweight?: number | null;
-    manufacturer?: string | null; description?: string | null;
-    observations?: string | null;
-  } | null;
-  burnMetadata?: { burnStartTime?: number; burnEndTime?: number } | null;
-}
-
-function converterV1(v1: SessaoExportadaV1): { nome: string; leituras: LeituraProcessada[]; meta: MetadadosLocal } {
-  const burn = v1.burnMetadata ?? {};
-  const inicio = burn.burnStartTime ?? -1;
-  const fim    = burn.burnEndTime   ?? -1;
-
-  let impulsoAcumulado = 0;
-  const leituras: LeituraProcessada[] = v1.dadosTabela.map((p, i, arr) => {
-    if (i > 0) {
-      const dt = p.tempo_esp - arr[i - 1]!.tempo_esp; // segundos → N·s
-      impulsoAcumulado += (arr[i - 1]!.newtons + p.newtons) / 2 * dt;
-    }
-    return {
-      marcaTemporal:      Math.round(p.tempo_esp * 1000),
-      forcaNewton:        p.newtons,
-      temperatura:        0,
-      emQueima:           inicio >= 0 ? (i >= inicio && i <= fim) : false,
-      impulsoAcumuladoNs: impulsoAcumulado,
-    };
-  });
-
-  const mm = v1.metadadosMotor;
-  const meta: MetadadosLocal = {};
-  if (mm?.diameter    != null) meta.diametro_mm       = mm.diameter;
-  if (mm?.length      != null) meta.comprimento_mm    = mm.length;
-  if (mm?.propweight  != null) meta.massaPropelente_g = mm.propweight  * 1000;
-  if (mm?.totalweight != null) meta.massaTotal_g      = mm.totalweight * 1000;
-  if (mm?.manufacturer)        meta.fabricante        = mm.manufacturer;
-  if (mm?.description)         meta.descricao         = mm.description;
-  if (mm?.observations)        meta.observacoes       = mm.observations;
-
-  return { nome: v1.nome, leituras, meta };
-}
+import { normalizarImportacao, type SessaoExportadaV2 } from './importacaoSessao.js';
 
 export class TelaSessoes {
   private selecionadas = new Set<string>();
@@ -423,26 +367,8 @@ export class TelaSessoes {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async importarJSON(parsed: any, lista: HTMLElement): Promise<void> {
-    let nome: string;
-    let leituras: LeituraProcessada[];
-    let meta: MetadadosLocal;
-
-    if (parsed.versao === 2) {
-      // Formato v2 nativo
-      const v2 = parsed as SessaoExportadaV2;
-      if (!v2.nome || !Array.isArray(v2.leituras)) throw new Error('Arquivo JSON inválido (faltam campos obrigatórios).');
-      nome     = v2.nome;
-      leituras = v2.leituras;
-      meta     = v2.metadados ?? {};
-    } else if (Array.isArray(parsed.dadosTabela)) {
-      // Formato legado v1
-      const v1 = parsed as SessaoExportadaV1;
-      if (!v1.nome) throw new Error('Arquivo JSON v1 inválido (faltam campos obrigatórios).');
-      ({ nome, leituras, meta } = converterV1(v1));
-    } else {
-      throw new Error('Formato de arquivo não reconhecido. Esperado JSON exportado pelo BalançaGFIG.');
-    }
+  private async importarJSON(parsed: unknown, lista: HTMLElement): Promise<void> {
+    const { nome, leituras, meta } = normalizarImportacao(parsed);
 
     const sessao = await this.armazenamento.criarSessao(nome);
     if (leituras.length > 0) await this.armazenamento.adicionarLeituras(sessao.id, leituras);

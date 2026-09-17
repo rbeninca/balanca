@@ -1,0 +1,4873 @@
+{
+  "id": 1778523215067,
+  "nome": "Fernanda 2.1",
+  "timestamp": "2026-05-11 18:13:26",
+  "data_inicio": "2026-05-11 18:13:26",
+  "data_fim": "2026-05-11 18:13:35",
+  "data_modificacao": "2026-05-11 18:13:35",
+  "dadosTabela": [
+    {
+      "timestamp": "11/05/2026 18:13:26.730",
+      "tempo_esp": 0,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.730",
+      "tempo_esp": 0.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.730",
+      "tempo_esp": 0.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.06,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.731",
+      "tempo_esp": 0.1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.761",
+      "tempo_esp": 0.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.761",
+      "tempo_esp": 0.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.772",
+      "tempo_esp": 0.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.772",
+      "tempo_esp": 0.14,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.810",
+      "tempo_esp": 0.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.810",
+      "tempo_esp": 0.17,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.810",
+      "tempo_esp": 0.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.810",
+      "tempo_esp": 0.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.810",
+      "tempo_esp": 0.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.811",
+      "tempo_esp": 0.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.811",
+      "tempo_esp": 0.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.811",
+      "tempo_esp": 0.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.811",
+      "tempo_esp": 0.25,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.900",
+      "tempo_esp": 0.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.901",
+      "tempo_esp": 0.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.939",
+      "tempo_esp": 0.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.939",
+      "tempo_esp": 0.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.939",
+      "tempo_esp": 0.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.939",
+      "tempo_esp": 0.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.39,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:26.940",
+      "tempo_esp": 0.42,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.049",
+      "tempo_esp": 0.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.050",
+      "tempo_esp": 0.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.050",
+      "tempo_esp": 0.46,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.050",
+      "tempo_esp": 0.47,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.050",
+      "tempo_esp": 0.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.156",
+      "tempo_esp": 0.49,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.156",
+      "tempo_esp": 0.5,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.156",
+      "tempo_esp": 0.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.156",
+      "tempo_esp": 0.53,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.157",
+      "tempo_esp": 0.54,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.157",
+      "tempo_esp": 0.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.157",
+      "tempo_esp": 0.56,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.222",
+      "tempo_esp": 0.57,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.222",
+      "tempo_esp": 0.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.61,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.63,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.64,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.67,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.68,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.223",
+      "tempo_esp": 0.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.224",
+      "tempo_esp": 0.71,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.411",
+      "tempo_esp": 0.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.411",
+      "tempo_esp": 0.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.411",
+      "tempo_esp": 0.75,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.411",
+      "tempo_esp": 0.76,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.450",
+      "tempo_esp": 0.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.78,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.82,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.83,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.451",
+      "tempo_esp": 0.89,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.509",
+      "tempo_esp": 0.9,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.516",
+      "tempo_esp": 0.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.567",
+      "tempo_esp": 0.92,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.97,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 0.99,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 1.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 1.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.568",
+      "tempo_esp": 1.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.649",
+      "tempo_esp": 1.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.649",
+      "tempo_esp": 1.06,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.682",
+      "tempo_esp": 1.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.682",
+      "tempo_esp": 1.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.682",
+      "tempo_esp": 1.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.682",
+      "tempo_esp": 1.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.14,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.743",
+      "tempo_esp": 1.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.823",
+      "tempo_esp": 1.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.823",
+      "tempo_esp": 1.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.823",
+      "tempo_esp": 1.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.824",
+      "tempo_esp": 1.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.826",
+      "tempo_esp": 1.25,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.827",
+      "tempo_esp": 1.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.827",
+      "tempo_esp": 1.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.827",
+      "tempo_esp": 1.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.885",
+      "tempo_esp": 1.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.885",
+      "tempo_esp": 1.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.885",
+      "tempo_esp": 1.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:27.885",
+      "tempo_esp": 1.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.010",
+      "tempo_esp": 1.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.063",
+      "tempo_esp": 1.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.063",
+      "tempo_esp": 1.39,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.063",
+      "tempo_esp": 1.4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.063",
+      "tempo_esp": 1.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.063",
+      "tempo_esp": 1.42,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.064",
+      "tempo_esp": 1.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.064",
+      "tempo_esp": 1.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.101",
+      "tempo_esp": 1.45,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.101",
+      "tempo_esp": 1.47,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.101",
+      "tempo_esp": 1.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.101",
+      "tempo_esp": 1.49,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.101",
+      "tempo_esp": 1.5,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.167",
+      "tempo_esp": 1.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.168",
+      "tempo_esp": 1.52,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.168",
+      "tempo_esp": 1.54,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.168",
+      "tempo_esp": 1.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.205",
+      "tempo_esp": 1.56,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.206",
+      "tempo_esp": 1.57,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.59,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.61,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.63,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.64,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.208",
+      "tempo_esp": 1.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.318",
+      "tempo_esp": 1.66,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.318",
+      "tempo_esp": 1.68,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.356",
+      "tempo_esp": 1.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.356",
+      "tempo_esp": 1.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.356",
+      "tempo_esp": 1.71,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.357",
+      "tempo_esp": 1.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.357",
+      "tempo_esp": 1.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.357",
+      "tempo_esp": 1.75,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.357",
+      "tempo_esp": 1.76,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.357",
+      "tempo_esp": 1.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.358",
+      "tempo_esp": 1.78,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.358",
+      "tempo_esp": 1.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.358",
+      "tempo_esp": 1.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.561",
+      "tempo_esp": 1.81,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.561",
+      "tempo_esp": 1.83,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.561",
+      "tempo_esp": 1.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.561",
+      "tempo_esp": 1.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.561",
+      "tempo_esp": 1.88,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.562",
+      "tempo_esp": 1.9,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.615",
+      "tempo_esp": 1.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.616",
+      "tempo_esp": 1.92,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.616",
+      "tempo_esp": 1.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.616",
+      "tempo_esp": 1.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.616",
+      "tempo_esp": 1.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.762",
+      "tempo_esp": 1.97,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.762",
+      "tempo_esp": 1.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.762",
+      "tempo_esp": 1.99,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.762",
+      "tempo_esp": 2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.762",
+      "tempo_esp": 2.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.02,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.06,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.763",
+      "tempo_esp": 2.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.14,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.764",
+      "tempo_esp": 2.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.817",
+      "tempo_esp": 2.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.818",
+      "tempo_esp": 2.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.818",
+      "tempo_esp": 2.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.920",
+      "tempo_esp": 2.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.920",
+      "tempo_esp": 2.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.957",
+      "tempo_esp": 2.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.957",
+      "tempo_esp": 2.31,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.957",
+      "tempo_esp": 2.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.957",
+      "tempo_esp": 2.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.958",
+      "tempo_esp": 2.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.999",
+      "tempo_esp": 2.38,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:28.999",
+      "tempo_esp": 2.4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.000",
+      "tempo_esp": 2.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.000",
+      "tempo_esp": 2.42,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.000",
+      "tempo_esp": 2.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.000",
+      "tempo_esp": 2.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.122",
+      "tempo_esp": 2.45,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.122",
+      "tempo_esp": 2.47,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.122",
+      "tempo_esp": 2.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.176",
+      "tempo_esp": 2.49,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.216",
+      "tempo_esp": 2.5,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.314",
+      "tempo_esp": 2.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.52,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.54,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.56,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.57,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.315",
+      "tempo_esp": 2.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.59,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.63,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.64,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.66,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.316",
+      "tempo_esp": 2.67,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.71,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.317",
+      "tempo_esp": 2.74,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.398",
+      "tempo_esp": 2.76,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.398",
+      "tempo_esp": 2.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.398",
+      "tempo_esp": 2.78,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.452",
+      "tempo_esp": 2.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.453",
+      "tempo_esp": 2.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.81,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.83,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.88,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.9,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.511",
+      "tempo_esp": 2.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.571",
+      "tempo_esp": 2.92,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.571",
+      "tempo_esp": 2.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 2.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 2.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 2.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 2.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 2.99,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 3.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.572",
+      "tempo_esp": 3.02,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.573",
+      "tempo_esp": 3.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.576",
+      "tempo_esp": 3.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.576",
+      "tempo_esp": 3.06,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.688",
+      "tempo_esp": 3.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.730",
+      "tempo_esp": 3.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.730",
+      "tempo_esp": 3.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.730",
+      "tempo_esp": 3.1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.730",
+      "tempo_esp": 3.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.785",
+      "tempo_esp": 3.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.785",
+      "tempo_esp": 3.14,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.785",
+      "tempo_esp": 3.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.786",
+      "tempo_esp": 3.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.786",
+      "tempo_esp": 3.17,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.786",
+      "tempo_esp": 3.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.786",
+      "tempo_esp": 3.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.786",
+      "tempo_esp": 3.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.875",
+      "tempo_esp": 3.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.876",
+      "tempo_esp": 3.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.876",
+      "tempo_esp": 3.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.876",
+      "tempo_esp": 3.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.914",
+      "tempo_esp": 3.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.915",
+      "tempo_esp": 3.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:29.922",
+      "tempo_esp": 3.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.049",
+      "tempo_esp": 3.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.049",
+      "tempo_esp": 3.31,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.049",
+      "tempo_esp": 3.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.050",
+      "tempo_esp": 3.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.050",
+      "tempo_esp": 3.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.050",
+      "tempo_esp": 3.38,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.050",
+      "tempo_esp": 3.39,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.050",
+      "tempo_esp": 3.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.109",
+      "tempo_esp": 3.42,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.110",
+      "tempo_esp": 3.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.110",
+      "tempo_esp": 3.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.116",
+      "tempo_esp": 3.45,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.116",
+      "tempo_esp": 3.46,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.49,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.5,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.52,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.117",
+      "tempo_esp": 3.53,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.168",
+      "tempo_esp": 3.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.217",
+      "tempo_esp": 3.56,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.217",
+      "tempo_esp": 3.57,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.217",
+      "tempo_esp": 3.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.59,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.63,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.64,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.66,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.218",
+      "tempo_esp": 3.67,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.315",
+      "tempo_esp": 3.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.315",
+      "tempo_esp": 3.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.376",
+      "tempo_esp": 3.71,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.376",
+      "tempo_esp": 3.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.377",
+      "tempo_esp": 3.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.377",
+      "tempo_esp": 3.74,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.380",
+      "tempo_esp": 3.75,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.380",
+      "tempo_esp": 3.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.380",
+      "tempo_esp": 3.78,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.380",
+      "tempo_esp": 3.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.380",
+      "tempo_esp": 3.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.381",
+      "tempo_esp": 3.81,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.381",
+      "tempo_esp": 3.82,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.473",
+      "tempo_esp": 3.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.474",
+      "tempo_esp": 3.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.515",
+      "tempo_esp": 3.88,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.515",
+      "tempo_esp": 3.89,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.515",
+      "tempo_esp": 3.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.516",
+      "tempo_esp": 3.92,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.592",
+      "tempo_esp": 3.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.593",
+      "tempo_esp": 3.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.593",
+      "tempo_esp": 3.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.593",
+      "tempo_esp": 3.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.600",
+      "tempo_esp": 3.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.600",
+      "tempo_esp": 3.99,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.601",
+      "tempo_esp": 4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.712",
+      "tempo_esp": 4.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.713",
+      "tempo_esp": 4.02,
+      "newtons": 0.316755,
+      "grama_forca": 32.30002090418237,
+      "quilo_forca": 0.03230002090418237
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.713",
+      "tempo_esp": 4.03,
+      "newtons": 0.376575,
+      "grama_forca": 38.399963290216334,
+      "quilo_forca": 0.03839996329021633
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.713",
+      "tempo_esp": 4.05,
+      "newtons": 0.445222,
+      "grama_forca": 45.40000917744592,
+      "quilo_forca": 0.04540000917744592
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.713",
+      "tempo_esp": 4.06,
+      "newtons": 0.507004,
+      "grama_forca": 51.70001988446616,
+      "quilo_forca": 0.05170001988446616
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.753",
+      "tempo_esp": 4.07,
+      "newtons": 0.583496,
+      "grama_forca": 59.50003314077693,
+      "quilo_forca": 0.059500033140776926
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.800",
+      "tempo_esp": 4.08,
+      "newtons": 0.658026,
+      "grama_forca": 67.09997807610142,
+      "quilo_forca": 0.06709997807610142
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.800",
+      "tempo_esp": 4.09,
+      "newtons": 0.730595,
+      "grama_forca": 74.49995666206095,
+      "quilo_forca": 0.07449995666206095
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.800",
+      "tempo_esp": 4.1,
+      "newtons": 0.809049,
+      "grama_forca": 82.50003823935799,
+      "quilo_forca": 0.08250003823935799
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.801",
+      "tempo_esp": 4.11,
+      "newtons": 0.896328,
+      "grama_forca": 91.40001937460805,
+      "quilo_forca": 0.09140001937460805
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.801",
+      "tempo_esp": 4.13,
+      "newtons": 0.967916,
+      "grama_forca": 98.69996380007444,
+      "quilo_forca": 0.09869996380007444
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.801",
+      "tempo_esp": 4.14,
+      "newtons": 1.04735,
+      "grama_forca": 106.79997756624331,
+      "quilo_forca": 0.10679997756624332
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.801",
+      "tempo_esp": 4.15,
+      "newtons": 1.13463,
+      "grama_forca": 115.70006067311468,
+      "quilo_forca": 0.11570006067311468
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.844",
+      "tempo_esp": 4.16,
+      "newtons": 1.22191,
+      "grama_forca": 124.60014377998604,
+      "quilo_forca": 0.12460014377998604
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.844",
+      "tempo_esp": 4.17,
+      "newtons": 1.29644,
+      "grama_forca": 132.20008871531056,
+      "quilo_forca": 0.13220008871531055
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.844",
+      "tempo_esp": 4.18,
+      "newtons": 1.34155,
+      "grama_forca": 136.800028552054,
+      "quilo_forca": 0.13680002855205398
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.844",
+      "tempo_esp": 4.2,
+      "newtons": 1.36999,
+      "grama_forca": 139.7001014617632,
+      "quilo_forca": 0.1397001014617632
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.844",
+      "tempo_esp": 4.21,
+      "newtons": 1.41706,
+      "grama_forca": 144.4999056762503,
+      "quilo_forca": 0.14449990567625032
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.900",
+      "tempo_esp": 4.22,
+      "newtons": 1.48865,
+      "grama_forca": 151.8000540449593,
+      "quilo_forca": 0.1518000540449593
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.900",
+      "tempo_esp": 4.23,
+      "newtons": 1.53278,
+      "grama_forca": 156.3000616928309,
+      "quilo_forca": 0.1563000616928309
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.24,
+      "newtons": 1.57691,
+      "grama_forca": 160.8000693407025,
+      "quilo_forca": 0.16080006934070248
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.25,
+      "newtons": 1.66615,
+      "grama_forca": 169.90001682531752,
+      "quilo_forca": 0.16990001682531752
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.27,
+      "newtons": 1.77206,
+      "grama_forca": 180.69983123696676,
+      "quilo_forca": 0.18069983123696676
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.28,
+      "newtons": 1.85444,
+      "grama_forca": 189.10025339947896,
+      "quilo_forca": 0.18910025339947895
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.29,
+      "newtons": 1.93289,
+      "grama_forca": 197.09992709029078,
+      "quilo_forca": 0.19709992709029078
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.901",
+      "tempo_esp": 4.3,
+      "newtons": 2.02507,
+      "grama_forca": 206.4996711415213,
+      "quilo_forca": 0.20649967114152132
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.951",
+      "tempo_esp": 4.31,
+      "newtons": 2.11137,
+      "grama_forca": 215.29982205952084,
+      "quilo_forca": 0.21529982205952083
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.998",
+      "tempo_esp": 4.32,
+      "newtons": 2.16139,
+      "grama_forca": 220.40044255683645,
+      "quilo_forca": 0.22040044255683644
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.999",
+      "tempo_esp": 4.34,
+      "newtons": 2.18394,
+      "grama_forca": 222.6999026171017,
+      "quilo_forca": 0.2226999026171017
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.999",
+      "tempo_esp": 4.37,
+      "newtons": 2.30456,
+      "grama_forca": 234.99971957804144,
+      "quilo_forca": 0.23499971957804144
+    },
+    {
+      "timestamp": "11/05/2026 18:13:30.999",
+      "tempo_esp": 4.38,
+      "newtons": 2.31241,
+      "grama_forca": 235.8001968052291,
+      "quilo_forca": 0.2358001968052291
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.076",
+      "tempo_esp": 4.39,
+      "newtons": 2.32908,
+      "grama_forca": 237.50006373226333,
+      "quilo_forca": 0.23750006373226332
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.076",
+      "tempo_esp": 4.41,
+      "newtons": 2.33496,
+      "grama_forca": 238.09965686549435,
+      "quilo_forca": 0.23809965686549436
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.077",
+      "tempo_esp": 4.42,
+      "newtons": 2.35752,
+      "grama_forca": 240.40013664197258,
+      "quilo_forca": 0.24040013664197257
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.077",
+      "tempo_esp": 4.43,
+      "newtons": 2.3585,
+      "grama_forca": 240.50006883084438,
+      "quilo_forca": 0.24050006883084438
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.077",
+      "tempo_esp": 4.44,
+      "newtons": 2.3585,
+      "grama_forca": 240.50006883084438,
+      "quilo_forca": 0.24050006883084438
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.077",
+      "tempo_esp": 4.45,
+      "newtons": 2.3634,
+      "grama_forca": 240.99972977520358,
+      "quilo_forca": 0.24099972977520356
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.077",
+      "tempo_esp": 4.46,
+      "newtons": 2.34771,
+      "grama_forca": 239.39979503704123,
+      "quilo_forca": 0.23939979503704123
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.079",
+      "tempo_esp": 4.47,
+      "newtons": 2.3536,
+      "grama_forca": 240.00040788648522,
+      "quilo_forca": 0.24000040788648522
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.131",
+      "tempo_esp": 4.49,
+      "newtons": 2.36634,
+      "grama_forca": 241.29952634181907,
+      "quilo_forca": 0.2412995263418191
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.131",
+      "tempo_esp": 4.5,
+      "newtons": 2.3889,
+      "grama_forca": 243.6000061182973,
+      "quilo_forca": 0.2436000061182973
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.131",
+      "tempo_esp": 4.51,
+      "newtons": 2.38694,
+      "grama_forca": 243.40014174055364,
+      "quilo_forca": 0.24340014174055363
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.131",
+      "tempo_esp": 4.52,
+      "newtons": 2.39674,
+      "grama_forca": 244.399463629272,
+      "quilo_forca": 0.24439946362927198
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.132",
+      "tempo_esp": 4.53,
+      "newtons": 2.4144,
+      "grama_forca": 246.20028246139103,
+      "quilo_forca": 0.24620028246139103
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.132",
+      "tempo_esp": 4.54,
+      "newtons": 2.41244,
+      "grama_forca": 246.00041808364733,
+      "quilo_forca": 0.24600041808364734
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.132",
+      "tempo_esp": 4.56,
+      "newtons": 2.39969,
+      "grama_forca": 244.7002799121005,
+      "quilo_forca": 0.2447002799121005
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.132",
+      "tempo_esp": 4.57,
+      "newtons": 2.42224,
+      "grama_forca": 246.99973997236572,
+      "quilo_forca": 0.2469997399723657
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.132",
+      "tempo_esp": 4.58,
+      "newtons": 2.43303,
+      "grama_forca": 248.1000137661689,
+      "quilo_forca": 0.2481000137661689
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.210",
+      "tempo_esp": 4.59,
+      "newtons": 2.44676,
+      "grama_forca": 249.50008412658755,
+      "quilo_forca": 0.24950008412658756
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.210",
+      "tempo_esp": 4.6,
+      "newtons": 2.47618,
+      "grama_forca": 252.50008922516864,
+      "quilo_forca": 0.25250008922516864
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.210",
+      "tempo_esp": 4.61,
+      "newtons": 2.48893,
+      "grama_forca": 253.80022739671548,
+      "quilo_forca": 0.2538002273967155
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.317",
+      "tempo_esp": 4.63,
+      "newtons": 2.50364,
+      "grama_forca": 255.30022994600603,
+      "quilo_forca": 0.25530022994600604
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.317",
+      "tempo_esp": 4.64,
+      "newtons": 2.49972,
+      "grama_forca": 254.90050119051872,
+      "quilo_forca": 0.2549005011905187
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.319",
+      "tempo_esp": 4.65,
+      "newtons": 2.46539,
+      "grama_forca": 251.39981543136548,
+      "quilo_forca": 0.25139981543136547
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.319",
+      "tempo_esp": 4.66,
+      "newtons": 2.45068,
+      "grama_forca": 249.89981288207494,
+      "quilo_forca": 0.24989981288207494
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.361",
+      "tempo_esp": 4.67,
+      "newtons": 2.49089,
+      "grama_forca": 254.00009177445915,
+      "quilo_forca": 0.25400009177445915
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.361",
+      "tempo_esp": 4.68,
+      "newtons": 2.51835,
+      "grama_forca": 256.80023249529654,
+      "quilo_forca": 0.25680023249529654
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.361",
+      "tempo_esp": 4.7,
+      "newtons": 2.54188,
+      "grama_forca": 259.19962474443366,
+      "quilo_forca": 0.25919962474443364
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.362",
+      "tempo_esp": 4.71,
+      "newtons": 2.57032,
+      "grama_forca": 262.09969765414286,
+      "quilo_forca": 0.26209969765414287
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.442",
+      "tempo_esp": 4.72,
+      "newtons": 2.57327,
+      "grama_forca": 262.4005139369713,
+      "quilo_forca": 0.26240051393697134
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.442",
+      "tempo_esp": 4.73,
+      "newtons": 2.58307,
+      "grama_forca": 263.39983582568976,
+      "quilo_forca": 0.26339983582568977
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.442",
+      "tempo_esp": 4.74,
+      "newtons": 2.58798,
+      "grama_forca": 263.9005164862619,
+      "quilo_forca": 0.2639005164862619
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.442",
+      "tempo_esp": 4.75,
+      "newtons": 2.55463,
+      "grama_forca": 260.49976291598045,
+      "quilo_forca": 0.2604997629159805
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.442",
+      "tempo_esp": 4.77,
+      "newtons": 2.57523,
+      "grama_forca": 262.600378314715,
+      "quilo_forca": 0.262600378314715
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.615",
+      "tempo_esp": 4.78,
+      "newtons": 2.61739,
+      "grama_forca": 266.89950186863,
+      "quilo_forca": 0.26689950186863
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.615",
+      "tempo_esp": 4.79,
+      "newtons": 2.61838,
+      "grama_forca": 267.0004537737148,
+      "quilo_forca": 0.2670004537737148
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.615",
+      "tempo_esp": 4.8,
+      "newtons": 2.62916,
+      "grama_forca": 268.09970785130497,
+      "quilo_forca": 0.268099707851305
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.615",
+      "tempo_esp": 4.81,
+      "newtons": 2.62916,
+      "grama_forca": 268.09970785130497,
+      "quilo_forca": 0.268099707851305
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.82,
+      "newtons": 2.60367,
+      "grama_forca": 265.5004512244243,
+      "quilo_forca": 0.2655004512244243
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.83,
+      "newtons": 2.60268,
+      "grama_forca": 265.39949931933944,
+      "quilo_forca": 0.2653994993193394
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.87,
+      "newtons": 2.66937,
+      "grama_forca": 272.19998674368924,
+      "quilo_forca": 0.2721999867436892
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.88,
+      "newtons": 2.67722,
+      "grama_forca": 273.000463970877,
+      "quilo_forca": 0.27300046397087696
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.89,
+      "newtons": 2.68604,
+      "grama_forca": 273.8998536707235,
+      "quilo_forca": 0.27389985367072345
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.616",
+      "tempo_esp": 4.9,
+      "newtons": 2.69094,
+      "grama_forca": 274.3995146150826,
+      "quilo_forca": 0.2743995146150826
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.672",
+      "tempo_esp": 4.92,
+      "newtons": 2.69683,
+      "grama_forca": 275.0001274645266,
+      "quilo_forca": 0.2750001274645266
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.672",
+      "tempo_esp": 4.93,
+      "newtons": 2.69291,
+      "grama_forca": 274.60039870903927,
+      "quilo_forca": 0.2746003987090393
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.672",
+      "tempo_esp": 4.94,
+      "newtons": 2.7439,
+      "grama_forca": 279.79993167901375,
+      "quilo_forca": 0.27979993167901374
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 4.95,
+      "newtons": 2.75665,
+      "grama_forca": 281.10006985056066,
+      "quilo_forca": 0.28110006985056063
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 4.96,
+      "newtons": 2.73998,
+      "grama_forca": 279.4002029235264,
+      "quilo_forca": 0.2794002029235264
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 4.97,
+      "newtons": 2.72527,
+      "grama_forca": 277.90020037423585,
+      "quilo_forca": 0.27790020037423585
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 4.99,
+      "newtons": 2.71056,
+      "grama_forca": 276.40019782494534,
+      "quilo_forca": 0.27640019782494535
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5,
+      "newtons": 2.7184,
+      "grama_forca": 277.19965533592,
+      "quilo_forca": 0.27719965533592
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5.01,
+      "newtons": 2.76548,
+      "grama_forca": 282.0004792666201,
+      "quilo_forca": 0.28200047926662014
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5.02,
+      "newtons": 2.77822,
+      "grama_forca": 283.299597721954,
+      "quilo_forca": 0.283299597721954
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5.03,
+      "newtons": 2.78411,
+      "grama_forca": 283.900210571398,
+      "quilo_forca": 0.283900210571398
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5.04,
+      "newtons": 2.78313,
+      "grama_forca": 283.80027838252613,
+      "quilo_forca": 0.28380027838252614
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.673",
+      "tempo_esp": 5.06,
+      "newtons": 2.75861,
+      "grama_forca": 281.29993422830427,
+      "quilo_forca": 0.2812999342283043
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.674",
+      "tempo_esp": 5.07,
+      "newtons": 2.75469,
+      "grama_forca": 280.900205472817,
+      "quilo_forca": 0.28090020547281697
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.674",
+      "tempo_esp": 5.08,
+      "newtons": 2.77822,
+      "grama_forca": 283.299597721954,
+      "quilo_forca": 0.283299597721954
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.674",
+      "tempo_esp": 5.09,
+      "newtons": 2.76744,
+      "grama_forca": 282.2003436443638,
+      "quilo_forca": 0.2822003436443638
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.738",
+      "tempo_esp": 5.1,
+      "newtons": 2.76646,
+      "grama_forca": 282.1004114554919,
+      "quilo_forca": 0.2821004114554919
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.738",
+      "tempo_esp": 5.11,
+      "newtons": 2.77626,
+      "grama_forca": 283.09973334421034,
+      "quilo_forca": 0.28309973334421035
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.738",
+      "tempo_esp": 5.13,
+      "newtons": 2.77528,
+      "grama_forca": 282.99980115533845,
+      "quilo_forca": 0.28299980115533846
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.819",
+      "tempo_esp": 5.14,
+      "newtons": 2.79784,
+      "grama_forca": 285.3002809318167,
+      "quilo_forca": 0.2853002809318167
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.819",
+      "tempo_esp": 5.15,
+      "newtons": 2.81843,
+      "grama_forca": 287.39987661433827,
+      "quilo_forca": 0.28739987661433825
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.819",
+      "tempo_esp": 5.16,
+      "newtons": 2.77724,
+      "grama_forca": 283.19966553308217,
+      "quilo_forca": 0.2831996655330822
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.819",
+      "tempo_esp": 5.17,
+      "newtons": 2.7743,
+      "grama_forca": 282.89986896646667,
+      "quilo_forca": 0.2828998689664667
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.820",
+      "tempo_esp": 5.18,
+      "newtons": 2.76155,
+      "grama_forca": 281.59973079491976,
+      "quilo_forca": 0.2815997307949198
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.820",
+      "tempo_esp": 5.2,
+      "newtons": 2.7488,
+      "grama_forca": 280.299592623373,
+      "quilo_forca": 0.28029959262337295
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.820",
+      "tempo_esp": 5.21,
+      "newtons": 2.73802,
+      "grama_forca": 279.20033854578276,
+      "quilo_forca": 0.27920033854578274
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.820",
+      "tempo_esp": 5.22,
+      "newtons": 2.75077,
+      "grama_forca": 280.5004767173296,
+      "quilo_forca": 0.2805004767173296
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.820",
+      "tempo_esp": 5.23,
+      "newtons": 2.81255,
+      "grama_forca": 286.8002834811072,
+      "quilo_forca": 0.2868002834811072
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.904",
+      "tempo_esp": 5.24,
+      "newtons": 2.80176,
+      "grama_forca": 285.70000968730403,
+      "quilo_forca": 0.285700009687304
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.972",
+      "tempo_esp": 5.25,
+      "newtons": 2.76842,
+      "grama_forca": 282.3002758332356,
+      "quilo_forca": 0.28230027583323564
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.972",
+      "tempo_esp": 5.26,
+      "newtons": 2.75763,
+      "grama_forca": 281.20000203943243,
+      "quilo_forca": 0.2812000020394324
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.973",
+      "tempo_esp": 5.28,
+      "newtons": 2.70271,
+      "grama_forca": 275.59972059775765,
+      "quilo_forca": 0.27559972059775767
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.973",
+      "tempo_esp": 5.29,
+      "newtons": 2.7135,
+      "grama_forca": 276.69999439156084,
+      "quilo_forca": 0.27669999439156084
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.973",
+      "tempo_esp": 5.3,
+      "newtons": 2.73998,
+      "grama_forca": 279.4002029235264,
+      "quilo_forca": 0.2794002029235264
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.973",
+      "tempo_esp": 5.31,
+      "newtons": 2.70173,
+      "grama_forca": 275.4997884088858,
+      "quilo_forca": 0.27549978840888584
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.973",
+      "tempo_esp": 5.32,
+      "newtons": 2.68898,
+      "grama_forca": 274.1996502373389,
+      "quilo_forca": 0.27419965023733894
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.974",
+      "tempo_esp": 5.33,
+      "newtons": 2.67525,
+      "grama_forca": 272.7995798769203,
+      "quilo_forca": 0.2727995798769203
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.975",
+      "tempo_esp": 5.37,
+      "newtons": 2.59092,
+      "grama_forca": 264.2003130528774,
+      "quilo_forca": 0.2642003130528774
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.975",
+      "tempo_esp": 5.38,
+      "newtons": 2.55561,
+      "grama_forca": 260.59969510485234,
+      "quilo_forca": 0.26059969510485237
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.975",
+      "tempo_esp": 5.39,
+      "newtons": 2.50658,
+      "grama_forca": 255.60002651262153,
+      "quilo_forca": 0.25560002651262154
+    },
+    {
+      "timestamp": "11/05/2026 18:13:31.975",
+      "tempo_esp": 5.4,
+      "newtons": 2.46931,
+      "grama_forca": 251.79954418685284,
+      "quilo_forca": 0.25179954418685285
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.053",
+      "tempo_esp": 5.42,
+      "newtons": 2.44382,
+      "grama_forca": 249.20028755997208,
+      "quilo_forca": 0.2492002875599721
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.053",
+      "tempo_esp": 5.43,
+      "newtons": 2.36634,
+      "grama_forca": 241.29952634181907,
+      "quilo_forca": 0.2412995263418191
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.120",
+      "tempo_esp": 5.44,
+      "newtons": 2.28789,
+      "grama_forca": 233.29985265100726,
+      "quilo_forca": 0.23329985265100725
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.214",
+      "tempo_esp": 5.45,
+      "newtons": 2.21042,
+      "grama_forca": 225.40011114906724,
+      "quilo_forca": 0.22540011114906724
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.214",
+      "tempo_esp": 5.46,
+      "newtons": 2.13687,
+      "grama_forca": 217.90009840261456,
+      "quilo_forca": 0.21790009840261457
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.214",
+      "tempo_esp": 5.47,
+      "newtons": 2.04371,
+      "grama_forca": 208.40042216251217,
+      "quilo_forca": 0.20840042216251217
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.274",
+      "tempo_esp": 5.49,
+      "newtons": 1.93975,
+      "grama_forca": 197.79945241239366,
+      "quilo_forca": 0.19779945241239366
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.274",
+      "tempo_esp": 5.5,
+      "newtons": 1.84659,
+      "grama_forca": 188.29977617229127,
+      "quilo_forca": 0.18829977617229127
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.274",
+      "tempo_esp": 5.51,
+      "newtons": 1.74755,
+      "grama_forca": 178.20050679895786,
+      "quilo_forca": 0.17820050679895785
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.332",
+      "tempo_esp": 5.52,
+      "newtons": 1.66027,
+      "grama_forca": 169.3004236920865,
+      "quilo_forca": 0.1693004236920865
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.53,
+      "newtons": 1.57789,
+      "grama_forca": 160.90000152957435,
+      "quilo_forca": 0.16090000152957434
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.54,
+      "newtons": 1.49355,
+      "grama_forca": 152.29971498931846,
+      "quilo_forca": 0.15229971498931846
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.56,
+      "newtons": 1.42295,
+      "grama_forca": 145.1005185256943,
+      "quilo_forca": 0.1451005185256943
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.57,
+      "newtons": 1.34351,
+      "grama_forca": 136.99989292979765,
+      "quilo_forca": 0.13699989292979764
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.58,
+      "newtons": 1.26212,
+      "grama_forca": 128.70042267237028,
+      "quilo_forca": 0.12870042267237028
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.59,
+      "newtons": 1.1866,
+      "grama_forca": 120.99952583196098,
+      "quilo_forca": 0.12099952583196098
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.6,
+      "newtons": 1.11796,
+      "grama_forca": 114.00019374608047,
+      "quilo_forca": 0.11400019374608047
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.61,
+      "newtons": 1.05421,
+      "grama_forca": 107.49950288834619,
+      "quilo_forca": 0.10749950288834619
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.333",
+      "tempo_esp": 5.62,
+      "newtons": 0.994394,
+      "grama_forca": 101.3999683887974,
+      "quilo_forca": 0.1013999683887974
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.64,
+      "newtons": 0.952226,
+      "grama_forca": 97.10002906191208,
+      "quilo_forca": 0.09710002906191208
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.65,
+      "newtons": 0.920844,
+      "grama_forca": 93.89995564234474,
+      "quilo_forca": 0.09389995564234474
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.66,
+      "newtons": 0.867889,
+      "grama_forca": 88.50004843652012,
+      "quilo_forca": 0.08850004843652012
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.67,
+      "newtons": 0.831604,
+      "grama_forca": 84.80000815772972,
+      "quilo_forca": 0.08480000815772971
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.68,
+      "newtons": 0.799242,
+      "grama_forca": 81.50000254929053,
+      "quilo_forca": 0.08150000254929053
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.372",
+      "tempo_esp": 5.69,
+      "newtons": 0.774725,
+      "grama_forca": 78.99996430993254,
+      "quilo_forca": 0.07899996430993254
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.373",
+      "tempo_esp": 5.71,
+      "newtons": 0.741383,
+      "grama_forca": 75.60002651262154,
+      "quilo_forca": 0.07560002651262154
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.427",
+      "tempo_esp": 5.72,
+      "newtons": 0.711963,
+      "grama_forca": 72.60002141404048,
+      "quilo_forca": 0.07260002141404048
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.427",
+      "tempo_esp": 5.73,
+      "newtons": 0.694311,
+      "grama_forca": 70.80001835489185,
+      "quilo_forca": 0.07080001835489184
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.427",
+      "tempo_esp": 5.74,
+      "newtons": 0.665872,
+      "grama_forca": 67.90004741680391,
+      "quilo_forca": 0.06790004741680392
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.428",
+      "tempo_esp": 5.75,
+      "newtons": 0.638413,
+      "grama_forca": 65.10000866758782,
+      "quilo_forca": 0.06510000866758782
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.428",
+      "tempo_esp": 5.76,
+      "newtons": 0.617819,
+      "grama_forca": 63.00000509858107,
+      "quilo_forca": 0.06300000509858107
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.479",
+      "tempo_esp": 5.78,
+      "newtons": 0.593302,
+      "grama_forca": 60.499966859223086,
+      "quilo_forca": 0.060499966859223084
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.479",
+      "tempo_esp": 5.79,
+      "newtons": 0.564863,
+      "grama_forca": 57.599995921135154,
+      "quilo_forca": 0.057599995921135155
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.8,
+      "newtons": 0.54623,
+      "grama_forca": 55.69995870149338,
+      "quilo_forca": 0.05569995870149338
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.81,
+      "newtons": 0.514849,
+      "grama_forca": 52.49998725354734,
+      "quilo_forca": 0.05249998725354734
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.82,
+      "newtons": 0.490333,
+      "grama_forca": 50.00005098581065,
+      "quilo_forca": 0.05000005098581065
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.83,
+      "newtons": 0.476603,
+      "grama_forca": 48.59998062539196,
+      "quilo_forca": 0.048599980625391954
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.87,
+      "newtons": 0.418744,
+      "grama_forca": 42.70000458872296,
+      "quilo_forca": 0.04270000458872296
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.88,
+      "newtons": 0.397169,
+      "grama_forca": 40.49996685922308,
+      "quilo_forca": 0.04049996685922308
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.89,
+      "newtons": 0.362846,
+      "grama_forca": 36.999994901418944,
+      "quilo_forca": 0.03699999490141894
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.555",
+      "tempo_esp": 5.9,
+      "newtons": 0.335387,
+      "grama_forca": 34.199956152202844,
+      "quilo_forca": 0.034199956152202844
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.557",
+      "tempo_esp": 5.92,
+      "newtons": 0.307929,
+      "grama_forca": 31.400019374608046,
+      "quilo_forca": 0.03140001937460805
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.624",
+      "tempo_esp": 5.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.624",
+      "tempo_esp": 5.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 5.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 5.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 5.97,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 5.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.625",
+      "tempo_esp": 6.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.626",
+      "tempo_esp": 6.02,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.678",
+      "tempo_esp": 6.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.678",
+      "tempo_esp": 6.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.678",
+      "tempo_esp": 6.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.678",
+      "tempo_esp": 6.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.678",
+      "tempo_esp": 6.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.679",
+      "tempo_esp": 6.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.679",
+      "tempo_esp": 6.1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.731",
+      "tempo_esp": 6.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.731",
+      "tempo_esp": 6.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.731",
+      "tempo_esp": 6.14,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.732",
+      "tempo_esp": 6.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.732",
+      "tempo_esp": 6.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.732",
+      "tempo_esp": 6.17,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.847",
+      "tempo_esp": 6.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.893",
+      "tempo_esp": 6.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.893",
+      "tempo_esp": 6.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.893",
+      "tempo_esp": 6.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.893",
+      "tempo_esp": 6.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.893",
+      "tempo_esp": 6.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.894",
+      "tempo_esp": 6.25,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.894",
+      "tempo_esp": 6.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.985",
+      "tempo_esp": 6.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.986",
+      "tempo_esp": 6.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.986",
+      "tempo_esp": 6.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.986",
+      "tempo_esp": 6.31,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:32.986",
+      "tempo_esp": 6.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.025",
+      "tempo_esp": 6.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.026",
+      "tempo_esp": 6.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.026",
+      "tempo_esp": 6.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.026",
+      "tempo_esp": 6.38,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.026",
+      "tempo_esp": 6.39,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.026",
+      "tempo_esp": 6.4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.027",
+      "tempo_esp": 6.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.027",
+      "tempo_esp": 6.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.079",
+      "tempo_esp": 6.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.080",
+      "tempo_esp": 6.45,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.080",
+      "tempo_esp": 6.46,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.080",
+      "tempo_esp": 6.47,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.080",
+      "tempo_esp": 6.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.160",
+      "tempo_esp": 6.5,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.161",
+      "tempo_esp": 6.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.162",
+      "tempo_esp": 6.52,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.162",
+      "tempo_esp": 6.53,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.162",
+      "tempo_esp": 6.54,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.162",
+      "tempo_esp": 6.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.226",
+      "tempo_esp": 6.57,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.226",
+      "tempo_esp": 6.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.226",
+      "tempo_esp": 6.59,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.226",
+      "tempo_esp": 6.6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.226",
+      "tempo_esp": 6.61,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.227",
+      "tempo_esp": 6.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.227",
+      "tempo_esp": 6.64,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.287",
+      "tempo_esp": 6.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.287",
+      "tempo_esp": 6.66,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.287",
+      "tempo_esp": 6.67,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.357",
+      "tempo_esp": 6.68,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.357",
+      "tempo_esp": 6.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.357",
+      "tempo_esp": 6.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.357",
+      "tempo_esp": 6.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.357",
+      "tempo_esp": 6.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.358",
+      "tempo_esp": 6.74,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.358",
+      "tempo_esp": 6.75,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.358",
+      "tempo_esp": 6.76,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.359",
+      "tempo_esp": 6.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.479",
+      "tempo_esp": 6.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.479",
+      "tempo_esp": 6.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.480",
+      "tempo_esp": 6.81,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.480",
+      "tempo_esp": 6.82,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.520",
+      "tempo_esp": 6.83,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.521",
+      "tempo_esp": 6.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.521",
+      "tempo_esp": 6.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.522",
+      "tempo_esp": 6.88,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.523",
+      "tempo_esp": 6.89,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.523",
+      "tempo_esp": 6.9,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.523",
+      "tempo_esp": 6.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.523",
+      "tempo_esp": 6.93,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.523",
+      "tempo_esp": 6.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.576",
+      "tempo_esp": 6.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.577",
+      "tempo_esp": 6.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.577",
+      "tempo_esp": 6.97,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.577",
+      "tempo_esp": 6.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.625",
+      "tempo_esp": 7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.625",
+      "tempo_esp": 7.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.625",
+      "tempo_esp": 7.02,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.625",
+      "tempo_esp": 7.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.723",
+      "tempo_esp": 7.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.723",
+      "tempo_esp": 7.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.724",
+      "tempo_esp": 7.07,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.724",
+      "tempo_esp": 7.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.724",
+      "tempo_esp": 7.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.796",
+      "tempo_esp": 7.1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.797",
+      "tempo_esp": 7.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.797",
+      "tempo_esp": 7.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.797",
+      "tempo_esp": 7.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.797",
+      "tempo_esp": 7.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.797",
+      "tempo_esp": 7.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.837",
+      "tempo_esp": 7.17,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.837",
+      "tempo_esp": 7.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.837",
+      "tempo_esp": 7.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.837",
+      "tempo_esp": 7.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.838",
+      "tempo_esp": 7.22,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.838",
+      "tempo_esp": 7.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.838",
+      "tempo_esp": 7.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.901",
+      "tempo_esp": 7.25,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.902",
+      "tempo_esp": 7.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.902",
+      "tempo_esp": 7.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.902",
+      "tempo_esp": 7.29,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.903",
+      "tempo_esp": 7.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.903",
+      "tempo_esp": 7.31,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.903",
+      "tempo_esp": 7.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.974",
+      "tempo_esp": 7.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.975",
+      "tempo_esp": 7.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.975",
+      "tempo_esp": 7.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.975",
+      "tempo_esp": 7.38,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.975",
+      "tempo_esp": 7.39,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:33.975",
+      "tempo_esp": 7.4,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.019",
+      "tempo_esp": 7.41,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.019",
+      "tempo_esp": 7.43,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.077",
+      "tempo_esp": 7.44,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.077",
+      "tempo_esp": 7.45,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.077",
+      "tempo_esp": 7.46,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.077",
+      "tempo_esp": 7.47,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.077",
+      "tempo_esp": 7.48,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.078",
+      "tempo_esp": 7.49,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.078",
+      "tempo_esp": 7.51,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.078",
+      "tempo_esp": 7.52,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.078",
+      "tempo_esp": 7.53,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.078",
+      "tempo_esp": 7.54,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.153",
+      "tempo_esp": 7.55,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.232",
+      "tempo_esp": 7.56,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.232",
+      "tempo_esp": 7.58,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.233",
+      "tempo_esp": 7.59,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.233",
+      "tempo_esp": 7.6,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.233",
+      "tempo_esp": 7.61,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.233",
+      "tempo_esp": 7.62,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.233",
+      "tempo_esp": 7.63,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.234",
+      "tempo_esp": 7.65,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.234",
+      "tempo_esp": 7.66,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.235",
+      "tempo_esp": 7.67,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.235",
+      "tempo_esp": 7.68,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.236",
+      "tempo_esp": 7.69,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.360",
+      "tempo_esp": 7.7,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.360",
+      "tempo_esp": 7.72,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.361",
+      "tempo_esp": 7.73,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.361",
+      "tempo_esp": 7.74,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.530",
+      "tempo_esp": 7.75,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.531",
+      "tempo_esp": 7.76,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.531",
+      "tempo_esp": 7.77,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.531",
+      "tempo_esp": 7.79,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.531",
+      "tempo_esp": 7.8,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.532",
+      "tempo_esp": 7.81,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.532",
+      "tempo_esp": 7.82,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.532",
+      "tempo_esp": 7.83,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.532",
+      "tempo_esp": 7.84,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.532",
+      "tempo_esp": 7.87,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.533",
+      "tempo_esp": 7.88,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.533",
+      "tempo_esp": 7.89,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.533",
+      "tempo_esp": 7.9,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.533",
+      "tempo_esp": 7.91,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.534",
+      "tempo_esp": 7.92,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.534",
+      "tempo_esp": 7.94,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.534",
+      "tempo_esp": 7.95,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.534",
+      "tempo_esp": 7.96,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.535",
+      "tempo_esp": 7.97,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.535",
+      "tempo_esp": 7.98,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.535",
+      "tempo_esp": 7.99,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.535",
+      "tempo_esp": 8.01,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.655",
+      "tempo_esp": 8.02,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.656",
+      "tempo_esp": 8.03,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.656",
+      "tempo_esp": 8.04,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.692",
+      "tempo_esp": 8.05,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.693",
+      "tempo_esp": 8.06,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.693",
+      "tempo_esp": 8.08,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.693",
+      "tempo_esp": 8.09,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.693",
+      "tempo_esp": 8.1,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.694",
+      "tempo_esp": 8.11,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.694",
+      "tempo_esp": 8.12,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.733",
+      "tempo_esp": 8.13,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.733",
+      "tempo_esp": 8.15,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.733",
+      "tempo_esp": 8.16,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.785",
+      "tempo_esp": 8.17,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.785",
+      "tempo_esp": 8.18,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.841",
+      "tempo_esp": 8.19,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.841",
+      "tempo_esp": 8.2,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.841",
+      "tempo_esp": 8.21,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.842",
+      "tempo_esp": 8.23,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.842",
+      "tempo_esp": 8.24,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.842",
+      "tempo_esp": 8.25,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.842",
+      "tempo_esp": 8.26,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.843",
+      "tempo_esp": 8.27,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.843",
+      "tempo_esp": 8.28,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.843",
+      "tempo_esp": 8.3,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.990",
+      "tempo_esp": 8.31,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.990",
+      "tempo_esp": 8.32,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.991",
+      "tempo_esp": 8.33,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.991",
+      "tempo_esp": 8.34,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    },
+    {
+      "timestamp": "11/05/2026 18:13:34.991",
+      "tempo_esp": 8.37,
+      "newtons": 0,
+      "grama_forca": 0,
+      "quilo_forca": 0
+    }
+  ],
+  "metadadosMotor": {
+    "name": null,
+    "diameter": null,
+    "length": null,
+    "delay": null,
+    "propweight": null,
+    "totalweight": null,
+    "manufacturer": null,
+    "description": null,
+    "observations": null,
+    "temperatura": null,
+    "umidade": null,
+    "pressao": null
+  },
+  "burnMetadata": {
+    "burnStartTime": null,
+    "burnEndTime": null
+  },
+  "savedToMysql": true
+}

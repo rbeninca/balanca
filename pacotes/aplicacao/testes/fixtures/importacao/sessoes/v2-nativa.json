@@ -1,0 +1,100 @@
+{
+  "versao": 2,
+  "nome": "Motor Teste V2",
+  "criadoEm": "2026-09-10T12:00:00.000Z",
+  "exportadoEm": "2026-09-10T12:05:00.000Z",
+  "metadados": {
+    "diametro_mm": 29,
+    "comprimento_mm": 70,
+    "massaPropelente_g": 12.5,
+    "fabricante": "GFCS",
+    "descricao": "fixture v2",
+    "observacoes": "gerado para testes"
+  },
+  "leituras": [
+    {
+      "marcaTemporal": 0,
+      "forcaNewton": 0.0,
+      "temperatura": 0,
+      "emQueima": false,
+      "impulsoAcumuladoNs": 0.0
+    },
+    {
+      "marcaTemporal": 50,
+      "forcaNewton": 0.0,
+      "temperatura": 0,
+      "emQueima": false,
+      "impulsoAcumuladoNs": 0.0
+    },
+    {
+      "marcaTemporal": 100,
+      "forcaNewton": 5.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 0.125
+    },
+    {
+      "marcaTemporal": 150,
+      "forcaNewton": 40.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 1.25
+    },
+    {
+      "marcaTemporal": 200,
+      "forcaNewton": 120.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 5.25
+    },
+    {
+      "marcaTemporal": 250,
+      "forcaNewton": 150.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 12.0
+    },
+    {
+      "marcaTemporal": 300,
+      "forcaNewton": 140.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 19.25
+    },
+    {
+      "marcaTemporal": 350,
+      "forcaNewton": 90.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 25.0
+    },
+    {
+      "marcaTemporal": 400,
+      "forcaNewton": 30.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 28.0
+    },
+    {
+      "marcaTemporal": 450,
+      "forcaNewton": 5.0,
+      "temperatura": 0,
+      "emQueima": true,
+      "impulsoAcumuladoNs": 28.875
+    },
+    {
+      "marcaTemporal": 500,
+      "forcaNewton": 0.0,
+      "temperatura": 0,
+      "emQueima": false,
+      "impulsoAcumuladoNs": 29.0
+    },
+    {
+      "marcaTemporal": 550,
+      "forcaNewton": 0.0,
+      "temperatura": 0,
+      "emQueima": false,
+      "impulsoAcumuladoNs": 29.0
+    }
+  ]
+}

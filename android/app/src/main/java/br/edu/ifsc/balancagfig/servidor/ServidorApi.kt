@@ -330,13 +330,8 @@ class ServidorApi(
 
     private fun metodoNaoPermitido(): Response = erro(Response.Status.METHOD_NOT_ALLOWED, "Método não permitido")
 
-    /** `cors({ origin: true })` do Fastify: reflete qualquer origem. */
-    private fun Response.comCors(): Response = apply {
-        addHeader("Access-Control-Allow-Origin", "*")
-        addHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-        addHeader("Access-Control-Allow-Headers", "Content-Type, x-chave-api")
-        addHeader("Access-Control-Max-Age", "86400")
-    }
+    /** CORS + fechamento de conexão (ver [FinalizadorResposta]). */
+    private fun Response.comCors(): Response = FinalizadorResposta.finalizar(this)
 
     private fun JSONObject.optStringOrNull(k: String): String? = if (has(k) && !isNull(k)) getString(k) else null
     private fun JSONObject.optDoubleOrNull(k: String): Double? = if (has(k) && !isNull(k)) optDouble(k).takeUnless { it.isNaN() } else null
@@ -347,5 +342,31 @@ class ServidorApi(
         const val PORTA_PADRAO = 3000
         /** bodyLimit do Fastify no pacote api: 10 MB. */
         private const val LIMITE_CORPO = 10 * 1024 * 1024
+    }
+}
+
+/**
+ * Finaliza toda resposta da API: cabeçalhos CORS (`cors({ origin: true })` do
+ * Fastify, reflete qualquer origem) e `Connection: close`.
+ *
+ * O `Connection: close` é essencial: o NanoHTTPD fecha um socket keep-alive
+ * ocioso após 5 s (SOCKET_READ_TIMEOUT). O browser mantém essa conexão no seu
+ * pool e, ao reaproveitá-la numa requisição seguinte (entre lotes de uma
+ * importação, ou numa importação posterior), encontra o socket já encerrado
+ * pelo servidor — o `fetch` então falha com "Failed to fetch" embora parte dos
+ * dados já tenha sido gravada. Fechando a conexão a cada resposta o browser
+ * nunca reusa um socket da API, replicando o padrão "uma conexão por
+ * requisição" que curl/urllib usam sem falhas.
+ *
+ * Isolado de [ServidorApi] para ser testável em JVM (usa só a API estática do
+ * NanoHTTPD, sem dependências de Android).
+ */
+internal object FinalizadorResposta {
+    fun finalizar(resp: NanoHTTPD.Response): NanoHTTPD.Response = resp.apply {
+        addHeader("Access-Control-Allow-Origin", "*")
+        addHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+        addHeader("Access-Control-Allow-Headers", "Content-Type, x-chave-api")
+        addHeader("Access-Control-Max-Age", "86400")
+        closeConnection(true)
     }
 }
