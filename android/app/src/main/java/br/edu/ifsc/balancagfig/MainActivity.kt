@@ -9,6 +9,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -247,7 +250,18 @@ private fun ConteudoStatus(interno: PaddingValues) {
         }
 
         Cartao("Registro") {
-            registro.takeLast(12).forEach { Mono(it) }
+            val estadoLista = rememberLazyListState()
+            // acompanha o mais recente: rola para o fim quando chega um registro novo
+            LaunchedEffect(registro.size) {
+                if (registro.isNotEmpty()) estadoLista.animateScrollToItem(registro.size - 1)
+            }
+            LazyColumn(
+                state = estadoLista,
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                items(registro) { linha -> Mono(linha) }
+            }
         }
 
         FilledTonalButton(

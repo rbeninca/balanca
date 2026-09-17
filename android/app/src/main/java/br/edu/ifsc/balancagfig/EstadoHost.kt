@@ -52,6 +52,6 @@ object EstadoHost {
     internal fun atualizarEstatisticas(f: (EstatisticasSerial) -> EstatisticasSerial) = _estatisticas.update(f)
 
     internal fun registrar(msg: String) {
-        _registro.update { (it + msg).takeLast(30) }
+        _registro.update { (it + msg).takeLast(100) }
     }
 }
