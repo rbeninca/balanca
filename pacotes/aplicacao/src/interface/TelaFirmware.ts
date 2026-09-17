@@ -27,7 +27,9 @@ export class TelaFirmware {
       const raw = localStorage.getItem(CHAVE_LS);
       const cfg = raw ? JSON.parse(raw) as { modo: string; ip: string } : null;
       if (cfg?.modo === 'tvbox') {
-        const ip = cfg.ip || 'localhost';
+        // Sem IP salvo (auto-conexão pelo host que serviu a página), o atualizador
+        // está no mesmo host — 'localhost' apontaria para o próprio celular.
+        const ip = cfg.ip || location.hostname || 'localhost';
         return `http://${ip}:8767`;
       }
     } catch { /* ignora */ }
@@ -67,7 +69,7 @@ export class TelaFirmware {
           </p>
           ${motGateway ? `<p class="fw-opcao-motivo">${motGateway}</p>` : ''}
           <button id="btn-gravar-a" class="btn-primary" ${temCenarioA ? '' : 'disabled'}>
-            Gravar via Docker
+            Gravar via Gateway
           </button>
         </div>
 
@@ -136,7 +138,7 @@ export class TelaFirmware {
     el.textContent = 'Não foi possível obter informações da versão do firmware.';
   }
 
-  // ── Cenário A: via serviço Docker ─────────────────────────────────────────
+  // ── Cenário A: via serviço atualizador do gateway (Docker ou app Android) ──
 
   private async gravarViaGateway(container: HTMLElement): Promise<void> {
     const btn = container.querySelector<HTMLButtonElement>('#btn-gravar-a')!;
@@ -177,7 +179,7 @@ export class TelaFirmware {
       }
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Gravar via Docker';
+      btn.textContent = 'Gravar via Gateway';
       this.abortController = null;
     }
   }

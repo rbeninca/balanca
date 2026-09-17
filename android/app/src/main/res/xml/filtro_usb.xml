@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Conversores USB-serial usados nas placas ESP8266 (NodeMCU / Wemos D1 mini) -->
+<resources>
+    <!-- CH340 / CH341 (WCH) — chip da balança atual -->
+    <usb-device vendor-id="6790" product-id="29987" />
+    <usb-device vendor-id="6790" product-id="21795" />
+    <!-- CP2102 / CP2104 (Silicon Labs) -->
+    <usb-device vendor-id="4292" product-id="60000" />
+    <usb-device vendor-id="4292" product-id="60016" />
+    <!-- FT232R (FTDI) -->
+    <usb-device vendor-id="1027" product-id="24577" />
+</resources>

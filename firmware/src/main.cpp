@@ -253,6 +253,22 @@ static bool isValidConversionFactor(float value) {
 
 // ======== IMPLEMENTAÇÃO DAS FUNÇÕES BINÁRIAS ========
 
+// O conversor USB-serial da placa (CH340) tem FIFO pequena e escoa ~32 bytes
+// por frame USB de 1 ms. Um pacote de 64 bytes escrito de uma vez a 921600
+// estoura essa FIFO e chega truncado ao host (visto no TX9 Android: o CONFIG
+// perdia 12–30 bytes e o DATA seguinte vinha colado). Pacotes de 20 bytes
+// (DATA) e 14 (STATUS) cabem e não precisam disso. Custo: ~5 ms por CONFIG,
+// que só sai no boot, em CMD_GET_CONFIG e após calibrar.
+static void escreverPausado(const uint8_t* dados, size_t tamanho) {
+  const size_t BLOCO = 16;
+  for (size_t i = 0; i < tamanho; i += BLOCO) {
+    size_t n = (tamanho - i < BLOCO) ? (tamanho - i) : BLOCO;
+    Serial.write(dados + i, n);
+    Serial.flush();   // espera a UART esvaziar: os bytes já estão no CH340
+    delay(1);         // um frame USB para o CH340 repassar ao host
+  }
+}
+
 void sendBinaryConfig(const Config& cfg) {
   PacketConfig p;
   memset(&p, 0, sizeof(p));
@@ -276,8 +292,7 @@ void sendBinaryConfig(const Config& cfg) {
   p.mode = 0;
   
   p.crc = crc16_ccitt((const uint8_t*)&p, sizeof(PacketConfig) - sizeof(uint16_t));
-  Serial.write((const uint8_t*)&p, sizeof(PacketConfig));
-  // Serial.flush(); // MANTIDO REMOVIDO
+  escreverPausado((const uint8_t*)&p, sizeof(PacketConfig));
 }
 
 void sendBinaryStatus(uint8_t status_type, uint8_t code, uint16_t value) {
@@ -528,7 +543,7 @@ void setup() {
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.printf("   Versao: ESTAVEL V16 (Binary Protocol v%d)\n", PROTO_VERSION);
+  Serial.printf("   Versao: ESTAVEL V17 (Binary Protocol v%d)\n", PROTO_VERSION);
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -825,7 +840,7 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("V16 BINARY PROTO");
+  display.println("V17 BINARY PROTO");
   display.setCursor(0, 45);
   display.printf("Serial: 921600 Baud");
   display.setCursor(0, 55);
