@@ -4,11 +4,13 @@ import android.content.Intent
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.view.WindowManager
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +25,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,6 +47,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import org.mozilla.geckoview.GeckoRuntime
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoView
 import br.edu.ifsc.balancagfig.sistema.EnderecosRede
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
 import br.edu.ifsc.balancagfig.sistema.PainelFrontalTx9
@@ -51,6 +60,9 @@ import kotlinx.coroutines.launch
 /** SSID do hotspot local que os celulares usam para acessar a balança. */
 const val SSID_HOTSPOT = "balancaGFIG"
 
+/** Frontend servido pelo próprio box (ServidorHttp). */
+private const val URL_APP_LOCAL = "http://127.0.0.1:8080"
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +70,7 @@ class MainActivity : ComponentActivity() {
         ServicoBalanca.iniciar(this, reconectarUsb = intent.veioDeUsb())
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                PainelStatus()
+                AppComAbas()
             }
         }
     }
@@ -72,14 +84,79 @@ class MainActivity : ComponentActivity() {
     private fun Intent?.veioDeUsb() = this?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED
 }
 
-/**
- * Painel de status do host: rede, balança e hotspot, alimentado pelo
- * [EstadoHost] que o [ServicoBalanca] mantém. A WebView com o frontend entra
- * quando a WebView do box for atualizada (Chromium 52 não roda o bundle).
- */
+private enum class Aba(val titulo: String) { STATUS("Status"), BALANCA("Balança") }
+
+/** Activity com duas abas: o painel de status e a interface web servida pelo box. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PainelStatus() {
+fun AppComAbas() {
+    var aba by remember { mutableStateOf(Aba.STATUS) }
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("BalançaGFIG — Host") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                )
+                TabRow(selectedTabIndex = aba.ordinal) {
+                    Aba.values().forEach { a ->
+                        Tab(
+                            selected = aba == a,
+                            onClick = { aba = a },
+                            text = { Text(a.titulo) },
+                        )
+                    }
+                }
+            }
+        }
+    ) { interno ->
+        when (aba) {
+            Aba.STATUS -> ConteudoStatus(interno)
+            Aba.BALANCA -> TelaWeb(interno)
+        }
+    }
+}
+
+/** GeckoRuntime é único por processo; criado sob demanda e reaproveitado. */
+private object Gecko {
+    @Volatile private var runtime: GeckoRuntime? = null
+    fun runtime(ctx: Context): GeckoRuntime =
+        runtime ?: synchronized(this) {
+            runtime ?: GeckoRuntime.create(ctx.applicationContext).also { runtime = it }
+        }
+}
+
+/**
+ * Aba que exibe o frontend servido pelo próprio box (127.0.0.1:8080) num
+ * GeckoView (motor Firefox embutido) — a WebView do sistema (Chromium 52) é
+ * antiga demais para o bundle es2022/CSS Grid do frontend.
+ */
+@Composable
+private fun TelaWeb(interno: PaddingValues) {
+    val ctx = LocalContext.current
+    val sessao = remember {
+        GeckoSession().apply {
+            open(Gecko.runtime(ctx))
+            loadUri(URL_APP_LOCAL)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { sessao.close() }
+    }
+    AndroidView(
+        modifier = Modifier.fillMaxSize().padding(interno),
+        factory = { c -> GeckoView(c).apply { setSession(sessao) } },
+    )
+}
+
+/**
+ * Painel de status do host: rede, balança e hotspot, alimentado pelo
+ * [EstadoHost] que o [ServicoBalanca] mantém.
+ */
+@Composable
+private fun ConteudoStatus(interno: PaddingValues) {
     val contexto = LocalContext.current
     val escopo = rememberCoroutineScope()
 
@@ -113,94 +190,83 @@ fun PainelStatus() {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("BalançaGFIG — Host") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        }
-    ) { interno ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(interno)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Cartao("Balança", Modifier.weight(1f)) {
-                    val (texto, cor) = when (val s = serial) {
-                        EstadoSerial.SemDispositivo -> "Nenhum conversor USB-serial conectado" to Color(0xFFE57373)
-                        is EstadoSerial.SemPermissao -> "Aguardando permissão USB…" to Color(0xFFFFB74D)
-                        is EstadoSerial.Conectando -> "Conectando…" to Color(0xFFFFB74D)
-                        is EstadoSerial.Conectado -> "Conectada — ${s.nomeDispositivo} @ ${s.baud}" to Color(0xFF81C784)
-                        is EstadoSerial.Erro -> "Erro: ${s.mensagem}" to Color(0xFFE57373)
-                        EstadoSerial.Gravando -> "Gravando firmware…" to Color(0xFFFFB74D)
-                    }
-                    Text(texto, color = cor, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    val u = stats.ultimo
-                    Text(
-                        if (u != null) "%.2f N".format(u.forcaNewtons) else "— N",
-                        fontSize = 40.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Mono("bruto ${u?.forcaBruta ?: "—"}   t=${u?.marcaTemporal ?: "—"} ms   status ${u?.statusFirmware ?: "—"}")
-                    Mono("${stats.taxaHz} Hz   ${stats.pacotes} pacotes   ${stats.errosCrc} erros CRC")
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(interno)
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Cartao("Balança", Modifier.weight(1f)) {
+                val (texto, cor) = when (val s = serial) {
+                    EstadoSerial.SemDispositivo -> "Nenhum conversor USB-serial conectado" to Color(0xFFE57373)
+                    is EstadoSerial.SemPermissao -> "Aguardando permissão USB…" to Color(0xFFFFB74D)
+                    is EstadoSerial.Conectando -> "Conectando…" to Color(0xFFFFB74D)
+                    is EstadoSerial.Conectado -> "Conectada — ${s.nomeDispositivo} @ ${s.baud}" to Color(0xFF81C784)
+                    is EstadoSerial.Erro -> "Erro: ${s.mensagem}" to Color(0xFFE57373)
+                    EstadoSerial.Gravando -> "Gravando firmware…" to Color(0xFFFFB74D)
                 }
-
-                Cartao("Rede", Modifier.weight(1f)) {
-                    when {
-                        portaHttp == null -> Text("Servidor HTTP não está no ar", color = Color(0xFFE57373))
-                        enderecosIP.isEmpty() -> Text("Sem conexão de rede")
-                        else -> enderecosIP.forEach { ip -> Mono("http://$ip:$portaHttp") }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Hotspot $SSID_HOTSPOT: ${if (hotspotLigado) "ligado (${HotspotManager.IP_HOTSPOT})" else "desligado"}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            Cartao("Registro") {
-                registro.takeLast(12).forEach { Mono(it) }
-            }
-
-            FilledTonalButton(
-                enabled = !hotspotOcupado,
-                onClick = {
-                    escopo.launch {
-                        hotspotOcupado = true
-                        val resultado = if (hotspotLigado) {
-                            HotspotManager.desligarHotspot(contexto)
-                        } else {
-                            HotspotManager.ligarHotspot(contexto, SSID_HOTSPOT)
-                        }
-                        Toast.makeText(contexto, resultado.mensagem, Toast.LENGTH_LONG).show()
-                        if (resultado.precisaPermissaoEscrita) {
-                            HotspotManager.intentPermissaoEscrita(contexto)?.let { contexto.startActivity(it) }
-                        }
-                        hotspotLigado = HotspotManager.hotspotAtivo(contexto)
-                        enderecosIP = EnderecosRede.listarIPv4()
-                        hotspotOcupado = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
+                Text(texto, color = cor, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                val u = stats.ultimo
                 Text(
-                    when {
-                        hotspotOcupado -> "AGUARDE..."
-                        hotspotLigado -> "DESLIGAR HOTSPOT $SSID_HOTSPOT"
-                        else -> "LIGAR HOTSPOT $SSID_HOTSPOT"
-                    }
+                    if (u != null) "%.2f N".format(u.forcaNewtons) else "— N",
+                    fontSize = 40.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+                Mono("bruto ${u?.forcaBruta ?: "—"}   t=${u?.marcaTemporal ?: "—"} ms   status ${u?.statusFirmware ?: "—"}")
+                Mono("${stats.taxaHz} Hz   ${stats.pacotes} pacotes   ${stats.errosCrc} erros CRC")
+            }
+
+            Cartao("Rede", Modifier.weight(1f)) {
+                when {
+                    portaHttp == null -> Text("Servidor HTTP não está no ar", color = Color(0xFFE57373))
+                    enderecosIP.isEmpty() -> Text("Sem conexão de rede")
+                    else -> enderecosIP.forEach { ip -> Mono("http://$ip:$portaHttp") }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Hotspot $SSID_HOTSPOT: ${if (hotspotLigado) "ligado (${HotspotManager.IP_HOTSPOT})" else "desligado"}",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
+
+        Cartao("Registro") {
+            registro.takeLast(12).forEach { Mono(it) }
+        }
+
+        FilledTonalButton(
+            enabled = !hotspotOcupado,
+            onClick = {
+                escopo.launch {
+                    hotspotOcupado = true
+                    val resultado = if (hotspotLigado) {
+                        HotspotManager.desligarHotspot(contexto)
+                    } else {
+                        HotspotManager.ligarHotspot(contexto, SSID_HOTSPOT)
+                    }
+                    Toast.makeText(contexto, resultado.mensagem, Toast.LENGTH_LONG).show()
+                    if (resultado.precisaPermissaoEscrita) {
+                        HotspotManager.intentPermissaoEscrita(contexto)?.let { contexto.startActivity(it) }
+                    }
+                    hotspotLigado = HotspotManager.hotspotAtivo(contexto)
+                    enderecosIP = EnderecosRede.listarIPv4()
+                    hotspotOcupado = false
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text(
+                when {
+                    hotspotOcupado -> "AGUARDE..."
+                    hotspotLigado -> "DESLIGAR HOTSPOT $SSID_HOTSPOT"
+                    else -> "LIGAR HOTSPOT $SSID_HOTSPOT"
+                }
+            )
         }
     }
 }

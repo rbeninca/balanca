@@ -20,6 +20,9 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // GeckoView é grande; o TX9 é armeabi-v7a, então só empacotamos essa ABI
+        ndk { abiFilters += "armeabi-v7a" }
     }
 
     buildTypes {
@@ -58,6 +61,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    // Motor Firefox embutido (a WebView do box é Chromium 52, não roda o frontend)
+    implementation("org.mozilla.geckoview:geckoview:115.0.20230726201356")
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.usb.serial)
     implementation(libs.nanohttpd)

@@ -18,6 +18,8 @@ dependencyResolutionManagement {
         mavenCentral()
         // usb-serial-for-android (mik3y) é publicado apenas no JitPack
         maven("https://jitpack.io")
+        // GeckoView (motor Firefox embutido para a aba WebView na TV do box)
+        maven("https://maven.mozilla.org/maven2")
     }
 }
 
