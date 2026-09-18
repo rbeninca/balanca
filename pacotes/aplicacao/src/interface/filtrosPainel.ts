@@ -21,6 +21,7 @@ export function htmlPainelFiltros(): string {
               <div class="filtro-params">
                 <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.001" title="Limiar (N)">
                 <span>N</span>
+                <button type="button" id="btn-sugerir-zm" class="filtro-sugerir" title="Sugerir a partir da capacidade e acurácia da célula (calibração)">sugerir</button>
               </div>
             </div>
             <div class="filtro-linha">

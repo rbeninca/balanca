@@ -6,6 +6,7 @@ import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros } from './filtrosPainel.js';
+import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
@@ -39,6 +40,7 @@ export class TelaMedicao {
   private unidade: Unidade   = 'N';
   private ultimaForca        = 0;
   private ultimaLeitura: LeituraProcessada | null = null;
+  private dadosCelula: DadosCelula = {};
   private hz                 = 0;
   private contMsgs           = 0;
   private ultimoHzTs         = Date.now();
@@ -368,6 +370,20 @@ export class TelaMedicao {
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
 
+    // Sugere a zona morta a partir da capacidade/acurácia da célula (config).
+    container.querySelector<HTMLButtonElement>('#btn-sugerir-zm')?.addEventListener('click', () => {
+      const zm = sugerirZonaMortaN(this.dadosCelula);
+      if (zm == null) {
+        alert('Informe a capacidade e a acurácia da célula (na calibração ou em Configurações) para sugerir a zona morta.');
+        return;
+      }
+      const inp = container.querySelector<HTMLInputElement>('#in-zona-morta');
+      const ck  = container.querySelector<HTMLInputElement>('#ck-zona-morta');
+      if (inp) inp.value = String(Number(zm.toPrecision(3)));
+      if (ck) ck.checked = true;   // sugerir implica ativar a zona morta
+      aplicar();
+    });
+
     this.atualizarBadgeFiltros(container);
   }
 
@@ -468,8 +484,11 @@ export class TelaMedicao {
   }
 
   private onConfig(raw: unknown) {
-    const c = raw as Partial<EstadoPipeline> & { capacidadeMaxGramas?: number } | null;
+    const c = raw as Partial<EstadoPipeline> & { capacidadeMaxGramas?: number; acuracia?: number; gravidade?: number } | null;
     if (!c) return;
+    if (c.capacidadeMaxGramas !== undefined) this.dadosCelula.capacidadeMaxGramas = c.capacidadeMaxGramas;
+    if (c.acuracia !== undefined) this.dadosCelula.acuracia = c.acuracia;
+    if (c.gravidade !== undefined) this.dadosCelula.gravidade = c.gravidade;
     if (c.ativoZonaMorta !== undefined) {
       this.sincronizarPainel(c as EstadoPipeline);
     }
