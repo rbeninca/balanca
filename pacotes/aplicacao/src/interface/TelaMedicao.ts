@@ -370,11 +370,13 @@ export class TelaMedicao {
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
 
-    // Sugere a zona morta a partir da capacidade/acurácia da célula (config).
+    // Sugere a zona morta a partir da capacidade/acurácia gravadas na ESP.
     container.querySelector<HTMLButtonElement>('#btn-sugerir-zm')?.addEventListener('click', () => {
       const zm = sugerirZonaMortaN(this.dadosCelula);
       if (zm == null) {
-        alert('Informe a capacidade e a acurácia da célula (na calibração ou em Configurações) para sugerir a zona morta.');
+        // Os valores ficam na ESP; se ainda não chegaram, pede o config e avisa.
+        this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
+        alert('Capacidade/acurácia da célula ainda não recebidas da ESP. Verifique a conexão com a balança e tente de novo.');
         return;
       }
       const inp = container.querySelector<HTMLInputElement>('#in-zona-morta');
@@ -383,6 +385,9 @@ export class TelaMedicao {
       if (ck) ck.checked = true;   // sugerir implica ativar a zona morta
       aplicar();
     });
+
+    // Pede o config à ESP para ter capacidade/acurácia/gravidade prontas.
+    this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
 
     this.atualizarBadgeFiltros(container);
   }
