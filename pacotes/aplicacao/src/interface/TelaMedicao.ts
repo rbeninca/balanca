@@ -5,6 +5,7 @@ import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
+import { htmlPainelFiltros } from './filtrosPainel.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
@@ -132,106 +133,7 @@ export class TelaMedicao {
           <button id="ctrl-tela-cheia" class="ctrl-btn ctrl-btn-solo ctrl-btn-tela-cheia" title="Tela cheia (F11)">⛶</button>
         </div>
 
-        <div class="filtros-painel" id="filtros-painel">
-          <button class="filtros-header" id="filtros-toggle">
-            <span class="filtros-titulo">Processamento de Sinal</span>
-            <span class="filtros-badge" id="filtros-badge">3 ativos</span>
-            <span class="filtros-origem" id="filtros-origem"></span>
-            <span class="filtros-seta" id="filtros-seta">▼</span>
-          </button>
-          <div class="filtros-corpo hidden" id="filtros-corpo">
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-zona-morta">
-                Zona Morta
-              </label>
-              <button class="filtro-info-btn" data-filtro="zona-morta" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-zona-morta" class="filtro-num" value="0.05" min="0" step="0.01" title="Limiar (N)">
-                <span>N</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-media-movel">
-                Média Móvel
-              </label>
-              <button class="filtro-info-btn" data-filtro="media-movel" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-media-movel" class="filtro-num" value="5" min="1" max="50" step="1" title="Janela (amostras)">
-                <span>am</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-det-queima">
-                Det. Queima
-              </label>
-              <button class="filtro-info-btn" data-filtro="det-queima" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10" title="Histerese (ms)">
-                <span>ms</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-notch">
-                Notch
-              </label>
-              <button class="filtro-info-btn" data-filtro="notch" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-notch-freq" class="filtro-num" value="60" min="1" max="500" step="1" title="Frequência a rejeitar (Hz)">
-                <span>Hz</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-mediana">
-                Mediana
-              </label>
-              <button class="filtro-info-btn" data-filtro="mediana" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-mediana-jan" class="filtro-num" value="5" min="1" max="21" step="2" title="Janela (amostras)">
-                <span>am</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-ema">
-                EMA
-              </label>
-              <button class="filtro-info-btn" data-filtro="ema" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-ema-alpha" class="filtro-num" value="0.20" min="0.01" max="1" step="0.01" title="Fator α (0–1)">
-                <span>α</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-sg">
-                Sav-Golay
-              </label>
-              <button class="filtro-info-btn" data-filtro="sg" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-sg-jan" class="filtro-num" value="7" min="5" max="11" step="2" title="Janela (amostras, 5-11)">
-                <span>am</span>
-              </div>
-            </div>
-            <div class="filtro-linha">
-              <label class="filtro-chk">
-                <input type="checkbox" id="ck-kalman">
-                Kalman
-              </label>
-              <button class="filtro-info-btn" data-filtro="kalman" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <span title="Q: ruído de processo">Q</span>
-                <input type="number" id="in-kalman-q" class="filtro-num" value="0.01" min="0.0001" max="100" step="0.001" title="Ruído de processo (Q)">
-                <span title="R: ruído de medição">R</span>
-                <input type="number" id="in-kalman-r" class="filtro-num" value="1.0" min="0.01" max="1000" step="0.1" title="Ruído de medição (R)">
-              </div>
-            </div>
-          </div>
-        </div>
+        ${htmlPainelFiltros()}
 
         <div class="status-bar">
           <span><span id="ponto-serial" class="status-ponto"></span><span id="txt-serial">Serial desconectado</span></span>
