@@ -4,6 +4,11 @@ import android.content.Intent
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.view.WindowManager
+import android.app.Activity
+import android.view.KeyEvent
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -67,15 +72,39 @@ const val SSID_HOTSPOT = "balancaGFIG"
 private const val URL_APP_LOCAL = "http://127.0.0.1:8080"
 
 class MainActivity : ComponentActivity() {
+    // Aba atual e escolha manual ficam na Activity para o "voltar"
+    // (dispatchKeyEvent) sair da tela cheia antes do GeckoView consumir a tecla.
+    private var aba by mutableStateOf(Aba.STATUS)
+    private var usuarioInteragiu by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         ServicoBalanca.iniciar(this, reconectarUsb = intent.veioDeUsb())
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                AppComAbas()
+                AppComAbas(
+                    aba = aba,
+                    usuarioInteragiu = usuarioInteragiu,
+                    onSelecionarAba = { aba = it; usuarioInteragiu = true },
+                    onAutoAbrirBalanca = { aba = Aba.BALANCA },
+                )
             }
         }
+    }
+
+    /**
+     * Trata o "voltar" antes do GeckoView (que consome a tecla): na tela cheia
+     * da Balança, volta para a Status; fora dela, comportamento padrão.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP &&
+            NavegacaoInicial.ehTelaCheia(aba)
+        ) {
+            NavegacaoInicial.aoVoltar(aba)?.let { aba = it; usuarioInteragiu = true }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     /** Chegada de USB_DEVICE_ATTACHED com a Activity já aberta (launchMode singleTask). */
@@ -87,14 +116,16 @@ class MainActivity : ComponentActivity() {
     private fun Intent?.veioDeUsb() = this?.action == UsbManager.ACTION_USB_DEVICE_ATTACHED
 }
 
-private enum class Aba(val titulo: String) { STATUS("Status"), BALANCA("Balança") }
 
 /** Activity com duas abas: o painel de status e a interface web servida pelo box. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppComAbas() {
-    var aba by remember { mutableStateOf(Aba.STATUS) }
-    var usuarioInteragiu by remember { mutableStateOf(false) }
+fun AppComAbas(
+    aba: Aba,
+    usuarioInteragiu: Boolean,
+    onSelecionarAba: (Aba) -> Unit,
+    onAutoAbrirBalanca: () -> Unit,
+) {
     var jaAutoTrocou by remember { mutableStateOf(false) }
     val serial by EstadoHost.serial.collectAsState()
 
@@ -105,46 +136,64 @@ fun AppComAbas() {
         if (NavegacaoInicial.deveAbrirBalanca(serial, jaAutoTrocou, usuarioInteragiu)) {
             delay(NavegacaoInicial.ATRASO_ABRIR_BALANCA_MS)
             if (NavegacaoInicial.deveAbrirBalanca(EstadoHost.serial.value, jaAutoTrocou, usuarioInteragiu)) {
-                aba = Aba.BALANCA
                 jaAutoTrocou = true
+                onAutoAbrirBalanca()
             }
         }
     }
-    Scaffold(
-        topBar = {
-            // Barra única: nome do app à esquerda + abas ao lado, para não gastar
-            // uma faixa inteira só com o título (a TV do box tem pouca altura útil).
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "BalançaGFIG",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                TabRow(
-                    selectedTabIndex = aba.ordinal,
-                    modifier = Modifier.weight(1f),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                ) {
-                    Aba.values().forEach { a ->
-                        Tab(
-                            selected = aba == a,
-                            onClick = { aba = a; usuarioInteragiu = true },
-                            text = { Text(a.titulo) },
-                        )
-                    }
-                }
-            }
+    val telaCheia = NavegacaoInicial.ehTelaCheia(aba)
+
+    // Na aba Balança (tela cheia), esconde as barras do sistema; nas demais,
+    // mostra. O "voltar" é tratado na Activity (dispatchKeyEvent), antes de o
+    // GeckoView consumir a tecla.
+    val janela = (LocalContext.current as? Activity)?.window
+    LaunchedEffect(telaCheia) {
+        janela?.let { w ->
+            val c = WindowCompat.getInsetsController(w, w.decorView)
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (telaCheia) c.hide(WindowInsetsCompat.Type.systemBars())
+            else c.show(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    Scaffold(
+        topBar = { if (!telaCheia) BarraSuperior(aba, onSelecionarAba) },
     ) { interno ->
         when (aba) {
             Aba.STATUS -> ConteudoStatus(interno)
-            Aba.BALANCA -> TelaWeb(interno)
+            Aba.BALANCA -> TelaWeb(if (telaCheia) PaddingValues(0.dp) else interno)
+        }
+    }
+}
+
+/** Barra superior: nome do app + abas. Oculta quando a Balança está em tela cheia. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BarraSuperior(aba: Aba, onSelecionar: (Aba) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "BalançaGFIG",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        TabRow(
+            selectedTabIndex = aba.ordinal,
+            modifier = Modifier.weight(1f),
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ) {
+            Aba.values().forEach { a ->
+                Tab(
+                    selected = aba == a,
+                    onClick = { onSelecionar(a) },
+                    text = { Text(a.titulo) },
+                )
+            }
         }
     }
 }
