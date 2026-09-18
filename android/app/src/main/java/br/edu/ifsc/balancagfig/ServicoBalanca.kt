@@ -34,6 +34,7 @@ import br.edu.ifsc.balancagfig.servidor.ServidorHttp
 import br.edu.ifsc.balancagfig.servidor.ServidorSaude
 import br.edu.ifsc.balancagfig.servidor.ServidorWs
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
+import br.edu.ifsc.balancagfig.sistema.RedirecionamentoPorta
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -121,6 +122,7 @@ class ServicoBalanca : Service() {
         atualizador?.stop()
         try { unregisterReceiver(receptorMidia) } catch (_: Exception) { }
         bd?.close()
+        http?.listeningPort?.let { RedirecionamentoPorta.remover(it) }
         http?.stop()
         EstadoHost.definirPortaHttp(null)
         escopo.cancel()
@@ -141,6 +143,7 @@ class ServicoBalanca : Service() {
             http = servidor
             EstadoHost.definirPortaHttp(servidor.listeningPort)
             EstadoHost.registrar("Frontend em http://0.0.0.0:${servidor.listeningPort}")
+            aplicarRedirecionamento80(servidor.listeningPort)
         } catch (e: IOException) {
             Log.e(TAG, "servidor HTTP não subiu", e)
             EstadoHost.registrar("Servidor HTTP falhou: ${e.message}")
@@ -315,6 +318,16 @@ class ServicoBalanca : Service() {
         if (HotspotManager.hotspotAtivo(this@ServicoBalanca)) return@launch
         val r = HotspotManager.ligarHotspot(this@ServicoBalanca, SSID_HOTSPOT)
         EstadoHost.registrar("Hotspot: ${r.mensagem}")
+        // O tethering do Android reconstrói as chains de NAT ao subir o AP;
+        // reaplica o redirect :80 para o frontend seguir acessível sem porta.
+        http?.listeningPort?.let { aplicarRedirecionamento80(it) }
+    }
+
+    /** Redireciona, via root, a porta 80 para a porta real do frontend. */
+    private fun aplicarRedirecionamento80(portaFrontend: Int) = escopo.launch {
+        if (RedirecionamentoPorta.garantir(portaFrontend)) {
+            EstadoHost.registrar("Frontend também em http://<ip> (porta 80 → $portaFrontend)")
+        }
     }
 
     /** Taxa de pacotes por segundo para o painel. */

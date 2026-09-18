@@ -256,7 +256,7 @@ private fun ConteudoStatus(interno: PaddingValues) {
                 when {
                     portaHttp == null -> Text("Servidor HTTP não está no ar", color = Color(0xFFE57373))
                     enderecosIP.isEmpty() -> Text("Sem conexão de rede")
-                    else -> enderecosIP.forEach { ip -> Mono("http://$ip:$portaHttp") }
+                    else -> enderecosIP.forEach { ip -> Mono("http://$ip") }
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
