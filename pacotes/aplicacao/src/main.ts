@@ -2,6 +2,7 @@ import { ArmazenamentoLocal, type IArmazenamento } from './armazenamento/Armazen
 import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { ControladorGravacao } from './nucleo/ControladorGravacao.js';
+import { estadoGateway } from './nucleo/EstadoGateway.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaJogos } from './interface/TelaJogos.js';
@@ -25,7 +26,13 @@ let controlador: ControladorGravacao | null = null;
 /** Gravação local (GerenciadorSessao) ou compartilhada no gateway, conforme a fonte anuncia. */
 function criarControlador(fonte: unknown): ControladorGravacao {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new ControladorGravacao(fonte as any, new GerenciadorSessao(armazenamento), armazenamento);
+  const c = new ControladorGravacao(fonte as any, new GerenciadorSessao(armazenamento), armazenamento);
+  // O chip da barra (👥 N) mostra os clientes do gateway em qualquer tela
+  estadoGateway.limpar();
+  c.aoMudar((e) => estadoGateway.definir({
+    disponivel: e.remota, clientes: e.clientes, gravandoPor: e.gravando ? e.iniciadaPor : null,
+  }));
+  return c;
 }
 const ponteJogos = new PonteJogosLegados(globalThis.window as Window, globalThis.document);
 
@@ -328,6 +335,8 @@ function renderizar() {
       }
       fonteAtual = null;
       enderecoAtual = null;
+      controlador = null;
+      estadoGateway.limpar();
       fontePonteAtual = null;
       atualizarStatusPonteJogos(false);
       telaFirmwareAtual = new TelaFirmware(app, {

@@ -67,7 +67,31 @@
     .nav-links a.ativo { border-bottom-color: #2563eb; color: #1a1a1a; font-weight: 600; }
     .nav-links a:hover { color: #1d4ed8; }
     .nav-links .nav-desativado { color: #9ca3af; padding: 0.3rem 0; cursor: not-allowed; }
-    .nav-status { margin-top: -0.9rem; margin-bottom: 0.75rem; }
+    .nav-links { position: relative; }
+    .nav-direita { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+    .nav-icone { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.2rem 0.4rem; border-radius: 4px; line-height: 1; color: #6b7280; position: relative; transition: background 0.15s, color 0.15s; }
+    .nav-icone:hover { background: rgba(0,0,0,0.07); color: #374151; }
+    .nav-icone.ativo { color: #1a1a1a; background: rgba(0,0,0,0.07); }
+    .nav-icone .nav-aviso { position: absolute; top: -2px; right: -2px; margin: 0; vertical-align: baseline; }
+    .nav-menu-wrap { position: relative; }
+    .nav-menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 12rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 0.35rem 0; z-index: 500; }
+    .nav-menu-grupo { padding: 0.25rem 0; }
+    .nav-menu-grupo + .nav-menu-grupo { border-top: 1px solid #e5e7eb; }
+    .nav-menu-item { display: block; padding: 0.5rem 1rem; color: #1a1a1a !important; text-decoration: none; border-bottom: none !important; font-size: 0.9rem; white-space: nowrap; }
+    .nav-menu-item:hover { background: #f3f4f6; }
+    .nav-menu-item.ativo { font-weight: 600; color: #2563eb !important; }
+    .nav-menu-item.nav-desativado { color: #9ca3af !important; cursor: not-allowed; }
+    .nav-clientes { background: rgba(0,0,0,0.06); border: none; border-radius: 999px; padding: 0 0.45rem; margin-left: 0.2rem; font: inherit; color: inherit; cursor: pointer; line-height: 1.4; }
+    .nav-clientes:hover { background: rgba(0,0,0,0.12); }
+    .nav-clientes.gravando { background: #fee2e2; color: #b91c1c; }
+    .nav-clientes-painel { position: absolute; right: 0; top: calc(100% + 6px); min-width: 16rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 0.6rem 0.9rem; z-index: 500; font-size: 0.85rem; }
+    .nav-clientes-titulo { font-weight: 600; margin-bottom: 0.4rem; }
+    .nav-clientes-linha { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.2rem 0; font-variant-numeric: tabular-nums; }
+    .nav-clientes-end { font-family: monospace; }
+    .nav-clientes-desde { color: #6b7280; font-size: 0.78rem; margin-left: auto; }
+    .nav-clientes-rec { color: #b91c1c; font-size: 0.78rem; font-weight: 600; }
+    .nav-clientes-vazio { color: #6b7280; }
+    @media (max-width: 480px) { .nav-endereco { display: none; } .nav-links { gap: 0.7rem; } }
     .nav-status-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; padding: 0.15rem 0.6rem; border-radius: 999px; }
     .nav-status-chip::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
     .nav-status-chip.conectado  { background: #dcfce7; color: #15803d; }
@@ -407,8 +431,6 @@
 
     @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-    .grav-clientes { margin-top: 0.5rem; font-size: 0.8rem; color: #6b7280; }
-    [data-tema="escuro"] .grav-clientes { color: #94a3b8; }
 
     /* ── Atualização do app do TVBox ────────────────────────────────────────── */
     .nav-aviso { display: inline-block; margin-left: 0.25rem; color: #f59e0b; font-size: 0.7rem; vertical-align: super; }
@@ -434,8 +456,6 @@
     @keyframes indicador-entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
     /* ── Botão de tema ──────────────────────────────────────────────────────── */
-    .nav-tema-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.4rem; border-radius: 4px; line-height: 1; color: #9ca3af; transition: background 0.15s, color 0.15s; }
-    .nav-tema-btn:hover { background: rgba(0,0,0,0.07); color: #374151; }
 
     /* ── Modo escuro ────────────────────────────────────────────────────────── */
     [data-tema="escuro"] { color-scheme: dark; }
@@ -462,8 +482,18 @@
     [data-tema="escuro"] .nav-links a.ativo { color: #f1f5f9; border-bottom-color: #60a5fa; }
     [data-tema="escuro"] .nav-links a:hover { color: #93c5fd; }
     [data-tema="escuro"] .nav-links .nav-desativado { color: #475569; }
-    [data-tema="escuro"] .nav-tema-btn { color: #64748b; }
-    [data-tema="escuro"] .nav-tema-btn:hover { background: rgba(255,255,255,0.07); color: #94a3b8; }
+    [data-tema="escuro"] .nav-icone { color: #94a3b8; }
+    [data-tema="escuro"] .nav-icone:hover, [data-tema="escuro"] .nav-icone.ativo { background: rgba(255,255,255,0.08); color: #f1f5f9; }
+    [data-tema="escuro"] .nav-menu, [data-tema="escuro"] .nav-clientes-painel { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .nav-menu-grupo + .nav-menu-grupo { border-top-color: #334155; }
+    [data-tema="escuro"] .nav-menu-item { color: #e2e8f0 !important; }
+    [data-tema="escuro"] .nav-menu-item:hover { background: #334155; }
+    [data-tema="escuro"] .nav-menu-item.ativo { color: #60a5fa !important; }
+    [data-tema="escuro"] .nav-menu-item.nav-desativado { color: #475569 !important; }
+    [data-tema="escuro"] .nav-clientes { background: rgba(255,255,255,0.1); }
+    [data-tema="escuro"] .nav-clientes.gravando { background: rgba(239,68,68,0.2); color: #f87171; }
+    [data-tema="escuro"] .nav-clientes-desde, [data-tema="escuro"] .nav-clientes-vazio { color: #94a3b8; }
+    [data-tema="escuro"] .nav-clientes-rec { color: #f87171; }
     [data-tema="escuro"] .nav-status-chip.conectado { background: rgba(22,163,74,0.15); color: #4ade80; }
     [data-tema="escuro"] .nav-status-chip.desconectado { background: rgba(239,68,68,0.15); color: #f87171; }
     [data-tema="escuro"] .auto-conectando { color: #475569; }

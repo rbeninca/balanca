@@ -165,7 +165,6 @@ export class TelaMedicao {
           <button id="btn-parar"   class="btn-danger hidden">Parar</button>
         </div>
         <div id="status-grav" class="status-box hidden" style="margin-top:0.75rem"></div>
-        <div id="grav-clientes" class="grav-clientes hidden"></div>
       </div>
     `;
 
@@ -808,16 +807,6 @@ export class TelaMedicao {
     if (this.elNome) {
       this.elNome.disabled = e.gravando && e.remota;
       if (e.gravando && e.remota && e.nome) this.elNome.value = e.nome;
-    }
-
-    const elClientes = this.cardMedicao?.parentElement?.querySelector<HTMLElement>('#grav-clientes')
-      ?? document.querySelector<HTMLElement>('#grav-clientes');
-    if (elClientes) {
-      const n = e.clientes.length;
-      elClientes.classList.toggle('hidden', !e.remota || n === 0);
-      elClientes.textContent = n === 1
-        ? 'Gravação compartilhada no gateway — 1 cliente conectado'
-        : `Gravação compartilhada no gateway — ${n} clientes conectados: ${e.clientes.map(c => c.endereco).join(', ')}`;
     }
   }
 

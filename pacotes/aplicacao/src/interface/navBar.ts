@@ -3,6 +3,7 @@ import { TelaEsquema } from './TelaEsquema.js';
 import { TelaPendrive } from './TelaPendrive.js';
 import { TelaAtualizacao } from './TelaAtualizacao.js';
 import { resumir, type EstadoAtualizacaoApp } from './atualizacaoApp.js';
+import { estadoGateway, linhasClientes, type EstadoGatewayDados } from '../nucleo/EstadoGateway.js';
 
 export interface StatusConexao {
   endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
@@ -20,67 +21,160 @@ export interface NavProps {
   status?:          StatusConexao;
 }
 
-function itemNav(id: string, label: string, isAtivo: boolean, cb: (() => void) | undefined, extra = ''): string {
-  if (isAtivo)  return `<a href="#" id="${id}" class="ativo"${extra}>${label}</a>`;
-  if (!cb)      return `<span class="nav-desativado"${extra}>${label}</span>`;
-  return `<a href="#" id="${id}"${extra}>${label}</a>`;
+/**
+ * Barra: Conexão · Medição · Sessões à esquerda; à direita o chip de status
+ * (IP · Hz · clientes), o tema e a engrenagem com o resto (Configurações,
+ * Jogos, Firmware, Atualização, Pendrive, Montagem, Créditos).
+ */
+
+export interface ItemMenu {
+  id: string;
+  label: string;
+  /** 'tela' navega (callback em NavProps); 'modal' abre um overlay. */
+  tipo: 'tela' | 'modal';
+  disponivel: boolean;
+  ativo: boolean;
+  grupo: 'operacao' | 'box' | 'ajuda';
+}
+
+/** Itens da engrenagem, na ordem e agrupamento exibidos. */
+export function itensMenu(props: Pick<NavProps, 'ativo' | 'onConfiguracoes' | 'onJogos' | 'onFirmware'>): ItemMenu[] {
+  return [
+    { id: 'nav-config',      label: 'Configurações', tipo: 'tela',  disponivel: !!props.onConfiguracoes, ativo: props.ativo === 'configuracoes', grupo: 'operacao' },
+    { id: 'nav-jogos',       label: 'Jogos',         tipo: 'tela',  disponivel: !!props.onJogos,         ativo: props.ativo === 'jogos',         grupo: 'operacao' },
+    { id: 'nav-firmware',    label: 'Firmware',      tipo: 'tela',  disponivel: !!props.onFirmware,      ativo: props.ativo === 'firmware',      grupo: 'box' },
+    { id: 'nav-atualizacao', label: 'Atualização',   tipo: 'modal', disponivel: true,                    ativo: false,                           grupo: 'box' },
+    { id: 'nav-pendrive',    label: 'Pendrive',      tipo: 'modal', disponivel: true,                    ativo: false,                           grupo: 'box' },
+    { id: 'nav-montagem',    label: 'Montagem',      tipo: 'modal', disponivel: true,                    ativo: false,                           grupo: 'ajuda' },
+    { id: 'nav-creditos',    label: 'Créditos',      tipo: 'modal', disponivel: true,                    ativo: false,                           grupo: 'ajuda' },
+  ];
+}
+
+/** Texto do contador de clientes no chip; vazio quando não há gateway com gravação compartilhada. */
+export function textoClientes(e: EstadoGatewayDados): string {
+  if (!e.disponivel || e.clientes.length === 0) return '';
+  return `👥 ${e.clientes.length}`;
+}
+
+function itemNav(id: string, label: string, isAtivo: boolean, cb: (() => void) | undefined): string {
+  if (isAtivo)  return `<a href="#" id="${id}" class="ativo">${label}</a>`;
+  if (!cb)      return `<span class="nav-desativado">${label}</span>`;
+  return `<a href="#" id="${id}">${label}</a>`;
 }
 
 function statusHtml(s: StatusConexao): string {
   const classe = s.conectado ? 'conectado' : 'desconectado';
   const texto  = s.conectado ? s.endereco  : `${s.endereco} — desconectado`;
-  return `<div class="nav-status"><span class="nav-status-chip ${classe}">${texto}<span id="nav-hz" class="nav-hz"></span></span></div>`;
+  return `<span class="nav-status-chip ${classe}"><span class="nav-endereco">${texto}</span><span id="nav-hz" class="nav-hz"></span><button id="nav-clientes" class="nav-clientes hidden" type="button" title="Clientes conectados ao gateway"></button></span>`;
+}
+
+function menuHtml(itens: ItemMenu[]): string {
+  const grupos: ItemMenu['grupo'][] = ['operacao', 'box', 'ajuda'];
+  const blocos = grupos.map(g => itens.filter(i => i.grupo === g).map(i => {
+    const aviso = i.id === 'nav-atualizacao' ? '<span id="nav-atualizacao-aviso" class="nav-aviso hidden">●</span>' : '';
+    if (!i.disponivel) return `<span class="nav-menu-item nav-desativado">${i.label}</span>`;
+    return `<a href="#" id="${i.id}" class="nav-menu-item${i.ativo ? ' ativo' : ''}">${i.label}${aviso}</a>`;
+  }).join(''));
+  return blocos.filter(b => b).map(b => `<div class="nav-menu-grupo">${b}</div>`).join('');
 }
 
 export function navHtml(props: NavProps): string {
   const escuro = document.documentElement.dataset['tema'] === 'escuro';
+  const itens = itensMenu(props);
+  const menuAtivo = itens.some(i => i.ativo);
   return `
     <div class="nav-links">
-      ${itemNav('nav-conexao',  'Conexão',       props.ativo === 'conexao',       props.onConexao)}
-      ${itemNav('nav-medir',    'Medição',        props.ativo === 'medicao',       props.onMedicao)}
-      ${itemNav('nav-jogos',    'Jogos',          props.ativo === 'jogos',         props.onJogos)}
-      ${itemNav('nav-sessoes',  'Sessões',        props.ativo === 'sessoes',       props.onSessoes)}
-      ${itemNav('nav-config',   'Configurações',  props.ativo === 'configuracoes', props.onConfiguracoes)}
-      ${itemNav('nav-firmware', 'Firmware',       props.ativo === 'firmware',      props.onFirmware, ' style="margin-left:auto"')}
-      <a href="#" id="nav-pendrive">Pendrive</a>
-      <a href="#" id="nav-atualizacao" title="Atualização do app do TVBox">Atualização<span id="nav-atualizacao-aviso" class="nav-aviso hidden" title="Há versão nova">●</span></a>
-      <a href="#" id="nav-montagem">Montagem</a>
-      <a href="#" id="nav-creditos">Créditos</a>
-      <button id="nav-tema" class="nav-tema-btn" title="Alternar modo escuro/claro">${escuro ? '☀' : '🌙'}</button>
+      ${itemNav('nav-conexao', 'Conexão', props.ativo === 'conexao', props.onConexao)}
+      ${itemNav('nav-medir',   'Medição', props.ativo === 'medicao', props.onMedicao)}
+      ${itemNav('nav-sessoes', 'Sessões', props.ativo === 'sessoes', props.onSessoes)}
+      <div class="nav-direita">
+        ${props.status ? statusHtml(props.status) : ''}
+        <button id="nav-tema" class="nav-icone" type="button" title="Alternar modo escuro/claro">${escuro ? '☀' : '🌙'}</button>
+        <div class="nav-menu-wrap">
+          <button id="nav-menu-btn" class="nav-icone${menuAtivo ? ' ativo' : ''}" type="button" title="Mais opções" aria-haspopup="true" aria-expanded="false">⚙<span id="nav-menu-aviso" class="nav-aviso hidden">●</span></button>
+          <div id="nav-menu" class="nav-menu hidden" role="menu">${menuHtml(itens)}</div>
+        </div>
+      </div>
+      <div id="nav-clientes-painel" class="nav-clientes-painel hidden"></div>
     </div>
-    ${props.status ? statusHtml(props.status) : ''}
   `;
 }
+
+let cancelarObservacao: (() => void) | null = null;
+/** Fecha menu e painel da barra atual; registrado uma vez no document (a barra é recriada a cada tela). */
+let fecharFlutuantes: () => void = () => {};
+let ouvintesGlobais = false;
 
 export function bindNav(container: HTMLElement, props: NavProps): void {
   const bind = (id: string, cb: (() => void) | undefined) => {
     if (!cb) return;
     container.querySelector(`#${id}`)?.addEventListener('click', (e) => {
-      e.preventDefault(); cb();
+      e.preventDefault(); fecharMenu(); cb();
     });
   };
 
   bind('nav-conexao',  props.onConexao);
   bind('nav-medir',    props.onMedicao);
-  bind('nav-jogos',    props.onJogos);
   bind('nav-sessoes',  props.onSessoes);
   bind('nav-config',   props.onConfiguracoes);
+  bind('nav-jogos',    props.onJogos);
   bind('nav-firmware', props.onFirmware);
 
-  container.querySelector('#nav-pendrive')?.addEventListener('click', (e) => {
-    e.preventDefault(); new TelaPendrive();
-  });
-  container.querySelector('#nav-atualizacao')?.addEventListener('click', (e) => {
-    e.preventDefault(); new TelaAtualizacao();
-  });
-  void marcarAtualizacaoDisponivel(container);
+  const modais: Record<string, () => void> = {
+    'nav-atualizacao': () => new TelaAtualizacao(),
+    'nav-pendrive':    () => new TelaPendrive(),
+    'nav-montagem':    () => new TelaEsquema(),
+    'nav-creditos':    () => new TelaCreditos(),
+  };
+  for (const [id, abrir] of Object.entries(modais)) {
+    container.querySelector(`#${id}`)?.addEventListener('click', (e) => { e.preventDefault(); fecharMenu(); abrir(); });
+  }
 
-  container.querySelector('#nav-montagem')?.addEventListener('click', (e) => {
-    e.preventDefault(); new TelaEsquema();
+  // Engrenagem: abre/fecha por clique; fecha ao clicar fora ou com Esc
+  const menuBtn = container.querySelector<HTMLButtonElement>('#nav-menu-btn');
+  const menu    = container.querySelector<HTMLElement>('#nav-menu');
+  const fecharMenu = () => { menu?.classList.add('hidden'); menuBtn?.setAttribute('aria-expanded', 'false'); };
+  menuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const aberto = !menu?.classList.contains('hidden');
+    if (aberto) fecharMenu();
+    else { fecharPainelClientes(); menu?.classList.remove('hidden'); menuBtn.setAttribute('aria-expanded', 'true'); }
   });
-  container.querySelector('#nav-creditos')?.addEventListener('click', (e) => {
-    e.preventDefault(); new TelaCreditos();
+  menu?.addEventListener('click', (e) => e.stopPropagation());
+
+  // Clientes conectados: painel com a lista
+  const btnClientes = container.querySelector<HTMLButtonElement>('#nav-clientes');
+  const painel      = container.querySelector<HTMLElement>('#nav-clientes-painel');
+  const fecharPainelClientes = () => painel?.classList.add('hidden');
+  btnClientes?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!painel) return;
+    if (!painel.classList.contains('hidden')) { fecharPainelClientes(); return; }
+    fecharMenu();
+    painel.innerHTML = painelClientesHtml(estadoGateway.obter());
+    painel.classList.remove('hidden');
   });
+  painel?.addEventListener('click', (e) => e.stopPropagation());
+
+  fecharFlutuantes = () => { fecharMenu(); fecharPainelClientes(); };
+  if (!ouvintesGlobais) {
+    ouvintesGlobais = true;
+    document.addEventListener('click', () => fecharFlutuantes());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharFlutuantes(); });
+  }
+
+  // Chip: contador de clientes acompanha o estado do gateway enquanto esta barra existir
+  cancelarObservacao?.();
+  cancelarObservacao = estadoGateway.observar((e) => {
+    if (!btnClientes) return;
+    const texto = textoClientes(e);
+    btnClientes.textContent = texto;
+    btnClientes.classList.toggle('hidden', texto === '');
+    btnClientes.classList.toggle('gravando', e.gravandoPor !== null);
+    if (painel && !painel.classList.contains('hidden')) painel.innerHTML = painelClientesHtml(e);
+  });
+
+  void marcarAtualizacaoDisponivel(container);
 
   const temaBtn = container.querySelector<HTMLButtonElement>('#nav-tema');
   if (temaBtn) {
@@ -94,17 +188,33 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   }
 }
 
+function painelClientesHtml(e: EstadoGatewayDados): string {
+  const linhas = linhasClientes(e, Date.now());
+  if (linhas.length === 0) return '<div class="nav-clientes-vazio">Nenhum cliente conectado.</div>';
+  return `
+    <div class="nav-clientes-titulo">${linhas.length === 1 ? '1 cliente conectado' : `${linhas.length} clientes conectados`} ao gateway</div>
+    ${linhas.map(l => `
+      <div class="nav-clientes-linha${l.gravando ? ' gravando' : ''}">
+        <span class="nav-clientes-end">${l.endereco}</span>
+        <span class="nav-clientes-desde">${l.desde}</span>
+        ${l.gravando ? '<span class="nav-clientes-rec">● gravando</span>' : ''}
+      </div>`).join('')}
+  `;
+}
+
 /**
- * Acende o ponto no item "Atualização" quando o box já sabe de uma versão nova
- * (o serviço consulta o repositório sozinho). Silencioso quando não há gateway.
+ * Acende o ponto na engrenagem e no item "Atualização" quando o box já sabe
+ * de uma versão nova (o serviço consulta o repositório sozinho). Silencioso
+ * quando não há gateway.
  */
 async function marcarAtualizacaoDisponivel(container: HTMLElement): Promise<void> {
-  const aviso = container.querySelector<HTMLElement>('#nav-atualizacao-aviso');
-  if (!aviso) return;
+  const avisos = container.querySelectorAll<HTMLElement>('#nav-atualizacao-aviso, #nav-menu-aviso');
+  if (avisos.length === 0) return;
   try {
     const r = await fetch(`http://${location.hostname}:3000/atualizacao`, { signal: AbortSignal.timeout(4000) });
     if (!r.ok) return;
     const e = await r.json() as EstadoAtualizacaoApp;
-    aviso.classList.toggle('hidden', !resumir(e).haAtualizacao);
+    const ha = resumir(e).haAtualizacao;
+    avisos.forEach(a => a.classList.toggle('hidden', !ha));
   } catch { /* sem gateway (WebSerial / Pages): fica escondido */ }
 }
