@@ -17,8 +17,7 @@
   clientes do WebSocket a cada poucos segundos. Investigar com o log do
   gateway agora que há batimento.
 
-- **Reorganização dos filtros em 3 etapas** — plano em
-  `PLANEJAMENTO-PROCESSAMENTO.MD`, branch `feat/processamento-3-etapas`.
+- **Push das tags novas**: `v2.4.0` (além das listadas acima).
 
 - **Ruído nos testes do WebSerial.** `FonteWebSerial.teste.ts` emite uma
   "unhandled rejection" no mock do laço de leitura (pré-existente; os testes
@@ -26,6 +25,8 @@
 
 ## Resolvidas nesta rodada
 
+- Reorganização dos filtros em 3 etapas — 12 fases mergeadas em `main` (v2.4.0).
+- Firmware V18 (marcas de tempo sem quantização, display sem gaps) — gravado.
 - Tag `v2.3.0` e `versionName 2.3.0` alinhados; log em `log-modificacoes.md`.
 - Lista de sessões lenta (dezenas de segundos) — resumo gravado no banco.
 - Cada cliente gravava por conta própria — gravação compartilhada no gateway.

@@ -3,6 +3,35 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.4.0 (tag local, 2026-09-19)
+
+Branch `feat/processamento-3-etapas` (12 fases, uma por commit, cada uma com
+testes TS + JUnit e validação no TX9; plano e decisões em
+`PLANEJAMENTO-PROCESSAMENTO.MD`):
+
+- **Fase 0–1** — golden files do pipeline e equivalência TS ↔ Kotlin (1e-12);
+  três etapas sem mudar números.
+- **Fase 2** — um só filtro principal (`filtroPrincipal`), radio no painel;
+  flags antigas seguem aceitas.
+- **Fase 3** — Fs estimada pelas marcas de tempo (média em janela de 256,
+  histerese 1 % com janela cheia); Notch deixa de assumir 100 Hz.
+- **Fase 4** — Hampel causal com piso em σ; limpeza `Hampel → Mediana → Notch`.
+- **Fase 5** — Butterworth 2ª ordem com validação de Nyquist.
+- **Fase 6** — zona morta na etapa 3 (após o suavizador); `fonteCalculoImpulso`.
+- **Fase 7** — detector de evento com limiares/tempos de início e fim;
+  "sugerir" preenche zona morta + limiares.
+- **Fase 8** — zero tracking (bloqueado em evento e gravação; offset visível).
+- **Fase 9** — painel em três blocos, "Pipeline atual", atraso por filtro.
+- **Fase 10** — `config_pipeline`/`config_esp` gravados na sessão; "Gravada
+  com: …" na Análise.
+- **Fase 11** — detrend offline (média/linear só no repouso), salvo nos
+  metadados.
+- **Fase 12** — perfis Pesagem / Teste de motor / Impacto / Dados brutos.
+- **`7ef0a91` — Firmware V18**: marca de tempo no instante da amostra (Δt
+  11/12 ms, sem gaps; 86,7 Hz reais) e OLED sem roubar leituras. Gravado na
+  ESP pelo atualizador do box.
+- **`9d43d76`** — `massa_total_g` passa a ser guardada nos metadados.
+
 ## v2.3.0 (tag local, 2026-09-19)
 
 - **`ce1b11f` — Watchdog de conexão: batimento do gateway e reconexão automática.**
