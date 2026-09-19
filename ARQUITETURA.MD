@@ -916,27 +916,47 @@ Botões de exportação:
 ## 9. O Pipeline de Processamento
 
 ```typescript
-// pacotes/processamento/src/pipeline/PipelineProcessamento.ts
+// pacotes/processamento/src/pipeline/PipelineProcessamento.ts (espelhado em
+// android/.../processamento/PipelineProcessamento.kt — mesma ordem, mesmos nomes)
 
-export class PipelineProcessamento {
-  processar(pacote: PacoteDados): LeituraProcessada {
-    let forca = this.calibrador.aplicar(pacote.forcaBruta);
-    forca     = this.zonaMorta.aplicar(forca);
-    forca     = this.mediaMovel.aplicar(forca);
-    return {
-      marcaTemporal:      pacote.marcaTemporal,
-      forcaNewton:        forca,
-      temperatura:        pacote.temperatura,
-      emQueima:           this.detector.atualizar(forca, pacote.marcaTemporal),
-      impulsoAcumuladoNs: this.calculador.integrar(forca, pacote.marcaTemporal),
-    };
-  }
-  reiniciar() { /* ... */ }
+private aplicarFiltros(forca: number) {
+  const bruta = forca;                      // Newtons como a ESP mandou
+  if (ativoNotch)   forca = notch.aplicar(forca);
+  if (ativoMediana) forca = mediana.aplicar(forca);
+  if (ativoZonaMorta) forca = zonaMorta.aplicar(forca);
+  if (ativoMediaMovel) forca = mediaMovel.aplicar(forca);   // suavizadores encadeáveis
+  if (ativoEMA)        forca = ema.aplicar(forca);          // (a interface só liga um)
+  if (ativoSG)         forca = sg.aplicar(forca);
+  if (ativoKalman)     forca = kalman.aplicar(forca);
+  return { filtrada: forca, bruta };
 }
+// emQueima  = detector(filtrada)  — limiar = limiarZonaMortaN, fim após tempoMinFimMs
+// impulso   = integral(filtrada)  — após a zona morta
 ```
 
-**Cenários A/B — no gateway** antes do WebSocket.
+**Cenários A/B — no gateway** antes do WebSocket (o app Android difunde
+`PIPELINE_ESTADO`; `PIPELINE_CONFIG` de qualquer cliente muda o estado de todos).
 **Cenário C — no WebWorker** no browser.
+
+### O que é "cru"
+
+A ESP já envia `forcaN = ((read_average(numAmostrasMedia) − tareOffset) /
+conversionFactor / 1000) · gravity`: tara, calibração, gravidade e uma média de
+`numAmostrasMedia` leituras do HX711 (padrão 3) são aplicadas no firmware e
+não são reversíveis; o ADC bruto não é transmitido. No pipeline,
+`forcaNewtonCrua` é exatamente esse valor, sem nenhum filtro.
+
+### O que é gravado (tabela `leituras`)
+
+| coluna | origem |
+|---|---|
+| `forca_crua` | `forcaNewtonCrua` — sem filtros do pipeline |
+| `em_queima` | detector, calculado sobre o sinal **filtrado** |
+| `impulso_acumulado_ns` | integral do sinal **filtrado** (após zona morta) |
+
+O sinal filtrado não é guardado: a análise reabre `forca_crua` e refiltra. A
+configuração de filtros vigente na gravação ainda não é registrada — está no
+plano de reorganização dos filtros (`PLANEJAMENTO-PROCESSAMENTO.MD`).
 
 ---
 
