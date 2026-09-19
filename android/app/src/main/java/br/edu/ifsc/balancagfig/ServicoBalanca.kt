@@ -26,6 +26,11 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
 import br.edu.ifsc.balancagfig.armazenamento.BackupPendrive
+import br.edu.ifsc.balancagfig.atualizacao.ArmazemPreferencias
+import br.edu.ifsc.balancagfig.atualizacao.Atualizador
+import br.edu.ifsc.balancagfig.atualizacao.InstaladorRoot
+import br.edu.ifsc.balancagfig.atualizacao.RedeHttp
+import br.edu.ifsc.balancagfig.atualizacao.Versao
 import br.edu.ifsc.balancagfig.firmware.GravadorEsp8266
 import br.edu.ifsc.balancagfig.servidor.ServidorAtualizador
 import br.edu.ifsc.balancagfig.servidor.Mensagens
@@ -66,6 +71,7 @@ class ServicoBalanca : Service() {
     private var atualizador: ServidorAtualizador? = null
     private var bd: BancoDados? = null
     private var backup: BackupPendrive? = null
+    private var atualizadorApp: Atualizador? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
     private val pipeline = PipelineProcessamento(ConfiguracaoPipeline())
@@ -94,6 +100,7 @@ class ServicoBalanca : Service() {
 
         iniciarHttp()
         iniciarWebSocket()
+        iniciarAtualizacaoApp()
         iniciarApi()
         iniciarAtualizador()
         iniciarSerial()
@@ -183,7 +190,8 @@ class ServicoBalanca : Service() {
             val banco = BancoDados(this).also { bd = it }
             val bkp = BackupPendrive(this, banco).also { backup = it }
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
-            api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp)
+            api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
+                atualizacao = atualizadorApp?.let { a -> ServidorApi.Atualizacao(a) { escopo.launch(Dispatchers.IO) { a.executarPendente() } } })
                 .also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
             registrarReceptorMidia()
             bkp.sincronizarTudo()   // o pendrive pode já estar montado no boot
@@ -191,6 +199,35 @@ class ServicoBalanca : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "API não subiu", e)
             EstadoHost.registrar("API falhou: ${e.message}")
+        }
+    }
+
+    /**
+     * Atualização automática do app pelas releases do GitHub: retoma uma cadeia
+     * interrompida pela reinstalação e verifica versões novas ao subir e a cada 6 h.
+     */
+    private fun iniciarAtualizacaoApp() {
+        val versao = Versao.analisar(packageManager.getPackageInfo(packageName, 0).versionName)
+        if (versao == null) { EstadoHost.registrar("Atualização: versionName inválido, atualizador desligado"); return }
+        val urlReleases = File(filesDir, ARQUIVO_URL_RELEASES).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
+            ?: Atualizador.URL_RELEASES_PADRAO
+        val a = Atualizador(
+            versaoInstalada = versao,
+            rede = RedeHttp("BalancaGFIG/$versao (TVBox)"),
+            instalador = InstaladorRoot(),
+            armazem = ArmazemPreferencias(this),
+            pastaDownload = File(filesDir, "atualizacao"),
+            urlReleases = urlReleases,
+            registrar = EstadoHost::registrar,
+        ).also { atualizadorApp = it }
+        escopo.launch(Dispatchers.IO) {
+            if (a.retomar()) a.executarPendente()
+            // Verificação periódica: só consulta, a instalação depende do usuário.
+            delay(30_000)
+            while (true) {
+                a.verificar()
+                delay(6 * 60 * 60 * 1000L)
+            }
         }
     }
 
@@ -383,6 +420,8 @@ class ServicoBalanca : Service() {
         const val BAUD = 921600
         const val EXTRA_RECONECTAR_USB = "reconectar_usb"
         const val ARQUIVO_CHAVE_API = ".chave-api"
+        /** Opcional: arquivo com outra URL de releases (testes com servidor local). */
+        const val ARQUIVO_URL_RELEASES = "atualizacao-url.txt"
 
         /** Instância viva (um só processo), para a Activity pedir reconexão. */
         @Volatile

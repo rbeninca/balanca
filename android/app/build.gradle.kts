@@ -1,3 +1,4 @@
+import java.util.Properties
 import javax.inject.Inject
 import org.gradle.process.ExecOperations
 
@@ -25,13 +26,40 @@ android {
         ndk { abiFilters += "armeabi-v7a" }
     }
 
+    // ------------------------------------------------------------------
+    // Assinatura única para debug e release: o atualizador automático faz
+    // `pm install -r` por cima do app instalado, e o Android exige a mesma
+    // assinatura. Local: android/chaves/chaves.properties (fora do git; ver
+    // chaves/LEIA-ME.md). CI: variáveis BALANCA_KEYSTORE / BALANCA_KEYSTORE_SENHA /
+    // BALANCA_CHAVE_ALIAS / BALANCA_CHAVE_SENHA. Sem nenhum dos dois, cai na
+    // chave de debug do Android Studio (APK NÃO atualizável pelos boxes).
+    // ------------------------------------------------------------------
+    val chaves = Properties().apply {
+        rootProject.file("chaves/chaves.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
+    }
+    val keystore = System.getenv("BALANCA_KEYSTORE")?.let { file(it) }
+        ?: chaves.getProperty("storeFile")?.let { rootProject.file(it) }
+    val assinaturaBalanca = if (keystore?.isFile == true) signingConfigs.create("balanca") {
+        storeFile = keystore
+        storePassword = System.getenv("BALANCA_KEYSTORE_SENHA") ?: chaves.getProperty("storePassword")
+        keyAlias = System.getenv("BALANCA_CHAVE_ALIAS") ?: chaves.getProperty("keyAlias")
+        keyPassword = System.getenv("BALANCA_CHAVE_SENHA") ?: chaves.getProperty("keyPassword")
+    } else {
+        logger.warn("Keystore da BalançaGFIG ausente — APK assinado com a chave de debug (não atualizável nos boxes).")
+        null
+    }
+
     buildTypes {
+        debug {
+            assinaturaBalanca?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            assinaturaBalanca?.let { signingConfig = it }
         }
     }
     compileOptions {

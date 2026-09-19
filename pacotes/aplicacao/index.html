@@ -407,6 +407,23 @@
 
     @keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+    /* ── Atualização do app do TVBox ────────────────────────────────────────── */
+    .nav-aviso { display: inline-block; margin-left: 0.25rem; color: #f59e0b; font-size: 0.7rem; vertical-align: super; }
+    .at-instalada { margin: 0 0 0.5rem; }
+    .at-status { margin: 0 0 0.75rem; font-weight: 600; }
+    .at-status.at-erro { color: #b91c1c; }
+    .at-cadeia { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0.5rem 0 0.75rem; }
+    .at-versao { padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid #d1d5db; font-family: monospace; font-size: 0.9rem; background: #f9fafb; }
+    .at-versao.at-atual { border-color: #2563eb; color: #1d4ed8; background: #eff6ff; }
+    .at-versao.at-feita { border-color: #16a34a; color: #166534; background: #ecfdf5; }
+    .at-versao.at-emcurso { border-color: #f59e0b; color: #92400e; background: #fffbeb; animation: piscar 1.2s ease-in-out infinite; }
+    .at-seta { color: #9ca3af; }
+    .at-barra { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin: 0.25rem 0 0.75rem; }
+    .at-barra-preenchida { height: 100%; background: #2563eb; transition: width 0.4s ease; }
+    .at-notas { margin: 0.5rem 0; font-size: 0.9rem; }
+    .at-notas pre { white-space: pre-wrap; font-family: inherit; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0.4rem 0 0; }
+    .at-lista { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+
     /* ── Indicador "aguarde" (não bloqueante) ──────────────────────────────── */
     .indicador-carregando { position: fixed; right: 1rem; bottom: 1rem; z-index: 9000; display: flex; align-items: center; gap: 0.6rem; background: #1f2937; color: #f9fafb; padding: 0.55rem 0.9rem; border-radius: 999px; font-size: 0.85rem; box-shadow: 0 4px 14px rgba(0,0,0,0.25); pointer-events: none; animation: indicador-entrar 0.15s ease-out; }
     .indicador-spinner { width: 1rem; height: 1rem; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: indicador-girar 0.8s linear infinite; flex-shrink: 0; }
@@ -507,6 +524,13 @@
     [data-tema="escuro"] .jogo-tag { background: #0f172a; color: #64748b; border-color: #334155; }
     [data-tema="escuro"] .origem-gateway { background: rgba(37,99,235,0.12); color: #60a5fa; border-color: #1d4ed8; }
     [data-tema="escuro"] .origem-local { background: #1e293b; color: #64748b; border-color: #334155; }
+    [data-tema="escuro"] .at-versao { border-color: #475569; background: #1e293b; color: #e2e8f0; }
+    [data-tema="escuro"] .at-versao.at-atual { border-color: #3b82f6; color: #93c5fd; background: rgba(59,130,246,0.12); }
+    [data-tema="escuro"] .at-versao.at-feita { border-color: #16a34a; color: #4ade80; background: rgba(22,163,74,0.12); }
+    [data-tema="escuro"] .at-versao.at-emcurso { border-color: #f59e0b; color: #fbbf24; background: rgba(245,158,11,0.12); }
+    [data-tema="escuro"] .at-status.at-erro { color: #f87171; }
+    [data-tema="escuro"] .at-barra { background: #334155; }
+    [data-tema="escuro"] .at-notas pre { background: #1e293b; border-color: #334155; }
     [data-tema="escuro"] .indicador-carregando { background: #e5e7eb; color: #111827; }
     [data-tema="escuro"] .indicador-spinner { border-color: rgba(17,24,39,0.25); border-top-color: #111827; }
     [data-tema="escuro"] .motor-badge { background: rgba(22,163,74,0.1); color: #4ade80; border-color: #166534; }

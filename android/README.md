@@ -104,6 +104,34 @@ sobe no boot, liga o hotspot `balancaGFIG`, conecta à balança e serve tudo.
   WebView com o frontend entra quando a WebView do box (Chromium 52) for
   atualizada.
 
+## Atualização automática pelo repositório
+
+O app se atualiza sozinho a partir de **GitHub Releases** — as equipes não
+precisam de git nem de PC:
+
+1. Publicar uma versão: subir `versionCode`/`versionName` em
+   `app/build.gradle.kts`, commitar e empurrar uma tag `vX.Y.Z`
+   (`git tag -a v2.4.0 -m "..." && git push origin v2.4.0`). O workflow
+   `.github/workflows/release.yml` compila o frontend e o APK, assina com a
+   chave fixa (secrets — ver `chaves/LEIA-ME.md`), gera o `manifest.json`
+   (versão, SHA-256, tamanho) e cria a release com APK + firmware.
+2. No box, o serviço consulta as releases ao subir e a cada 6 h
+   (`atualizacao/Atualizador.kt`). A tela **Atualização** do frontend (barra
+   de navegação) mostra a versão instalada e a cadeia de versões a percorrer.
+3. O usuário só decide "Atualizar agora". A partir daí é automático: para cada
+   versão mais nova, em ordem, o app baixa o APK, confere o SHA-256 do
+   manifest, instala via root (`pm install -r`), reinicia
+   (`MY_PACKAGE_REPLACED`) e retoma o plano até a última. Instalar uma a uma
+   garante que cada versão rode as próprias migrações.
+
+Rotas: `GET /atualizacao`, `POST /atualizacao/{verificar,iniciar,cancelar}`.
+Para testar com releases locais, grave a URL de um `releases.json` (formato da
+API do GitHub) em `files/atualizacao-url.txt` do app.
+
+**A chave de assinatura é obrigatória e única**: o Android só instala por cima
+do app um APK com a mesma assinatura. `android/chaves/` fica fora do git; sem
+o keystore, a atualização dos boxes só é possível reinstalando cada um à mão.
+
 ## Testes
 
 ```bash

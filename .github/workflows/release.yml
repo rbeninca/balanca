@@ -1,0 +1,95 @@
+name: Release do app Android
+
+# Ao empurrar uma tag vX.Y.Z: compila o frontend e o APK (assinado com a chave
+# fixa dos boxes), gera o manifest.json e publica tudo em GitHub Releases.
+# O app instalado nos boxes consulta essas releases para se atualizar sozinho
+# (android/app/src/main/java/br/edu/ifsc/balancagfig/atualizacao/).
+#
+# Secrets necessários (ver android/chaves/LEIA-ME.md):
+#   KEYSTORE_BASE64, KEYSTORE_SENHA, CHAVE_ALIAS, CHAVE_SENHA
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir que a tag bate com o versionName do APK
+        id: versao
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSAO=$(grep -oP 'versionName = "\K[^"]+' android/app/build.gradle.kts)
+          CODIGO=$(grep -oP 'versionCode = \K[0-9]+' android/app/build.gradle.kts)
+          if [ "$TAG" != "$VERSAO" ]; then
+            echo "::error::tag v$TAG ≠ versionName $VERSAO em android/app/build.gradle.kts"; exit 1
+          fi
+          echo "versao=$VERSAO" >> "$GITHUB_OUTPUT"
+          echo "codigo=$CODIGO" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Frontend (mesmos passos do deploy-pages.yml)
+        run: |
+          mkdir -p pacotes/aplicacao/public
+          cp firmware/firmware.bin pacotes/aplicacao/public/firmware.bin
+          cp firmware/versao.json  pacotes/aplicacao/public/firmware-versao.json
+          npm install --prefer-offline
+          npm run compilar --workspace=pacotes/aplicacao
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Restaurar a chave de assinatura
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/balancagfig.keystore"
+          test -s "$RUNNER_TEMP/balancagfig.keystore" || { echo "::error::secret KEYSTORE_BASE64 vazio"; exit 1; }
+
+      - name: Compilar APK assinado
+        working-directory: android
+        env:
+          BALANCA_KEYSTORE: ${{ runner.temp }}/balancagfig.keystore
+          BALANCA_KEYSTORE_SENHA: ${{ secrets.KEYSTORE_SENHA }}
+          BALANCA_CHAVE_ALIAS: ${{ secrets.CHAVE_ALIAS }}
+          BALANCA_CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
+        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon
+
+      - name: Montar artefatos e manifest.json
+        id: artefatos
+        run: |
+          V="${{ steps.versao.outputs.versao }}"
+          mkdir -p release
+          cp android/app/build/outputs/apk/release/app-release.apk "release/balancagfig-$V.apk"
+          cp firmware/firmware.bin "release/firmware-$(jq -r .versao firmware/versao.json).bin"
+          SHA=$(sha256sum "release/balancagfig-$V.apk" | cut -d' ' -f1)
+          TAM=$(stat -c %s "release/balancagfig-$V.apk")
+          jq -n --arg versao "$V" --argjson versionCode "${{ steps.versao.outputs.codigo }}" \
+                --arg apk "balancagfig-$V.apk" --arg sha256 "$SHA" --argjson tamanho "$TAM" \
+                --arg firmware "$(jq -r .versao firmware/versao.json)" \
+                '{versao:$versao, versionCode:$versionCode, apk:$apk, sha256:$sha256, tamanho:$tamanho, firmware:$firmware}' \
+                > release/manifest.json
+          cat release/manifest.json
+
+      - name: Publicar a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.versao.outputs.versao }}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "BalançaGFIG v$V" \
+            --notes-from-tag \
+            release/balancagfig-$V.apk release/manifest.json release/firmware-*.bin

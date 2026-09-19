@@ -3,6 +3,7 @@ package br.edu.ifsc.balancagfig.servidor
 import android.util.Log
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
 import br.edu.ifsc.balancagfig.armazenamento.ResumoSessao
+import br.edu.ifsc.balancagfig.atualizacao.Atualizador
 import br.edu.ifsc.balancagfig.armazenamento.ModoRestauracao
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
@@ -21,6 +22,7 @@ import java.util.UUID
  *   GET    /sessoes/:id/leituras        POST   /sessoes/:id/leituras*   DELETE /sessoes/:id/leituras*
  *   GET    /sessoes/:id/exportar.csv
  *   GET    /sessoes/:id/metadados       POST   /sessoes/:id/metadados*
+ *   GET    /atualizacao                 POST   /atualizacao/{verificar,iniciar,cancelar}*
  *
  * (*) exigem o cabeçalho x-chave-api quando uma chave está configurada;
  * sem chave, como no pacote api, a escrita é livre (modo dev/laboratório).
@@ -33,8 +35,13 @@ class ServidorApi(
     private val aoSalvarSessao: ((String) -> Unit)? = null,
     /** Backup em pendrive, para as rotas /pendrive (null quando indisponível). */
     private val backup: br.edu.ifsc.balancagfig.armazenamento.BackupPendrive? = null,
+    /** Atualização automática do app, para as rotas /atualizacao (null quando indisponível). */
+    private val atualizacao: Atualizacao? = null,
     porta: Int = PORTA_PADRAO,
 ) : NanoHTTPD(porta) {
+
+    /** Atualizador do app + como disparar a execução em segundo plano. */
+    class Atualizacao(val atualizador: Atualizador, val executar: () -> Unit)
 
     private val rotaSessao = Regex("^/sessoes/([^/]+)$")
     private val rotaLeituras = Regex("^/sessoes/([^/]+)/leituras$")
@@ -65,6 +72,7 @@ class ServidorApi(
         }
 
         if (uri.startsWith("/pendrive")) return rotearPendrive(uri, m, s)
+        if (uri.startsWith("/atualizacao")) return rotearAtualizacao(uri, m, s)
 
         if (uri == "/sessoes") return when (m) {
             Method.GET -> json(
@@ -124,6 +132,32 @@ class ServidorApi(
         }
 
         return erro(Response.Status.NOT_FOUND, "Rota não encontrada")
+    }
+
+    /**
+     *   GET  /atualizacao            → estado (instalada, disponíveis, plano, fase, progresso, erro)
+     *   POST /atualizacao/verificar* → consulta o repositório agora e devolve o estado
+     *   POST /atualizacao/iniciar*   → decisão do usuário: percorre o plano inteiro sozinho
+     *   POST /atualizacao/cancelar*  → desiste (só antes da instalação)
+     */
+    private fun rotearAtualizacao(uri: String, m: Method, s: IHTTPSession): Response {
+        val at = atualizacao ?: return erro(Response.Status.SERVICE_UNAVAILABLE, "Atualizador indisponível")
+        val a = at.atualizador
+        return when {
+            uri == "/atualizacao" && m == Method.GET -> json(Response.Status.OK, a.estadoJson())
+            uri == "/atualizacao/verificar" && m == Method.POST -> autenticado(s) {
+                a.verificar(); json(Response.Status.OK, a.estadoJson())
+            }
+            uri == "/atualizacao/iniciar" && m == Method.POST -> autenticado(s) {
+                if (a.iniciar()) { at.executar(); json(Response.Status.ACCEPTED, a.estadoJson()) }
+                else erro(Response.Status.CONFLICT, "Nada a atualizar ou atualização já em andamento")
+            }
+            uri == "/atualizacao/cancelar" && m == Method.POST -> autenticado(s) {
+                if (a.cancelar()) json(Response.Status.OK, a.estadoJson())
+                else erro(Response.Status.CONFLICT, "Instalação em andamento, não é possível cancelar")
+            }
+            else -> erro(Response.Status.NOT_FOUND, "Rota não encontrada")
+        }
     }
 
     private fun rotearPendrive(uri: String, m: Method, s: IHTTPSession): Response {

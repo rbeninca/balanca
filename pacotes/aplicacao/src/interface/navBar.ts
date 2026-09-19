@@ -1,6 +1,8 @@
 import { TelaCreditos } from './TelaCreditos.js';
 import { TelaEsquema } from './TelaEsquema.js';
 import { TelaPendrive } from './TelaPendrive.js';
+import { TelaAtualizacao } from './TelaAtualizacao.js';
+import { resumir, type EstadoAtualizacaoApp } from './atualizacaoApp.js';
 
 export interface StatusConexao {
   endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
@@ -41,6 +43,7 @@ export function navHtml(props: NavProps): string {
       ${itemNav('nav-config',   'Configurações',  props.ativo === 'configuracoes', props.onConfiguracoes)}
       ${itemNav('nav-firmware', 'Firmware',       props.ativo === 'firmware',      props.onFirmware, ' style="margin-left:auto"')}
       <a href="#" id="nav-pendrive">Pendrive</a>
+      <a href="#" id="nav-atualizacao" title="Atualização do app do TVBox">Atualização<span id="nav-atualizacao-aviso" class="nav-aviso hidden" title="Há versão nova">●</span></a>
       <a href="#" id="nav-montagem">Montagem</a>
       <a href="#" id="nav-creditos">Créditos</a>
       <button id="nav-tema" class="nav-tema-btn" title="Alternar modo escuro/claro">${escuro ? '☀' : '🌙'}</button>
@@ -67,6 +70,11 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   container.querySelector('#nav-pendrive')?.addEventListener('click', (e) => {
     e.preventDefault(); new TelaPendrive();
   });
+  container.querySelector('#nav-atualizacao')?.addEventListener('click', (e) => {
+    e.preventDefault(); new TelaAtualizacao();
+  });
+  void marcarAtualizacaoDisponivel(container);
+
   container.querySelector('#nav-montagem')?.addEventListener('click', (e) => {
     e.preventDefault(); new TelaEsquema();
   });
@@ -84,4 +92,19 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
       temaBtn.textContent = novoTema === 'escuro' ? '☀' : '🌙';
     });
   }
+}
+
+/**
+ * Acende o ponto no item "Atualização" quando o box já sabe de uma versão nova
+ * (o serviço consulta o repositório sozinho). Silencioso quando não há gateway.
+ */
+async function marcarAtualizacaoDisponivel(container: HTMLElement): Promise<void> {
+  const aviso = container.querySelector<HTMLElement>('#nav-atualizacao-aviso');
+  if (!aviso) return;
+  try {
+    const r = await fetch(`http://${location.hostname}:3000/atualizacao`, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return;
+    const e = await r.json() as EstadoAtualizacaoApp;
+    aviso.classList.toggle('hidden', !resumir(e).haAtualizacao);
+  } catch { /* sem gateway (WebSerial / Pages): fica escondido */ }
 }

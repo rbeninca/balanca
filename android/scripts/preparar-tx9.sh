@@ -54,14 +54,15 @@ USB_XML="/data/system/users/0/usb_device_manager.xml"
 
 DEV_PATH=""
 for d in $(adb -s "$DEVICE" shell "su -c 'ls -d /sys/bus/usb/devices/*/'" | tr -d '\r'); do
-  vid=$(adb -s "$DEVICE" shell "su -c 'cat ${d}idVendor 2>/dev/null'" | tr -d '\r ')
+  # hubs/raízes não têm idVendor: o cat falha e, com pipefail, mataria o script
+  vid=$(adb -s "$DEVICE" shell "su -c 'cat ${d}idVendor 2>/dev/null'" | tr -d '\r ' || true)
   case "$vid" in 1a86|10c4|0403) DEV_PATH="$d"; break ;; esac
 done
 
 if [ -z "$DEV_PATH" ]; then
   echo "==> Balanca nao encontrada na USB; pulei a pre-aprovacao USB."
 else
-  rd() { adb -s "$DEVICE" shell "su -c 'cat ${DEV_PATH}$1 2>/dev/null'" | tr -d '\r '; }
+  rd() { adb -s "$DEVICE" shell "su -c 'cat ${DEV_PATH}$1 2>/dev/null'" | tr -d '\r ' || true; }
   VID=$((16#$(rd idVendor)));     PID=$((16#$(rd idProduct)))
   CLS=$((16#$(rd bDeviceClass))); SUB=$((16#$(rd bDeviceSubClass))); PRO=$((16#$(rd bDeviceProtocol)))
   PRODNAME=$(adb -s "$DEVICE" shell "su -c 'cat ${DEV_PATH}product 2>/dev/null'" | tr -d '\r')
