@@ -8,6 +8,15 @@ export interface SessaoLocal {
   criadoEm: string;
   /** Preenchido pela API na listagem; ausente no armazenamento local. */
   resumo?: ResumoSessao;
+  /** Configuração do pipeline (e da ESP) vigente ao iniciar a gravação — reprodutibilidade. */
+  configPipeline?: Record<string, unknown>;
+  configEsp?: Record<string, unknown>;
+}
+
+/** Fotografia da configuração passada ao criar a sessão. */
+export interface ConfigDaSessao {
+  configPipeline?: Record<string, unknown> | undefined;
+  configEsp?: Record<string, unknown> | undefined;
 }
 
 export interface MetadadosLocal {
@@ -18,10 +27,12 @@ export interface MetadadosLocal {
   fabricante?: string;
   descricao?: string;
   observacoes?: string;
+  /** Remoção de deriva escolhida na análise (não altera as leituras gravadas). */
+  detrend?: 'nenhum' | 'media' | 'linear';
 }
 
 export interface IArmazenamento {
-  criarSessao(nome: string): Promise<SessaoLocal>;
+  criarSessao(nome: string, config?: ConfigDaSessao): Promise<SessaoLocal>;
   listarSessoes(): Promise<SessaoLocal[]>;
   atualizarSessao(id: string, dados: Partial<Pick<SessaoLocal, 'nome' | 'criadoEm'>>): Promise<SessaoLocal>;
   excluirSessao(id: string): Promise<void>;
@@ -136,9 +147,11 @@ function gerarUUID(): string {
 }
 
 export class ArmazenamentoLocal implements IArmazenamento {
-  async criarSessao(nome: string): Promise<SessaoLocal> {
+  async criarSessao(nome: string, config?: ConfigDaSessao): Promise<SessaoLocal> {
     const id = gerarUUID();
     const sessao: SessaoLocal = { id, nome, criadoEm: new Date().toISOString() };
+    if (config?.configPipeline) sessao.configPipeline = config.configPipeline;
+    if (config?.configEsp) sessao.configEsp = config.configEsp;
     const db = await abrirBD();
     await tx(db, ['sessoes'], 'readwrite', async (t) => put(t.objectStore('sessoes'), sessao));
     db.close();

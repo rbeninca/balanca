@@ -1,11 +1,12 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
+import type { EstadoPipeline, PipelinePatch, FonteImpulso } from '@balancagfig/processamento';
 import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorGravacao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-import { htmlPainelFiltros } from './filtrosPainel.js';
-import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
+import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth, descreverPipeline, textoAtraso } from './filtrosPainel.js';
+import { PERFIS, detectarPerfil, type PerfilProcessamento } from './presetsProcessamento.js';
+import { sugerirZonaMortaN, sugerirLimiaresDetector, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
 type Unidade = 'N' | 'kg' | 'g';
@@ -283,18 +284,45 @@ export class TelaMedicao {
     const inp = (id: string, v: number | undefined, fb: number) => { const el = c.querySelector<HTMLInputElement>(id); if (el) el.value = String(v ?? fb); };
 
     ck('#ck-zona-morta',  cfg.ativoZonaMorta);
-    ck('#ck-media-movel', cfg.ativoMediaMovel);
+    ck('#ck-hampel',      cfg.ativoHampel ?? false);
+    ck('#ck-zero-tracking', cfg.ativoZeroTracking ?? false);
     ck('#ck-det-queima',  cfg.ativoDetectorQueima);
     ck('#ck-notch',       cfg.ativoNotch);
     ck('#ck-mediana',     cfg.ativoMediana);
-    ck('#ck-ema',         cfg.ativoEMA);
-    ck('#ck-sg',          cfg.ativoSG);
-    ck('#ck-kalman',      cfg.ativoKalman);
+    const principal = filtroPrincipalDe(cfg);
+    for (const r of RADIOS_FILTRO_PRINCIPAL) ck(`#${r.id}`, r.valor === principal);
+
+    const fs = c.querySelector<HTMLElement>('#fs-estimada');
+    if (fs) {
+      const fixa = cfg.taxaAmostragemHz;
+      const medida = cfg.taxaEstimadaHz;
+      fs.textContent = fixa != null ? `Fs ${fixa} Hz (fixa)` : medida != null ? `Fs ≈ ${medida.toFixed(1)} Hz` : 'Fs —';
+    }
 
     inp('#in-zona-morta',   cfg.limiarZonaMortaN,  0.05);
     inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
-    inp('#in-det-hister',   cfg.tempoMinFimMs,     100);
+    // Detector: o estado traz os valores efetivos (com os padrões antigos aplicados)
+    const det = cfg.detector;
+    inp('#in-det-entrada',   det?.limiarEntradaN ?? cfg.limiarEntradaN, cfg.limiarZonaMortaN ?? 0.2);
+    inp('#in-det-t-entrada', det?.tempoEntradaMs ?? cfg.tempoEntradaMs, 0);
+    inp('#in-det-saida',     det?.limiarSaidaN   ?? cfg.limiarSaidaN,   cfg.limiarZonaMortaN ?? 0.1);
+    inp('#in-det-hister',    det?.tempoSaidaMs   ?? cfg.tempoSaidaMs,   cfg.tempoMinFimMs ?? 100);
     inp('#in-notch-freq',   cfg.freqNotchHz,       60);
+    inp('#in-hampel-jan',   cfg.janelaHampel,      7);
+    inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
+    inp('#in-bw-corte',     cfg.frequenciaCorteHz, 10);
+    inp('#in-zt-limiar',    cfg.zeroTrackingLimiarN, 0.05);
+    inp('#in-zt-tempo',     cfg.zeroTrackingTempoMs, 3000);
+    inp('#in-zt-alpha',     cfg.zeroTrackingAlpha,   0.01);
+    const off = c.querySelector<HTMLElement>('#zt-offset');
+    if (off) off.textContent = `offset ${(cfg.zeroTrackingOffsetN ?? 0).toFixed(4)} N`;
+    this.mostrarPipeline(c, cfg);
+    this.mostrarPerfil(c, cfg);
+    const selImpulso = c.querySelector<HTMLSelectElement>('#sel-impulso');
+    if (selImpulso) selImpulso.value = cfg.fonteCalculoImpulso ?? 'final';
+    const bw = situacaoButterworth(cfg);
+    const ny = c.querySelector<HTMLElement>('#bw-nyquist'); if (ny) ny.textContent = bw.nyquist;
+    c.querySelector<HTMLElement>('#bw-aviso')?.classList.toggle('hidden', !(bw.invalido && principal === 'butterworth'));
     inp('#in-mediana-jan',  cfg.janelaMediana,     5);
     inp('#in-ema-alpha',    cfg.alphaEMA,          0.2);
     inp('#in-sg-jan',       cfg.janelaSG,          7);
@@ -340,36 +368,61 @@ export class TelaMedicao {
       Math.max(0, +(container.querySelector<HTMLInputElement>(id)!.value) || fb);
     const chk = (id: string) =>
       container.querySelector<HTMLInputElement>(id)!.checked;
+    const principalEscolhido = () =>
+      RADIOS_FILTRO_PRINCIPAL.find(r => chk(`#${r.id}`))?.valor ?? 'nenhum';
 
     const aplicar = () => {
       const patch: PipelinePatch = {
         ativoZonaMorta:      chk('#ck-zona-morta'),
         limiarZonaMortaN:    num('#in-zona-morta', 0.05),
-        ativoMediaMovel:     chk('#ck-media-movel'),
+        ...patchFiltroPrincipal(principalEscolhido()),
         janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
         ativoDetectorQueima: chk('#ck-det-queima'),
-        tempoMinFimMs:       num('#in-det-hister', 100),
+        limiarEntradaN:      num('#in-det-entrada', 0.2),
+        limiarSaidaN:        Math.min(num('#in-det-saida', 0.1), num('#in-det-entrada', 0.2)),
+        tempoEntradaMs:      num('#in-det-t-entrada', 0),
+        tempoSaidaMs:        num('#in-det-hister', 100),
+        tempoMinFimMs:       num('#in-det-hister', 100),   // compat com gateway anterior à Fase 7
+        frequenciaCorteHz:   Math.max(0.1, num('#in-bw-corte', 10)),
+        fonteCalculoImpulso: (container.querySelector<HTMLSelectElement>('#sel-impulso')?.value ?? 'final') as FonteImpulso,
+        ativoHampel:         chk('#ck-hampel'),
+        ativoZeroTracking:   chk('#ck-zero-tracking'),
+        zeroTrackingLimiarN: num('#in-zt-limiar', 0.05),
+        zeroTrackingTempoMs: num('#in-zt-tempo', 3000),
+        zeroTrackingAlpha:   Math.min(1, Math.max(0.0001, num('#in-zt-alpha', 0.01))),
+        janelaHampel:        janelaImpar(num('#in-hampel-jan', 7)),
+        limiarHampelSigma:   Math.max(0.5, num('#in-hampel-k', 3)),
         ativoNotch:          chk('#ck-notch'),
         freqNotchHz:         Math.max(1, num('#in-notch-freq', 60)),
         ativoMediana:        chk('#ck-mediana'),
         janelaMediana:       Math.max(1, num('#in-mediana-jan', 5)),
-        ativoEMA:            chk('#ck-ema'),
         alphaEMA:            Math.min(1, Math.max(0.001, num('#in-ema-alpha', 0.2))),
-        ativoSG:             chk('#ck-sg'),
         janelaSG:            Math.max(5, num('#in-sg-jan', 7)),
-        ativoKalman:         chk('#ck-kalman'),
         kalmanQ:             Math.max(0.0001, num('#in-kalman-q', 0.01)),
         kalmanR:             Math.max(0.01,   num('#in-kalman-r', 1.0)),
       };
       this.fonte.atualizarConfigPipeline?.(patch);
       this.atualizarBadgeFiltros(container);
       this.atualizarBotaoSinalBruto(patch);
+      const estadoNovo = { ...this.fonte.obterConfigPipeline?.(), ...patch };
+      this.mostrarPipeline(container, estadoNovo);
+      this.mostrarPerfil(container, estadoNovo);
     };
 
-    ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
-     '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'].forEach(id =>
+    // Perfil: aplica os valores do preset nos controles e envia; o usuário pode mudar tudo depois
+    container.querySelector<HTMLSelectElement>('#sel-perfil')?.addEventListener('change', (e) => {
+      const chave = (e.target as HTMLSelectElement).value as PerfilProcessamento;
+      if (chave === 'personalizado') return;
+      const perfil = PERFIS[chave];
+      this.sincronizarPainel({ ...this.fonte.obterConfigPipeline?.(), ...perfil.patch } as EstadoPipeline);
+      aplicar();
+    });
+
+    ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana',
+     ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister',
+    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-det-entrada', '#in-det-t-entrada', '#in-det-saida',
+     '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso', '#in-zt-limiar', '#in-zt-tempo', '#in-zt-alpha',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -387,6 +440,14 @@ export class TelaMedicao {
       const ck  = container.querySelector<HTMLInputElement>('#ck-zona-morta');
       if (inp) inp.value = String(Number(zm.toPrecision(3)));
       if (ck) ck.checked = true;   // sugerir implica ativar a zona morta
+      // …e os limiares do detector: início 4× e fim 2× o piso de ruído
+      const lim = sugerirLimiaresDetector(this.dadosCelula);
+      if (lim) {
+        const e = container.querySelector<HTMLInputElement>('#in-det-entrada');
+        const s = container.querySelector<HTMLInputElement>('#in-det-saida');
+        if (e) e.value = String(Number(lim.limiarEntradaN.toPrecision(3)));
+        if (s) s.value = String(Number(lim.limiarSaidaN.toPrecision(3)));
+      }
       aplicar();
     });
 
@@ -396,19 +457,43 @@ export class TelaMedicao {
     this.atualizarBadgeFiltros(container);
   }
 
+  /** Seletor de perfil reflete o estado: um dos presets ou "Personalizado". */
+  private mostrarPerfil(container: HTMLElement, cfg: Partial<EstadoPipeline>) {
+    const sel = container.querySelector<HTMLSelectElement>('#sel-perfil');
+    const desc = container.querySelector<HTMLElement>('#perfil-descricao');
+    if (!sel) return;
+    const perfil = detectarPerfil(cfg);
+    sel.value = perfil;
+    if (desc) desc.textContent = perfil === 'personalizado' ? '' : PERFIS[perfil].descricao;
+  }
+
+  /** "BRUTO → Hampel → … → SAÍDA" e o atraso do filtro principal, sempre que a configuração muda. */
+  private mostrarPipeline(container: HTMLElement, cfg: Partial<EstadoPipeline>) {
+    const el = container.querySelector<HTMLElement>('#pipeline-atual');
+    if (el) {
+      el.innerHTML = descreverPipeline(cfg).map((e, i, a) => {
+        const cls = e === 'BRUTO' || e === 'SAÍDA' ? 'pipeline-ponta' : e.startsWith('→') ? 'pipeline-ramo' : 'pipeline-estagio';
+        return `<span class="${cls}">${e}</span>${i < a.length - 1 && !a[i + 1]!.startsWith('→') ? '<span class="pipeline-seta">→</span>' : ''}`;
+      }).join('');
+    }
+    const atraso = container.querySelector<HTMLElement>('#fp-atraso');
+    if (atraso) atraso.textContent = textoAtraso(cfg);
+  }
+
   private atualizarBadgeFiltros(container: HTMLElement) {
     const badge = container.querySelector<HTMLElement>('#filtros-badge');
     if (!badge) return;
-    const ids = ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
-                 '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'];
-    const total  = ids.length;
-    const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length;
+    const ids = ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
+    const total  = ids.length + 1;   // + o filtro principal (um só)
+    const principal = RADIOS_FILTRO_PRINCIPAL.some(r => r.valor !== 'nenhum' && container.querySelector<HTMLInputElement>(`#${r.id}`)?.checked);
+    const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length + (principal ? 1 : 0);
     badge.textContent = ativos === total ? `${total} ativos` : ativos === 0 ? 'inativo' : `${ativos}/${total} ativos`;
     badge.className   = 'filtros-badge' + (ativos === total ? '' : ativos === 0 ? ' inativo' : ' parcial');
   }
 
   private atualizarBotaoSinalBruto(patch: PipelinePatch) {
-    const algumNovo = patch.ativoNotch || patch.ativoMediana || patch.ativoEMA || patch.ativoSG || patch.ativoKalman;
+    const fp = patch.filtroPrincipal ?? 'nenhum';
+    const algumNovo = patch.ativoHampel || patch.ativoNotch || patch.ativoMediana || (fp !== 'nenhum' && fp !== 'mediaMovel');
     if (this.elBtnSinalBruto) {
       this.elBtnSinalBruto.disabled = !algumNovo;
       if (!algumNovo) {
@@ -963,10 +1048,28 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
   }, []);
 
   return {
+    'zero-tracking': {
+      nome: 'Zero tracking',
+      oque: 'Compensa lentamente a deriva do zero (temperatura, fluência da célula) quando a balança está comprovadamente sem carga. É o terceiro "zero" do sistema, depois da tara da ESP e do deslocamento de tara — e o único que anda sozinho, por isso o offset fica visível aqui.',
+      como: 'Saída = F − offset. Se |F − offset| ficar abaixo da zona de repouso por mais que o tempo indicado, sem variação rápida entre amostras, o offset caminha devagar: offset += α·(F − offset). Nunca corrige durante um evento (detector) nem durante uma gravação — o zero de uma sessão não pode andar. Quando usar: pesagens longas e bancadas ao sol. Quando não usar: quando o repouso real tem força pequena mas verdadeira (ex.: pré-carga) — ela seria absorvida com o tempo; e sempre com o detector ligado em testes de motor.',
+      svg: _svg(zm_e, zm_e.map(v => v * 0.2)),
+      refs: [
+        { texto: 'OIML R 76 — zero-tracking device (balanças não automáticas)', url: 'https://www.oiml.org/en/files/pdf_r/r076-1-e06.pdf' },
+      ],
+    },
+    'impulso': {
+      nome: 'Fonte do impulso',
+      oque: 'Escolhe qual sinal alimenta a integral do impulso acumulado (N·s). O sinal exibido continua o mesmo; muda só o que é integrado.',
+      como: 'final (padrão): após a zona morta — o ruído de repouso não acumula ao vivo, o impulso fica parado entre queimas. filtrado: após o suavizador, antes da zona morta — integra também o que a zona morta zera (mais fiel durante a queima, mas deriva em repouso). limpo: só a etapa 1. bruto: como veio da ESP, sem nenhum filtro. Para análise científica, a tela de Análise recalcula o impulso na janela de queima a partir do sinal gravado (cru), independentemente desta escolha.',
+      svg: _svg(zm_e, zm_s),
+      refs: [
+        { texto: 'Wikipedia — Specific impulse / total impulse', url: 'https://en.wikipedia.org/wiki/Impulse_(physics)' },
+      ],
+    },
     'zona-morta': {
       nome: 'Zona Morta',
-      oque: 'Remove pequenas variações em torno do zero que correspondem ao ruído do sensor — e não a uma força real aplicada. Qualquer leitura com valor absoluto abaixo do limiar configurado é tratada como zero.',
-      como: 'Função de transferência: se |x| < limiar → y = 0; caso contrário y = x. O limiar deve ser calibrado para ficar ligeiramente acima do nível de ruído do sensor em repouso. No gráfico, observe que os trechos próximos ao zero da curva de entrada são suprimidos.',
+      oque: 'Remove pequenas variações em torno do zero que correspondem ao ruído do sensor — e não a uma força real aplicada. Qualquer leitura com valor absoluto abaixo do limiar configurado é tratada como zero. É um tratamento (etapa 3): roda sobre o sinal já suavizado.',
+      como: 'Função de transferência: se |x| < limiar → y = 0; caso contrário y = x. O limiar deve ser calibrado para ficar ligeiramente acima do nível de ruído do sensor em repouso (use "sugerir"). Por padrão o impulso também é integrado depois dela ("Impulso de: sinal final"), então o ruído de repouso não acumula. No gráfico, observe que os trechos próximos ao zero da curva de entrada são suprimidos.',
       svg: _svg(zm_e, zm_s),
       refs: [
         { texto: 'Wikipedia — Dead zone (control systems)', url: 'https://en.wikipedia.org/wiki/Dead_zone_(control_systems)' },
@@ -984,9 +1087,9 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
       ],
     },
     'det-queima': {
-      nome: 'Detector de Queima',
-      oque: 'Identifica o início e fim da fase de propulsão de um motor foguete de maneira robusta, mesmo com ruído e oscilações de chama no final da queima.',
-      como: 'Usa histerese temporal: a força ultrapassa o limiar → queima ativa. A queima só é marcada como encerrada se a força permanecer abaixo do limiar por pelo menos T ms (configurável). Isso evita falsos términos causados por flutuações transitórias. A saída binária (cinza) indica o estado de queima.',
+      nome: 'Detector de evento',
+      oque: 'Marca o início e o fim de um evento (a queima do motor, um impacto…) de maneira robusta, mesmo com ruído e oscilações de chama no final da queima. Os limiares são independentes da zona morta.',
+      como: 'Histerese de força + tempo de confirmação: o evento começa quando a força fica acima da força de início pelo tempo de início (0 = na primeira amostra) e termina quando fica abaixo da força de fim pelo tempo de fim. Força de fim menor que a de início (F_ON > F_OFF) evita liga-desliga no ruído; o tempo de fim evita falsos términos por flutuações transitórias. "sugerir" preenche início = 4× e fim = 2× o piso de ruído da célula. A saída binária (cinza) indica o estado.',
       svg: _svg(
         [0.00,0.00,0.08,0.58,0.88,0.95,0.90,0.82,0.78,0.84,0.80,0.72,0.55,0.30,0.10,0.02,0.00,0.00,0.00,0.00],
         [0.00,0.00,0.00,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.00,0.00,0.00,0.00,0.00,0.00],
@@ -994,6 +1097,30 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
       refs: [
         { texto: 'Wikipedia — Hysteresis (control systems)', url: 'https://en.wikipedia.org/wiki/Hysteresis#Control_systems' },
         { texto: 'Wikipedia — Solid-fuel rocket', url: 'https://en.wikipedia.org/wiki/Solid-fuel_rocket' },
+      ],
+    },
+    'hampel': {
+      nome: 'Filtro de Hampel',
+      oque: 'Remove amostras anômalas (spikes) comparando cada leitura com a mediana robusta das últimas N amostras. Diferente da mediana, só mexe no sinal quando encontra um outlier — o resto passa intacto.',
+      como: 'm = mediana da janela; MAD = mediana de |xᵢ − m|; σ ≈ 1,4826·MAD (com um piso da ordem da resolução da célula). Se |x − m| > K·σ a amostra é trocada por m. Janela causal (só o passado): sem atraso na saída; um degrau real fica preso na mediana por até (N+1)/2 amostras e depois passa. Quando usar: leituras isoladas absurdas (falha de comunicação, ruído impulsivo). Quando não usar: quando picos muito rápidos forem o fenômeno estudado, ou com K pequeno em sinais muito lisos (logo após um pico a janela se concentra no topo e a amostra nova pode ser marcada — suba K para 3,5).',
+      svg: _svg(med_e, med_e.map((v, i, a) => {
+        const win = a.slice(Math.max(0, i - 6), i + 1).slice().sort((x, y) => x - y);
+        const m = win[Math.floor(win.length / 2)] ?? v;
+        return Math.abs(v - m) > 0.3 ? m : v;
+      })),
+      refs: [
+        { texto: 'Wikipedia — Hampel filter (Median absolute deviation)', url: 'https://en.wikipedia.org/wiki/Median_absolute_deviation' },
+        { texto: 'Pearson, R. K. — Outliers in process modeling and identification (1999)', url: 'https://doi.org/10.1109/87.748144' },
+      ],
+    },
+    'butterworth': {
+      nome: 'Butterworth passa-baixa (2ª ordem)',
+      oque: 'Deixa passar as componentes lentas do sinal e atenua as rápidas acima da frequência de corte, com a resposta mais plana possível na banda passante (sem ondulação). −3 dB no corte e −12 dB por oitava acima.',
+      como: 'Filtro IIR biquad com Q = 1/√2, coeficientes calculados para a taxa de amostragem real (medida pelas marcas de tempo) e recalculados quando ela muda. Exige corte < Fs/2 (Nyquist) — acima disso o filtro é ignorado e o painel avisa. Quando usar: para eliminar oscilações acima de uma frequência conhecida mantendo a forma da curva de empuxo (ex.: corte em 10–20 Hz para um motor de queima de 1–3 s). Quando não usar: quando picos muito rápidos forem o fenômeno estudado (impacto) — o filtro os achata e atrasa.',
+      svg: _svg(ema_e, ema_s),
+      refs: [
+        { texto: 'Wikipedia — Butterworth filter', url: 'https://en.wikipedia.org/wiki/Butterworth_filter' },
+        { texto: 'Audio EQ Cookbook — LPF biquad', url: 'https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html' },
       ],
     },
     'notch': {
@@ -1065,4 +1192,10 @@ export function textoDuracao(ms: number): string {
   const m = Math.floor(s / 60);
   if (m < 60) return `${m} min ${String(s % 60).padStart(2, '0')} s`;
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+}
+
+/** Janela ímpar ≥ 3 para o Hampel (o campo tem step 2, mas o usuário pode digitar). */
+export function janelaImpar(v: number): number {
+  const n = Math.max(3, Math.round(v));
+  return n % 2 === 0 ? n + 1 : n;
 }

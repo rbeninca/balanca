@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS sessoes (
   -- resumo para a listagem (ver resumoSessao.ts): NULL = ainda não calculado
   total_leituras       INTEGER,
   forca_media_queima_n REAL,
-  impulso_queima_ns    REAL
+  impulso_queima_ns    REAL,
+  -- configuração vigente ao iniciar a gravação (JSON), para reprodutibilidade
+  config_pipeline      TEXT,
+  config_esp           TEXT
 );
 
 CREATE TABLE IF NOT EXISTS leituras (
@@ -28,10 +31,13 @@ CREATE INDEX IF NOT EXISTS idx_leituras_sessao ON leituras(id_sessao);
 CREATE TABLE IF NOT EXISTS metadados_sessao (
   id_sessao          TEXT    PRIMARY KEY REFERENCES sessoes(id) ON DELETE CASCADE,
   massa_propelente_g REAL,
+  massa_total_g      REAL,
   diametro_mm        REAL,
   comprimento_mm     REAL,
   fabricante         TEXT,
   descricao          TEXT,
-  observacoes        TEXT
+  observacoes        TEXT,
+  -- remoção de deriva escolhida na análise ('nenhum' | 'media' | 'linear'); não altera as leituras gravadas
+  detrend            TEXT
 );
 

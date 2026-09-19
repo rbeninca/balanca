@@ -543,10 +543,11 @@ void setup() {
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.printf("   Versao: ESTAVEL V17 (Binary Protocol v%d)\n", PROTO_VERSION);
+  Serial.printf("   Versao: ESTAVEL V18 (Binary Protocol v%d)\n", PROTO_VERSION);
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
+  Wire.setClock(400000);   // V18: SSD1306 aceita 400 kHz; encurta o bloqueio de cada redesenho
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("Falha ao iniciar display SSD1306."));
   }
@@ -592,8 +593,11 @@ void loop() {
     yield();
   }
 
-  // Rotina de Leitura e Envio da Célula de Carga (Alta Frequência)
-  if (millis() - lastReadTime >= 10) {
+  // Rotina de Leitura e Envio da Célula de Carga (Alta Frequência).
+  // V18: consulta is_ready() a cada volta do laço (antes, só a cada 10 ms —
+  // as marcas de tempo saíam quantizadas em 10/20 ms) e marca o tempo no
+  // instante em que a amostra ficou pronta, antes de ler.
+  if (millis() - lastReadTime >= 1) {
     lastReadTime = millis();
 
     // Não lê durante calibração/tara
@@ -602,6 +606,7 @@ void loop() {
     }
 
     if (loadcell.is_ready()) {
+      uint32_t t_amostra = millis();
       strcpy(balancaStatusBuffer, "Pesando");
       ESP.wdtFeed();
 
@@ -619,7 +624,7 @@ void loop() {
       p.magic     = MAGIC_BIN_PROTO;
       p.ver       = PROTO_VERSION;
       p.type      = TYPE_DATA;
-      p.t_ms      = millis();
+      p.t_ms      = t_amostra;
       p.forca_N   = forcaN;
       p.raw_value = rawValue;
       p.status    = status_code_from_str(balancaStatusBuffer);
@@ -631,8 +636,10 @@ void loop() {
     }
   }
 
-  // Rotina de Display (a cada 500ms)
-  if (millis() - lastDisplayUpdateTime >= 500) {
+  // Rotina de Display. V18: a cada 1 s (era 500 ms) e só quando o texto muda —
+  // cada redesenho bloqueia o laço pelo tempo da transferência I2C e perde
+  // uma amostra da célula; com I2C a 400 kHz o bloqueio cai para ~10 ms.
+  if (millis() - lastDisplayUpdateTime >= 1000) {
     lastDisplayUpdateTime = millis();
     atualizarDisplay(balancaStatusBuffer, pesoAtual_g);
     yield();
@@ -822,25 +829,34 @@ void processSerialCommand() {
 }
 
 void atualizarDisplay(const char* status, float peso_em_gramas) {
+  // Só transfere para o OLED se algo mudou: o display.display() bloqueia o laço.
+  static char ultimoTexto[64] = "";
+  char pesoTxt[16];
+  float peso_kg = peso_em_gramas / 1000.0;
+  if (abs(peso_kg) < 10) {
+    snprintf(pesoTxt, sizeof(pesoTxt), "%.3f kg", peso_kg);
+  } else if (abs(peso_kg) < 100) {
+    snprintf(pesoTxt, sizeof(pesoTxt), "%.2f kg", peso_kg);
+  } else {
+    snprintf(pesoTxt, sizeof(pesoTxt), "%.1f kg", peso_kg);
+  }
+  char texto[64];
+  snprintf(texto, sizeof(texto), "%s|%s|%u", pesoTxt, status, (unsigned)(ESP.getFreeHeap() / 1024));
+  if (strcmp(texto, ultimoTexto) == 0) return;
+  strncpy(ultimoTexto, texto, sizeof(ultimoTexto) - 1);
+  ultimoTexto[sizeof(ultimoTexto) - 1] = '\0';
+
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(2);
   display.setCursor(0, 0);
-
-  float peso_kg = peso_em_gramas / 1000.0;
-  if (abs(peso_kg) < 10) {
-    display.printf("%.3f kg", peso_kg);
-  } else if (abs(peso_kg) < 100) {
-    display.printf("%.2f kg", peso_kg);
-  } else {
-    display.printf("%.1f kg", peso_kg);
-  }
+  display.print(pesoTxt);
 
   display.setTextSize(1);
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("V17 BINARY PROTO");
+  display.println("V18 BINARY PROTO");
   display.setCursor(0, 45);
   display.printf("Serial: 921600 Baud");
   display.setCursor(0, 55);

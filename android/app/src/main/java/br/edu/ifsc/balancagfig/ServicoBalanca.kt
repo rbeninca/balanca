@@ -210,7 +210,19 @@ class ServicoBalanca : Service() {
             val bkp = BackupPendrive(this, banco).also { backup = it }
             // Gravação compartilhada no gateway (ver GravadorSessao); alimentada em aoReceber da serial
             val destino = EscritaSessoes.DestinoBanco(banco) { bkp.aoSalvarSessao(it) }.also { destinoGravacao = it }
-            gravador = GravadorSessao(destino, aoMudar = { difundirGravacao() })
+            gravador = GravadorSessao(
+                destino,
+                aoMudar = { e ->
+                    pipeline.definirGravando(e.gravando)   // zero tracking não corrige durante a gravação
+                    difundirGravacao()
+                },
+                // Fotografia da configuração no início da gravação: os mesmos JSONs que o frontend recebe
+                configAtual = {
+                    val pipelineJson = JSONObject(Mensagens.pipelineEstado(pipeline.obterConfig())).getJSONObject("carga").toString()
+                    val espJson = ultimaConfig?.let { JSONObject(Mensagens.config(it)).getJSONObject("carga").toString() }
+                    pipelineJson to espJson
+                },
+            )
             iniciarContadorGravacao()
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
@@ -304,6 +316,7 @@ class ServicoBalanca : Service() {
     private fun tratarMensagemCliente(entrada: Mensagens.Entrada, remetente: String) {
         when (entrada) {
             is Mensagens.Entrada.ConfigPipeline -> {
+                Log.d(TAG, "PIPELINE_CONFIG de $remetente: ${entrada.patch}")
                 pipeline.atualizarConfig(entrada.patch)
                 ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
             }
@@ -347,11 +360,12 @@ class ServicoBalanca : Service() {
         )
     }
 
-    /** Batimento SAUDE a cada 2 s (ver Mensagens.saude). */
+    /** Batimento SAUDE a cada 2 s (ver Mensagens.saude); aproveita para publicar o offset do zero tracking. */
     private fun iniciarBatimento() = escopo.launch {
         while (true) {
             delay(Mensagens.INTERVALO_SAUDE_MS)
             ws?.difundir(mensagemSaude())
+            if (pipeline.consumirMudancaOffset()) ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
         }
     }
 
@@ -398,6 +412,8 @@ class ServicoBalanca : Service() {
                         EstadoHost.atualizarEstatisticas { it.copy(pacotes = it.pacotes + 1, ultimo = pacote) }
                         gravador?.receber(leitura)
                         ws?.difundir(Mensagens.leitura(leitura))
+                        // Fs estimada mudou (filtros IIR reconstruídos): os painéis mostram a nova taxa
+                        if (pipeline.consumirMudancaTaxa()) ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
                     }
                     is PacoteConfiguracao -> {
                         EstadoHost.registrar("ESP: $pacote")

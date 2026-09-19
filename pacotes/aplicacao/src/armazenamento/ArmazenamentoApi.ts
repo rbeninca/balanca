@@ -1,6 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import { exportarCSV } from '@balancagfig/relatorio';
-import type { IArmazenamento, SessaoLocal, MetadadosLocal } from './ArmazenamentoLocal.js';
+import type { IArmazenamento, SessaoLocal, MetadadosLocal, ConfigDaSessao } from './ArmazenamentoLocal.js';
 import { resumoDaListagem, type LinhaResumoApi } from './resumoSessao.js';
 
 export class ArmazenamentoApi implements IArmazenamento {
@@ -15,23 +15,23 @@ export class ArmazenamentoApi implements IArmazenamento {
     this.headersAuth = { ...auth };
   }
 
-  async criarSessao(nome: string): Promise<SessaoLocal> {
+  async criarSessao(nome: string, config?: ConfigDaSessao): Promise<SessaoLocal> {
     const res = await fetch(`${this.base}/sessoes`, {
       method: 'POST',
       headers: this.headersJson,
-      body: JSON.stringify({ nome }),
+      body: JSON.stringify({ nome, config_pipeline: config?.configPipeline ?? null, config_esp: config?.configEsp ?? null }),
     });
     if (!res.ok) throw new Error(`Erro ao criar sessão: ${res.status}`);
-    const d = await res.json() as { id: string; nome: string; criado_em: string };
-    return { id: d.id, nome: d.nome, criadoEm: d.criado_em };
+    const d = await res.json() as LinhaSessaoApi;
+    return converterSessao(d);
   }
 
   async listarSessoes(): Promise<SessaoLocal[]> {
     const res = await fetch(`${this.base}/sessoes`);
     if (!res.ok) throw new Error(`Erro ao listar sessões: ${res.status}`);
-    const lista = await res.json() as Array<{ id: string; nome: string; criado_em: string } & LinhaResumoApi>;
+    const lista = await res.json() as Array<LinhaSessaoApi & LinhaResumoApi>;
     return lista.map(s => {
-      const sessao: SessaoLocal = { id: s.id, nome: s.nome, criadoEm: s.criado_em };
+      const sessao = converterSessao(s);
       const resumo = resumoDaListagem(s);
       if (resumo) sessao.resumo = resumo;
       return sessao;
@@ -121,6 +121,7 @@ export class ArmazenamentoApi implements IArmazenamento {
         fabricante:         meta.fabricante ?? null,
         descricao:          meta.descricao ?? null,
         observacoes:        meta.observacoes ?? null,
+        detrend:            meta.detrend ?? null,
       }),
     });
     if (!res.ok) throw new Error(`Erro ao salvar metadados: ${res.status}`);
@@ -134,6 +135,7 @@ export class ArmazenamentoApi implements IArmazenamento {
       massa_propelente_g: number | null; massa_total_g: number | null;
       diametro_mm: number | null; comprimento_mm: number | null;
       fabricante: string | null; descricao: string | null; observacoes: string | null;
+      detrend?: string | null;
     };
     const meta: MetadadosLocal = {};
     if (d.massa_propelente_g != null) meta.massaPropelente_g = d.massa_propelente_g;
@@ -143,6 +145,31 @@ export class ArmazenamentoApi implements IArmazenamento {
     if (d.fabricante         != null) meta.fabricante        = d.fabricante;
     if (d.descricao          != null) meta.descricao         = d.descricao;
     if (d.observacoes        != null) meta.observacoes       = d.observacoes;
+    if (d.detrend === 'nenhum' || d.detrend === 'media' || d.detrend === 'linear') meta.detrend = d.detrend;
     return meta;
   }
+}
+
+interface LinhaSessaoApi {
+  id: string; nome: string; criado_em: string;
+  config_pipeline?: string | null;
+  config_esp?: string | null;
+}
+
+/** A API guarda a configuração como texto JSON; aqui vira objeto (ignora texto inválido). */
+function converterSessao(d: LinhaSessaoApi): SessaoLocal {
+  const sessao: SessaoLocal = { id: d.id, nome: d.nome, criadoEm: d.criado_em };
+  const cp = analisarJson(d.config_pipeline);
+  const ce = analisarJson(d.config_esp);
+  if (cp) sessao.configPipeline = cp;
+  if (ce) sessao.configEsp = ce;
+  return sessao;
+}
+
+export function analisarJson(texto: string | null | undefined): Record<string, unknown> | null {
+  if (!texto) return null;
+  try {
+    const v = JSON.parse(texto) as unknown;
+    return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : null;
+  } catch { return null; }
 }

@@ -12,3 +12,6 @@ export type { ResultadoAnalise, MetadadosMotor } from './AnalisadorMotor.js';
 
 export { normalizar, gerarTabelaComparativa } from './ComparadorSessoes.js';
 export type { SessaoParaComparar, LeituraNormalizada, LinhaTabelaComparativa } from './ComparadorSessoes.js';
+
+export { removerMedia, removerLinear, aplicarDetrend, METODOS_DETREND } from './Detrend.js';
+export type { MetodoDetrend, ResultadoDetrend } from './Detrend.js';

@@ -31,9 +31,13 @@ export class ProvedorSQLite {
     const colunasSessoes = (this.db.pragma('table_info(sessoes)') as Array<{ name: string }>).map(c => c.name);
     for (const [coluna, tipo] of [
       ['total_leituras', 'INTEGER'], ['forca_media_queima_n', 'REAL'], ['impulso_queima_ns', 'REAL'],
+      ['config_pipeline', 'TEXT'], ['config_esp', 'TEXT'],
     ] as const) {
       if (!colunasSessoes.includes(coluna)) this.db.exec(`ALTER TABLE sessoes ADD COLUMN ${coluna} ${tipo}`);
     }
+    const colunasMeta = (this.db.pragma('table_info(metadados_sessao)') as Array<{ name: string }>).map(c => c.name);
+    if (!colunasMeta.includes('detrend')) this.db.exec('ALTER TABLE metadados_sessao ADD COLUMN detrend TEXT');
+    if (!colunasMeta.includes('massa_total_g')) this.db.exec('ALTER TABLE metadados_sessao ADD COLUMN massa_total_g REAL');
   }
 
   executar(sql: string, params: unknown[] = []): void {

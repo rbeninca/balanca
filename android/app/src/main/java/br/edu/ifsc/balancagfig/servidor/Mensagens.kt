@@ -2,6 +2,8 @@ package br.edu.ifsc.balancagfig.servidor
 
 import br.edu.ifsc.balancagfig.armazenamento.GravadorSessao
 import br.edu.ifsc.balancagfig.processamento.EstadoPipeline
+import br.edu.ifsc.balancagfig.processamento.FiltroPrincipal
+import br.edu.ifsc.balancagfig.processamento.FonteImpulso
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelinePatch
 import br.edu.ifsc.balancagfig.protocolo.ComandoCalibrar
@@ -83,6 +85,25 @@ object Mensagens {
         c.janelaSG?.let { put("janelaSG", it) }
         c.kalmanQ?.let { put("kalmanQ", it) }
         c.kalmanR?.let { put("kalmanR", it) }
+        put("filtroPrincipal", e.filtroPrincipal.valor)
+        put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
+        put("butterworthValido", e.butterworthValido)
+        put("fonteCalculoImpulso", e.fonteCalculoImpulso.valor)
+        c.limiarEntradaN?.let { put("limiarEntradaN", it) }
+        c.limiarSaidaN?.let { put("limiarSaidaN", it) }
+        c.tempoEntradaMs?.let { put("tempoEntradaMs", it) }
+        c.tempoSaidaMs?.let { put("tempoSaidaMs", it) }
+        put("detector", JSONObject().put("limiarEntradaN", e.detector.limiarEntradaN).put("limiarSaidaN", e.detector.limiarSaidaN)
+            .put("tempoEntradaMs", e.detector.tempoEntradaMs).put("tempoSaidaMs", e.detector.tempoSaidaMs))
+        c.frequenciaCorteHz?.let { put("frequenciaCorteHz", it) }
+        c.janelaHampel?.let { put("janelaHampel", it) }
+        c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
+        put("ativoHampel", e.ativoHampel)
+        c.zeroTrackingLimiarN?.let { put("zeroTrackingLimiarN", it) }
+        c.zeroTrackingTempoMs?.let { put("zeroTrackingTempoMs", it) }
+        c.zeroTrackingAlpha?.let { put("zeroTrackingAlpha", it) }
+        put("ativoZeroTracking", e.ativoZeroTracking)
+        put("zeroTrackingOffsetN", e.zeroTrackingOffsetN)
         put("ativoZonaMorta", e.ativoZonaMorta)
         put("ativoMediaMovel", e.ativoMediaMovel)
         put("ativoDetectorQueima", e.ativoDetectorQueima)
@@ -159,6 +180,19 @@ object Mensagens {
         janelaSG = c.optIntOrNull("janelaSG"),
         kalmanQ = c.optDoubleOrNull("kalmanQ"),
         kalmanR = c.optDoubleOrNull("kalmanR"),
+        limiarEntradaN = c.optDoubleOrNull("limiarEntradaN"),
+        limiarSaidaN = c.optDoubleOrNull("limiarSaidaN"),
+        tempoEntradaMs = c.optIntOrNull("tempoEntradaMs")?.toLong(),
+        tempoSaidaMs = c.optIntOrNull("tempoSaidaMs")?.toLong(),
+        fonteCalculoImpulso = FonteImpulso.deValor(c.optString("fonteCalculoImpulso").takeIf { c.has("fonteCalculoImpulso") }),
+        frequenciaCorteHz = c.optDoubleOrNull("frequenciaCorteHz"),
+        janelaHampel = c.optIntOrNull("janelaHampel"),
+        limiarHampelSigma = c.optDoubleOrNull("limiarHampelSigma"),
+        ativoHampel = c.optBooleanOrNull("ativoHampel"),
+        ativoZeroTracking = c.optBooleanOrNull("ativoZeroTracking"),
+        zeroTrackingLimiarN = c.optDoubleOrNull("zeroTrackingLimiarN"),
+        zeroTrackingTempoMs = c.optIntOrNull("zeroTrackingTempoMs")?.toLong(),
+        zeroTrackingAlpha = c.optDoubleOrNull("zeroTrackingAlpha"),
         ativoZonaMorta = c.optBooleanOrNull("ativoZonaMorta"),
         ativoMediaMovel = c.optBooleanOrNull("ativoMediaMovel"),
         ativoDetectorQueima = c.optBooleanOrNull("ativoDetectorQueima"),
@@ -167,6 +201,7 @@ object Mensagens {
         ativoNotch = c.optBooleanOrNull("ativoNotch"),
         ativoSG = c.optBooleanOrNull("ativoSG"),
         ativoKalman = c.optBooleanOrNull("ativoKalman"),
+        filtroPrincipal = FiltroPrincipal.deValor(c.optString("filtroPrincipal").takeIf { c.has("filtroPrincipal") }),
     )
 
     // `!= null` no TS: ausente ou null não altera o campo

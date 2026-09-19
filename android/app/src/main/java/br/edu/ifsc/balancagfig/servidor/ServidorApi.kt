@@ -204,7 +204,12 @@ class ServidorApi(
     private fun criarSessao(body: JSONObject): Response {
         val nome = body.optString("nome", "")
         if (nome.isEmpty()) return erro(Response.Status.BAD_REQUEST, "Campo \"nome\" é obrigatório")
-        val id = EscritaSessoes.criarSessao(bd, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"))
+        // Configuração vigente ao iniciar a gravação (objeto → JSON), para reprodutibilidade
+        val json = { k: String -> body.optJSONObject(k)?.toString() }
+        val id = EscritaSessoes.criarSessao(
+            bd, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"),
+            configPipeline = json("config_pipeline"), configEsp = json("config_esp"),
+        )
         return json(Response.Status.CREATED, bd.consultarUm("SELECT * FROM sessoes WHERE id = ?", id)!!)
     }
 
@@ -278,22 +283,24 @@ class ServidorApi(
         val existente = bd.consultarUm("SELECT id_sessao FROM metadados_sessao WHERE id_sessao = ?", id) != null
         val valores = arrayOf<Any?>(
             body.optDoubleOrNull("massa_propelente_g"),
+            body.optDoubleOrNull("massa_total_g"),
             body.optDoubleOrNull("diametro_mm"),
             body.optDoubleOrNull("comprimento_mm"),
             body.optStringOrNull("fabricante"),
             body.optStringOrNull("descricao"),
             body.optStringOrNull("observacoes"),
+            body.optStringOrNull("detrend")?.takeIf { it in DETRENDS },   // remoção de deriva escolhida na análise
         )
         if (existente) {
             bd.executar(
-                """UPDATE metadados_sessao SET massa_propelente_g = ?, diametro_mm = ?, comprimento_mm = ?,
-                   fabricante = ?, descricao = ?, observacoes = ? WHERE id_sessao = ?""",
+                """UPDATE metadados_sessao SET massa_propelente_g = ?, massa_total_g = ?, diametro_mm = ?, comprimento_mm = ?,
+                   fabricante = ?, descricao = ?, observacoes = ?, detrend = ? WHERE id_sessao = ?""",
                 *valores, id,
             )
         } else {
             bd.executar(
-                """INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, massa_total_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes, detrend)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 id, *valores,
             )
         }
@@ -357,6 +364,7 @@ class ServidorApi(
     private fun JSONObject.ehNumero(k: String): Boolean = has(k) && !isNull(k) && opt(k) is Number
 
     companion object {
+        private val DETRENDS = setOf("nenhum", "media", "linear")
         private const val TAG = "ServidorApi"
         const val PORTA_PADRAO = 3000
         /** bodyLimit do Fastify no pacote api: 10 MB. */

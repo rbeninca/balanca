@@ -1,5 +1,5 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento, ConfigDaSessao } from '../armazenamento/ArmazenamentoLocal.js';
 
 export interface SessaoTeste {
   id: string;
@@ -17,8 +17,8 @@ export class GerenciadorSessao {
 
   constructor(private readonly armazenamento: IArmazenamento) {}
 
-  async iniciarGravacao(nome: string): Promise<{ id: string }> {
-    const sessao = await this.armazenamento.criarSessao(nome);
+  async iniciarGravacao(nome: string, config?: ConfigDaSessao): Promise<{ id: string }> {
+    const sessao = await this.armazenamento.criarSessao(nome, config);
     this.idSessaoAtual = sessao.id;
     this.buffer = [];
     return { id: sessao.id };

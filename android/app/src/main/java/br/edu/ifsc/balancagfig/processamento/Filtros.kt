@@ -122,6 +122,78 @@ class SavitzkyGolay(janela: Int) {
 }
 
 /** Notch IIR de 2ª ordem normalizado para ganho DC unitário. */
+/**
+ * Porta de FiltroButterworth.ts: passa-baixa Butterworth de 2ª ordem (biquad,
+ * Q = 1/√2). Exige 0 < fc < Fs/2; `configurar` recalcula mantendo o estado.
+ */
+class FiltroButterworth(frequenciaCorteHz: Double, taxaAmostragemHz: Double) {
+    private var b0 = 1.0; private var b1 = 0.0; private var b2 = 0.0; private var a1 = 0.0; private var a2 = 0.0
+    private var x1 = 0.0; private var x2 = 0.0; private var y1 = 0.0; private var y2 = 0.0
+
+    init { configurar(frequenciaCorteHz, taxaAmostragemHz) }
+
+    fun configurar(frequenciaCorteHz: Double, taxaAmostragemHz: Double) {
+        require(valido(frequenciaCorteHz, taxaAmostragemHz)) { "Butterworth: exige 0 < fc < Fs/2 (fc = $frequenciaCorteHz Hz, Fs = $taxaAmostragemHz Hz)" }
+        val w0 = 2 * Math.PI * frequenciaCorteHz / taxaAmostragemHz
+        val cosW0 = kotlin.math.cos(w0)
+        val alpha = kotlin.math.sin(w0) / (2 * (1.0 / kotlin.math.sqrt(2.0)))
+        val a0 = 1 + alpha
+        b0 = ((1 - cosW0) / 2) / a0
+        b1 = (1 - cosW0) / a0
+        b2 = b0
+        a1 = (-2 * cosW0) / a0
+        a2 = (1 - alpha) / a0
+    }
+
+    fun aplicar(x: Double): Double {
+        val y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+        x2 = x1; x1 = x
+        y2 = y1; y1 = y
+        return y
+    }
+
+    fun reiniciar() { x1 = 0.0; x2 = 0.0; y1 = 0.0; y2 = 0.0 }
+
+    companion object {
+        fun valido(frequenciaCorteHz: Double, taxaAmostragemHz: Double) =
+            frequenciaCorteHz > 0 && taxaAmostragemHz > 0 && frequenciaCorteHz < taxaAmostragemHz / 2
+    }
+}
+
+/**
+ * Porta de FiltroHampel.ts: Hampel causal — a amostra mais recente contra a
+ * mediana robusta da janela; outlier se |x − m| > K·max(1,4826·MAD, piso).
+ */
+class FiltroHampel(private val janela: Int = 7, private val limiarSigma: Double = 3.0, private val pisoSigma: Double = 1e-3) {
+    init { require(janela >= 3 && janela % 2 == 1) { "Hampel: janela deve ser ímpar ≥ 3 (recebeu $janela)" } }
+
+    data class Resultado(val valor: Double, val outlier: Boolean)
+
+    private val buffer = ArrayDeque<Double>()
+
+    fun aplicarDetalhado(x: Double): Resultado {
+        buffer.addLast(x)
+        if (buffer.size > janela) buffer.removeFirst()
+        if (buffer.size < 3) return Resultado(x, false)
+        val m = mediana(buffer)
+        val mad = mediana(buffer.map { kotlin.math.abs(it - m) })
+        val sigma = maxOf(FATOR_MAD * mad, pisoSigma)
+        return if (kotlin.math.abs(x - m) > limiarSigma * sigma) Resultado(m, true) else Resultado(x, false)
+    }
+
+    fun aplicar(x: Double): Double = aplicarDetalhado(x).valor
+
+    fun reiniciar() = buffer.clear()
+
+    private fun mediana(valores: Collection<Double>): Double {
+        val ordenado = valores.sorted()
+        val meio = ordenado.size / 2
+        return if (ordenado.size % 2 == 1) ordenado[meio] else (ordenado[meio - 1] + ordenado[meio]) / 2
+    }
+
+    companion object { const val FATOR_MAD = 1.4826 }
+}
+
 class FiltroNotch(freqHz: Double, q: Double, taxaAmostragemHz: Double) {
     private val b0: Double
     private val b1: Double
@@ -179,6 +251,70 @@ class DetectorQueima(private val limiar: Double, private val tempoMinFimMs: Long
 }
 
 /** Integral trapezoidal de força no tempo (N·s). */
+/** Porta de ZeroTracking.ts: compensa deriva lenta do zero só em repouso comprovado e sem bloqueio. */
+class ZeroTracking(limiarN: Double, tempoEstavelMs: Long, alpha: Double, variacaoMaxN: Double? = null) {
+    val limiarN = maxOf(0.0, limiarN)
+    val tempoEstavelMs = maxOf(0, tempoEstavelMs)
+    val alpha = alpha.coerceIn(0.0, 1.0)
+    val variacaoMaxN = variacaoMaxN ?: (limiarN / 2)
+    private var offset = 0.0
+    private var estavelDesdeMs: Long? = null
+    private var ultimoCorrigido: Double? = null
+
+    fun aplicar(forca: Double, marcaTemporal: Long, bloqueado: Boolean = false): Double {
+        val corrigida = forca - offset
+        val variacao = ultimoCorrigido?.let { kotlin.math.abs(corrigida - it) } ?: 0.0
+        ultimoCorrigido = corrigida
+        val emRepouso = !bloqueado && kotlin.math.abs(corrigida) < limiarN && variacao <= variacaoMaxN
+        if (!emRepouso) { estavelDesdeMs = null; return corrigida }
+        val desde = estavelDesdeMs ?: marcaTemporal.also { estavelDesdeMs = it }
+        if (marcaTemporal - desde >= tempoEstavelMs) offset += alpha * corrigida
+        return corrigida
+    }
+
+    fun obterOffset(): Double = offset
+    fun reiniciar() { offset = 0.0; estavelDesdeMs = null; ultimoCorrigido = null }
+}
+
+/** Limiares/tempos do detector de evento (espelho de ConfigDetectorEvento em DetectorEvento.ts). */
+data class ConfigDetectorEvento(val limiarEntradaN: Double, val limiarSaidaN: Double, val tempoEntradaMs: Long, val tempoSaidaMs: Long)
+
+/**
+ * Porta de DetectorEvento.ts: início quando força > entrada por ≥ tempoEntrada,
+ * fim quando força ≤ saída por ≥ tempoSaida; saída presa à entrada se maior.
+ * Com saída = entrada e tempoEntrada = 0 reproduz o DetectorQueima.
+ */
+class DetectorEvento(config: ConfigDetectorEvento) {
+    val config = ConfigDetectorEvento(
+        limiarEntradaN = config.limiarEntradaN,
+        limiarSaidaN = minOf(config.limiarSaidaN, config.limiarEntradaN),
+        tempoEntradaMs = maxOf(0, config.tempoEntradaMs),
+        tempoSaidaMs = maxOf(0, config.tempoSaidaMs),
+    )
+    private var emEvento = false
+    private var tsAltoMs: Long? = null
+    private var tsBaixoMs: Long? = null
+
+    fun atualizar(forca: Double, marcaTemporal: Long): Boolean {
+        val c = config
+        if (!emEvento) {
+            if (forca > c.limiarEntradaN) {
+                val inicio = tsAltoMs ?: marcaTemporal.also { tsAltoMs = it }
+                if (marcaTemporal - inicio >= c.tempoEntradaMs) { emEvento = true; tsAltoMs = null; tsBaixoMs = null }
+            } else tsAltoMs = null
+        } else {
+            if (forca <= c.limiarSaidaN) {
+                val inicio = tsBaixoMs
+                if (inicio == null) tsBaixoMs = marcaTemporal
+                else if (marcaTemporal - inicio >= c.tempoSaidaMs) { emEvento = false; tsBaixoMs = null }
+            } else tsBaixoMs = null
+        }
+        return emEvento
+    }
+
+    fun reiniciar() { emEvento = false; tsAltoMs = null; tsBaixoMs = null }
+}
+
 class CalculadorImpulso {
     private var impulsoAcumulado = 0.0
     private var ultimaForca: Double? = null

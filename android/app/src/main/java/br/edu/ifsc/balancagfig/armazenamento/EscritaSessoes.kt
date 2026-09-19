@@ -7,9 +7,16 @@ import java.util.concurrent.Executors
 /** SQL de escrita de sessões, compartilhado pela API REST e pelo gravador do gateway. */
 object EscritaSessoes {
 
-    fun criarSessao(bd: BancoDados, nome: String, idMotor: String? = null, observacoes: String? = null): String {
+    /** [configPipeline]/[configEsp]: JSON da configuração vigente ao iniciar a gravação (reprodutibilidade). */
+    fun criarSessao(
+        bd: BancoDados, nome: String, idMotor: String? = null, observacoes: String? = null,
+        configPipeline: String? = null, configEsp: String? = null,
+    ): String {
         val id = UUID.randomUUID().toString()
-        bd.executar("INSERT INTO sessoes (id, nome, id_motor, observacoes) VALUES (?, ?, ?, ?)", id, nome, idMotor, observacoes)
+        bd.executar(
+            "INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp) VALUES (?, ?, ?, ?, ?, ?)",
+            id, nome, idMotor, observacoes, configPipeline, configEsp,
+        )
         return id
     }
 
@@ -60,7 +67,8 @@ object EscritaSessoes {
     class DestinoBanco(private val bd: BancoDados, private val aoSalvarSessao: (String) -> Unit) : GravadorSessao.Destino {
         private val escritor = Executors.newSingleThreadExecutor { r -> Thread(r, "GravadorSessao-escrita") }
 
-        override fun criarSessao(nome: String): String = criarSessao(bd, nome)
+        override fun criarSessao(nome: String, configPipeline: String?, configEsp: String?): String =
+            criarSessao(bd, nome, configPipeline = configPipeline, configEsp = configEsp)
 
         override fun inserir(idSessao: String, lote: List<LeituraProcessada>) {
             escritor.execute { inserirLeituras(bd, idSessao, lote) }

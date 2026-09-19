@@ -34,13 +34,15 @@ export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }:
   // ─── Escrita (com autenticação) ───────────────────────────────────────────
 
   app.post('/sessoes', { preHandler: verificarChave }, async (req, rep) => {
-    const body = req.body as { nome?: string; id_motor?: string; observacoes?: string };
+    const body = req.body as { nome?: string; id_motor?: string; observacoes?: string; config_pipeline?: unknown; config_esp?: unknown };
     if (!body.nome) return rep.status(400).send({ erro: 'Campo "nome" é obrigatório' });
 
+    // Configuração vigente ao iniciar a gravação (objeto → JSON), para reprodutibilidade
+    const json = (v: unknown) => (v && typeof v === 'object' ? JSON.stringify(v) : null);
     const id = randomUUID();
     db.executar(
-      'INSERT INTO sessoes (id, nome, id_motor, observacoes) VALUES (?, ?, ?, ?)',
-      [id, body.nome, body.id_motor ?? null, body.observacoes ?? null],
+      'INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, body.nome, body.id_motor ?? null, body.observacoes ?? null, json(body.config_pipeline), json(body.config_esp)],
     );
     const sessao = db.consultarUm<Sessao>('SELECT * FROM sessoes WHERE id = ?', [id]);
     return rep.status(201).send(sessao);

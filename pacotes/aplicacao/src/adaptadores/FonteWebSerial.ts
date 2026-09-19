@@ -92,6 +92,11 @@ export class FonteWebSerial {
         if (pacote.tipo === 'DADOS') {
           const leitura = this.pipeline.processar(pacote);
           this.ouvintesDados.forEach(fn => fn(leitura));
+          // Fs estimada mudou (Notch/Butterworth reconstruídos): o painel mostra a nova taxa
+          if (this.pipeline.consumirMudancaTaxa() || this.pipeline.consumirMudancaOffset()) {
+            const estado = this.pipeline.obterConfig();
+            this.ouvintesConfig.forEach(fn => fn(estado));
+          }
         } else if (pacote.tipo === 'CONFIGURACAO') {
           this.ouvintesConfig.forEach(fn => fn(pacote));
         }
@@ -136,6 +141,11 @@ export class FonteWebSerial {
     else if (evento === 'config') this.ouvintesConfig.push(fn);
     else if (evento === 'status') this.ouvintesStatus.push(fn);
     else if (evento === 'erro')   this.ouvinteserro.push(fn);
+  }
+
+  /** Gravação local em andamento: o zero tracking do pipeline não corrige. */
+  definirGravando(v: boolean): void {
+    this.pipeline.definirGravando(v);
   }
 
   atualizarConfigPipeline(patch: PipelinePatch): void {

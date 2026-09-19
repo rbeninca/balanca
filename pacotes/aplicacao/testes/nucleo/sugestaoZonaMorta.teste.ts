@@ -32,3 +32,13 @@ describe('sugerirZonaMortaN', () => {
     expect(sugerirZonaMortaN({ capacidadeMaxGramas: 1000, acuracia: 0 })).toBeNull();
   });
 });
+
+import { sugerirLimiaresDetector } from '../../src/nucleo/sugestaoZonaMorta.js';
+
+describe('sugerirLimiaresDetector (Fase 7)', () => {
+  it('início 4× e fim 2× o piso de ruído; null sem dados', () => {
+    const piso = sugerirZonaMortaN({ capacidadeMaxGramas: 1000, acuracia: 0.0003 })!;
+    expect(sugerirLimiaresDetector({ capacidadeMaxGramas: 1000, acuracia: 0.0003 })).toEqual({ limiarEntradaN: piso * 4, limiarSaidaN: piso * 2 });
+    expect(sugerirLimiaresDetector({})).toBeNull();
+  });
+});

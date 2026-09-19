@@ -920,18 +920,16 @@ Botões de exportação:
 // android/.../processamento/PipelineProcessamento.kt — mesma ordem, mesmos nomes)
 
 private aplicarFiltros(forca: number) {
-  const bruta = forca;                      // Newtons como a ESP mandou
-  if (ativoNotch)   forca = notch.aplicar(forca);
-  if (ativoMediana) forca = mediana.aplicar(forca);
-  if (ativoZonaMorta) forca = zonaMorta.aplicar(forca);
-  if (ativoMediaMovel) forca = mediaMovel.aplicar(forca);   // suavizadores encadeáveis
-  if (ativoEMA)        forca = ema.aplicar(forca);          // (a interface só liga um)
-  if (ativoSG)         forca = sg.aplicar(forca);
-  if (ativoKalman)     forca = kalman.aplicar(forca);
-  return { filtrada: forca, bruta };
+  const bruta = forca;                                   // Newtons como a ESP mandou
+  const limpa = aplicarLimpeza(bruta);                   // 1. Hampel → Mediana → Notch (combináveis)
+  const suavizada = aplicarFiltroPrincipal(limpa);       // 2. um só: média móvel | EMA | Butterworth | SG | Kalman
+  const filtrada = aplicarTratamento(suavizada);         // 3. zero tracking (bloqueado em evento/gravação) → zona morta
+  return { bruta, limpa, suavizada, filtrada };
 }
-// emQueima  = detector(filtrada)  — limiar = limiarZonaMortaN, fim após tempoMinFimMs
-// impulso   = integral(filtrada)  — após a zona morta
+// Fs dos filtros IIR = taxaAmostragemHz fixada, senão a estimada pelas marcas de tempo (EstimadorTaxaAmostragem)
+// emQueima  = DetectorEvento(filtrada) — início: > limiarEntradaN por tempoEntradaMs; fim: ≤ limiarSaidaN por tempoSaidaMs
+//             (padrões: entrada = saída = limiarZonaMortaN, tempoEntrada 0, tempoSaida = tempoMinFimMs)
+// impulso   = integral(fonteCalculoImpulso: final | filtrado | limpo | bruto) — padrão final (após a zona morta)
 ```
 
 **Cenários A/B — no gateway** antes do WebSocket (o app Android difunde
@@ -954,9 +952,10 @@ não são reversíveis; o ADC bruto não é transmitido. No pipeline,
 | `em_queima` | detector, calculado sobre o sinal **filtrado** |
 | `impulso_acumulado_ns` | integral do sinal **filtrado** (após zona morta) |
 
-O sinal filtrado não é guardado: a análise reabre `forca_crua` e refiltra. A
-configuração de filtros vigente na gravação ainda não é registrada — está no
-plano de reorganização dos filtros (`PLANEJAMENTO-PROCESSAMENTO.MD`).
+O sinal filtrado não é guardado: a análise reabre `forca_crua` e refiltra.
+Desde a Fase 10 a sessão guarda `config_pipeline` e `config_esp` (JSON da
+configuração vigente ao iniciar a gravação): com `forca_crua` + config,
+qualquer sinal intermediário é reproduzível. A Análise mostra "Gravada com: …".
 
 ---
 
