@@ -65,3 +65,52 @@ export function linhasClientes(e: EstadoGatewayDados, agoraMs: number): LinhaCli
     .map(c => ({ endereco: c.endereco, desde: descreverTempo(c.conectadoEm, agoraMs), gravando: c.endereco === e.gravandoPor }))
     .sort((a, b) => Number(b.gravando) - Number(a.gravando));
 }
+
+// ─── Ligação com o gateway (watchdog da FonteWebSocket) ──────────────────────
+
+export type FaseLigacao = 'conectando' | 'ok' | 'reconectando' | 'fechada';
+
+export interface EstadoLigacao {
+  fase: FaseLigacao;
+  serial: 'conectada' | 'sem_dispositivo' | 'erro' | 'desconhecida';
+  proximaTentativaS: number | null;
+  ultimaLeituraMs: number | null;
+}
+
+type ObservadorLigacao = (e: EstadoLigacao | null) => void;
+
+/** null = sem gateway WebSocket (WebSerial/GitHub Pages): o chip fica como sempre foi. */
+export class EstadoConexao {
+  private dados: EstadoLigacao | null = null;
+  private observadores = new Set<ObservadorLigacao>();
+  obter(): EstadoLigacao | null { return this.dados; }
+  definir(e: EstadoLigacao | null): void { this.dados = e; this.observadores.forEach(fn => fn(e)); }
+  observar(fn: ObservadorLigacao): () => void {
+    this.observadores.add(fn); fn(this.dados);
+    return () => { this.observadores.delete(fn); };
+  }
+}
+
+export const estadoConexao = new EstadoConexao();
+
+export interface AparenciaChip {
+  /** classe CSS do chip: conectado (verde) · atencao (amarelo) · reconectando (vermelho) · desconectado */
+  classe: 'conectado' | 'atencao' | 'reconectando' | 'desconectado';
+  texto: string;
+}
+
+/** Como o chip de status deve aparecer para o endereço [endereco] dado o estado da ligação. */
+export function descreverChip(e: EstadoLigacao | null, endereco: string): AparenciaChip {
+  if (!e) return { classe: 'conectado', texto: endereco };
+  switch (e.fase) {
+    case 'reconectando':
+      return { classe: 'reconectando', texto: `${endereco} — reconectando${e.proximaTentativaS != null ? ` em ${e.proximaTentativaS} s` : '…'}` };
+    case 'conectando':
+      return { classe: 'reconectando', texto: `${endereco} — conectando…` };
+    case 'fechada':
+      return { classe: 'desconectado', texto: `${endereco} — desconectado` };
+    default:
+      if (e.serial === 'conectada') return { classe: 'conectado', texto: endereco };
+      return { classe: 'atencao', texto: `${endereco} — gateway ok, ${e.serial === 'erro' ? 'erro na serial' : 'sem célula'}` };
+  }
+}

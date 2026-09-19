@@ -20,7 +20,8 @@ import org.json.JSONObject
  * não distinguir os dois.
  *
  * Gateway → frontend: LEITURA, CONFIG, STATUS, PIPELINE_ESTADO, SERIAL_OK, SERIAL_OFF,
- *   GRAVACAO_ESTADO (gravação compartilhada no gateway + clientes conectados — só no app Android).
+ *   GRAVACAO_ESTADO (gravação compartilhada no gateway + clientes conectados — só no app Android),
+ *   SAUDE (batimento a cada 2 s: serial, taxa, uptime — o watchdog do frontend reconecta se ele sumir).
  * Frontend → gateway: PIPELINE_CONFIG, GRAVACAO_INICIAR/GRAVACAO_PARAR e os comandos CMD_* (repassados ao ESP).
  */
 object Mensagens {
@@ -97,6 +98,20 @@ object Mensagens {
         envelope("GRAVACAO_ESTADO", estado.paraJson().put("clientes", JSONArray().apply {
             for (c in clientes) put(JSONObject().put("endereco", c.endereco).put("conectadoEm", c.conectadoEm))
         }))
+
+    /** Situação da serial no batimento SAUDE. */
+    enum class SerialSaude(val valor: String) { CONECTADA("conectada"), SEM_DISPOSITIVO("sem_dispositivo"), ERRO("erro") }
+
+    /**
+     * Batimento do gateway. Enviado ao conectar e a cada [INTERVALO_SAUDE_MS]:
+     * distingue "conexão morta" (nada chega) de "gateway vivo sem célula"
+     * (SAUDE chega, LEITURA não), para o frontend não reconectar à toa.
+     */
+    fun saude(serial: SerialSaude, taxaHz: Int, uptimeS: Long, clientes: Int): String =
+        envelope("SAUDE", JSONObject().put("serial", serial.valor).put("taxaHz", taxaHz).put("uptimeS", uptimeS)
+            .put("clientes", clientes).put("intervaloMs", INTERVALO_SAUDE_MS))
+
+    const val INTERVALO_SAUDE_MS = 2000L
 
     /** Cliente conectado ao WebSocket. */
     data class ClienteWs(val endereco: String, val conectadoEm: Long)

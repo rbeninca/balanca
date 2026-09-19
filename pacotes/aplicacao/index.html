@@ -99,6 +99,11 @@
     .nav-status-chip.conectado::before  { background: #22c55e; }
     .nav-status-chip.desconectado { background: #fee2e2; color: #b91c1c; }
     .nav-status-chip.desconectado::before { background: #ef4444; }
+    .nav-status-chip.atencao { background: #fef3c7; color: #92400e; }
+    .nav-status-chip.atencao::before { background: #f59e0b; }
+    .nav-status-chip.reconectando { background: #fee2e2; color: #b91c1c; }
+    .nav-status-chip.reconectando::before { background: #ef4444; animation: piscar 1s ease-in-out infinite; }
+    .grafico-selo { position: absolute; top: 0.5rem; left: 50%; transform: translateX(-50%); background: rgba(31,41,55,0.85); color: #f9fafb; font-size: 0.78rem; padding: 0.25rem 0.7rem; border-radius: 999px; pointer-events: none; white-space: nowrap; }
     .nav-hz { margin-left: 0.4rem; opacity: 0.65; font-weight: 400; }
     .auto-conectando { display: flex; align-items: center; justify-content: center; height: 60vh; color: #6b7280; font-size: 0.95rem; }
 
@@ -494,6 +499,8 @@
     [data-tema="escuro"] .nav-links a.ativo { color: #f1f5f9; border-bottom-color: #60a5fa; }
     [data-tema="escuro"] .nav-links a:hover { color: #93c5fd; }
     [data-tema="escuro"] .nav-links .nav-desativado { color: #475569; }
+    [data-tema="escuro"] .nav-status-chip.atencao { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    [data-tema="escuro"] .nav-status-chip.reconectando { background: rgba(239,68,68,0.18); color: #f87171; }
     [data-tema="escuro"] .nav-icone { color: #94a3b8; }
     [data-tema="escuro"] .nav-icone:hover, [data-tema="escuro"] .nav-icone.ativo { background: rgba(255,255,255,0.08); color: #f1f5f9; }
     [data-tema="escuro"] .nav-menu, [data-tema="escuro"] .nav-clientes-painel { background: #1e293b; border-color: #334155; }

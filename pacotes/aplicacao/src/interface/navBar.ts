@@ -4,7 +4,7 @@ import { TelaPendrive } from './TelaPendrive.js';
 import { TelaAtualizacao } from './TelaAtualizacao.js';
 import { WizardCalibracao, type Fonte as FonteCalibracao } from './WizardCalibracao.js';
 import { resumir, type EstadoAtualizacaoApp } from './atualizacaoApp.js';
-import { estadoGateway, linhasClientes, type EstadoGatewayDados } from '../nucleo/EstadoGateway.js';
+import { estadoGateway, estadoConexao, linhasClientes, descreverChip, type EstadoGatewayDados } from '../nucleo/EstadoGateway.js';
 
 export interface StatusConexao {
   endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
@@ -107,6 +107,7 @@ export function navHtml(props: NavProps): string {
 }
 
 let cancelarObservacao: (() => void) | null = null;
+let cancelarObservacaoLigacao: (() => void) | null = null;
 /** Fecha menu e painel da barra atual; registrado uma vez no document (a barra é recriada a cada tela). */
 let fecharFlutuantes: () => void = () => {};
 let ouvintesGlobais = false;
@@ -179,6 +180,21 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
     btnClientes.classList.toggle('hidden', texto === '');
     btnClientes.classList.toggle('gravando', e.gravandoPor !== null);
     if (painel && !painel.classList.contains('hidden')) painel.innerHTML = painelClientesHtml(e);
+  });
+
+  // Chip: verde (dados) · amarelo (gateway vivo sem célula) · vermelho (reconectando)
+  const chip = container.querySelector<HTMLElement>('.nav-status-chip');
+  const endereco = container.querySelector<HTMLElement>('.nav-endereco');
+  cancelarObservacaoLigacao?.();
+  cancelarObservacaoLigacao = estadoConexao.observar((e) => {
+    if (!chip || !endereco || !props.status) return;
+    const a = descreverChip(e, props.status.endereco);
+    chip.classList.remove('conectado', 'atencao', 'reconectando', 'desconectado');
+    chip.classList.add(a.classe);
+    endereco.textContent = a.texto;
+    // A contagem de clientes é do gateway: sem ligação, ela está velha
+    if (e && e.fase !== 'ok') btnClientes?.classList.add('hidden');
+    else if (btnClientes) btnClientes.classList.toggle('hidden', textoClientes(estadoGateway.obter()) === '');
   });
 
   void marcarAtualizacaoDisponivel(container);

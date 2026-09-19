@@ -37,3 +37,24 @@ describe('linhasClientes', () => {
     ]);
   });
 });
+
+import { descreverChip } from '../../src/nucleo/EstadoGateway.js';
+
+describe('descreverChip', () => {
+  const base = { serial: 'conectada' as const, proximaTentativaS: null, ultimaLeituraMs: null };
+  it('sem ligação WebSocket (WebSerial): chip como sempre', () => {
+    expect(descreverChip(null, 'WebSerial')).toEqual({ classe: 'conectado', texto: 'WebSerial' });
+  });
+  it('ok com célula: verde com o endereço', () => {
+    expect(descreverChip({ ...base, fase: 'ok' }, '192.168.43.1')).toEqual({ classe: 'conectado', texto: '192.168.43.1' });
+  });
+  it('gateway vivo sem célula: amarelo', () => {
+    expect(descreverChip({ ...base, fase: 'ok', serial: 'sem_dispositivo' }, 'g')).toEqual({ classe: 'atencao', texto: 'g — gateway ok, sem célula' });
+    expect(descreverChip({ ...base, fase: 'ok', serial: 'erro' }, 'g').texto).toContain('erro na serial');
+  });
+  it('reconectando: vermelho com contagem', () => {
+    expect(descreverChip({ ...base, fase: 'reconectando', proximaTentativaS: 4 }, 'g')).toEqual({ classe: 'reconectando', texto: 'g — reconectando em 4 s' });
+    expect(descreverChip({ ...base, fase: 'conectando' }, 'g')).toEqual({ classe: 'reconectando', texto: 'g — conectando…' });
+    expect(descreverChip({ ...base, fase: 'fechada' }, 'g')).toEqual({ classe: 'desconectado', texto: 'g — desconectado' });
+  });
+});

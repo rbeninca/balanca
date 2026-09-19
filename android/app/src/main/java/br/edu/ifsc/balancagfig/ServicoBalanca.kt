@@ -75,6 +75,9 @@ class ServicoBalanca : Service() {
     private var backup: BackupPendrive? = null
     private var atualizadorApp: Atualizador? = null
     private var gravador: GravadorSessao? = null
+    /** Última configuração recebida da ESP: reenviada a quem (re)conecta, sem nova consulta à ESP. */
+    @Volatile private var ultimaConfig: PacoteConfiguracao? = null
+    private val inicioMs = System.currentTimeMillis()
     private var destinoGravacao: EscritaSessoes.DestinoBanco? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
@@ -110,6 +113,7 @@ class ServicoBalanca : Service() {
         iniciarSerial()
         iniciarHotspot()
         iniciarContadorTaxa()
+        iniciarBatimento()
 
         EstadoHost.definirServicoAtivo(true)
         EstadoHost.registrar("Serviço iniciado")
@@ -168,8 +172,11 @@ class ServicoBalanca : Service() {
             ws = ServidorWs(
                 estadoInicial = {
                     listOfNotNull(
+                        mensagemSaude(),
                         Mensagens.pipelineEstado(pipeline.obterConfig()),
                         gravador?.let { Mensagens.gravacaoEstado(it.estado, ws?.listarClientes() ?: emptyList()) },
+                        ultimaConfig?.let { Mensagens.config(it) },
+                        if (porta?.conectado == true) Mensagens.serialOk() else Mensagens.serialOff(),
                     )
                 },
                 aoReceber = ::tratarMensagemCliente,
@@ -328,6 +335,26 @@ class ServicoBalanca : Service() {
         }
     }
 
+    private fun mensagemSaude(): String {
+        val serial = when (EstadoHost.serial.value) {
+            is EstadoSerial.Conectado, EstadoSerial.Gravando -> Mensagens.SerialSaude.CONECTADA
+            is EstadoSerial.Erro -> Mensagens.SerialSaude.ERRO
+            else -> Mensagens.SerialSaude.SEM_DISPOSITIVO
+        }
+        return Mensagens.saude(
+            serial, EstadoHost.estatisticas.value.taxaHz,
+            (System.currentTimeMillis() - inicioMs) / 1000, ws?.numClientes ?: 0,
+        )
+    }
+
+    /** Batimento SAUDE a cada 2 s (ver Mensagens.saude). */
+    private fun iniciarBatimento() = escopo.launch {
+        while (true) {
+            delay(Mensagens.INTERVALO_SAUDE_MS)
+            ws?.difundir(mensagemSaude())
+        }
+    }
+
     private fun enviarAoEsp(comando: ComandoHost) {
         try {
             porta?.enviar(Codificador.codificar(comando))
@@ -374,6 +401,7 @@ class ServicoBalanca : Service() {
                     }
                     is PacoteConfiguracao -> {
                         EstadoHost.registrar("ESP: $pacote")
+                        ultimaConfig = pacote
                         ws?.difundir(Mensagens.config(pacote))
                     }
                     is PacoteStatus -> {

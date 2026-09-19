@@ -2,7 +2,7 @@ import { ArmazenamentoLocal, type IArmazenamento } from './armazenamento/Armazen
 import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { ControladorGravacao } from './nucleo/ControladorGravacao.js';
-import { estadoGateway } from './nucleo/EstadoGateway.js';
+import { estadoGateway, estadoConexao } from './nucleo/EstadoGateway.js';
 import { definirFonteCalibracao } from './interface/navBar.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
@@ -165,6 +165,11 @@ function conectarPonteJogos(fonte: any): void {
     if (typeof conectado === 'boolean') {
       atualizarStatusPonteJogos(conectado);
     }
+  });
+  // Ligação com o gateway (só a FonteWebSocket emite): o chip da barra mostra reconexão/sem célula
+  estadoConexao.definir(null);
+  fonte.on('conexao', (c: { fase: 'conectando' | 'ok' | 'reconectando' | 'fechada'; serial: 'conectada' | 'sem_dispositivo' | 'erro' | 'desconhecida'; proximaTentativaS: number | null; ultimaLeituraMs: number | null }) => {
+    estadoConexao.definir({ fase: c.fase, serial: c.serial, proximaTentativaS: c.proximaTentativaS, ultimaLeituraMs: c.ultimaLeituraMs });
   });
 }
 
@@ -341,6 +346,7 @@ function renderizar() {
       controlador = null;
       definirFonteCalibracao(null);
       estadoGateway.limpar();
+      estadoConexao.definir(null);
       fontePonteAtual = null;
       atualizarStatusPonteJogos(false);
       telaFirmwareAtual = new TelaFirmware(app, {

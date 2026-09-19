@@ -112,3 +112,18 @@ class MensagensGravacaoTest {
         assertEquals("192.168.43.11", carga.getJSONArray("clientes").getJSONObject(1).getString("endereco"))
     }
 }
+
+class MensagensSaudeTest {
+    @Test
+    fun saudeTrazSerialTaxaUptimeEIntervalo() {
+        val j = org.json.JSONObject(Mensagens.saude(Mensagens.SerialSaude.SEM_DISPOSITIVO, 0, 125, 2))
+        assertEquals("SAUDE", j.getString("tipo"))
+        val c = j.getJSONObject("carga")
+        assertEquals("sem_dispositivo", c.getString("serial"))
+        assertEquals(0, c.getInt("taxaHz"))
+        assertEquals(125L, c.getLong("uptimeS"))
+        assertEquals(2, c.getInt("clientes"))
+        assertEquals(2000L, c.getLong("intervaloMs"))
+        assertEquals("conectada", org.json.JSONObject(Mensagens.saude(Mensagens.SerialSaude.CONECTADA, 80, 1, 1)).getJSONObject("carga").getString("serial"))
+    }
+}

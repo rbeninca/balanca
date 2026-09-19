@@ -42,6 +42,8 @@ export class TelaMedicao {
   private ultimaLeitura: LeituraProcessada | null = null;
   private dadosCelula: DadosCelula = {};
   private hz                 = 0;
+  private ultimoDadoMs       = 0;
+  private elSelo:            HTMLElement | null = null;
   private contMsgs           = 0;
   private ultimoHzTs         = Date.now();
   private animFrameId: number | null = null;
@@ -120,6 +122,7 @@ export class TelaMedicao {
 
         <div class="chart-container">
           <canvas id="grafico-rt" class="grafico-realtime"></canvas>
+          <span id="grafico-selo" class="grafico-selo hidden"></span>
         </div>
 
         <div class="chart-controles">
@@ -167,6 +170,7 @@ export class TelaMedicao {
     `;
 
     this.canvas          = container.querySelector<HTMLCanvasElement>('#grafico-rt')!;
+    this.elSelo          = container.querySelector('#grafico-selo');
     this.canvas.addEventListener('mousemove',  this.onCanvasMouseMove);
     this.canvas.addEventListener('mouseleave', this.onCanvasMouseLeave);
     this.elValor         = container.querySelector('#leit-valor');
@@ -460,6 +464,7 @@ export class TelaMedicao {
     this.ultimaForca   = l.forcaNewton;
     this.ultimaLeitura = l;
     this.contMsgs++;
+    this.ultimoDadoMs  = Date.now();
 
     const agora = Date.now();
     if (agora - this.ultimoHzTs >= 1000) {
@@ -544,10 +549,19 @@ export class TelaMedicao {
   private iniciarLoop() {
     const loop = () => {
       this.renderizarGrafico();
+      this.atualizarSelo();
       this.atualizarTempoGravacao();
       this.animFrameId = requestAnimationFrame(loop);
     };
     this.animFrameId = requestAnimationFrame(loop);
+  }
+
+  /** Selo sobre o gráfico quando ele congela: "sem dados há 12 s" (o chip da barra diz o porquê). */
+  private atualizarSelo(): void {
+    if (!this.elSelo) return;
+    const parado = this.ultimoDadoMs > 0 && Date.now() - this.ultimoDadoMs > 3000;
+    this.elSelo.classList.toggle('hidden', !parado);
+    if (parado) this.elSelo.textContent = `sem dados há ${textoDuracao(Date.now() - this.ultimoDadoMs)}`;
   }
 
   private atualizarTempoGravacao(): void {
@@ -1043,3 +1057,12 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
     },
   };
 })();
+
+/** "12 s", "2 min 05 s", "1 h 03 min" */
+export function textoDuracao(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ${String(s % 60).padStart(2, '0')} s`;
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+}
