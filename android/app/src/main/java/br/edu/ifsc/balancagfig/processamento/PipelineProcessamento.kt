@@ -55,6 +55,8 @@ data class PipelinePatch(
 data class EstadoPipeline(
     val config: ConfiguracaoPipeline,
     val filtroPrincipal: FiltroPrincipal,
+    /** Fs medida pelas marcas de tempo (null até haver amostras); usada se taxaAmostragemHz não foi fixada. */
+    val taxaEstimadaHz: Double?,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
     val ativoDetectorQueima: Boolean,
@@ -90,7 +92,9 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private var mediaMovel = MediaMovel(config.janelaMediaMovel)
     private var mediana = FiltroMediana(config.janelaMediana ?: 5)
     private var ema = MediaExponencial(config.alphaEMA ?: 0.2)
-    private var notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, config.taxaAmostragemHz ?: 100.0)
+    private val estimadorFs = EstimadorTaxaAmostragem()
+    private var taxaMudou = false
+    private var notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, taxaParaFiltros())
     private var sg = SavitzkyGolay(config.janelaSG ?: 7)
     private var kalman = FiltroKalman(config.kalmanQ ?: 0.01, config.kalmanR ?: 1.0)
     private var detector = DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs)
@@ -145,7 +149,28 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private fun aplicarTratamento(entrada: Double): Double = entrada
 
     @Synchronized
+    /** Fs dos filtros dependentes de frequência: a fixada em taxaAmostragemHz, senão a estimada, senão 100 Hz. */
+    private fun taxaParaFiltros(): Double = config.taxaAmostragemHz ?: estimadorFs.obterHzEstavel() ?: 100.0
+
+    private fun reconstruirNotch() {
+        notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, taxaParaFiltros())
+    }
+
+    /** Alimenta o estimador; se a Fs estável mudou e não há taxa fixada, reconstrói os filtros IIR. */
+    private fun acompanharTaxa(marcaTemporal: Long) {
+        estimadorFs.adicionarTimestamp(marcaTemporal)
+        if (estimadorFs.consumirMudanca() && config.taxaAmostragemHz == null) {
+            reconstruirNotch()
+            taxaMudou = true
+        }
+    }
+
+    /** true uma vez a cada reconstrução por mudança de Fs (o serviço reenvia o PIPELINE_ESTADO). */
+    @Synchronized
+    fun consumirMudancaTaxa(): Boolean { val m = taxaMudou; taxaMudou = false; return m }
+
     fun processar(pacote: PacoteDados): LeituraProcessada {
+        acompanharTaxa(pacote.marcaTemporal)
         // Float → Double exato, como o DataView.getFloat32 do gateway Node
         val sinais = aplicarFiltros(pacote.forcaNewtons.toDouble())
         val filtrada = sinais.filtrada
@@ -201,8 +226,9 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         if (patch.freqNotchHz != null || patch.qNotch != null || patch.taxaAmostragemHz != null) {
             config.freqNotchHz = patch.freqNotchHz ?: config.freqNotchHz ?: 60.0
             config.qNotch = patch.qNotch ?: config.qNotch ?: 30.0
-            config.taxaAmostragemHz = patch.taxaAmostragemHz ?: config.taxaAmostragemHz ?: 100.0
-            notch = FiltroNotch(config.freqNotchHz!!, config.qNotch!!, config.taxaAmostragemHz!!)
+            // taxaAmostragemHz só fica fixada se vier no patch; sem ela, vale a estimada
+            patch.taxaAmostragemHz?.let { config.taxaAmostragemHz = it }
+            reconstruirNotch()
         }
         patch.janelaSG?.let {
             config.janelaSG = it
@@ -238,6 +264,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         return EstadoPipeline(
             config = config.copy(),
             filtroPrincipal = filtroPrincipal,
+            taxaEstimadaHz = estimadorFs.obterHzEstavel(),
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,
             ativoDetectorQueima = ativoDetectorQueima,
@@ -265,5 +292,6 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         kalman.reiniciar()
         detector.reiniciar()
         calculador.reiniciar()
+        estimadorFs.reiniciar()
     }
 }

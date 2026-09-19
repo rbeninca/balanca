@@ -289,6 +289,13 @@ export class TelaMedicao {
     const principal = filtroPrincipalDe(cfg);
     for (const r of RADIOS_FILTRO_PRINCIPAL) ck(`#${r.id}`, r.valor === principal);
 
+    const fs = c.querySelector<HTMLElement>('#fs-estimada');
+    if (fs) {
+      const fixa = cfg.taxaAmostragemHz;
+      const medida = cfg.taxaEstimadaHz;
+      fs.textContent = fixa != null ? `Fs ${fixa} Hz (fixa)` : medida != null ? `Fs ≈ ${medida.toFixed(1)} Hz` : 'Fs —';
+    }
+
     inp('#in-zona-morta',   cfg.limiarZonaMortaN,  0.05);
     inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
     inp('#in-det-hister',   cfg.tempoMinFimMs,     100);

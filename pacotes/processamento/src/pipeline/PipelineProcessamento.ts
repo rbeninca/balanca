@@ -10,6 +10,7 @@ import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
 import { DetectorQueima }    from '../analise/DetectorQueima.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
+import { EstimadorTaxaAmostragem } from '../analise/EstimadorTaxaAmostragem.js';
 import { resolverFiltroPrincipal, flagsDoFiltroPrincipal, type TipoFiltroPrincipal } from './filtroPrincipal.js';
 
 // Reexportado aqui porque o vitest do pacote aplicacao resolve '@balancagfig/processamento' neste arquivo
@@ -37,6 +38,8 @@ export interface SinaisPipeline {
 
 export type EstadoPipeline = ConfiguracaoPipeline & {
   filtroPrincipal:     TipoFiltroPrincipal;
+  /** Fs medida pelas marcas de tempo (null até haver amostras); os filtros usam-na se taxaAmostragemHz não foi fixada. */
+  taxaEstimadaHz:      number | null;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
   ativoDetectorQueima: boolean;
@@ -58,6 +61,7 @@ export class PipelineProcessamento {
   private kalman:      FiltroKalman;
   private detector:    DetectorQueima;
   private calculador:  CalculadorImpulso;
+  private estimadorFs = new EstimadorTaxaAmostragem();
 
   private ativoZonaMorta      = false;
   private ativoDetectorQueima = false;
@@ -73,7 +77,7 @@ export class PipelineProcessamento {
     this.mediaMovel = new MediaMovel(config.janelaMediaMovel);
     this.mediana    = new FiltroMediana(config.janelaMediana ?? 5);
     this.ema        = new MediaExponencial(config.alphaEMA ?? 0.2);
-    this.notch      = new FiltroNotch(config.freqNotchHz ?? 60, config.qNotch ?? 30, config.taxaAmostragemHz ?? 100);
+    this.notch      = new FiltroNotch(config.freqNotchHz ?? 60, config.qNotch ?? 30, this.taxaParaFiltros());
     this.sg         = new SavitzkyGolay(config.janelaSG ?? 7);
     this.kalman     = new FiltroKalman(config.kalmanQ ?? 0.01, config.kalmanR ?? 1.0);
     this.detector   = new DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs);
@@ -122,7 +126,34 @@ export class PipelineProcessamento {
     return forca;
   }
 
+  /**
+   * Fs que os filtros dependentes de frequência (Notch; Butterworth na Fase 5)
+   * usam: a fixada em `taxaAmostragemHz`, senão a estimada, senão 100 Hz.
+   */
+  private taxaParaFiltros(): number {
+    return this.config.taxaAmostragemHz ?? this.estimadorFs.obterHzEstavel() ?? 100;
+  }
+
+  /** Alimenta o estimador; se a Fs estável mudou e não há taxa fixada, reconstrói os filtros IIR. */
+  private acompanharTaxa(marcaTemporal: number): void {
+    this.estimadorFs.adicionarTimestamp(marcaTemporal);
+    if (this.estimadorFs.consumirMudanca() && this.config.taxaAmostragemHz == null) {
+      this.reconstruirNotch();
+      this.taxaMudou = true;
+    }
+  }
+
+  private taxaMudou = false;
+
+  /** true uma vez a cada reconstrução por mudança de Fs (o gateway reenvia o PIPELINE_ESTADO). */
+  consumirMudancaTaxa(): boolean { const m = this.taxaMudou; this.taxaMudou = false; return m; }
+
+  private reconstruirNotch(): void {
+    this.notch = new FiltroNotch(this.config.freqNotchHz ?? 60, this.config.qNotch ?? 30, this.taxaParaFiltros());
+  }
+
   processar(pacote: PacoteDados): LeituraProcessada {
+    this.acompanharTaxa(pacote.marcaTemporal);
     const { filtrada, bruta } = this.aplicarFiltros(pacote.forcaNewtons);
 
     const emQueima           = this.ativoDetectorQueima
@@ -144,6 +175,7 @@ export class PipelineProcessamento {
   }
 
   processarLeitura(l: LeituraProcessada): LeituraProcessada {
+    this.acompanharTaxa(l.marcaTemporal);
     const { filtrada, bruta } = this.aplicarFiltros(l.forcaNewton);
 
     const emQueima           = this.ativoDetectorQueima
@@ -193,10 +225,11 @@ export class PipelineProcessamento {
       this.ema = new MediaExponencial(patch.alphaEMA);
     }
     if (patch.freqNotchHz != null || patch.qNotch != null || patch.taxaAmostragemHz != null) {
-      this.config.freqNotchHz      = patch.freqNotchHz      ?? this.config.freqNotchHz      ?? 60;
-      this.config.qNotch           = patch.qNotch           ?? this.config.qNotch           ?? 30;
-      this.config.taxaAmostragemHz = patch.taxaAmostragemHz ?? this.config.taxaAmostragemHz ?? 100;
-      this.notch = new FiltroNotch(this.config.freqNotchHz, this.config.qNotch, this.config.taxaAmostragemHz);
+      this.config.freqNotchHz = patch.freqNotchHz ?? this.config.freqNotchHz ?? 60;
+      this.config.qNotch      = patch.qNotch      ?? this.config.qNotch      ?? 30;
+      // taxaAmostragemHz só fica fixada se vier no patch; sem ela, vale a estimada
+      if (patch.taxaAmostragemHz != null) this.config.taxaAmostragemHz = patch.taxaAmostragemHz;
+      this.reconstruirNotch();
     }
     if (patch.janelaSG != null) {
       this.config.janelaSG = patch.janelaSG;
@@ -245,6 +278,7 @@ export class PipelineProcessamento {
     return {
       ...this.config,
       filtroPrincipal:     this.filtroPrincipal,
+      taxaEstimadaHz:      this.estimadorFs.obterHzEstavel(),
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,
       ativoMediana:        this.ativoMediana,
@@ -270,5 +304,6 @@ export class PipelineProcessamento {
     this.kalman.reiniciar();
     this.detector.reiniciar();
     this.calculador.reiniciar();
+    this.estimadorFs.reiniciar();
   }
 }

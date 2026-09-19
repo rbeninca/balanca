@@ -94,6 +94,7 @@ export function htmlPainelFiltros(): string {
               <div class="filtro-params">
                 <input type="number" id="in-notch-freq" class="filtro-num" value="60" min="1" max="500" step="1" title="Frequência a rejeitar (Hz)">
                 <span>Hz</span>
+                <span id="fs-estimada" class="filtro-fs" title="Taxa de amostragem medida pelas marcas de tempo — usada pelo Notch">Fs —</span>
               </div>
             </div>
             <div class="filtro-linha">

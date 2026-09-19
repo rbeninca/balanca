@@ -398,6 +398,8 @@ class ServicoBalanca : Service() {
                         EstadoHost.atualizarEstatisticas { it.copy(pacotes = it.pacotes + 1, ultimo = pacote) }
                         gravador?.receber(leitura)
                         ws?.difundir(Mensagens.leitura(leitura))
+                        // Fs estimada mudou (filtros IIR reconstruídos): os painéis mostram a nova taxa
+                        if (pipeline.consumirMudancaTaxa()) ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
                     }
                     is PacoteConfiguracao -> {
                         EstadoHost.registrar("ESP: $pacote")

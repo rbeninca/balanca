@@ -930,6 +930,7 @@ private aplicarFiltros(forca: number) {
   if (ativoKalman)     forca = kalman.aplicar(forca);
   return { filtrada: forca, bruta };
 }
+// Fs dos filtros IIR = taxaAmostragemHz fixada, senão a estimada pelas marcas de tempo (EstimadorTaxaAmostragem)
 // emQueima  = detector(filtrada)  — limiar = limiarZonaMortaN, fim após tempoMinFimMs
 // impulso   = integral(filtrada)  — após a zona morta
 ```

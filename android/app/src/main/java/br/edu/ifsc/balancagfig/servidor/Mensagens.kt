@@ -85,6 +85,7 @@ object Mensagens {
         c.kalmanQ?.let { put("kalmanQ", it) }
         c.kalmanR?.let { put("kalmanR", it) }
         put("filtroPrincipal", e.filtroPrincipal.valor)
+        put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
         put("ativoZonaMorta", e.ativoZonaMorta)
         put("ativoMediaMovel", e.ativoMediaMovel)
         put("ativoDetectorQueima", e.ativoDetectorQueima)

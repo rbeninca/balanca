@@ -85,6 +85,17 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   dois suavizadores deixou de existir; golden `sg-e-kalman-encadeados` virou
   `flags-sg-e-kalman-vira-kalman`, `tudo-ligado` regravado (principal = Kalman).
 
+- Fase 3 ✔: `EstimadorTaxaAmostragem` (TS e Kotlin): média em janela de 128
+  marcas, salto recomeça a janela, valor estável com histerese de **1 %**
+  avaliada só com a janela cheia (5 % avançava em degraus e travou em 86,3 Hz
+  com Fs real de 83,5 — para um Notch de Q = 30 isso tira o centro da
+  frequência; janela de 64 oscilava ±1,5 % pelo jitter de polling da ESP). O
+  pipeline usa a Fs estimada quando `taxaAmostragemHz` não foi fixada e
+  reconstrói o Notch a cada mudança; `PIPELINE_ESTADO.taxaEstimadaHz`, painel
+  mostra "Fs ≈ 83,6 Hz". **Mudança de comportamento**: o Notch deixa de
+  assumir 100 Hz — passa a rejeitar a frequência certa. Golden files intactos
+  (fixam `taxaAmostragemHz: 80`). No TX9: 83,55 Hz estável (real 83,46).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento
