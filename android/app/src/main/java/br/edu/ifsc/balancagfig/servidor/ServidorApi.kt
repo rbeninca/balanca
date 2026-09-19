@@ -2,6 +2,7 @@ package br.edu.ifsc.balancagfig.servidor
 
 import android.util.Log
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
+import br.edu.ifsc.balancagfig.armazenamento.ResumoSessao
 import br.edu.ifsc.balancagfig.armazenamento.ModoRestauracao
 import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
@@ -66,7 +67,10 @@ class ServidorApi(
         if (uri.startsWith("/pendrive")) return rotearPendrive(uri, m, s)
 
         if (uri == "/sessoes") return when (m) {
-            Method.GET -> json(Response.Status.OK, bd.consultar("SELECT * FROM sessoes ORDER BY criado_em DESC"))
+            Method.GET -> json(
+                Response.Status.OK,
+                ResumoSessao.garantir(bd, bd.consultar("SELECT * FROM sessoes ORDER BY criado_em DESC")),
+            )
             Method.POST -> autenticado(s) { criarSessao(corpoJson(s)) }
             else -> metodoNaoPermitido()
         }
@@ -95,6 +99,7 @@ class ServidorApi(
                     sessaoOu404(id) {
                         bd.executar("DELETE FROM leituras WHERE id_sessao = ?", id)
                         bd.executar("UPDATE sessoes SET duracao_ms = 0, forca_maxima_n = 0, impulso_total_ns = 0 WHERE id = ?", id)
+                        ResumoSessao.gravar(bd, id)
                         semConteudo()
                     }
                 }
@@ -215,6 +220,7 @@ class ServidorApi(
             }
         }
         atualizarMetricasSessao(id)
+        ResumoSessao.gravar(bd, id)
         aoSalvarSessao?.invoke(id)
         return json(Response.Status.CREATED, JSONObject().put("inseridas", lote.length()))
     }

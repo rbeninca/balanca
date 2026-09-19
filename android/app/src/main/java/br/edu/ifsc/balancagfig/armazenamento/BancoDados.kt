@@ -35,7 +35,7 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
 
     private fun aplicarEsquema(db: SQLiteDatabase) {
         val sql = context.assets.open(ARQUIVO_ESQUEMA).bufferedReader().readText()
-        sql.split(';').map { it.trim() }.filter { it.isNotEmpty() }.forEach { db.execSQL(it) }
+        dividirEsquema(sql).forEach { db.execSQL(it) }
     }
 
     /** Mesma migração do ProvedorSQLite: bancos antigos tinham forca_newton. */
@@ -45,6 +45,14 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
                 .any { it == "forca_newton" }
         }
         if (temForcaNewton) db.execSQL("ALTER TABLE leituras RENAME COLUMN forca_newton TO forca_crua")
+
+        // Colunas de resumo da listagem (CREATE TABLE IF NOT EXISTS não altera tabela existente)
+        val colunasSessoes = db.rawQuery("PRAGMA table_info(sessoes)", null).use { c ->
+            generateSequence { if (c.moveToNext()) c.getString(c.getColumnIndexOrThrow("name")) else null }.toSet()
+        }
+        for ((coluna, tipo) in COLUNAS_RESUMO) {
+            if (coluna !in colunasSessoes) db.execSQL("ALTER TABLE sessoes ADD COLUMN $coluna $tipo")
+        }
     }
 
     // ─── Acesso genérico, espelhando executar/consultar/consultarUm ──────────
@@ -102,6 +110,23 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
     }
 
     companion object {
+        /**
+         * Divide o esquema em comandos pelo ';'. Comentários `--` são removidos
+         * antes da divisão: um ';' dentro de um comentário geraria um trecho vazio
+         * (execSQL falha com "not an error") e o resto do comentário viraria SQL.
+         */
+        fun dividirEsquema(sql: String): List<String> =
+            sql.lines()
+                .map { it.substringBefore("--") }
+                .joinToString("\n")
+                .split(';')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+
+        val COLUNAS_RESUMO = listOf(
+            "total_leituras" to "INTEGER", "forca_media_queima_n" to "REAL", "impulso_queima_ns" to "REAL",
+        )
+
         const val NOME_PADRAO = "balanca.db"
         const val ARQUIVO_ESQUEMA = "esquema.sql"
         private const val VERSAO = 1

@@ -4,6 +4,7 @@ import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF, exportarCSV, exportarENG } from '@balancagfig/relatorio';
 import type { MetadadosENG, MetadadosPDF } from '@balancagfig/relatorio';
 import ApexCharts from 'apexcharts';
+import { indicador } from './indicadorCarregando.js';
 
 export interface DadosAnalise {
   leituras:   LeituraProcessada[];
@@ -566,10 +567,12 @@ export class TelaAnalise {
     // Garante que os flags emQueima refletem o intervalo atual
     this.sincronizarEmQueima();
 
+    const concluirIndicador = indicador.iniciar('Salvando sessão…');
     if (this.leiturasMutadas || this.queimaAlterada) {
       try {
         await this.armazenamento.substituirLeituras(idSessao, this.dados.leituras);
       } catch (e) {
+        concluirIndicador();
         if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = 'Salvar Sessão'; }
         alert(`Não foi possível salvar as leituras:\n${String(e)}\n\nSe estiver usando o gateway, reconstrua o container da API:\n  docker compose build api && docker compose up -d api`);
         return;
@@ -582,7 +585,11 @@ export class TelaAnalise {
       if (!meta.descricao) meta.descricao = analise.nomeComum;
     } catch { /* sem queima detectada */ }
 
-    await this.armazenamento.salvarMetadados(idSessao, meta);
+    try {
+      await this.armazenamento.salvarMetadados(idSessao, meta);
+    } finally {
+      concluirIndicador();
+    }
 
     this.destruir();
   }

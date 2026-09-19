@@ -1,6 +1,7 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import { exportarCSV } from '@balancagfig/relatorio';
 import type { IArmazenamento, SessaoLocal, MetadadosLocal } from './ArmazenamentoLocal.js';
+import { resumoDaListagem, type LinhaResumoApi } from './resumoSessao.js';
 
 export class ArmazenamentoApi implements IArmazenamento {
   private readonly base: string;
@@ -28,8 +29,13 @@ export class ArmazenamentoApi implements IArmazenamento {
   async listarSessoes(): Promise<SessaoLocal[]> {
     const res = await fetch(`${this.base}/sessoes`);
     if (!res.ok) throw new Error(`Erro ao listar sessões: ${res.status}`);
-    const lista = await res.json() as Array<{ id: string; nome: string; criado_em: string }>;
-    return lista.map(s => ({ id: s.id, nome: s.nome, criadoEm: s.criado_em }));
+    const lista = await res.json() as Array<{ id: string; nome: string; criado_em: string } & LinhaResumoApi>;
+    return lista.map(s => {
+      const sessao: SessaoLocal = { id: s.id, nome: s.nome, criadoEm: s.criado_em };
+      const resumo = resumoDaListagem(s);
+      if (resumo) sessao.resumo = resumo;
+      return sessao;
+    });
   }
 
   async atualizarSessao(id: string, dados: Partial<Pick<SessaoLocal, 'nome' | 'criadoEm'>>): Promise<SessaoLocal> {

@@ -27,6 +27,13 @@ export class ProvedorSQLite {
     if (colunas.some(c => c.name === 'forca_newton')) {
       this.db.exec('ALTER TABLE leituras RENAME COLUMN forca_newton TO forca_crua');
     }
+    // Colunas de resumo da listagem (CREATE TABLE IF NOT EXISTS não altera tabela existente)
+    const colunasSessoes = (this.db.pragma('table_info(sessoes)') as Array<{ name: string }>).map(c => c.name);
+    for (const [coluna, tipo] of [
+      ['total_leituras', 'INTEGER'], ['forca_media_queima_n', 'REAL'], ['impulso_queima_ns', 'REAL'],
+    ] as const) {
+      if (!colunasSessoes.includes(coluna)) this.db.exec(`ALTER TABLE sessoes ADD COLUMN ${coluna} ${tipo}`);
+    }
   }
 
   executar(sql: string, params: unknown[] = []): void {

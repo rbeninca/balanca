@@ -6,7 +6,11 @@ CREATE TABLE IF NOT EXISTS sessoes (
   duracao_ms        INTEGER NOT NULL DEFAULT 0,
   forca_maxima_n    REAL    NOT NULL DEFAULT 0,
   impulso_total_ns  REAL    NOT NULL DEFAULT 0,
-  observacoes       TEXT
+  observacoes       TEXT,
+  -- resumo para a listagem (ver resumoSessao.ts): NULL = ainda não calculado
+  total_leituras       INTEGER,
+  forca_media_queima_n REAL,
+  impulso_queima_ns    REAL
 );
 
 CREATE TABLE IF NOT EXISTS leituras (
@@ -30,3 +34,4 @@ CREATE TABLE IF NOT EXISTS metadados_sessao (
   descricao          TEXT,
   observacoes        TEXT
 );
+

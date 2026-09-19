@@ -7,6 +7,7 @@ import { WizardCalibracao } from './WizardCalibracao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros } from './filtrosPainel.js';
 import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
+import { indicador } from './indicadorCarregando.js';
 
 type Unidade = 'N' | 'kg' | 'g';
 
@@ -800,7 +801,7 @@ export class TelaMedicao {
 
   private async pararGravacao() {
     this.gravando = false;
-    const sessao = await this.gerenciador.pararGravacao();
+    const sessao = await indicador.envolver('Salvando sessão…', () => this.gerenciador.pararGravacao());
     this.elStatsTempo    = null;
     this.elStatsAmostras = null;
 

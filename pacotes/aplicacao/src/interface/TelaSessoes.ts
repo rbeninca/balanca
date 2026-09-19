@@ -1,4 +1,5 @@
 import type { IArmazenamento, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import { resumoDeLeituras, type ResumoSessao } from '../armazenamento/resumoSessao.js';
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import { ArmazenamentoApi } from '../armazenamento/ArmazenamentoApi.js';
 import { analisarMotor } from '@balancagfig/analise';
@@ -9,6 +10,7 @@ import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { normalizarImportacao, type SessaoExportadaV2 } from './importacaoSessao.js';
+import { indicador } from './indicadorCarregando.js';
 
 export class TelaSessoes {
   private selecionadas = new Set<string>();
@@ -88,13 +90,13 @@ export class TelaSessoes {
         const text = await file.text();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const parsed = JSON.parse(text) as any;
-        await this.importarJSON(parsed, lista);
+        await indicador.envolver('Importando sessão…', () => this.importarJSON(parsed, lista));
       } catch (e) {
         alert(`Erro ao importar JSON:\n${String(e)}`);
       }
     });
 
-    const sessoes = (await this.armazenamento.listarSessoes())
+    const sessoes = (await indicador.envolver('Carregando sessões…', () => this.armazenamento.listarSessoes()))
       .slice()
       .sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
 
@@ -107,13 +109,51 @@ export class TelaSessoes {
     ul.setAttribute('data-testid', 'lista-sessoes');
     ul.style.listStyle = 'none';
 
+    const pendentes: Array<{ sessao: SessaoLocal; li: HTMLLIElement }> = [];
     for (const s of sessoes) {
-      const li = await this.criarItem(s);
+      const li = this.criarItem(s);
       ul.appendChild(li);
+      if (!s.resumo) pendentes.push({ sessao: s, li });
     }
 
     lista.innerHTML = '';
     lista.appendChild(ul);
+
+    // Sem resumo na listagem (armazenamento local / gateway antigo), completa
+    // depois de mostrar a lista, uma sessão por vez, sem travar a tela.
+    void this.completarResumos(pendentes);
+  }
+
+  private async completarResumos(itens: Array<{ sessao: SessaoLocal; li: HTMLLIElement }>): Promise<void> {
+    if (itens.length === 0) return;
+    const concluir = indicador.iniciar('Calculando resumos das sessões…');
+    try {
+      for (const { sessao, li } of itens) {
+        if (!li.isConnected) return;
+        try {
+          const leituras = await this.armazenamento.obterLeituras(sessao.id);
+          sessao.resumo = resumoDeLeituras(leituras);
+        } catch {
+          sessao.resumo = { totalLeituras: 0 };
+        }
+        this.preencherResumo(li, sessao.resumo);
+      }
+    } finally {
+      concluir();
+    }
+  }
+
+  private preencherResumo(li: HTMLLIElement, resumo: ResumoSessao) {
+    const badge = li.querySelector<HTMLElement>('.motor-badge-slot');
+    const resto = li.querySelector<HTMLElement>('.sessao-meta-resto');
+    if (badge) {
+      badge.innerHTML = resumo.letraMotor
+        ? `<span class="motor-badge" data-testid="nome-motor">${resumo.letraMotor}</span>`
+        : '';
+    }
+    if (resto) {
+      resto.textContent = ` — ${resumo.totalLeituras} leituras${resumo.nomeMotor ? ' — ' + resumo.nomeMotor : ''}`;
+    }
   }
 
   private atualizarBarraComparacao() {
@@ -138,6 +178,7 @@ export class TelaSessoes {
     const btn = this.barraComp?.querySelector<HTMLButtonElement>('#btn-comparar');
     if (btn) { btn.disabled = true; btn.textContent = 'Carregando…'; }
 
+    const concluir = indicador.iniciar('Carregando sessões para comparar…');
     try {
       const sessoes = await this.armazenamento.listarSessoes();
       const selecionadas = sessoes.filter(s => this.selecionadas.has(s.id));
@@ -150,6 +191,7 @@ export class TelaSessoes {
 
       new TelaComparacao(itens);
     } finally {
+      concluir();
       if (btn) { btn.disabled = false; btn.textContent = 'Comparar selecionadas'; }
     }
   }
@@ -160,8 +202,13 @@ export class TelaSessoes {
     if (selecionadas.length === 0) return;
 
     const erros: string[] = [];
+    const rotulo = formato.toUpperCase();
+    let concluir = indicador.iniciar(`Exportando ${rotulo} 1/${selecionadas.length}…`);
 
-    for (const s of selecionadas) {
+    for (const [i, s] of selecionadas.entries()) {
+      // troca a mensagem sem deixar o contador zerar (evita piscar o selo)
+      const proximo = indicador.iniciar(`Exportando ${rotulo} ${i + 1}/${selecionadas.length}…`);
+      concluir(); concluir = proximo;
       try {
         const ls = await this.armazenamento.obterLeituras(s.id);
 
@@ -192,13 +239,14 @@ export class TelaSessoes {
         erros.push(`${s.nome}: ${String(e)}`);
       }
     }
+    concluir();
 
     if (erros.length > 0) {
       alert(`Algumas sessões não puderam ser exportadas em ${formato.toUpperCase()}:\n\n${erros.join('\n')}`);
     }
   }
 
-  private async criarItem(s: SessaoLocal): Promise<HTMLLIElement> {
+  private criarItem(s: SessaoLocal): HTMLLIElement {
     const li = document.createElement('li');
     li.className = 'sessao-item';
 
@@ -207,18 +255,6 @@ export class TelaSessoes {
       ? `<span class="origem-badge origem-gateway" title="Gravado no banco de dados do gateway">&#9635; gateway</span>`
       : `<span class="origem-badge origem-local"   title="Gravado no armazenamento local do browser">&#9632; local</span>`;
 
-    const leituras = await this.armazenamento.obterLeituras(s.id);
-    let motorBadge = '';
-    let nomeMotor  = '';
-
-    if (leituras.length > 0) {
-      try {
-        const analise = analisarMotor(leituras, {});
-        nomeMotor = analise.nomeComum;
-        motorBadge = `<span class="motor-badge" data-testid="nome-motor">${analise.letraMotor}</span>`;
-      } catch { /* sem queima — sem badge */ }
-    }
-
     const dataFmt = new Date(s.criadoEm).toLocaleString('pt-BR');
 
     li.innerHTML = `
@@ -226,11 +262,11 @@ export class TelaSessoes {
         <input type="checkbox" class="sessao-check" data-id="${s.id}">
       </label>
       <div style="flex:1;min-width:0">
-        <div class="nome">${s.nome} ${motorBadge} ${origemBadge}</div>
+        <div class="nome">${s.nome} <span class="motor-badge-slot"></span> ${origemBadge}</div>
         <div class="meta">
           <span class="sessao-data-texto">${dataFmt}</span>
           <button class="btn-editar-data" title="Editar data">✎</button>
-          <span class="sessao-meta-resto"> — ${leituras.length} leituras${nomeMotor ? ' — ' + nomeMotor : ''}</span>
+          <span class="sessao-meta-resto"> — carregando…</span>
         </div>
       </div>
       <div class="sessao-acoes">
@@ -241,6 +277,8 @@ export class TelaSessoes {
         <button class="btn-secondary btn-sm btn-excluir" data-id="${s.id}" title="Excluir sessão" style="color:#ef5350">Excluir</button>
       </div>
     `;
+
+    if (s.resumo) this.preencherResumo(li, s.resumo);
 
     li.querySelector<HTMLInputElement>('.sessao-check')!.addEventListener('change', (e) => {
       const checked = (e.target as HTMLInputElement).checked;
@@ -307,7 +345,7 @@ export class TelaSessoes {
 
     // Analisar
     li.querySelector('.btn-analisar')!.addEventListener('click', async () => {
-      const ls = await this.armazenamento.obterLeituras(s.id);
+      const ls = await indicador.envolver('Carregando leituras…', () => this.armazenamento.obterLeituras(s.id));
       new TelaAnalise(
         { leituras: ls, nomeSessao: s.nome, modo: 'revisao', idSessao: s.id },
         this.armazenamento,
@@ -317,7 +355,8 @@ export class TelaSessoes {
 
     // JSON
     li.querySelector('.btn-json')!.addEventListener('click', async () => {
-      const ls   = await this.armazenamento.obterLeituras(s.id);
+      const concluir = indicador.iniciar('Gerando JSON…');
+      const ls   = await this.armazenamento.obterLeituras(s.id).finally(concluir);
       const meta = await this.armazenamento.obterMetadados(s.id) ?? {};
       const payload: SessaoExportadaV2 = {
         versao: 2, nome: s.nome, criadoEm: s.criadoEm,
@@ -328,7 +367,7 @@ export class TelaSessoes {
 
     // CSV
     li.querySelector('.btn-csv')!.addEventListener('click', async () => {
-      const ls = await this.armazenamento.obterLeituras(s.id);
+      const ls = await indicador.envolver('Gerando CSV…', () => this.armazenamento.obterLeituras(s.id));
       const data = new Date(s.criadoEm).toLocaleDateString('pt-BR');
       let csv: string;
       try {
@@ -342,7 +381,7 @@ export class TelaSessoes {
 
     // PDF
     li.querySelector('.btn-pdf')!.addEventListener('click', async () => {
-      const ls = await this.armazenamento.obterLeituras(s.id);
+      const ls = await indicador.envolver('Gerando PDF…', () => this.armazenamento.obterLeituras(s.id));
       try {
         const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
         const analise = analisarMotor(ls, {});
@@ -358,7 +397,7 @@ export class TelaSessoes {
     // Excluir
     li.querySelector('.btn-excluir')!.addEventListener('click', async () => {
       if (confirm(`Excluir sessão "${s.nome}"?`)) {
-        await this.armazenamento.excluirSessao(s.id);
+        await indicador.envolver('Excluindo sessão…', () => this.armazenamento.excluirSessao(s.id));
         li.remove();
       }
     });
@@ -374,7 +413,8 @@ export class TelaSessoes {
     if (leituras.length > 0) await this.armazenamento.adicionarLeituras(sessao.id, leituras);
     if (Object.keys(meta).length > 0) await this.armazenamento.salvarMetadados(sessao.id, meta);
 
-    const li = await this.criarItem(sessao);
+    sessao.resumo = resumoDeLeituras(leituras);
+    const li = this.criarItem(sessao);
     let ul = lista.querySelector('ul');
     if (!ul) {
       lista.innerHTML = '';

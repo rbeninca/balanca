@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import type { ContextoRotas } from './tipos.js';
+import { garantirResumos } from '../bancoDados/resumoSessao.js';
 
 interface Sessao {
   id: string;
@@ -11,6 +12,9 @@ interface Sessao {
   forca_maxima_n: number;
   impulso_total_ns: number;
   observacoes: string | null;
+  total_leituras: number | null;
+  forca_media_queima_n: number | null;
+  impulso_queima_ns: number | null;
 }
 
 export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }: ContextoRotas) {
@@ -18,7 +22,7 @@ export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }:
 
   app.get('/sessoes', async (_req, rep) => {
     const sessoes = db.consultar<Sessao>('SELECT * FROM sessoes ORDER BY criado_em DESC');
-    return rep.send(sessoes);
+    return rep.send(garantirResumos(db, sessoes));
   });
 
   app.get<{ Params: { id: string } }>('/sessoes/:id', async (req, rep) => {

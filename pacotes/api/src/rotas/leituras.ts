@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { ProvedorSQLite } from '../bancoDados/ProvedorSQLite.js';
 import type { ContextoRotas } from './tipos.js';
+import { gravarResumoSessao } from '../bancoDados/resumoSessao.js';
 
 interface LeituraInput {
   marca_temporal: number;
@@ -85,6 +86,7 @@ export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }
       if (!sessao) return rep.status(404).send({ erro: 'Sessão não encontrada' });
       db.executar('DELETE FROM leituras WHERE id_sessao = ?', [req.params.id]);
       db.executar('UPDATE sessoes SET duracao_ms = 0, forca_maxima_n = 0, impulso_total_ns = 0 WHERE id = ?', [req.params.id]);
+      gravarResumoSessao(db, req.params.id);
       return rep.status(204).send();
     },
   );
@@ -112,6 +114,7 @@ export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }
       }
 
       atualizarMetricasSessao(db, req.params.id);
+      gravarResumoSessao(db, req.params.id);
       return rep.status(201).send({ inseridas: lotes.length });
     },
   );

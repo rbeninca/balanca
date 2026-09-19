@@ -1,10 +1,13 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import type { ResumoSessao } from './resumoSessao.js';
 import { exportarCSV } from '@balancagfig/relatorio';
 
 export interface SessaoLocal {
   id: string;
   nome: string;
   criadoEm: string;
+  /** Preenchido pela API na listagem; ausente no armazenamento local. */
+  resumo?: ResumoSessao;
 }
 
 export interface MetadadosLocal {
