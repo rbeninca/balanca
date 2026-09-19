@@ -97,3 +97,10 @@ describe('detector de evento no painel (Fase 7)', () => {
     expect(html).toContain('Detector de evento');
   });
 });
+
+describe('zero tracking no painel (Fase 8)', () => {
+  it('tem checkbox, zona de repouso, tempo, α e o offset', () => {
+    const html = htmlPainelFiltros();
+    for (const id of ['ck-zero-tracking', 'in-zt-limiar', 'in-zt-tempo', 'in-zt-alpha', 'zt-offset']) expect(html).toContain(`id="${id}"`);
+  });
+});

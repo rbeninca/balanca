@@ -99,6 +99,11 @@ object Mensagens {
         c.janelaHampel?.let { put("janelaHampel", it) }
         c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
         put("ativoHampel", e.ativoHampel)
+        c.zeroTrackingLimiarN?.let { put("zeroTrackingLimiarN", it) }
+        c.zeroTrackingTempoMs?.let { put("zeroTrackingTempoMs", it) }
+        c.zeroTrackingAlpha?.let { put("zeroTrackingAlpha", it) }
+        put("ativoZeroTracking", e.ativoZeroTracking)
+        put("zeroTrackingOffsetN", e.zeroTrackingOffsetN)
         put("ativoZonaMorta", e.ativoZonaMorta)
         put("ativoMediaMovel", e.ativoMediaMovel)
         put("ativoDetectorQueima", e.ativoDetectorQueima)
@@ -184,6 +189,10 @@ object Mensagens {
         janelaHampel = c.optIntOrNull("janelaHampel"),
         limiarHampelSigma = c.optDoubleOrNull("limiarHampelSigma"),
         ativoHampel = c.optBooleanOrNull("ativoHampel"),
+        ativoZeroTracking = c.optBooleanOrNull("ativoZeroTracking"),
+        zeroTrackingLimiarN = c.optDoubleOrNull("zeroTrackingLimiarN"),
+        zeroTrackingTempoMs = c.optIntOrNull("zeroTrackingTempoMs")?.toLong(),
+        zeroTrackingAlpha = c.optDoubleOrNull("zeroTrackingAlpha"),
         ativoZonaMorta = c.optBooleanOrNull("ativoZonaMorta"),
         ativoMediaMovel = c.optBooleanOrNull("ativoMediaMovel"),
         ativoDetectorQueima = c.optBooleanOrNull("ativoDetectorQueima"),

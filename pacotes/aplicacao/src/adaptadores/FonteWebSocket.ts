@@ -69,6 +69,8 @@ const CFG_GATEWAY_PADRAO: EstadoPipeline = {
   fonteCalculoImpulso: 'final',
   detector:            { limiarEntradaN: 0.5, limiarSaidaN: 0.5, tempoEntradaMs: 0, tempoSaidaMs: 100 },
   ativoHampel:         false,
+  ativoZeroTracking:   false,
+  zeroTrackingOffsetN: 0,
   ativoZonaMorta:      false,
   ativoMediaMovel:     false,
   ativoDetectorQueima: false,

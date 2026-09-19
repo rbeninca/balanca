@@ -923,7 +923,7 @@ private aplicarFiltros(forca: number) {
   const bruta = forca;                                   // Newtons como a ESP mandou
   const limpa = aplicarLimpeza(bruta);                   // 1. Hampel → Mediana → Notch (combináveis)
   const suavizada = aplicarFiltroPrincipal(limpa);       // 2. um só: média móvel | EMA | Butterworth | SG | Kalman
-  const filtrada = aplicarTratamento(suavizada);         // 3. zona morta (zero tracking na Fase 8)
+  const filtrada = aplicarTratamento(suavizada);         // 3. zero tracking (bloqueado em evento/gravação) → zona morta
   return { bruta, limpa, suavizada, filtrada };
 }
 // Fs dos filtros IIR = taxaAmostragemHz fixada, senão a estimada pelas marcas de tempo (EstimadorTaxaAmostragem)

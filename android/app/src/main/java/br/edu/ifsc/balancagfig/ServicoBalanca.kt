@@ -210,7 +210,10 @@ class ServicoBalanca : Service() {
             val bkp = BackupPendrive(this, banco).also { backup = it }
             // Gravação compartilhada no gateway (ver GravadorSessao); alimentada em aoReceber da serial
             val destino = EscritaSessoes.DestinoBanco(banco) { bkp.aoSalvarSessao(it) }.also { destinoGravacao = it }
-            gravador = GravadorSessao(destino, aoMudar = { difundirGravacao() })
+            gravador = GravadorSessao(destino, aoMudar = { e ->
+                pipeline.definirGravando(e.gravando)   // zero tracking não corrige durante a gravação
+                difundirGravacao()
+            })
             iniciarContadorGravacao()
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
@@ -348,11 +351,12 @@ class ServicoBalanca : Service() {
         )
     }
 
-    /** Batimento SAUDE a cada 2 s (ver Mensagens.saude). */
+    /** Batimento SAUDE a cada 2 s (ver Mensagens.saude); aproveita para publicar o offset do zero tracking. */
     private fun iniciarBatimento() = escopo.launch {
         while (true) {
             delay(Mensagens.INTERVALO_SAUDE_MS)
             ws?.difundir(mensagemSaude())
+            if (pipeline.consumirMudancaOffset()) ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
         }
     }
 

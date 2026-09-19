@@ -284,6 +284,7 @@ export class TelaMedicao {
 
     ck('#ck-zona-morta',  cfg.ativoZonaMorta);
     ck('#ck-hampel',      cfg.ativoHampel ?? false);
+    ck('#ck-zero-tracking', cfg.ativoZeroTracking ?? false);
     ck('#ck-det-queima',  cfg.ativoDetectorQueima);
     ck('#ck-notch',       cfg.ativoNotch);
     ck('#ck-mediana',     cfg.ativoMediana);
@@ -309,6 +310,11 @@ export class TelaMedicao {
     inp('#in-hampel-jan',   cfg.janelaHampel,      7);
     inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
     inp('#in-bw-corte',     cfg.frequenciaCorteHz, 10);
+    inp('#in-zt-limiar',    cfg.zeroTrackingLimiarN, 0.05);
+    inp('#in-zt-tempo',     cfg.zeroTrackingTempoMs, 3000);
+    inp('#in-zt-alpha',     cfg.zeroTrackingAlpha,   0.01);
+    const off = c.querySelector<HTMLElement>('#zt-offset');
+    if (off) off.textContent = `offset ${(cfg.zeroTrackingOffsetN ?? 0).toFixed(4)} N`;
     const selImpulso = c.querySelector<HTMLSelectElement>('#sel-impulso');
     if (selImpulso) selImpulso.value = cfg.fonteCalculoImpulso ?? 'final';
     const bw = situacaoButterworth(cfg);
@@ -377,6 +383,10 @@ export class TelaMedicao {
         frequenciaCorteHz:   Math.max(0.1, num('#in-bw-corte', 10)),
         fonteCalculoImpulso: (container.querySelector<HTMLSelectElement>('#sel-impulso')?.value ?? 'final') as FonteImpulso,
         ativoHampel:         chk('#ck-hampel'),
+        ativoZeroTracking:   chk('#ck-zero-tracking'),
+        zeroTrackingLimiarN: num('#in-zt-limiar', 0.05),
+        zeroTrackingTempoMs: num('#in-zt-tempo', 3000),
+        zeroTrackingAlpha:   Math.min(1, Math.max(0.0001, num('#in-zt-alpha', 0.01))),
         janelaHampel:        janelaImpar(num('#in-hampel-jan', 7)),
         limiarHampelSigma:   Math.max(0.5, num('#in-hampel-k', 3)),
         ativoNotch:          chk('#ck-notch'),
@@ -393,11 +403,11 @@ export class TelaMedicao {
       this.atualizarBotaoSinalBruto(patch);
     };
 
-    ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana',
+    ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
     ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-det-entrada', '#in-det-t-entrada', '#in-det-saida',
-     '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso',
+     '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso', '#in-zt-limiar', '#in-zt-tempo', '#in-zt-alpha',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -435,7 +445,7 @@ export class TelaMedicao {
   private atualizarBadgeFiltros(container: HTMLElement) {
     const badge = container.querySelector<HTMLElement>('#filtros-badge');
     if (!badge) return;
-    const ids = ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
+    const ids = ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
     const total  = ids.length + 1;   // + o filtro principal (um só)
     const principal = RADIOS_FILTRO_PRINCIPAL.some(r => r.valor !== 'nenhum' && container.querySelector<HTMLInputElement>(`#${r.id}`)?.checked);
     const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length + (principal ? 1 : 0);
@@ -1000,6 +1010,15 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
   }, []);
 
   return {
+    'zero-tracking': {
+      nome: 'Zero tracking',
+      oque: 'Compensa lentamente a deriva do zero (temperatura, fluência da célula) quando a balança está comprovadamente sem carga. É o terceiro "zero" do sistema, depois da tara da ESP e do deslocamento de tara — e o único que anda sozinho, por isso o offset fica visível aqui.',
+      como: 'Saída = F − offset. Se |F − offset| ficar abaixo da zona de repouso por mais que o tempo indicado, sem variação rápida entre amostras, o offset caminha devagar: offset += α·(F − offset). Nunca corrige durante um evento (detector) nem durante uma gravação — o zero de uma sessão não pode andar. Quando usar: pesagens longas e bancadas ao sol. Quando não usar: quando o repouso real tem força pequena mas verdadeira (ex.: pré-carga) — ela seria absorvida com o tempo; e sempre com o detector ligado em testes de motor.',
+      svg: _svg(zm_e, zm_e.map(v => v * 0.2)),
+      refs: [
+        { texto: 'OIML R 76 — zero-tracking device (balanças não automáticas)', url: 'https://www.oiml.org/en/files/pdf_r/r076-1-e06.pdf' },
+      ],
+    },
     'impulso': {
       nome: 'Fonte do impulso',
       oque: 'Escolhe qual sinal alimenta a integral do impulso acumulado (N·s). O sinal exibido continua o mesmo; muda só o que é integrado.',

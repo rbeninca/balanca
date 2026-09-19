@@ -58,6 +58,22 @@ export function htmlPainelFiltros(): string {
                 <button type="button" id="btn-sugerir-zm" class="filtro-sugerir" title="Sugerir a partir da capacidade e acurácia gravadas na ESP">sugerir</button>
               </div>
             </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk" title="Etapa 3: compensa a deriva lenta do zero quando a balança está comprovadamente em repouso">
+                <input type="checkbox" id="ck-zero-tracking">
+                Zero tracking
+              </label>
+              <button class="filtro-info-btn" data-filtro="zero-tracking" type="button" title="Saiba mais">ℹ</button>
+              <div class="filtro-params">
+                <input type="number" id="in-zt-limiar" class="filtro-num" value="0.05" min="0" step="0.001" title="Zona de repouso (N)">
+                <span>N</span>
+                <input type="number" id="in-zt-tempo" class="filtro-num" value="3000" min="0" step="100" title="Tempo em repouso antes de corrigir (ms)">
+                <span>ms</span>
+                <input type="number" id="in-zt-alpha" class="filtro-num" value="0.01" min="0.0001" max="1" step="0.001" title="Passo da correção por amostra (α)">
+                <span>α</span>
+                <span id="zt-offset" class="filtro-fs" title="Offset atual aplicado pelo zero tracking">offset 0 N</span>
+              </div>
+            </div>
             <div class="filtro-linha filtro-linha-fixa">
               <label class="filtro-chk" for="sel-impulso" title="Etapa 3 → análise: qual sinal alimenta a integral do impulso">Impulso de</label>
               <button class="filtro-info-btn" data-filtro="impulso" type="button" title="Saiba mais">ℹ</button>

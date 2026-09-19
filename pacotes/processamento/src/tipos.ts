@@ -36,6 +36,11 @@ export interface ConfiguracaoPipeline {
   tempoEntradaMs?:   number;   // ms acima da entrada para confirmar o início (0 = imediato)
   tempoSaidaMs?:     number;   // ms abaixo da saída para confirmar o fim
 
+  // Etapa 3 — Zero tracking (Fase 8), desativado por padrão
+  zeroTrackingLimiarN?:  number;   // zona de repouso (N), padrão 0.05
+  zeroTrackingTempoMs?:  number;   // tempo em repouso antes de corrigir, padrão 3000
+  zeroTrackingAlpha?:    number;   // passo por amostra, padrão 0.01
+
   /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão 'final'). */
   fonteCalculoImpulso?: FonteImpulso;
 

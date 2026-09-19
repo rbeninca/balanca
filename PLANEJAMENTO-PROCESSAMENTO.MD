@@ -148,6 +148,17 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   `.filtro-num` perdendo largura para `input[type=number]` em contêineres
   largos (mesmo bug da tela de Configurações).
 
+- Fase 8 ✔: `ZeroTracking` (TS e Kotlin) na etapa 3, **antes** da zona morta
+  (sobre zeros não teria o que corrigir): saída = F − offset; corrige
+  `offset += α·(F − offset)` só com |F − offset| < limiar por mais de
+  `tempoEstavel` e sem variação rápida; **bloqueado durante evento (detector)
+  e durante gravação** (o serviço avisa o pipeline pelo `GravadorSessao`; no
+  WebSerial, o `ControladorGravacao` avisa a fonte). Liga/desliga e mudança
+  real de parâmetro zeram o offset; reenviar os mesmos parâmetros (o painel
+  manda tudo a cada mudança) não zera — achado no TX9. Offset visível no
+  painel (`zeroTrackingOffsetN`), publicado junto com o batimento quando muda
+  ≥ 1 mN. Golden `zero-tracking` novo, demais idênticos.
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

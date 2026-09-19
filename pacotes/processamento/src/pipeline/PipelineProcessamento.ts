@@ -10,6 +10,7 @@ import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
 import { FiltroHampel }      from '../filtros/FiltroHampel.js';
 import { FiltroButterworth } from '../filtros/FiltroButterworth.js';
+import { ZeroTracking }      from '../filtros/ZeroTracking.js';
 import { DetectorEvento, type ConfigDetectorEvento } from '../analise/DetectorEvento.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
 import { EstimadorTaxaAmostragem } from '../analise/EstimadorTaxaAmostragem.js';
@@ -22,6 +23,7 @@ export { FONTES_IMPULSO, type FonteImpulso } from '../tipos.js';
 /** `filtroPrincipal` vence; as flags ativoMediaMovel/EMA/SG/Kalman seguem aceitas (ver resolverFiltroPrincipal). */
 export type PipelinePatch = Partial<ConfiguracaoPipeline> & {
   ativoHampel?:         boolean;
+  ativoZeroTracking?:   boolean;
   ativoZonaMorta?:      boolean;
   ativoMediaMovel?:     boolean;
   ativoDetectorQueima?: boolean;
@@ -50,6 +52,9 @@ export type EstadoPipeline = ConfiguracaoPipeline & {
   /** Limiares/tempos efetivos do detector de evento (após os padrões e a validação saída ≤ entrada). */
   detector:            ConfigDetectorEvento;
   ativoHampel:         boolean;
+  ativoZeroTracking:   boolean;
+  /** Offset atual do zero tracking (N), 0 quando desligado. */
+  zeroTrackingOffsetN: number;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
   ativoDetectorQueima: boolean;
@@ -70,6 +75,13 @@ export class PipelineProcessamento {
   private hampel:      FiltroHampel;
   /** null enquanto fc/Fs forem inválidos (o filtro passa direto). */
   private butterworth: FiltroButterworth | null = null;
+  private zeroTracking: ZeroTracking;
+  private ativoZeroTracking = false;
+  /** Gravação em andamento (informada pelo serviço/tela): bloqueia o zero tracking. */
+  private gravando = false;
+  /** Estado do detector na amostra anterior: evento em curso bloqueia o zero tracking. */
+  private ultimoEmEvento = false;
+  private offsetPublicadoN = 0;
   private sg:          SavitzkyGolay;
   private kalman:      FiltroKalman;
   private detector:    DetectorEvento;
@@ -98,14 +110,34 @@ export class PipelineProcessamento {
     this.kalman     = new FiltroKalman(config.kalmanQ ?? 0.01, config.kalmanR ?? 1.0);
     this.detector   = new DetectorEvento(this.configDetector());
     this.calculador = new CalculadorImpulso();
+    this.zeroTracking = new ZeroTracking(this.configZeroTracking());
+  }
+
+  private configZeroTracking() {
+    return {
+      limiarN:        this.config.zeroTrackingLimiarN ?? 0.05,
+      tempoEstavelMs: this.config.zeroTrackingTempoMs ?? 3000,
+      alpha:          this.config.zeroTrackingAlpha ?? 0.01,
+    };
+  }
+
+  /** Gravação em andamento: o zero tracking não corrige (o zero de uma sessão não pode andar). */
+  definirGravando(v: boolean): void { this.gravando = v; }
+
+  /** true quando o offset do zero tracking andou mais de [minimoN] desde a última publicação. */
+  consumirMudancaOffset(minimoN = 0.001): boolean {
+    const atual = this.zeroTracking.obterOffset();
+    if (Math.abs(atual - this.offsetPublicadoN) < minimoN) return false;
+    this.offsetPublicadoN = atual;
+    return true;
   }
 
   /** Três etapas (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro principal → tratamento. */
-  private aplicarFiltros(forca: number): SinaisPipeline {
+  private aplicarFiltros(forca: number, marcaTemporal: number): SinaisPipeline {
     const bruta = forca;
     const limpa = this.aplicarLimpeza(bruta);
     const suavizada = this.aplicarFiltroPrincipal(limpa);
-    const filtrada = this.aplicarTratamento(suavizada);
+    const filtrada = this.aplicarTratamento(suavizada, marcaTemporal);
     return { bruta, limpa, suavizada, filtrada };
   }
 
@@ -142,7 +174,10 @@ export class PipelineProcessamento {
    * (desde a Fase 6 roda sobre o sinal já suavizado: sem tremor perto de
    * zero); zero tracking entra na Fase 8.
    */
-  private aplicarTratamento(forca: number): number {
+  private aplicarTratamento(forca: number, marcaTemporal: number): number {
+    // Zero tracking antes da zona morta (sobre zeros ele não teria o que corrigir);
+    // bloqueado em evento e em gravação.
+    if (this.ativoZeroTracking) forca = this.zeroTracking.aplicar(forca, marcaTemporal, this.ultimoEmEvento || this.gravando);
     if (this.ativoZonaMorta) forca = this.zonaMorta.aplicar(forca);
     return forca;
   }
@@ -215,12 +250,13 @@ export class PipelineProcessamento {
 
   processar(pacote: PacoteDados): LeituraProcessada {
     this.acompanharTaxa(pacote.marcaTemporal);
-    const sinais = this.aplicarFiltros(pacote.forcaNewtons);
+    const sinais = this.aplicarFiltros(pacote.forcaNewtons, pacote.marcaTemporal);
     const { filtrada, bruta } = sinais;
 
     const emQueima           = this.ativoDetectorQueima
       ? this.detector.atualizar(filtrada, pacote.marcaTemporal)
       : false;
+    this.ultimoEmEvento = emQueima;
     const impulsoAcumuladoNs = this.calculador.integrar(this.sinalParaImpulso(sinais), pacote.marcaTemporal);
 
     const algumFiltroNovo = this.algumFiltroNovo;
@@ -238,12 +274,13 @@ export class PipelineProcessamento {
 
   processarLeitura(l: LeituraProcessada): LeituraProcessada {
     this.acompanharTaxa(l.marcaTemporal);
-    const sinais = this.aplicarFiltros(l.forcaNewton);
+    const sinais = this.aplicarFiltros(l.forcaNewton, l.marcaTemporal);
     const { filtrada, bruta } = sinais;
 
     const emQueima           = this.ativoDetectorQueima
       ? this.detector.atualizar(filtrada, l.marcaTemporal)
       : l.emQueima;
+    this.ultimoEmEvento = emQueima;
     const impulsoAcumuladoNs = this.calculador.integrar(this.sinalParaImpulso(sinais), l.marcaTemporal);
 
     const algumFiltroNovo = this.algumFiltroNovo;
@@ -299,6 +336,17 @@ export class PipelineProcessamento {
       this.reconstruirNotch();
       this.reconstruirButterworth();
     }
+    {
+      // O painel reenvia tudo a cada mudança: só recria (e zera o offset) se um parâmetro mudou de fato
+      const antes = this.configZeroTracking();
+      if (patch.zeroTrackingLimiarN != null) this.config.zeroTrackingLimiarN = patch.zeroTrackingLimiarN;
+      if (patch.zeroTrackingTempoMs != null) this.config.zeroTrackingTempoMs = patch.zeroTrackingTempoMs;
+      if (patch.zeroTrackingAlpha != null)   this.config.zeroTrackingAlpha   = patch.zeroTrackingAlpha;
+      const depois = this.configZeroTracking();
+      if (antes.limiarN !== depois.limiarN || antes.tempoEstavelMs !== depois.tempoEstavelMs || antes.alpha !== depois.alpha) {
+        this.zeroTracking = new ZeroTracking(depois);
+      }
+    }
     if (patch.fonteCalculoImpulso != null && (FONTES_IMPULSO as readonly string[]).includes(patch.fonteCalculoImpulso)) {
       this.config.fonteCalculoImpulso = patch.fonteCalculoImpulso;
     }
@@ -325,6 +373,10 @@ export class PipelineProcessamento {
     if (patch.ativoHampel != null) {
       if (patch.ativoHampel && !this.ativoHampel) this.hampel.reiniciar();
       this.ativoHampel = patch.ativoHampel;
+    }
+    if (patch.ativoZeroTracking != null) {
+      if (patch.ativoZeroTracking !== this.ativoZeroTracking) this.zeroTracking.reiniciar();   // liga/desliga: offset zera
+      this.ativoZeroTracking = patch.ativoZeroTracking;
     }
     if (patch.ativoZonaMorta != null)      this.ativoZonaMorta = patch.ativoZonaMorta;
     if (patch.ativoDetectorQueima != null) {
@@ -368,6 +420,8 @@ export class PipelineProcessamento {
       fonteCalculoImpulso: this.config.fonteCalculoImpulso ?? 'final',
       detector:            this.detector.config,
       ativoHampel:         this.ativoHampel,
+      ativoZeroTracking:   this.ativoZeroTracking,
+      zeroTrackingOffsetN: this.ativoZeroTracking ? this.zeroTracking.obterOffset() : 0,
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,
       ativoMediana:        this.ativoMediana,
@@ -391,6 +445,8 @@ export class PipelineProcessamento {
     this.notch.reiniciar();
     this.hampel.reiniciar();
     this.butterworth?.reiniciar();
+    this.zeroTracking.reiniciar();
+    this.ultimoEmEvento = false;
     this.sg.reiniciar();
     this.kalman.reiniciar();
     this.detector.reiniciar();

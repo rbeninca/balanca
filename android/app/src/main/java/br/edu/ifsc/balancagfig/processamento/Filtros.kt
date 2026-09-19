@@ -251,6 +251,31 @@ class DetectorQueima(private val limiar: Double, private val tempoMinFimMs: Long
 }
 
 /** Integral trapezoidal de força no tempo (N·s). */
+/** Porta de ZeroTracking.ts: compensa deriva lenta do zero só em repouso comprovado e sem bloqueio. */
+class ZeroTracking(limiarN: Double, tempoEstavelMs: Long, alpha: Double, variacaoMaxN: Double? = null) {
+    val limiarN = maxOf(0.0, limiarN)
+    val tempoEstavelMs = maxOf(0, tempoEstavelMs)
+    val alpha = alpha.coerceIn(0.0, 1.0)
+    val variacaoMaxN = variacaoMaxN ?: (limiarN / 2)
+    private var offset = 0.0
+    private var estavelDesdeMs: Long? = null
+    private var ultimoCorrigido: Double? = null
+
+    fun aplicar(forca: Double, marcaTemporal: Long, bloqueado: Boolean = false): Double {
+        val corrigida = forca - offset
+        val variacao = ultimoCorrigido?.let { kotlin.math.abs(corrigida - it) } ?: 0.0
+        ultimoCorrigido = corrigida
+        val emRepouso = !bloqueado && kotlin.math.abs(corrigida) < limiarN && variacao <= variacaoMaxN
+        if (!emRepouso) { estavelDesdeMs = null; return corrigida }
+        val desde = estavelDesdeMs ?: marcaTemporal.also { estavelDesdeMs = it }
+        if (marcaTemporal - desde >= tempoEstavelMs) offset += alpha * corrigida
+        return corrigida
+    }
+
+    fun obterOffset(): Double = offset
+    fun reiniciar() { offset = 0.0; estavelDesdeMs = null; ultimoCorrigido = null }
+}
+
 /** Limiares/tempos do detector de evento (espelho de ConfigDetectorEvento em DetectorEvento.ts). */
 data class ConfigDetectorEvento(val limiarEntradaN: Double, val limiarSaidaN: Double, val tempoEntradaMs: Long, val tempoSaidaMs: Long)
 

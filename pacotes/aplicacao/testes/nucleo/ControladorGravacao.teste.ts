@@ -12,7 +12,9 @@ function leitura(t: number, f: number, i: number): LeituraProcessada {
 
 /** Fonte sem gravação remota (WebSerial / gateway antigo). */
 class FonteSimples implements FonteGravacao {
+  gravando: boolean[] = [];
   on(_evento: string, _fn: (v: unknown) => void): void { /* nunca emite gravacao */ }
+  definirGravando(v: boolean) { this.gravando.push(v); }
 }
 
 /** Simula o gateway Android: guarda o estado difundido e responde aos comandos. */
@@ -50,8 +52,9 @@ class FonteGatewaySimulado implements FonteGravacao {
 
 function criarLocal() {
   const armazenamento = new ArmazenamentoLocal();
-  const controlador = new ControladorGravacao(new FonteSimples(), new GerenciadorSessao(armazenamento), armazenamento);
-  return { armazenamento, controlador };
+  const fonte = new FonteSimples();
+  const controlador = new ControladorGravacao(fonte, new GerenciadorSessao(armazenamento), armazenamento);
+  return { armazenamento, controlador, fonte };
 }
 
 function criarRemoto(timeout = 200) {
@@ -80,6 +83,13 @@ describe('ControladorGravacao — modo local (WebSerial / GitHub Pages)', () => 
     expect((await armazenamento.obterLeituras(id))).toHaveLength(2);
     expect(estados).toEqual([true, false]);
     expect(controlador.estado.gravando).toBe(false);
+  });
+
+  it('avisa a fonte local para bloquear o zero tracking durante a gravação (Fase 8)', async () => {
+    const { controlador, fonte } = criarLocal();
+    await controlador.iniciar('ZT');
+    await controlador.parar();
+    expect(fonte.gravando).toEqual([true, false]);
   });
 });
 

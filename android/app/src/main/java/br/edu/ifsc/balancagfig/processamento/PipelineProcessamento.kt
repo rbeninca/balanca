@@ -35,6 +35,11 @@ data class ConfiguracaoPipeline(
     var tempoEntradaMs: Long? = null,
     var tempoSaidaMs: Long? = null,
 
+    // Etapa 3 — Zero tracking (Fase 8), desativado por padrão
+    var zeroTrackingLimiarN: Double? = null,   // zona de repouso (N), padrão 0.05
+    var zeroTrackingTempoMs: Long? = null,     // tempo em repouso antes de corrigir, padrão 3000
+    var zeroTrackingAlpha: Double? = null,     // passo por amostra, padrão 0.01
+
     /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão FINAL). */
     var fonteCalculoImpulso: FonteImpulso = FonteImpulso.FINAL,
 
@@ -70,6 +75,10 @@ data class PipelinePatch(
     val janelaHampel: Int? = null,
     val limiarHampelSigma: Double? = null,
     val ativoHampel: Boolean? = null,
+    val ativoZeroTracking: Boolean? = null,
+    val zeroTrackingLimiarN: Double? = null,
+    val zeroTrackingTempoMs: Long? = null,
+    val zeroTrackingAlpha: Double? = null,
     val ativoZonaMorta: Boolean? = null,
     val ativoMediaMovel: Boolean? = null,
     val ativoDetectorQueima: Boolean? = null,
@@ -94,6 +103,9 @@ data class EstadoPipeline(
     /** Limiares/tempos efetivos do detector (após os padrões e a validação saída ≤ entrada). */
     val detector: ConfigDetectorEvento,
     val ativoHampel: Boolean,
+    val ativoZeroTracking: Boolean,
+    /** Offset atual do zero tracking (N), 0 quando desligado. */
+    val zeroTrackingOffsetN: Double,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
     val ativoDetectorQueima: Boolean,
@@ -135,8 +147,27 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private var hampel = FiltroHampel(config.janelaHampel ?: 7, config.limiarHampelSigma ?: 3.0)
     /** null enquanto fc/Fs forem inválidos (o filtro passa direto). */
     private var butterworth: FiltroButterworth? = null
+    private var zeroTracking = ZeroTracking(config.zeroTrackingLimiarN ?: 0.05, config.zeroTrackingTempoMs ?: 3000, config.zeroTrackingAlpha ?: 0.01)
+    private var ativoZeroTracking = false
+    /** Gravação em andamento (informada pelo serviço): bloqueia o zero tracking. */
+    @Volatile private var gravando = false
+    /** Estado do detector na amostra anterior: evento em curso bloqueia o zero tracking. */
+    private var ultimoEmEvento = false
+    private var offsetPublicadoN = 0.0
 
     init { reconstruirButterworth() }
+
+    /** Gravação em andamento: o zero tracking não corrige (o zero de uma sessão não pode andar). */
+    fun definirGravando(v: Boolean) { gravando = v }
+
+    /** true quando o offset do zero tracking andou mais de [minimoN] desde a última publicação. */
+    @Synchronized
+    fun consumirMudancaOffset(minimoN: Double = 0.001): Boolean {
+        val atual = zeroTracking.obterOffset()
+        if (kotlin.math.abs(atual - offsetPublicadoN) < minimoN) return false
+        offsetPublicadoN = atual
+        return true
+    }
     private var sg = SavitzkyGolay(config.janelaSG ?: 7)
     private var kalman = FiltroKalman(config.kalmanQ ?: 0.01, config.kalmanR ?: 1.0)
     private var detector = DetectorEvento(configDetector())
@@ -151,10 +182,10 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private var filtroPrincipal = config.filtroPrincipal
 
     /** Três etapas, espelho do TS (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro principal → tratamento. */
-    private fun aplicarFiltros(entrada: Double): SinaisPipeline {
+    private fun aplicarFiltros(entrada: Double, marcaTemporal: Long): SinaisPipeline {
         val limpa = aplicarLimpeza(entrada)
         val suavizada = aplicarFiltroPrincipal(limpa)
-        val filtrada = aplicarTratamento(suavizada)
+        val filtrada = aplicarTratamento(suavizada, marcaTemporal)
         return SinaisPipeline(bruta = entrada, limpa = limpa, suavizada = suavizada, filtrada = filtrada)
     }
 
@@ -207,9 +238,13 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         FiltroPrincipal.NENHUM -> Unit
     }
 
-    /** Etapa 3 — tratamento: zona morta sobre o sinal já suavizado (zero tracking na Fase 8). */
-    private fun aplicarTratamento(entrada: Double): Double =
-        if (ativoZonaMorta) zonaMorta.aplicar(entrada) else entrada
+    /** Etapa 3 — tratamento: zero tracking (bloqueado em evento/gravação) e depois zona morta. */
+    private fun aplicarTratamento(entrada: Double, marcaTemporal: Long): Double {
+        var forca = entrada
+        if (ativoZeroTracking) forca = zeroTracking.aplicar(forca, marcaTemporal, ultimoEmEvento || gravando)
+        if (ativoZonaMorta) forca = zonaMorta.aplicar(forca)
+        return forca
+    }
 
     @Synchronized
     /** Fs dos filtros dependentes de frequência: a fixada em taxaAmostragemHz, senão a estimada, senão 100 Hz. */
@@ -245,11 +280,12 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     fun processar(pacote: PacoteDados): LeituraProcessada {
         acompanharTaxa(pacote.marcaTemporal)
         // Float → Double exato, como o DataView.getFloat32 do gateway Node
-        val sinais = aplicarFiltros(pacote.forcaNewtons.toDouble())
+        val sinais = aplicarFiltros(pacote.forcaNewtons.toDouble(), pacote.marcaTemporal)
         val filtrada = sinais.filtrada
         val bruta = sinais.bruta
 
         val emQueima = if (ativoDetectorQueima) detector.atualizar(filtrada, pacote.marcaTemporal) else false
+        ultimoEmEvento = emQueima
         val impulso = calculador.integrar(sinalParaImpulso(sinais), pacote.marcaTemporal)
         val algumFiltroNovo = ativoHampel || ativoNotch || ativoMediana ||
             (filtroPrincipal != FiltroPrincipal.NENHUM && filtroPrincipal != FiltroPrincipal.MEDIA_MOVEL)
@@ -308,6 +344,15 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             reconstruirNotch()
             reconstruirButterworth()
         }
+        run {
+            // O painel reenvia tudo a cada mudança: só recria (e zera o offset) se um parâmetro mudou de fato
+            val antes = Triple(config.zeroTrackingLimiarN ?: 0.05, config.zeroTrackingTempoMs ?: 3000, config.zeroTrackingAlpha ?: 0.01)
+            patch.zeroTrackingLimiarN?.let { config.zeroTrackingLimiarN = it }
+            patch.zeroTrackingTempoMs?.let { config.zeroTrackingTempoMs = it }
+            patch.zeroTrackingAlpha?.let { config.zeroTrackingAlpha = it }
+            val depois = Triple(config.zeroTrackingLimiarN ?: 0.05, config.zeroTrackingTempoMs ?: 3000, config.zeroTrackingAlpha ?: 0.01)
+            if (antes != depois) zeroTracking = ZeroTracking(depois.first, depois.second, depois.third)
+        }
         patch.fonteCalculoImpulso?.let { config.fonteCalculoImpulso = it }
         patch.frequenciaCorteHz?.let {
             config.frequenciaCorteHz = it
@@ -330,6 +375,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
 
         // Flags de ativação — ao ligar um filtro, começa com estado limpo
         patch.ativoHampel?.let { if (it && !ativoHampel) hampel.reiniciar(); ativoHampel = it }
+        patch.ativoZeroTracking?.let { if (it != ativoZeroTracking) zeroTracking.reiniciar(); ativoZeroTracking = it }
         patch.ativoZonaMorta?.let { ativoZonaMorta = it }
         patch.ativoDetectorQueima?.let { if (it && !ativoDetectorQueima) detector.reiniciar(); ativoDetectorQueima = it }
         patch.ativoMediana?.let { if (it && !ativoMediana) mediana.reiniciar(); ativoMediana = it }
@@ -358,6 +404,8 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             fonteCalculoImpulso = config.fonteCalculoImpulso,
             detector = detector.config,
             ativoHampel = ativoHampel,
+            ativoZeroTracking = ativoZeroTracking,
+            zeroTrackingOffsetN = if (ativoZeroTracking) zeroTracking.obterOffset() else 0.0,
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,
             ativoDetectorQueima = ativoDetectorQueima,
@@ -383,6 +431,8 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         notch.reiniciar()
         hampel.reiniciar()
         butterworth?.reiniciar()
+        zeroTracking.reiniciar()
+        ultimoEmEvento = false
         sg.reiniciar()
         kalman.reiniciar()
         detector.reiniciar()

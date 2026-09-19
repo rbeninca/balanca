@@ -38,6 +38,7 @@ export const CASOS: Record<string, PipelinePatch> = {
   'kalman':                { ativoKalman: true, kalmanQ: 0.01, kalmanR: 1.0 },
   'butterworth-10':        { filtroPrincipal: 'butterworth', frequenciaCorteHz: 10, ativoDetectorQueima: true },
   'detector-limiares':     { ativoDetectorQueima: true, limiarEntradaN: 5, limiarSaidaN: 2, tempoEntradaMs: 30, tempoSaidaMs: 100 },
+  'zero-tracking':         { ativoZeroTracking: true, zeroTrackingLimiarN: 0.1, zeroTrackingTempoMs: 500, zeroTrackingAlpha: 0.05, ativoDetectorQueima: true },
   'impulso-do-filtrado':   { ativoZonaMorta: true, filtroPrincipal: 'ema', alphaEMA: 0.3, fonteCalculoImpulso: 'filtrado' },
   // Fase 2: flags antigas viram um só filtro principal (a última na ordem MM→EMA→SG→Kalman vence)
   'flags-sg-e-kalman-vira-kalman': { ativoSG: true, ativoKalman: true },
