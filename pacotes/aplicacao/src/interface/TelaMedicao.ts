@@ -3,7 +3,6 @@ import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
 import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorGravacao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
-import { WizardCalibracao } from './WizardCalibracao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros } from './filtrosPainel.js';
 import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
@@ -136,7 +135,6 @@ export class TelaMedicao {
           <button id="ctrl-limpar"     class="ctrl-btn ctrl-btn-solo" title="Limpar gráfico e zerar impulso exibido">↺ Limpar</button>
           <button id="ctrl-sinal-bruto" class="ctrl-btn ctrl-btn-solo" title="Exibir sinal bruto junto com o filtrado" disabled>Bruto</button>
           <button id="btn-tarar"    class="ctrl-btn ctrl-btn-solo" title="Zerar leitura atual (tara)">Tarar</button>
-          <button id="btn-calibrar" class="ctrl-btn ctrl-btn-solo" title="Abrir assistente de calibração">Calibração</button>
           <button id="ctrl-tela-cheia" class="ctrl-btn ctrl-btn-solo ctrl-btn-tela-cheia" title="Tela cheia (F11)">⛶</button>
         </div>
 
@@ -232,9 +230,6 @@ export class TelaMedicao {
 
     container.querySelector('#btn-tarar')!.addEventListener('click', () =>
       this.fonte.enviarComando?.({ tipo: 'CMD_TARAR' }));
-
-    container.querySelector('#btn-calibrar')!.addEventListener('click', () =>
-      new WizardCalibracao(this.fonte, () => {}));
 
     // Controles do gráfico
     const ativarModo = (grupo: string, ativo: string) => {
