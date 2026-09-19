@@ -927,7 +927,8 @@ private aplicarFiltros(forca: number) {
   return { bruta, limpa, suavizada, filtrada };
 }
 // Fs dos filtros IIR = taxaAmostragemHz fixada, senão a estimada pelas marcas de tempo (EstimadorTaxaAmostragem)
-// emQueima  = detector(filtrada)  — limiar = limiarZonaMortaN, fim após tempoMinFimMs
+// emQueima  = DetectorEvento(filtrada) — início: > limiarEntradaN por tempoEntradaMs; fim: ≤ limiarSaidaN por tempoSaidaMs
+//             (padrões: entrada = saída = limiarZonaMortaN, tempoEntrada 0, tempoSaida = tempoMinFimMs)
 // impulso   = integral(fonteCalculoImpulso: final | filtrado | limpo | bruto) — padrão final (após a zona morta)
 ```
 

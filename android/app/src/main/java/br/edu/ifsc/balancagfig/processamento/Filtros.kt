@@ -251,6 +251,45 @@ class DetectorQueima(private val limiar: Double, private val tempoMinFimMs: Long
 }
 
 /** Integral trapezoidal de força no tempo (N·s). */
+/** Limiares/tempos do detector de evento (espelho de ConfigDetectorEvento em DetectorEvento.ts). */
+data class ConfigDetectorEvento(val limiarEntradaN: Double, val limiarSaidaN: Double, val tempoEntradaMs: Long, val tempoSaidaMs: Long)
+
+/**
+ * Porta de DetectorEvento.ts: início quando força > entrada por ≥ tempoEntrada,
+ * fim quando força ≤ saída por ≥ tempoSaida; saída presa à entrada se maior.
+ * Com saída = entrada e tempoEntrada = 0 reproduz o DetectorQueima.
+ */
+class DetectorEvento(config: ConfigDetectorEvento) {
+    val config = ConfigDetectorEvento(
+        limiarEntradaN = config.limiarEntradaN,
+        limiarSaidaN = minOf(config.limiarSaidaN, config.limiarEntradaN),
+        tempoEntradaMs = maxOf(0, config.tempoEntradaMs),
+        tempoSaidaMs = maxOf(0, config.tempoSaidaMs),
+    )
+    private var emEvento = false
+    private var tsAltoMs: Long? = null
+    private var tsBaixoMs: Long? = null
+
+    fun atualizar(forca: Double, marcaTemporal: Long): Boolean {
+        val c = config
+        if (!emEvento) {
+            if (forca > c.limiarEntradaN) {
+                val inicio = tsAltoMs ?: marcaTemporal.also { tsAltoMs = it }
+                if (marcaTemporal - inicio >= c.tempoEntradaMs) { emEvento = true; tsAltoMs = null; tsBaixoMs = null }
+            } else tsAltoMs = null
+        } else {
+            if (forca <= c.limiarSaidaN) {
+                val inicio = tsBaixoMs
+                if (inicio == null) tsBaixoMs = marcaTemporal
+                else if (marcaTemporal - inicio >= c.tempoSaidaMs) { emEvento = false; tsBaixoMs = null }
+            } else tsBaixoMs = null
+        }
+        return emEvento
+    }
+
+    fun reiniciar() { emEvento = false; tsAltoMs = null; tsBaixoMs = null }
+}
+
 class CalculadorImpulso {
     private var impulsoAcumulado = 0.0
     private var ultimaForca: Double? = null

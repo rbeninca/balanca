@@ -30,3 +30,14 @@ export function sugerirZonaMortaN(dados: DadosCelula, k = 1): number | null {
   const fundoDeEscalaN = (cap / 1000) * g;
   return fundoDeEscalaN * acu * k;
 }
+
+/**
+ * Limiares do detector de evento sugeridos a partir do piso de ruído da célula
+ * (a mesma zona morta sugerida): início em 4× o piso (ruído não dispara),
+ * fim em 2× (histerese F_ON > F_OFF). null quando faltam os dados.
+ */
+export function sugerirLimiaresDetector(dados: DadosCelula): { limiarEntradaN: number; limiarSaidaN: number } | null {
+  const piso = sugerirZonaMortaN(dados);
+  if (piso == null) return null;
+  return { limiarEntradaN: piso * 4, limiarSaidaN: piso * 2 };
+}

@@ -14,6 +14,7 @@ export * from './filtros/FiltroPassaBaixa.js';
 export * from './filtros/FiltroBandaPassante.js';
 export * from './filtros/FiltroFIR.js';
 export * from './analise/DetectorQueima.js';
+export * from './analise/DetectorEvento.js';
 export * from './analise/CalculadorImpulso.js';
 export * from './analise/EstimadorTaxaAmostragem.js';
 export * from './analise/CanceladorRespiracao.js';

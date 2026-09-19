@@ -10,7 +10,7 @@ import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
 import { FiltroHampel }      from '../filtros/FiltroHampel.js';
 import { FiltroButterworth } from '../filtros/FiltroButterworth.js';
-import { DetectorQueima }    from '../analise/DetectorQueima.js';
+import { DetectorEvento, type ConfigDetectorEvento } from '../analise/DetectorEvento.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
 import { EstimadorTaxaAmostragem } from '../analise/EstimadorTaxaAmostragem.js';
 import { resolverFiltroPrincipal, flagsDoFiltroPrincipal, type TipoFiltroPrincipal } from './filtroPrincipal.js';
@@ -47,6 +47,8 @@ export type EstadoPipeline = ConfiguracaoPipeline & {
   /** false quando filtroPrincipal = 'butterworth' e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
   butterworthValido:   boolean;
   fonteCalculoImpulso: FonteImpulso;
+  /** Limiares/tempos efetivos do detector de evento (após os padrões e a validação saída ≤ entrada). */
+  detector:            ConfigDetectorEvento;
   ativoHampel:         boolean;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
@@ -70,7 +72,7 @@ export class PipelineProcessamento {
   private butterworth: FiltroButterworth | null = null;
   private sg:          SavitzkyGolay;
   private kalman:      FiltroKalman;
-  private detector:    DetectorQueima;
+  private detector:    DetectorEvento;
   private calculador:  CalculadorImpulso;
   private estimadorFs = new EstimadorTaxaAmostragem();
 
@@ -94,7 +96,7 @@ export class PipelineProcessamento {
     this.reconstruirButterworth();
     this.sg         = new SavitzkyGolay(config.janelaSG ?? 7);
     this.kalman     = new FiltroKalman(config.kalmanQ ?? 0.01, config.kalmanR ?? 1.0);
-    this.detector   = new DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs);
+    this.detector   = new DetectorEvento(this.configDetector());
     this.calculador = new CalculadorImpulso();
   }
 
@@ -143,6 +145,26 @@ export class PipelineProcessamento {
   private aplicarTratamento(forca: number): number {
     if (this.ativoZonaMorta) forca = this.zonaMorta.aplicar(forca);
     return forca;
+  }
+
+  /**
+   * Limiares/tempos efetivos do detector: os próprios quando definidos, senão
+   * os antigos (limiar = zona morta, só tempo de fim) — compatível com
+   * configurações anteriores à Fase 7.
+   */
+  private configDetector(): ConfigDetectorEvento {
+    const c = this.config;
+    const entrada = c.limiarEntradaN ?? c.limiarZonaMortaN;
+    return {
+      limiarEntradaN: entrada,
+      limiarSaidaN:   Math.min(c.limiarSaidaN ?? entrada, entrada),
+      tempoEntradaMs: c.tempoEntradaMs ?? 0,
+      tempoSaidaMs:   c.tempoSaidaMs ?? c.tempoMinFimMs,
+    };
+  }
+
+  private reconstruirDetector(): void {
+    this.detector = new DetectorEvento(this.configDetector());
   }
 
   /** Sinal que alimenta o impulso, conforme `fonteCalculoImpulso`. */
@@ -239,15 +261,19 @@ export class PipelineProcessamento {
     if (patch.limiarZonaMortaN != null) {
       this.config.limiarZonaMortaN = patch.limiarZonaMortaN;
       this.zonaMorta = new ZonaMorta(patch.limiarZonaMortaN);
-      this.detector  = new DetectorQueima(patch.limiarZonaMortaN, this.config.tempoMinFimMs);
     }
     if (patch.janelaMediaMovel != null) {
       this.config.janelaMediaMovel = patch.janelaMediaMovel;
       this.mediaMovel = new MediaMovel(patch.janelaMediaMovel);
     }
-    if (patch.tempoMinFimMs != null) {
-      this.config.tempoMinFimMs = patch.tempoMinFimMs;
-      this.detector = new DetectorQueima(this.config.limiarZonaMortaN, patch.tempoMinFimMs);
+    if (patch.tempoMinFimMs != null) this.config.tempoMinFimMs = patch.tempoMinFimMs;
+    if (patch.limiarEntradaN != null) this.config.limiarEntradaN = patch.limiarEntradaN;
+    if (patch.limiarSaidaN != null)   this.config.limiarSaidaN   = patch.limiarSaidaN;
+    if (patch.tempoEntradaMs != null) this.config.tempoEntradaMs = patch.tempoEntradaMs;
+    if (patch.tempoSaidaMs != null)   this.config.tempoSaidaMs   = patch.tempoSaidaMs;
+    if (patch.limiarZonaMortaN != null || patch.tempoMinFimMs != null || patch.limiarEntradaN != null ||
+        patch.limiarSaidaN != null || patch.tempoEntradaMs != null || patch.tempoSaidaMs != null) {
+      this.reconstruirDetector();   // como antes: mudar limiar/tempo recomeça o detector
     }
     if (patch.fatorCalibracao != null) {
       this.config.fatorCalibracao = patch.fatorCalibracao;
@@ -340,6 +366,7 @@ export class PipelineProcessamento {
       taxaEstimadaHz:      this.estimadorFs.obterHzEstavel(),
       butterworthValido:   this.butterworth !== null,
       fonteCalculoImpulso: this.config.fonteCalculoImpulso ?? 'final',
+      detector:            this.detector.config,
       ativoHampel:         this.ativoHampel,
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,

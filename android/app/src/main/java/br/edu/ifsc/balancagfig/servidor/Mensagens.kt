@@ -89,6 +89,12 @@ object Mensagens {
         put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
         put("butterworthValido", e.butterworthValido)
         put("fonteCalculoImpulso", e.fonteCalculoImpulso.valor)
+        c.limiarEntradaN?.let { put("limiarEntradaN", it) }
+        c.limiarSaidaN?.let { put("limiarSaidaN", it) }
+        c.tempoEntradaMs?.let { put("tempoEntradaMs", it) }
+        c.tempoSaidaMs?.let { put("tempoSaidaMs", it) }
+        put("detector", JSONObject().put("limiarEntradaN", e.detector.limiarEntradaN).put("limiarSaidaN", e.detector.limiarSaidaN)
+            .put("tempoEntradaMs", e.detector.tempoEntradaMs).put("tempoSaidaMs", e.detector.tempoSaidaMs))
         c.frequenciaCorteHz?.let { put("frequenciaCorteHz", it) }
         c.janelaHampel?.let { put("janelaHampel", it) }
         c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
@@ -169,6 +175,10 @@ object Mensagens {
         janelaSG = c.optIntOrNull("janelaSG"),
         kalmanQ = c.optDoubleOrNull("kalmanQ"),
         kalmanR = c.optDoubleOrNull("kalmanR"),
+        limiarEntradaN = c.optDoubleOrNull("limiarEntradaN"),
+        limiarSaidaN = c.optDoubleOrNull("limiarSaidaN"),
+        tempoEntradaMs = c.optIntOrNull("tempoEntradaMs")?.toLong(),
+        tempoSaidaMs = c.optIntOrNull("tempoSaidaMs")?.toLong(),
         fonteCalculoImpulso = FonteImpulso.deValor(c.optString("fonteCalculoImpulso").takeIf { c.has("fonteCalculoImpulso") }),
         frequenciaCorteHz = c.optDoubleOrNull("frequenciaCorteHz"),
         janelaHampel = c.optIntOrNull("janelaHampel"),

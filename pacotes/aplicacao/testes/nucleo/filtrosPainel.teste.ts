@@ -87,3 +87,13 @@ describe('fonte do impulso no painel (Fase 6)', () => {
     expect(html.indexOf('value="final"')).toBeLessThan(html.indexOf('value="filtrado"'));
   });
 });
+
+describe('detector de evento no painel (Fase 7)', () => {
+  it('tem força/tempo de início e de fim; "Histerese" virou tempo de fim', () => {
+    const html = htmlPainelFiltros();
+    for (const id of ['in-det-entrada', 'in-det-t-entrada', 'in-det-saida', 'in-det-hister']) expect(html).toContain(`id="${id}"`);
+    expect(html).toMatch(/id="in-det-hister"[^>]*title="Tempo de fim/);
+    expect(html).not.toContain('Histerese (ms)');
+    expect(html).toContain('Detector de evento');
+  });
+});

@@ -29,6 +29,12 @@ data class ConfiguracaoPipeline(
     /** Etapa 2: um só suavizador (padrão NENHUM). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
     var filtroPrincipal: FiltroPrincipal = FiltroPrincipal.NENHUM,
 
+    // Detector de evento (Fase 7); null = padrão antigo (entrada = saída = zona morta, tempoEntrada 0, tempoSaida = tempoMinFimMs)
+    var limiarEntradaN: Double? = null,
+    var limiarSaidaN: Double? = null,
+    var tempoEntradaMs: Long? = null,
+    var tempoSaidaMs: Long? = null,
+
     /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão FINAL). */
     var fonteCalculoImpulso: FonteImpulso = FonteImpulso.FINAL,
 
@@ -55,6 +61,10 @@ data class PipelinePatch(
     val janelaSG: Int? = null,
     val kalmanQ: Double? = null,
     val kalmanR: Double? = null,
+    val limiarEntradaN: Double? = null,
+    val limiarSaidaN: Double? = null,
+    val tempoEntradaMs: Long? = null,
+    val tempoSaidaMs: Long? = null,
     val fonteCalculoImpulso: FonteImpulso? = null,
     val frequenciaCorteHz: Double? = null,
     val janelaHampel: Int? = null,
@@ -81,6 +91,8 @@ data class EstadoPipeline(
     /** false quando filtroPrincipal = BUTTERWORTH e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
     val butterworthValido: Boolean,
     val fonteCalculoImpulso: FonteImpulso,
+    /** Limiares/tempos efetivos do detector (após os padrões e a validação saída ≤ entrada). */
+    val detector: ConfigDetectorEvento,
     val ativoHampel: Boolean,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
@@ -127,7 +139,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     init { reconstruirButterworth() }
     private var sg = SavitzkyGolay(config.janelaSG ?: 7)
     private var kalman = FiltroKalman(config.kalmanQ ?: 0.01, config.kalmanR ?: 1.0)
-    private var detector = DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs)
+    private var detector = DetectorEvento(configDetector())
     private val calculador = CalculadorImpulso()
 
     private var ativoHampel = false
@@ -145,6 +157,19 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         val filtrada = aplicarTratamento(suavizada)
         return SinaisPipeline(bruta = entrada, limpa = limpa, suavizada = suavizada, filtrada = filtrada)
     }
+
+    /** Limiares/tempos efetivos: os próprios quando definidos, senão os antigos (zona morta + tempo de fim). */
+    private fun configDetector(): ConfigDetectorEvento {
+        val entrada = config.limiarEntradaN ?: config.limiarZonaMortaN
+        return ConfigDetectorEvento(
+            limiarEntradaN = entrada,
+            limiarSaidaN = minOf(config.limiarSaidaN ?: entrada, entrada),
+            tempoEntradaMs = config.tempoEntradaMs ?: 0,
+            tempoSaidaMs = config.tempoSaidaMs ?: config.tempoMinFimMs,
+        )
+    }
+
+    private fun reconstruirDetector() { detector = DetectorEvento(configDetector()) }
 
     /** Sinal que alimenta o impulso, conforme fonteCalculoImpulso. */
     private fun sinalParaImpulso(s: SinaisPipeline): Double = when (config.fonteCalculoImpulso) {
@@ -245,15 +270,19 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         patch.limiarZonaMortaN?.let {
             config.limiarZonaMortaN = it
             zonaMorta = ZonaMorta(it)
-            detector = DetectorQueima(it, config.tempoMinFimMs)
         }
         patch.janelaMediaMovel?.let {
             config.janelaMediaMovel = it
             mediaMovel = MediaMovel(it)
         }
-        patch.tempoMinFimMs?.let {
-            config.tempoMinFimMs = it
-            detector = DetectorQueima(config.limiarZonaMortaN, it)
+        patch.tempoMinFimMs?.let { config.tempoMinFimMs = it }
+        patch.limiarEntradaN?.let { config.limiarEntradaN = it }
+        patch.limiarSaidaN?.let { config.limiarSaidaN = it }
+        patch.tempoEntradaMs?.let { config.tempoEntradaMs = it }
+        patch.tempoSaidaMs?.let { config.tempoSaidaMs = it }
+        if (patch.limiarZonaMortaN != null || patch.tempoMinFimMs != null || patch.limiarEntradaN != null ||
+            patch.limiarSaidaN != null || patch.tempoEntradaMs != null || patch.tempoSaidaMs != null) {
+            reconstruirDetector()   // como antes: mudar limiar/tempo recomeça o detector
         }
         patch.fatorCalibracao?.let {
             config.fatorCalibracao = it
@@ -327,6 +356,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             taxaEstimadaHz = estimadorFs.obterHzEstavel(),
             butterworthValido = butterworth != null,
             fonteCalculoImpulso = config.fonteCalculoImpulso,
+            detector = detector.config,
             ativoHampel = ativoHampel,
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,

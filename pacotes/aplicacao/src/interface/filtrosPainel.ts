@@ -88,13 +88,21 @@ export function htmlPainelFiltros(): string {
               </div>
             </div>
             <div class="filtro-linha">
-              <label class="filtro-chk">
+              <label class="filtro-chk" title="Etapa 3: marca início e fim do evento (queima) com limiares e tempos próprios">
                 <input type="checkbox" id="ck-det-queima">
-                Det. Queima
+                Detector de evento
               </label>
               <button class="filtro-info-btn" data-filtro="det-queima" type="button" title="Saiba mais">ℹ</button>
-              <div class="filtro-params">
-                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10" title="Histerese (ms)">
+              <div class="filtro-params filtro-params-detector">
+                <span title="Início: força acima deste valor pelo tempo indicado">início</span>
+                <input type="number" id="in-det-entrada" class="filtro-num" value="0.2" min="0" step="0.01" title="Força de início (N)">
+                <span>N</span>
+                <input type="number" id="in-det-t-entrada" class="filtro-num" value="30" min="0" step="10" title="Tempo de início (ms) — 0 = imediato">
+                <span>ms</span>
+                <span title="Fim: força abaixo deste valor pelo tempo indicado">fim</span>
+                <input type="number" id="in-det-saida" class="filtro-num" value="0.1" min="0" step="0.01" title="Força de fim (N) — deve ser menor que a de início">
+                <span>N</span>
+                <input type="number" id="in-det-hister" class="filtro-num" value="100" min="0" step="10" title="Tempo de fim (ms)">
                 <span>ms</span>
               </div>
             </div>

@@ -135,6 +135,19 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   novo, `zona-morta-detector` (sem suavizador) idêntico. O detector continua
   sobre o sinal final; a separação dos limiares é a Fase 7.
 
+- Fase 7 ✔: `DetectorEvento` (TS e Kotlin) com `limiarEntradaN`, `limiarSaidaN`,
+  `tempoEntradaMs`, `tempoSaidaMs` — saída presa à entrada (F_ON > F_OFF),
+  tempo de início confirma (spike de 1 amostra não dispara). Padrões mantêm o
+  acoplamento antigo (entrada = saída = zona morta, tempo de início 0, fim =
+  `tempoMinFimMs`): golden intactos, `detector-limiares` novo; teste de
+  equivalência com o `DetectorQueima` (que continua exportado). O estado
+  expõe `detector` com os valores efetivos. Painel: "Detector de evento" com
+  força/tempo de início e de fim ("Histerese (ms)" → tempo de fim); "sugerir"
+  preenche também início = 4× e fim = 2× o piso de ruído. O frontend ainda
+  manda `tempoMinFimMs` para gateways anteriores. Corrigido de passagem o
+  `.filtro-num` perdendo largura para `input[type=number]` em contêineres
+  largos (mesmo bug da tela de Configurações).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

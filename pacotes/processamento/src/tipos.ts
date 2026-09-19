@@ -29,6 +29,13 @@ export interface ConfiguracaoPipeline {
   /** Etapa 2: um só suavizador (padrão 'nenhum'). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
   filtroPrincipal?:  TipoFiltroPrincipal;
 
+  // Detector de evento (Fase 7). Padrões mantêm o comportamento antigo:
+  // entrada = saída = limiarZonaMortaN, tempoEntrada = 0, tempoSaida = tempoMinFimMs.
+  limiarEntradaN?:   number;   // N — força acima disso inicia (exige > limiarSaidaN)
+  limiarSaidaN?:     number;   // N — força abaixo disso encerra
+  tempoEntradaMs?:   number;   // ms acima da entrada para confirmar o início (0 = imediato)
+  tempoSaidaMs?:     number;   // ms abaixo da saída para confirmar o fim
+
   /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão 'final'). */
   fonteCalculoImpulso?: FonteImpulso;
 

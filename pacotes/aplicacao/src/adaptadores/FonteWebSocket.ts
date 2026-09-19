@@ -67,6 +67,7 @@ const CFG_GATEWAY_PADRAO: EstadoPipeline = {
   taxaEstimadaHz:      null,
   butterworthValido:   true,
   fonteCalculoImpulso: 'final',
+  detector:            { limiarEntradaN: 0.5, limiarSaidaN: 0.5, tempoEntradaMs: 0, tempoSaidaMs: 100 },
   ativoHampel:         false,
   ativoZonaMorta:      false,
   ativoMediaMovel:     false,

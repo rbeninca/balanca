@@ -5,7 +5,7 @@ import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth } from './filtrosPainel.js';
-import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
+import { sugerirZonaMortaN, sugerirLimiaresDetector, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
 type Unidade = 'N' | 'kg' | 'g';
@@ -299,7 +299,12 @@ export class TelaMedicao {
 
     inp('#in-zona-morta',   cfg.limiarZonaMortaN,  0.05);
     inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
-    inp('#in-det-hister',   cfg.tempoMinFimMs,     100);
+    // Detector: o estado traz os valores efetivos (com os padrões antigos aplicados)
+    const det = cfg.detector;
+    inp('#in-det-entrada',   det?.limiarEntradaN ?? cfg.limiarEntradaN, cfg.limiarZonaMortaN ?? 0.2);
+    inp('#in-det-t-entrada', det?.tempoEntradaMs ?? cfg.tempoEntradaMs, 0);
+    inp('#in-det-saida',     det?.limiarSaidaN   ?? cfg.limiarSaidaN,   cfg.limiarZonaMortaN ?? 0.1);
+    inp('#in-det-hister',    det?.tempoSaidaMs   ?? cfg.tempoSaidaMs,   cfg.tempoMinFimMs ?? 100);
     inp('#in-notch-freq',   cfg.freqNotchHz,       60);
     inp('#in-hampel-jan',   cfg.janelaHampel,      7);
     inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
@@ -364,7 +369,11 @@ export class TelaMedicao {
         ...patchFiltroPrincipal(principalEscolhido()),
         janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
         ativoDetectorQueima: chk('#ck-det-queima'),
-        tempoMinFimMs:       num('#in-det-hister', 100),
+        limiarEntradaN:      num('#in-det-entrada', 0.2),
+        limiarSaidaN:        Math.min(num('#in-det-saida', 0.1), num('#in-det-entrada', 0.2)),
+        tempoEntradaMs:      num('#in-det-t-entrada', 0),
+        tempoSaidaMs:        num('#in-det-hister', 100),
+        tempoMinFimMs:       num('#in-det-hister', 100),   // compat com gateway anterior à Fase 7
         frequenciaCorteHz:   Math.max(0.1, num('#in-bw-corte', 10)),
         fonteCalculoImpulso: (container.querySelector<HTMLSelectElement>('#sel-impulso')?.value ?? 'final') as FonteImpulso,
         ativoHampel:         chk('#ck-hampel'),
@@ -387,7 +396,8 @@ export class TelaMedicao {
     ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso',
+    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-det-entrada', '#in-det-t-entrada', '#in-det-saida',
+     '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -405,6 +415,14 @@ export class TelaMedicao {
       const ck  = container.querySelector<HTMLInputElement>('#ck-zona-morta');
       if (inp) inp.value = String(Number(zm.toPrecision(3)));
       if (ck) ck.checked = true;   // sugerir implica ativar a zona morta
+      // …e os limiares do detector: início 4× e fim 2× o piso de ruído
+      const lim = sugerirLimiaresDetector(this.dadosCelula);
+      if (lim) {
+        const e = container.querySelector<HTMLInputElement>('#in-det-entrada');
+        const s = container.querySelector<HTMLInputElement>('#in-det-saida');
+        if (e) e.value = String(Number(lim.limiarEntradaN.toPrecision(3)));
+        if (s) s.value = String(Number(lim.limiarSaidaN.toPrecision(3)));
+      }
       aplicar();
     });
 
@@ -1012,9 +1030,9 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
       ],
     },
     'det-queima': {
-      nome: 'Detector de Queima',
-      oque: 'Identifica o início e fim da fase de propulsão de um motor foguete de maneira robusta, mesmo com ruído e oscilações de chama no final da queima.',
-      como: 'Usa histerese temporal: a força ultrapassa o limiar → queima ativa. A queima só é marcada como encerrada se a força permanecer abaixo do limiar por pelo menos T ms (configurável). Isso evita falsos términos causados por flutuações transitórias. A saída binária (cinza) indica o estado de queima.',
+      nome: 'Detector de evento',
+      oque: 'Marca o início e o fim de um evento (a queima do motor, um impacto…) de maneira robusta, mesmo com ruído e oscilações de chama no final da queima. Os limiares são independentes da zona morta.',
+      como: 'Histerese de força + tempo de confirmação: o evento começa quando a força fica acima da força de início pelo tempo de início (0 = na primeira amostra) e termina quando fica abaixo da força de fim pelo tempo de fim. Força de fim menor que a de início (F_ON > F_OFF) evita liga-desliga no ruído; o tempo de fim evita falsos términos por flutuações transitórias. "sugerir" preenche início = 4× e fim = 2× o piso de ruído da célula. A saída binária (cinza) indica o estado.',
       svg: _svg(
         [0.00,0.00,0.08,0.58,0.88,0.95,0.90,0.82,0.78,0.84,0.80,0.72,0.55,0.30,0.10,0.02,0.00,0.00,0.00,0.00],
         [0.00,0.00,0.00,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.65,0.00,0.00,0.00,0.00,0.00,0.00],
