@@ -5,6 +5,8 @@ import { gerarPDF, exportarCSV, exportarENG } from '@balancagfig/relatorio';
 import type { MetadadosENG, MetadadosPDF } from '@balancagfig/relatorio';
 import ApexCharts from 'apexcharts';
 import { indicador } from './indicadorCarregando.js';
+import { descreverPipeline } from './filtrosPainel.js';
+import type { EstadoPipeline } from '@balancagfig/processamento';
 
 export interface DadosAnalise {
   leituras:   LeituraProcessada[];
@@ -47,6 +49,20 @@ export class TelaAnalise {
     if (dados.modo === 'revisao' && dados.idSessao) {
       this.carregarMetadados(dados.idSessao);
     }
+    if (dados.idSessao) void this.mostrarConfigGravacao(dados.idSessao);
+  }
+
+  /** "Gravada com: BRUTO → Hampel → … → SAÍDA" — a configuração fotografada na sessão (Fase 10). */
+  private async mostrarConfigGravacao(idSessao: string) {
+    const el = this.overlay.querySelector<HTMLElement>('#analise-config-gravacao');
+    if (!el) return;
+    try {
+      const sessao = (await this.armazenamento.listarSessoes()).find(s => s.id === idSessao);
+      const cfg = sessao?.configPipeline;
+      if (!cfg) { el.textContent = 'Configuração de gravação não registrada (sessão anterior ou gateway antigo).'; return; }
+      el.textContent = `Gravada com: ${descreverPipeline(cfg as Partial<EstadoPipeline>).join(' → ').replace(' → → ', ' → ')}`;
+      el.title = JSON.stringify(cfg, null, 1);
+    } catch { el.textContent = ''; }
   }
 
   private async carregarMetadados(idSessao: string) {
@@ -136,6 +152,7 @@ export class TelaAnalise {
               <p style="font-size:0.72rem;color:#555;margin-top:6px;text-align:center">
                 Clique no gráfico para ajustar início/fim da queima
               </p>
+              <p id="analise-config-gravacao" class="analise-config" title="Configuração do pipeline vigente quando a sessão foi gravada"></p>
             </div>
             <div class="analise-stats">
 

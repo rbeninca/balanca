@@ -210,10 +210,19 @@ class ServicoBalanca : Service() {
             val bkp = BackupPendrive(this, banco).also { backup = it }
             // Gravação compartilhada no gateway (ver GravadorSessao); alimentada em aoReceber da serial
             val destino = EscritaSessoes.DestinoBanco(banco) { bkp.aoSalvarSessao(it) }.also { destinoGravacao = it }
-            gravador = GravadorSessao(destino, aoMudar = { e ->
-                pipeline.definirGravando(e.gravando)   // zero tracking não corrige durante a gravação
-                difundirGravacao()
-            })
+            gravador = GravadorSessao(
+                destino,
+                aoMudar = { e ->
+                    pipeline.definirGravando(e.gravando)   // zero tracking não corrige durante a gravação
+                    difundirGravacao()
+                },
+                // Fotografia da configuração no início da gravação: os mesmos JSONs que o frontend recebe
+                configAtual = {
+                    val pipelineJson = JSONObject(Mensagens.pipelineEstado(pipeline.obterConfig())).getJSONObject("carga").toString()
+                    val espJson = ultimaConfig?.let { JSONObject(Mensagens.config(it)).getJSONObject("carga").toString() }
+                    pipelineJson to espJson
+                },
+            )
             iniciarContadorGravacao()
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,

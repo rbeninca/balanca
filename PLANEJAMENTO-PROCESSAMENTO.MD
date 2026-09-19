@@ -169,6 +169,15 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   'variável' para os IIR — registrado, sem compensação automática. Mesmos ids
   dos controles (teste garante).
 
+- Fase 10 ✔: colunas `config_pipeline` e `config_esp` (JSON) em `sessoes`,
+  com migração nos dois provedores. O `GravadorSessao` fotografa o
+  `PIPELINE_ESTADO` e a última CONFIG da ESP ao iniciar; a API (Node e
+  Kotlin) aceita `config_pipeline`/`config_esp` no `POST /sessoes` e devolve
+  nas listagens; a gravação local (WebSerial/IndexedDB) guarda
+  `configPipeline` da fonte. A Análise mostra "Gravada com: BRUTO → … → SAÍDA"
+  (e o JSON no *tooltip*); sessões antigas avisam que não há registro.
+  Validado no TX9 (Butterworth 12 Hz + Hampel, fator da ESP −1142,4).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

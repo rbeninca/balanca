@@ -15,6 +15,7 @@ class FonteSimples implements FonteGravacao {
   gravando: boolean[] = [];
   on(_evento: string, _fn: (v: unknown) => void): void { /* nunca emite gravacao */ }
   definirGravando(v: boolean) { this.gravando.push(v); }
+  obterConfigPipeline() { return { filtroPrincipal: 'mediaMovel', janelaMediaMovel: 5 }; }
 }
 
 /** Simula o gateway Android: guarda o estado difundido e responde aos comandos. */
@@ -83,6 +84,14 @@ describe('ControladorGravacao — modo local (WebSerial / GitHub Pages)', () => 
     expect((await armazenamento.obterLeituras(id))).toHaveLength(2);
     expect(estados).toEqual([true, false]);
     expect(controlador.estado.gravando).toBe(false);
+  });
+
+  it('fotografa a configuração do pipeline na sessão ao iniciar a gravação local (Fase 10)', async () => {
+    const { armazenamento, controlador } = criarLocal();
+    const { id } = await controlador.iniciar('Cfg');
+    await controlador.parar();
+    const sessao = (await armazenamento.listarSessoes()).find(s => s.id === id);
+    expect(sessao?.configPipeline).toEqual({ filtroPrincipal: 'mediaMovel', janelaMediaMovel: 5 });
   });
 
   it('avisa a fonte local para bloquear o zero tracking durante a gravação (Fase 8)', async () => {

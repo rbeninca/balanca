@@ -952,9 +952,10 @@ não são reversíveis; o ADC bruto não é transmitido. No pipeline,
 | `em_queima` | detector, calculado sobre o sinal **filtrado** |
 | `impulso_acumulado_ns` | integral do sinal **filtrado** (após zona morta) |
 
-O sinal filtrado não é guardado: a análise reabre `forca_crua` e refiltra. A
-configuração de filtros vigente na gravação ainda não é registrada — está no
-plano de reorganização dos filtros (`PLANEJAMENTO-PROCESSAMENTO.MD`).
+O sinal filtrado não é guardado: a análise reabre `forca_crua` e refiltra.
+Desde a Fase 10 a sessão guarda `config_pipeline` e `config_esp` (JSON da
+configuração vigente ao iniciar a gravação): com `forca_crua` + config,
+qualquer sinal intermediário é reproduzível. A Análise mostra "Gravada com: …".
 
 ---
 

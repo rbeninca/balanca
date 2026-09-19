@@ -118,3 +118,38 @@ describe('IT-6.1 Rotas de Sessões', () => {
     expect(JSON.parse(res.body)).toMatchObject({ status: 'ok' });
   });
 });
+
+describe('Configuração do pipeline na sessão (Fase 10)', () => {
+  let app: FastifyInstance;
+  beforeEach(async () => { app = criarApp({ caminhoBanco: ':memory:', chaveAPI: CHAVE }); await app.ready(); });
+  afterEach(async () => { await app.close(); });
+
+  it('POST /sessoes guarda config_pipeline e config_esp como JSON; GET devolve', async () => {
+    const config_pipeline = { filtroPrincipal: 'butterworth', frequenciaCorteHz: 10, ativoZonaMorta: true };
+    const config_esp = { fatorConversao: -1142.4, capacidadeMaxGramas: 1000 };
+    const post = await app.inject({
+      method: 'POST', url: '/sessoes',
+      headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
+      body: JSON.stringify({ nome: 'Com config', config_pipeline, config_esp }),
+    });
+    expect(post.statusCode).toBe(201);
+    const { id } = JSON.parse(post.body);
+    const get = await app.inject({ method: 'GET', url: `/sessoes/${id}` });
+    const s = JSON.parse(get.body);
+    expect(JSON.parse(s.config_pipeline)).toEqual(config_pipeline);
+    expect(JSON.parse(s.config_esp)).toEqual(config_esp);
+    const lista = JSON.parse((await app.inject({ method: 'GET', url: '/sessoes' })).body);
+    expect(JSON.parse(lista[0].config_pipeline)).toEqual(config_pipeline);
+  });
+
+  it('sem config, as colunas ficam nulas (sessões antigas e clientes antigos)', async () => {
+    const post = await app.inject({
+      method: 'POST', url: '/sessoes',
+      headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
+      body: JSON.stringify({ nome: 'Sem config', config_pipeline: 'texto invalido' }),
+    });
+    const s = JSON.parse(post.body);
+    expect(s.config_pipeline).toBeNull();
+    expect(s.config_esp).toBeNull();
+  });
+});

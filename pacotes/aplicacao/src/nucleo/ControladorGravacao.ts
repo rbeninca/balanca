@@ -13,6 +13,8 @@ export interface FonteGravacao {
   pararGravacaoRemota?(): void;
   /** Fonte local (WebSerial): bloqueia o zero tracking do pipeline durante a gravação. */
   definirGravando?(v: boolean): void;
+  /** Configuração vigente do pipeline, fotografada na sessão ao iniciar a gravação local. */
+  obterConfigPipeline?(): unknown;
 }
 
 export interface EstadoGravacao {
@@ -93,7 +95,10 @@ export class ControladorGravacao {
       const e = await espera;
       return { id: e.idSessao! };
     }
-    const { id } = await this.local.iniciarGravacao(nome);
+    const cfg = this.fonte.obterConfigPipeline?.();
+    const { id } = await this.local.iniciarGravacao(nome, {
+      configPipeline: cfg && typeof cfg === 'object' ? cfg as Record<string, unknown> : undefined,
+    });
     this.fonte.definirGravando?.(true);
     this.gravadasLocal = [];
     this.estadoLocal = { ...ESTADO_PARADO, gravando: true, idSessao: id, nome, inicioMs: Date.now() };

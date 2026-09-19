@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS sessoes (
   -- resumo para a listagem (ver resumoSessao.ts): NULL = ainda não calculado
   total_leituras       INTEGER,
   forca_media_queima_n REAL,
-  impulso_queima_ns    REAL
+  impulso_queima_ns    REAL,
+  -- configuração vigente ao iniciar a gravação (JSON), para reprodutibilidade
+  config_pipeline      TEXT,
+  config_esp           TEXT
 );
 
 CREATE TABLE IF NOT EXISTS leituras (

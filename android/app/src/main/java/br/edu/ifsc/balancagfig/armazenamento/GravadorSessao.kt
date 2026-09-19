@@ -17,10 +17,13 @@ class GravadorSessao(
     private val aoMudar: (EstadoGravacao) -> Unit,
     private val agora: () -> Long = System::currentTimeMillis,
     private val tamanhoLote: Int = 50,
+    /** Fotografia da configuração (pipeline, ESP) no início da gravação: (configPipeline, configEsp) em JSON. */
+    private val configAtual: () -> Pair<String?, String?> = { null to null },
 ) {
     /** Onde as leituras são persistidas (SQLite no app; simulado nos testes). */
     interface Destino {
-        fun criarSessao(nome: String): String
+        /** [configPipeline]/[configEsp]: JSON da configuração vigente ao iniciar (pode ser null). */
+        fun criarSessao(nome: String, configPipeline: String?, configEsp: String?): String
         fun inserir(idSessao: String, lote: List<LeituraProcessada>)
         /** Métricas/resumo após a última inserção. */
         fun finalizar(idSessao: String)
@@ -63,7 +66,8 @@ class GravadorSessao(
         val id: String
         synchronized(lock) {
             if (estado.gravando) return false
-            id = destino.criarSessao(nomeFinal)
+            val (configPipeline, configEsp) = configAtual()
+            id = destino.criarSessao(nomeFinal, configPipeline, configEsp)
             buffer = ArrayList(tamanhoLote)
             estado = EstadoGravacao(gravando = true, idSessao = id, nome = nomeFinal, inicioMs = agora(), iniciadaPor = por, ultima = estado.ultima)
         }

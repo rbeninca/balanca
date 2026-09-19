@@ -204,7 +204,12 @@ class ServidorApi(
     private fun criarSessao(body: JSONObject): Response {
         val nome = body.optString("nome", "")
         if (nome.isEmpty()) return erro(Response.Status.BAD_REQUEST, "Campo \"nome\" é obrigatório")
-        val id = EscritaSessoes.criarSessao(bd, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"))
+        // Configuração vigente ao iniciar a gravação (objeto → JSON), para reprodutibilidade
+        val json = { k: String -> body.optJSONObject(k)?.toString() }
+        val id = EscritaSessoes.criarSessao(
+            bd, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"),
+            configPipeline = json("config_pipeline"), configEsp = json("config_esp"),
+        )
         return json(Response.Status.CREATED, bd.consultarUm("SELECT * FROM sessoes WHERE id = ?", id)!!)
     }
 

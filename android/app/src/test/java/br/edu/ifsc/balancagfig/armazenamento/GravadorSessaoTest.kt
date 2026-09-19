@@ -12,9 +12,11 @@ class GravadorSessaoTest {
 
     private class DestinoFalso : GravadorSessao.Destino {
         val sessoes = ArrayList<Pair<String, String>>()
+        val configs = ArrayList<Pair<String?, String?>>()
         val inseridas = HashMap<String, MutableList<LeituraProcessada>>()
         val finalizadas = ArrayList<String>()
-        override fun criarSessao(nome: String): String = "s${sessoes.size + 1}".also { sessoes += it to nome }
+        override fun criarSessao(nome: String, configPipeline: String?, configEsp: String?): String =
+            "s${sessoes.size + 1}".also { sessoes += it to nome; configs += configPipeline to configEsp }
         override fun inserir(idSessao: String, lote: List<LeituraProcessada>) { inseridas.getOrPut(idSessao) { ArrayList() } += lote }
         override fun finalizar(idSessao: String) { finalizadas += idSessao }
     }
@@ -83,6 +85,19 @@ class GravadorSessaoTest {
         assertEquals("c2", fim.paradaPor)
         assertTrue(g.iniciar("B", "c2"))   // nova gravação depois de parar
         assertEquals("A", g.estado.ultima!!.nome)  // 'ultima' sobrevive ao novo início
+    }
+
+    @Test
+    fun fotografaAConfiguracaoNoInicio() {
+        val d = DestinoFalso()
+        var atual: Pair<String?, String?> = "{\"filtroPrincipal\":\"ema\"}" to "{\"fatorConversao\":-1142.4}"
+        val g = GravadorSessao(d, aoMudar = {}, agora = { 1_000L }, configAtual = { atual })
+        g.iniciar("A", "c1")
+        assertEquals(listOf("{\"filtroPrincipal\":\"ema\"}" to "{\"fatorConversao\":-1142.4}"), d.configs)
+        g.parar("c1")
+        atual = "{\"filtroPrincipal\":\"nenhum\"}" to null   // mudou depois: a sessão B leva a nova
+        g.iniciar("B", "c1")
+        assertEquals("{\"filtroPrincipal\":\"nenhum\"}" to null, d.configs[1])
     }
 
     @Test

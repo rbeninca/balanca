@@ -120,3 +120,14 @@ describe('ArmazenamentoLocal', () => {
     expect(resultado.every(l => l.emQueima === false)).toBe(true);
   });
 });
+
+describe('configuração do pipeline na sessão (Fase 10)', () => {
+  it('criarSessao guarda configPipeline/configEsp e listarSessoes devolve', async () => {
+    const a = new ArmazenamentoLocal();
+    const s = await a.criarSessao('Com config', { configPipeline: { filtroPrincipal: 'ema', alphaEMA: 0.2 } });
+    const lista = await a.listarSessoes();
+    expect(lista.find(x => x.id === s.id)?.configPipeline).toEqual({ filtroPrincipal: 'ema', alphaEMA: 0.2 });
+    const semConfig = await a.criarSessao('Sem');
+    expect(lista.find(x => x.id === semConfig.id)?.configPipeline).toBeUndefined();
+  });
+});
