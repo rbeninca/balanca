@@ -125,6 +125,16 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   filtro principal para 'nenhum' — basta recarregar a página (o box já serve
   index.html com `Cache-Control: no-cache`).
 
+- Fase 6 ✔: Zona Morta migrou para a etapa 3 (roda sobre o sinal já
+  suavizado) e `fonteCalculoImpulso: 'bruto' | 'limpo' | 'filtrado' | 'final'`
+  (padrão `final` = comportamento anterior; seletor "Impulso de" no painel,
+  com ajuda). **Mudança de comportamento** para quem usa zona morta com
+  suavizador (ex.: 0,6, 0,6, 0,2 com limiar 0,5 e média de 3: antes 0,4,
+  agora 0 — a decisão é sobre a média, sem tremor perto de zero); golden
+  `media-movel-5`, `ema-0.2` e `tudo-ligado` regravados, `impulso-do-filtrado`
+  novo, `zona-morta-detector` (sem suavizador) idêntico. O detector continua
+  sobre o sinal final; a separação dos limiares é a Fase 7.
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

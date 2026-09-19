@@ -31,12 +31,36 @@ describe('Pipeline — etapas (Fase 1)', () => {
     expect(p.obterConfig().ativoHampel).toBe(true);
   });
 
-  it('zona morta vem antes do filtro principal: a média móvel recebe zeros, não o ruído', () => {
+  it('Fase 6: zona morta vem DEPOIS do filtro principal — decide sobre o sinal já suavizado', () => {
     const p = new PipelineProcessamento({ ...cfg });
-    p.atualizarConfig({ ativoZonaMorta: true, ativoMediaMovel: true, janelaMediaMovel: 3 });
-    p.processar(pacote(0.4)); p.processar(pacote(0.4));
-    const r = p.processar(pacote(0.4));         // todos abaixo de 0.5 → zerados antes de suavizar
-    expect(r.forcaNewton).toBe(0);
+    p.atualizarConfig({ ativoZonaMorta: true, filtroPrincipal: 'mediaMovel', janelaMediaMovel: 3 });
+    // 0.9, 0.9, 0 → média 0.6 > 0.5: passa (antes, cada 0.9 passava e o 0 zerava a média para 0.6 também;
+    // a diferença aparece com ruído em torno do limiar:)
+    p.processar(pacote(0.9)); p.processar(pacote(0.9));
+    expect(p.processar(pacote(0)).forcaNewton).toBeCloseTo(0.6, 9);
+    const q = new PipelineProcessamento({ ...cfg });
+    q.atualizarConfig({ ativoZonaMorta: true, filtroPrincipal: 'mediaMovel', janelaMediaMovel: 3 });
+    // 0.6, 0.6, 0.2 → média 0.467 < 0.5 → 0. Antes (zona morta antes da média): 0.6, 0.6, 0 → 0.4 → saía 0.4.
+    q.processar(pacote(0.6)); q.processar(pacote(0.6));
+    expect(q.processar(pacote(0.2)).forcaNewton).toBe(0);
+  });
+
+  it('Fase 6: fonteCalculoImpulso — padrão final (após zona morta); filtrado integra antes dela', () => {
+    const final = new PipelineProcessamento({ ...cfg });
+    final.atualizarConfig({ ativoZonaMorta: true });
+    expect(final.obterConfig().fonteCalculoImpulso).toBe('final');
+    let ultimo = 0;
+    for (let i = 0; i < 10; i++) ultimo = final.processar(pacote(0.3, i * 100)).impulsoAcumuladoNs;   // 0.3 < 0.5 → zerado
+    expect(ultimo).toBe(0);                                                                            // ruído não acumula
+
+    const filtrado = new PipelineProcessamento({ ...cfg, fonteCalculoImpulso: 'filtrado' });
+    filtrado.atualizarConfig({ ativoZonaMorta: true });
+    for (let i = 0; i < 10; i++) ultimo = filtrado.processar(pacote(0.3, i * 100)).impulsoAcumuladoNs;
+    expect(ultimo).toBeCloseTo(0.3 * 0.9, 9);   // integra o sinal antes da zona morta (9 intervalos de 0,1 s)
+    expect(filtrado.processar(pacote(0.3, 1000)).forcaNewton).toBe(0);   // a saída visível continua zerada
+
+    filtrado.atualizarConfig({ fonteCalculoImpulso: 'invalido' as never });
+    expect(filtrado.obterConfig().fonteCalculoImpulso).toBe('filtrado');   // valor desconhecido é ignorado
   });
 
   it('filtro principal vem depois da limpeza: com tudo desligado a saída é a entrada', () => {

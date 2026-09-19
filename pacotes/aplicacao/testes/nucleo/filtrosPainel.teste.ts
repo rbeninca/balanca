@@ -78,3 +78,12 @@ describe('Butterworth no painel (Fase 5)', () => {
     expect(situacaoButterworth({ taxaEstimadaHz: 80, frequenciaCorteHz: 10, butterworthValido: false }).invalido).toBe(true);
   });
 });
+
+describe('fonte do impulso no painel (Fase 6)', () => {
+  it('tem o seletor com as quatro fontes e "final" primeiro', () => {
+    const html = htmlPainelFiltros();
+    expect(html).toContain('id="sel-impulso"');
+    for (const v of ['final', 'filtrado', 'limpo', 'bruto']) expect(html).toContain(`value="${v}"`);
+    expect(html.indexOf('value="final"')).toBeLessThan(html.indexOf('value="filtrado"'));
+  });
+});

@@ -1,5 +1,5 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
+import type { EstadoPipeline, PipelinePatch, FonteImpulso } from '@balancagfig/processamento';
 import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorGravacao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
@@ -304,6 +304,8 @@ export class TelaMedicao {
     inp('#in-hampel-jan',   cfg.janelaHampel,      7);
     inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
     inp('#in-bw-corte',     cfg.frequenciaCorteHz, 10);
+    const selImpulso = c.querySelector<HTMLSelectElement>('#sel-impulso');
+    if (selImpulso) selImpulso.value = cfg.fonteCalculoImpulso ?? 'final';
     const bw = situacaoButterworth(cfg);
     const ny = c.querySelector<HTMLElement>('#bw-nyquist'); if (ny) ny.textContent = bw.nyquist;
     c.querySelector<HTMLElement>('#bw-aviso')?.classList.toggle('hidden', !(bw.invalido && principal === 'butterworth'));
@@ -364,6 +366,7 @@ export class TelaMedicao {
         ativoDetectorQueima: chk('#ck-det-queima'),
         tempoMinFimMs:       num('#in-det-hister', 100),
         frequenciaCorteHz:   Math.max(0.1, num('#in-bw-corte', 10)),
+        fonteCalculoImpulso: (container.querySelector<HTMLSelectElement>('#sel-impulso')?.value ?? 'final') as FonteImpulso,
         ativoHampel:         chk('#ck-hampel'),
         janelaHampel:        janelaImpar(num('#in-hampel-jan', 7)),
         limiarHampelSigma:   Math.max(0.5, num('#in-hampel-k', 3)),
@@ -384,7 +387,7 @@ export class TelaMedicao {
     ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte',
+    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte', '#sel-impulso',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -979,10 +982,19 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
   }, []);
 
   return {
+    'impulso': {
+      nome: 'Fonte do impulso',
+      oque: 'Escolhe qual sinal alimenta a integral do impulso acumulado (N·s). O sinal exibido continua o mesmo; muda só o que é integrado.',
+      como: 'final (padrão): após a zona morta — o ruído de repouso não acumula ao vivo, o impulso fica parado entre queimas. filtrado: após o suavizador, antes da zona morta — integra também o que a zona morta zera (mais fiel durante a queima, mas deriva em repouso). limpo: só a etapa 1. bruto: como veio da ESP, sem nenhum filtro. Para análise científica, a tela de Análise recalcula o impulso na janela de queima a partir do sinal gravado (cru), independentemente desta escolha.',
+      svg: _svg(zm_e, zm_s),
+      refs: [
+        { texto: 'Wikipedia — Specific impulse / total impulse', url: 'https://en.wikipedia.org/wiki/Impulse_(physics)' },
+      ],
+    },
     'zona-morta': {
       nome: 'Zona Morta',
-      oque: 'Remove pequenas variações em torno do zero que correspondem ao ruído do sensor — e não a uma força real aplicada. Qualquer leitura com valor absoluto abaixo do limiar configurado é tratada como zero.',
-      como: 'Função de transferência: se |x| < limiar → y = 0; caso contrário y = x. O limiar deve ser calibrado para ficar ligeiramente acima do nível de ruído do sensor em repouso. No gráfico, observe que os trechos próximos ao zero da curva de entrada são suprimidos.',
+      oque: 'Remove pequenas variações em torno do zero que correspondem ao ruído do sensor — e não a uma força real aplicada. Qualquer leitura com valor absoluto abaixo do limiar configurado é tratada como zero. É um tratamento (etapa 3): roda sobre o sinal já suavizado.',
+      como: 'Função de transferência: se |x| < limiar → y = 0; caso contrário y = x. O limiar deve ser calibrado para ficar ligeiramente acima do nível de ruído do sensor em repouso (use "sugerir"). Por padrão o impulso também é integrado depois dela ("Impulso de: sinal final"), então o ruído de repouso não acumula. No gráfico, observe que os trechos próximos ao zero da curva de entrada são suprimidos.',
       svg: _svg(zm_e, zm_s),
       refs: [
         { texto: 'Wikipedia — Dead zone (control systems)', url: 'https://en.wikipedia.org/wiki/Dead_zone_(control_systems)' },

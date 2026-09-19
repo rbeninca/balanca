@@ -2,6 +2,12 @@ package br.edu.ifsc.balancagfig.processamento
 
 import br.edu.ifsc.balancagfig.protocolo.PacoteDados
 
+/** Qual sinal alimenta o impulso (espelho de FonteImpulso em tipos.ts); FINAL = após a zona morta (padrão). */
+enum class FonteImpulso(val valor: String) {
+    BRUTO("bruto"), LIMPO("limpo"), FILTRADO("filtrado"), FINAL("final");
+    companion object { fun deValor(v: String?): FonteImpulso? = entries.firstOrNull { it.valor == v } }
+}
+
 /** Parâmetros do pipeline (espelho de ConfiguracaoPipeline em processamento/src/tipos.ts). */
 data class ConfiguracaoPipeline(
     var limiarZonaMortaN: Double = 0.5,   // força abaixo disso → zero
@@ -22,6 +28,9 @@ data class ConfiguracaoPipeline(
 
     /** Etapa 2: um só suavizador (padrão NENHUM). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
     var filtroPrincipal: FiltroPrincipal = FiltroPrincipal.NENHUM,
+
+    /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão FINAL). */
+    var fonteCalculoImpulso: FonteImpulso = FonteImpulso.FINAL,
 
     // Etapa 2 — Butterworth passa-baixa (filtroPrincipal = BUTTERWORTH)
     var frequenciaCorteHz: Double? = null, // Hz, exige 0 < fc < Fs/2 (padrão 10)
@@ -46,6 +55,7 @@ data class PipelinePatch(
     val janelaSG: Int? = null,
     val kalmanQ: Double? = null,
     val kalmanR: Double? = null,
+    val fonteCalculoImpulso: FonteImpulso? = null,
     val frequenciaCorteHz: Double? = null,
     val janelaHampel: Int? = null,
     val limiarHampelSigma: Double? = null,
@@ -70,6 +80,7 @@ data class EstadoPipeline(
     val taxaEstimadaHz: Double?,
     /** false quando filtroPrincipal = BUTTERWORTH e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
     val butterworthValido: Boolean,
+    val fonteCalculoImpulso: FonteImpulso,
     val ativoHampel: Boolean,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
@@ -127,17 +138,20 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     /** Etapa 2: só um suavizador (as flags antigas são derivadas dele). */
     private var filtroPrincipal = config.filtroPrincipal
 
-    /**
-     * Três etapas, espelho do TS (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza →
-     * filtro principal → tratamento. Ordem numérica igual à de sempre; a zona
-     * morta ainda roda entre a limpeza e o principal (legado, migra na Fase 6).
-     */
+    /** Três etapas, espelho do TS (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro principal → tratamento. */
     private fun aplicarFiltros(entrada: Double): SinaisPipeline {
         val limpa = aplicarLimpeza(entrada)
-        val zonada = if (ativoZonaMorta) zonaMorta.aplicar(limpa) else limpa   // legado (Fase 6)
-        val suavizada = aplicarFiltroPrincipal(zonada)
+        val suavizada = aplicarFiltroPrincipal(limpa)
         val filtrada = aplicarTratamento(suavizada)
         return SinaisPipeline(bruta = entrada, limpa = limpa, suavizada = suavizada, filtrada = filtrada)
+    }
+
+    /** Sinal que alimenta o impulso, conforme fonteCalculoImpulso. */
+    private fun sinalParaImpulso(s: SinaisPipeline): Double = when (config.fonteCalculoImpulso) {
+        FonteImpulso.BRUTO -> s.bruta
+        FonteImpulso.LIMPO -> s.limpa
+        FonteImpulso.FILTRADO -> s.suavizada
+        FonteImpulso.FINAL -> s.filtrada
     }
 
     /** Etapa 1 — limpeza (combináveis): Hampel → Mediana → Notch, spikes antes do IIR. */
@@ -168,8 +182,9 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         FiltroPrincipal.NENHUM -> Unit
     }
 
-    /** Etapa 3 — tratamento: vazia até a Fase 6. */
-    private fun aplicarTratamento(entrada: Double): Double = entrada
+    /** Etapa 3 — tratamento: zona morta sobre o sinal já suavizado (zero tracking na Fase 8). */
+    private fun aplicarTratamento(entrada: Double): Double =
+        if (ativoZonaMorta) zonaMorta.aplicar(entrada) else entrada
 
     @Synchronized
     /** Fs dos filtros dependentes de frequência: a fixada em taxaAmostragemHz, senão a estimada, senão 100 Hz. */
@@ -210,7 +225,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         val bruta = sinais.bruta
 
         val emQueima = if (ativoDetectorQueima) detector.atualizar(filtrada, pacote.marcaTemporal) else false
-        val impulso = calculador.integrar(filtrada, pacote.marcaTemporal)
+        val impulso = calculador.integrar(sinalParaImpulso(sinais), pacote.marcaTemporal)
         val algumFiltroNovo = ativoHampel || ativoNotch || ativoMediana ||
             (filtroPrincipal != FiltroPrincipal.NENHUM && filtroPrincipal != FiltroPrincipal.MEDIA_MOVEL)
 
@@ -264,6 +279,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             reconstruirNotch()
             reconstruirButterworth()
         }
+        patch.fonteCalculoImpulso?.let { config.fonteCalculoImpulso = it }
         patch.frequenciaCorteHz?.let {
             config.frequenciaCorteHz = it
             reconstruirButterworth()
@@ -310,6 +326,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             filtroPrincipal = filtroPrincipal,
             taxaEstimadaHz = estimadorFs.obterHzEstavel(),
             butterworthValido = butterworth != null,
+            fonteCalculoImpulso = config.fonteCalculoImpulso,
             ativoHampel = ativoHampel,
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,

@@ -58,6 +58,18 @@ export function htmlPainelFiltros(): string {
                 <button type="button" id="btn-sugerir-zm" class="filtro-sugerir" title="Sugerir a partir da capacidade e acurácia gravadas na ESP">sugerir</button>
               </div>
             </div>
+            <div class="filtro-linha filtro-linha-fixa">
+              <label class="filtro-chk" for="sel-impulso" title="Etapa 3 → análise: qual sinal alimenta a integral do impulso">Impulso de</label>
+              <button class="filtro-info-btn" data-filtro="impulso" type="button" title="Saiba mais">ℹ</button>
+              <div class="filtro-params">
+                <select id="sel-impulso" class="filtro-sel" title="Sinal integrado no impulso acumulado">
+                  <option value="final">sinal final (após zona morta)</option>
+                  <option value="filtrado">filtrado (antes da zona morta)</option>
+                  <option value="limpo">limpo (só etapa 1)</option>
+                  <option value="bruto">bruto (como veio da ESP)</option>
+                </select>
+              </div>
+            </div>
             <div class="filtro-linha filtro-principal-nenhum">
               <label class="filtro-chk" title="Etapa 2 — filtro principal: só um suavizador por vez">
                 <input type="radio" name="filtro-principal" id="rd-fp-nenhum" value="nenhum" checked>

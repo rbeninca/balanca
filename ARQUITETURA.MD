@@ -920,19 +920,15 @@ Botões de exportação:
 // android/.../processamento/PipelineProcessamento.kt — mesma ordem, mesmos nomes)
 
 private aplicarFiltros(forca: number) {
-  const bruta = forca;                      // Newtons como a ESP mandou
-  if (ativoNotch)   forca = notch.aplicar(forca);
-  if (ativoMediana) forca = mediana.aplicar(forca);
-  if (ativoZonaMorta) forca = zonaMorta.aplicar(forca);
-  if (ativoMediaMovel) forca = mediaMovel.aplicar(forca);   // suavizadores encadeáveis
-  if (ativoEMA)        forca = ema.aplicar(forca);          // (a interface só liga um)
-  if (ativoSG)         forca = sg.aplicar(forca);
-  if (ativoKalman)     forca = kalman.aplicar(forca);
-  return { filtrada: forca, bruta };
+  const bruta = forca;                                   // Newtons como a ESP mandou
+  const limpa = aplicarLimpeza(bruta);                   // 1. Hampel → Mediana → Notch (combináveis)
+  const suavizada = aplicarFiltroPrincipal(limpa);       // 2. um só: média móvel | EMA | Butterworth | SG | Kalman
+  const filtrada = aplicarTratamento(suavizada);         // 3. zona morta (zero tracking na Fase 8)
+  return { bruta, limpa, suavizada, filtrada };
 }
 // Fs dos filtros IIR = taxaAmostragemHz fixada, senão a estimada pelas marcas de tempo (EstimadorTaxaAmostragem)
 // emQueima  = detector(filtrada)  — limiar = limiarZonaMortaN, fim após tempoMinFimMs
-// impulso   = integral(filtrada)  — após a zona morta
+// impulso   = integral(fonteCalculoImpulso: final | filtrado | limpo | bruto) — padrão final (após a zona morta)
 ```
 
 **Cenários A/B — no gateway** antes do WebSocket (o app Android difunde

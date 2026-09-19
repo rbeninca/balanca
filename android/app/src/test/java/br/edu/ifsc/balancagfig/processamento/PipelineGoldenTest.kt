@@ -32,6 +32,7 @@ class PipelineGoldenTest {
         janelaSG = o.optIntOrNull("janelaSG"),
         kalmanQ = o.optDoubleOrNull("kalmanQ"),
         kalmanR = o.optDoubleOrNull("kalmanR"),
+        fonteCalculoImpulso = FonteImpulso.deValor(if (o.has("fonteCalculoImpulso")) o.getString("fonteCalculoImpulso") else null),
         frequenciaCorteHz = o.optDoubleOrNull("frequenciaCorteHz"),
         janelaHampel = o.optIntOrNull("janelaHampel"),
         limiarHampelSigma = o.optDoubleOrNull("limiarHampelSigma"),

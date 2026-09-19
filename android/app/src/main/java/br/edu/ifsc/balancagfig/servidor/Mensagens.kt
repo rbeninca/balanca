@@ -3,6 +3,7 @@ package br.edu.ifsc.balancagfig.servidor
 import br.edu.ifsc.balancagfig.armazenamento.GravadorSessao
 import br.edu.ifsc.balancagfig.processamento.EstadoPipeline
 import br.edu.ifsc.balancagfig.processamento.FiltroPrincipal
+import br.edu.ifsc.balancagfig.processamento.FonteImpulso
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelinePatch
 import br.edu.ifsc.balancagfig.protocolo.ComandoCalibrar
@@ -87,6 +88,7 @@ object Mensagens {
         put("filtroPrincipal", e.filtroPrincipal.valor)
         put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
         put("butterworthValido", e.butterworthValido)
+        put("fonteCalculoImpulso", e.fonteCalculoImpulso.valor)
         c.frequenciaCorteHz?.let { put("frequenciaCorteHz", it) }
         c.janelaHampel?.let { put("janelaHampel", it) }
         c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
@@ -167,6 +169,7 @@ object Mensagens {
         janelaSG = c.optIntOrNull("janelaSG"),
         kalmanQ = c.optDoubleOrNull("kalmanQ"),
         kalmanR = c.optDoubleOrNull("kalmanR"),
+        fonteCalculoImpulso = FonteImpulso.deValor(c.optString("fonteCalculoImpulso").takeIf { c.has("fonteCalculoImpulso") }),
         frequenciaCorteHz = c.optDoubleOrNull("frequenciaCorteHz"),
         janelaHampel = c.optIntOrNull("janelaHampel"),
         limiarHampelSigma = c.optDoubleOrNull("limiarHampelSigma"),

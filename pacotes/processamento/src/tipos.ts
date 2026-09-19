@@ -1,5 +1,14 @@
 import type { TipoFiltroPrincipal } from './pipeline/filtroPrincipal.js';
 
+/**
+ * Qual sinal alimenta a integral do impulso (Fase 6): 'final' (após a zona
+ * morta — padrão, evita que o ruído de repouso acumule ao vivo), 'filtrado'
+ * (após o suavizador, antes dos tratamentos), 'limpo' (após a limpeza) ou
+ * 'bruto' (como veio da ESP).
+ */
+export type FonteImpulso = 'bruto' | 'limpo' | 'filtrado' | 'final';
+export const FONTES_IMPULSO: readonly FonteImpulso[] = ['bruto', 'limpo', 'filtrado', 'final'];
+
 export interface ConfiguracaoPipeline {
   limiarZonaMortaN:  number;  // força abaixo disso → zero
   janelaMediaMovel:  number;  // amostras para suavização
@@ -19,6 +28,9 @@ export interface ConfiguracaoPipeline {
 
   /** Etapa 2: um só suavizador (padrão 'nenhum'). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
   filtroPrincipal?:  TipoFiltroPrincipal;
+
+  /** Etapa 3 → análise: sinal que alimenta o impulso acumulado (padrão 'final'). */
+  fonteCalculoImpulso?: FonteImpulso;
 
   // Etapa 2 — Butterworth passa-baixa (filtroPrincipal = 'butterworth')
   frequenciaCorteHz?:  number;   // Hz, exige 0 < fc < Fs/2 (padrão 10)

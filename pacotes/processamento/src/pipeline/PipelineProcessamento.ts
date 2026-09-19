@@ -1,5 +1,5 @@
 import type { PacoteDados } from '@balancagfig/protocolo';
-import type { ConfiguracaoPipeline, LeituraProcessada } from '../tipos.js';
+import { FONTES_IMPULSO, type ConfiguracaoPipeline, type FonteImpulso, type LeituraProcessada } from '../tipos.js';
 import { Calibrador }        from '../calibracao/Calibrador.js';
 import { ZonaMorta }         from '../filtros/ZonaMorta.js';
 import { MediaMovel }        from '../filtros/MediaMovel.js';
@@ -17,6 +17,7 @@ import { resolverFiltroPrincipal, flagsDoFiltroPrincipal, type TipoFiltroPrincip
 
 // Reexportado aqui porque o vitest do pacote aplicacao resolve '@balancagfig/processamento' neste arquivo
 export { resolverFiltroPrincipal, flagsDoFiltroPrincipal, ehFiltroPrincipal, FILTROS_PRINCIPAIS, type TipoFiltroPrincipal } from './filtroPrincipal.js';
+export { FONTES_IMPULSO, type FonteImpulso } from '../tipos.js';
 
 /** `filtroPrincipal` vence; as flags ativoMediaMovel/EMA/SG/Kalman seguem aceitas (ver resolverFiltroPrincipal). */
 export type PipelinePatch = Partial<ConfiguracaoPipeline> & {
@@ -45,6 +46,7 @@ export type EstadoPipeline = ConfiguracaoPipeline & {
   taxaEstimadaHz:      number | null;
   /** false quando filtroPrincipal = 'butterworth' e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
   butterworthValido:   boolean;
+  fonteCalculoImpulso: FonteImpulso;
   ativoHampel:         boolean;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
@@ -96,17 +98,11 @@ export class PipelineProcessamento {
     this.calculador = new CalculadorImpulso();
   }
 
-  /**
-   * Três etapas (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro
-   * principal → tratamento. A ordem numérica é a mesma de sempre; a zona
-   * morta ainda roda entre a limpeza e o filtro principal (posição legada —
-   * migra para o tratamento na Fase 6, com golden files regravados).
-   */
+  /** Três etapas (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro principal → tratamento. */
   private aplicarFiltros(forca: number): SinaisPipeline {
     const bruta = forca;
     const limpa = this.aplicarLimpeza(bruta);
-    const zonada = this.ativoZonaMorta ? this.zonaMorta.aplicar(limpa) : limpa;   // legado (Fase 6)
-    const suavizada = this.aplicarFiltroPrincipal(zonada);
+    const suavizada = this.aplicarFiltroPrincipal(limpa);
     const filtrada = this.aplicarTratamento(suavizada);
     return { bruta, limpa, suavizada, filtrada };
   }
@@ -139,9 +135,24 @@ export class PipelineProcessamento {
     return this.ativoHampel || this.ativoNotch || this.ativoMediana || (this.filtroPrincipal !== 'nenhum' && this.filtroPrincipal !== 'mediaMovel');
   }
 
-  /** Etapa 3 — tratamento (zona morta, zero tracking…): vazia até a Fase 6. */
+  /**
+   * Etapa 3 — tratamento: correções que não são filtros de ruído. Zona morta
+   * (desde a Fase 6 roda sobre o sinal já suavizado: sem tremor perto de
+   * zero); zero tracking entra na Fase 8.
+   */
   private aplicarTratamento(forca: number): number {
+    if (this.ativoZonaMorta) forca = this.zonaMorta.aplicar(forca);
     return forca;
+  }
+
+  /** Sinal que alimenta o impulso, conforme `fonteCalculoImpulso`. */
+  private sinalParaImpulso(s: SinaisPipeline): number {
+    switch (this.config.fonteCalculoImpulso ?? 'final') {
+      case 'bruto':    return s.bruta;
+      case 'limpo':    return s.limpa;
+      case 'filtrado': return s.suavizada;
+      default:         return s.filtrada;
+    }
   }
 
   /**
@@ -182,12 +193,13 @@ export class PipelineProcessamento {
 
   processar(pacote: PacoteDados): LeituraProcessada {
     this.acompanharTaxa(pacote.marcaTemporal);
-    const { filtrada, bruta } = this.aplicarFiltros(pacote.forcaNewtons);
+    const sinais = this.aplicarFiltros(pacote.forcaNewtons);
+    const { filtrada, bruta } = sinais;
 
     const emQueima           = this.ativoDetectorQueima
       ? this.detector.atualizar(filtrada, pacote.marcaTemporal)
       : false;
-    const impulsoAcumuladoNs = this.calculador.integrar(filtrada, pacote.marcaTemporal);
+    const impulsoAcumuladoNs = this.calculador.integrar(this.sinalParaImpulso(sinais), pacote.marcaTemporal);
 
     const algumFiltroNovo = this.algumFiltroNovo;
 
@@ -204,12 +216,13 @@ export class PipelineProcessamento {
 
   processarLeitura(l: LeituraProcessada): LeituraProcessada {
     this.acompanharTaxa(l.marcaTemporal);
-    const { filtrada, bruta } = this.aplicarFiltros(l.forcaNewton);
+    const sinais = this.aplicarFiltros(l.forcaNewton);
+    const { filtrada, bruta } = sinais;
 
     const emQueima           = this.ativoDetectorQueima
       ? this.detector.atualizar(filtrada, l.marcaTemporal)
       : l.emQueima;
-    const impulsoAcumuladoNs = this.calculador.integrar(filtrada, l.marcaTemporal);
+    const impulsoAcumuladoNs = this.calculador.integrar(this.sinalParaImpulso(sinais), l.marcaTemporal);
 
     const algumFiltroNovo = this.algumFiltroNovo;
 
@@ -259,6 +272,9 @@ export class PipelineProcessamento {
       if (patch.taxaAmostragemHz != null) this.config.taxaAmostragemHz = patch.taxaAmostragemHz;
       this.reconstruirNotch();
       this.reconstruirButterworth();
+    }
+    if (patch.fonteCalculoImpulso != null && (FONTES_IMPULSO as readonly string[]).includes(patch.fonteCalculoImpulso)) {
+      this.config.fonteCalculoImpulso = patch.fonteCalculoImpulso;
     }
     if (patch.frequenciaCorteHz != null) {
       this.config.frequenciaCorteHz = patch.frequenciaCorteHz;
@@ -323,6 +339,7 @@ export class PipelineProcessamento {
       filtroPrincipal:     this.filtroPrincipal,
       taxaEstimadaHz:      this.estimadorFs.obterHzEstavel(),
       butterworthValido:   this.butterworth !== null,
+      fonteCalculoImpulso: this.config.fonteCalculoImpulso ?? 'final',
       ativoHampel:         this.ativoHampel,
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,
