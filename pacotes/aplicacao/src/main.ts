@@ -46,7 +46,7 @@ class ContadorHz {
     fonte.on('dados', this.handler);
     this.timer = setInterval(() => {
       const el = document.getElementById('nav-hz');
-      if (el) el.textContent = this.contagem > 0 ? `· ${this.contagem} Hz` : '';
+      if (el) el.textContent = this.contagem > 0 ? `${this.contagem} Hz` : '';
       this.contagem = 0;
     }, 1000);
     this.fonte = fonte;

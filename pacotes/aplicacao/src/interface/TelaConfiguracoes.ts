@@ -85,9 +85,9 @@ export class TelaConfiguracoes {
       ${navHtml({ ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onJogos: this.onJogos, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) })}
 
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;margin-bottom:1rem">
           <h2 style="margin:0">Configurações do firmware</h2>
-          <button id="cfg-btn-atualizar" class="btn-secondary btn-sm">↻ Atualizar</button>
+          <button id="cfg-btn-atualizar" class="btn-secondary btn-sm" style="white-space:nowrap;flex-shrink:0">↻ Atualizar</button>
         </div>
         <div id="cfg-status" class="status-box hidden" style="margin-bottom:0.75rem"></div>
         <div class="cfg-table-wrap">

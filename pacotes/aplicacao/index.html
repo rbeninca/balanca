@@ -91,7 +91,8 @@
     .nav-clientes-desde { color: #6b7280; font-size: 0.78rem; margin-left: auto; }
     .nav-clientes-rec { color: #b91c1c; font-size: 0.78rem; font-weight: 600; }
     .nav-clientes-vazio { color: #6b7280; }
-    @media (max-width: 480px) { .nav-endereco { display: none; } .nav-links { gap: 0.7rem; } }
+    .nav-hz:not(:empty)::before { content: '· '; }
+    @media (max-width: 480px) { .nav-endereco { display: none; } .nav-hz:not(:empty)::before { content: ''; } .nav-links { gap: 0.7rem; } }
     .nav-status-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 500; padding: 0.15rem 0.6rem; border-radius: 999px; }
     .nav-status-chip::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
     .nav-status-chip.conectado  { background: #dcfce7; color: #15803d; }
@@ -390,8 +391,19 @@
     .cfg-nome  { color: #1a1a1a; font-weight: 500; }
     .cfg-desc  { font-size: 0.72rem; color: #9ca3af; margin-top: 0.1rem; }
     .cfg-input-cell { padding: 0.4rem 0.75rem; vertical-align: middle; }
-    .cfg-input { width: 140px; }
+    /* mais específico que input[type="number"] { width: 100% } */
+    .cfg-table input.cfg-input { width: 140px; min-width: 120px; }
     .cfg-enviar-cell { padding: 0.4rem 0.75rem; vertical-align: middle; white-space: nowrap; }
+    /* Celular: cada parâmetro vira um bloco — rótulo em cima, input + Enviar embaixo */
+    @media (max-width: 640px) {
+      .cfg-table thead { display: none; }
+      .cfg-table, .cfg-table tbody { display: block; width: 100%; }
+      .cfg-linha { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem 0.6rem; padding: 0.6rem 0; align-items: center; }
+      .cfg-linha:hover { background: none; }
+      .cfg-label { grid-column: 1 / -1; display: block; padding: 0; min-width: 0; }
+      .cfg-input-cell, .cfg-enviar-cell { display: block; padding: 0; }
+      .cfg-table input.cfg-input { width: 100%; min-width: 0; }
+    }
 
     /* ── Edição de data da sessão ───────────────────────────────────────────── */
     .btn-editar-data  { background: none; border: none; padding: 0 3px; font-size: 0.75rem; color: #9ca3af; cursor: pointer; vertical-align: middle; line-height: 1; }
