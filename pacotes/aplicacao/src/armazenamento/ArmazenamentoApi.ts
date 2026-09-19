@@ -121,6 +121,7 @@ export class ArmazenamentoApi implements IArmazenamento {
         fabricante:         meta.fabricante ?? null,
         descricao:          meta.descricao ?? null,
         observacoes:        meta.observacoes ?? null,
+        detrend:            meta.detrend ?? null,
       }),
     });
     if (!res.ok) throw new Error(`Erro ao salvar metadados: ${res.status}`);
@@ -134,6 +135,7 @@ export class ArmazenamentoApi implements IArmazenamento {
       massa_propelente_g: number | null; massa_total_g: number | null;
       diametro_mm: number | null; comprimento_mm: number | null;
       fabricante: string | null; descricao: string | null; observacoes: string | null;
+      detrend?: string | null;
     };
     const meta: MetadadosLocal = {};
     if (d.massa_propelente_g != null) meta.massaPropelente_g = d.massa_propelente_g;
@@ -143,6 +145,7 @@ export class ArmazenamentoApi implements IArmazenamento {
     if (d.fabricante         != null) meta.fabricante        = d.fabricante;
     if (d.descricao          != null) meta.descricao         = d.descricao;
     if (d.observacoes        != null) meta.observacoes       = d.observacoes;
+    if (d.detrend === 'nenhum' || d.detrend === 'media' || d.detrend === 'linear') meta.detrend = d.detrend;
     return meta;
   }
 }

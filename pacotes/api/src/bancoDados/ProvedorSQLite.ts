@@ -35,6 +35,8 @@ export class ProvedorSQLite {
     ] as const) {
       if (!colunasSessoes.includes(coluna)) this.db.exec(`ALTER TABLE sessoes ADD COLUMN ${coluna} ${tipo}`);
     }
+    const colunasMeta = (this.db.pragma('table_info(metadados_sessao)') as Array<{ name: string }>).map(c => c.name);
+    if (!colunasMeta.includes('detrend')) this.db.exec('ALTER TABLE metadados_sessao ADD COLUMN detrend TEXT');
   }
 
   executar(sql: string, params: unknown[] = []): void {

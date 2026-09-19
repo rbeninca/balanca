@@ -178,6 +178,16 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   (e o JSON no *tooltip*); sessões antigas avisam que não há registro.
   Validado no TX9 (Butterworth 12 Hz + Hampel, fator da ESP −1142,4).
 
+- Fase 11 ✔: `pacotes/analise/src/Detrend.ts` — `removerMedia` e
+  `removerLinear` (mínimos quadrados) estimados **só nas amostras fora da
+  queima** (a queima enviesaria a reta; teste mostra o viés sem a marcação),
+  cópia não destrutiva. Na Análise: "Remover deriva: Nenhum | Média | Linear"
+  com a reta estimada ("−(0,00204·t + 0,0971) N, 5734 amostras de repouso"),
+  aplicado sobre as leituras originais (recortar redefine a base), não marca
+  `leiturasMutadas`; a escolha vai para `metadados_sessao.detrend` (coluna
+  nova, migração nos dois provedores; Node e Kotlin validam o valor) e é
+  reaplicada ao reabrir. Só offline, como decidido.
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

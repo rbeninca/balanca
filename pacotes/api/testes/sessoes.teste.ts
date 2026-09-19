@@ -153,3 +153,19 @@ describe('Configuração do pipeline na sessão (Fase 10)', () => {
     expect(s.config_esp).toBeNull();
   });
 });
+
+describe('detrend nos metadados (Fase 11)', () => {
+  let app: FastifyInstance;
+  beforeEach(async () => { app = criarApp({ caminhoBanco: ':memory:', chaveAPI: CHAVE }); await app.ready(); });
+  afterEach(async () => { await app.close(); });
+
+  it('guarda e devolve o método; valor inválido vira nulo', async () => {
+    const post = await app.inject({ method: 'POST', url: '/sessoes', headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' }, body: JSON.stringify({ nome: 'D' }) });
+    const { id } = JSON.parse(post.body);
+    const h = { 'x-chave-api': CHAVE, 'content-type': 'application/json' };
+    await app.inject({ method: 'POST', url: `/sessoes/${id}/metadados`, headers: h, body: JSON.stringify({ detrend: 'linear' }) });
+    expect(JSON.parse((await app.inject({ method: 'GET', url: `/sessoes/${id}/metadados` })).body).detrend).toBe('linear');
+    await app.inject({ method: 'POST', url: `/sessoes/${id}/metadados`, headers: h, body: JSON.stringify({ detrend: 'quadratico' }) });
+    expect(JSON.parse((await app.inject({ method: 'GET', url: `/sessoes/${id}/metadados` })).body).detrend).toBeNull();
+  });
+});

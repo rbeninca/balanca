@@ -27,6 +27,8 @@ export interface MetadadosLocal {
   fabricante?: string;
   descricao?: string;
   observacoes?: string;
+  /** Remoção de deriva escolhida na análise (não altera as leituras gravadas). */
+  detrend?: 'nenhum' | 'media' | 'linear';
 }
 
 export interface IArmazenamento {

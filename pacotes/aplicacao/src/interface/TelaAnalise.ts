@@ -1,6 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import type { IArmazenamento, MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
-import { analisarMotor } from '@balancagfig/analise';
+import { analisarMotor, aplicarDetrend, type MetodoDetrend } from '@balancagfig/analise';
 import { gerarPDF, exportarCSV, exportarENG } from '@balancagfig/relatorio';
 import type { MetadadosENG, MetadadosPDF } from '@balancagfig/relatorio';
 import ApexCharts from 'apexcharts';
@@ -25,6 +25,9 @@ export class TelaAnalise {
   private nomeSessao:     string;
   private leiturasMutadas  = false;
   private queimaAlterada   = false;
+  /** Leituras como vieram do armazenamento: o detrend é aplicado sobre elas, nunca por cima de si mesmo. */
+  private leiturasOriginais: LeituraProcessada[] = [];
+  private detrend: MetodoDetrend = 'nenhum';
   private hoveredIdx       = -1;
 
   constructor(
@@ -37,6 +40,7 @@ export class TelaAnalise {
 
     this.nomeSessao = dados.nomeSessao;
     this.normalizarLeiturasPorTempo();
+    this.leiturasOriginais = this.dados.leituras;
     this.overlay = document.createElement('div');
     this.overlay.className = 'modal-overlay';
     this.overlay.innerHTML = this.html();
@@ -87,6 +91,29 @@ export class TelaAnalise {
     set('meta-massa-total', meta.massaTotal_g);
     set('meta-descricao',   meta.descricao);
     set('meta-observacoes', meta.observacoes);
+    if (meta.detrend && meta.detrend !== this.detrend) {
+      set('sel-detrend', meta.detrend);
+      this.aplicarDetrendEscolhido(meta.detrend);
+    }
+  }
+
+  /**
+   * Remoção de deriva (Fase 11): recalcula as leituras exibidas a partir das
+   * originais — não destrutivo, não marca leiturasMutadas; a escolha vai para
+   * os metadados ao salvar. Aplicada na análise, após a gravação.
+   */
+  private aplicarDetrendEscolhido(metodo: MetodoDetrend) {
+    this.detrend = metodo;
+    const r = aplicarDetrend(this.leiturasOriginais, metodo);
+    this.dados.leituras = r.leituras;
+    const info = this.overlay.querySelector<HTMLElement>('#detrend-info');
+    if (info) {
+      info.textContent = metodo === 'nenhum' ? ''
+        : metodo === 'media' ? `−${r.b.toFixed(4)} N (média de ${r.amostrasReferencia} amostras de repouso)`
+        : `−(${r.a.toFixed(5)}·t + ${r.b.toFixed(4)}) N (reta em ${r.amostrasReferencia} amostras de repouso)`;
+    }
+    this.renderizarGrafico();
+    this.atualizarStats();
   }
 
   private lerMetadadosFormulario(): MetadadosLocal {
@@ -106,6 +133,7 @@ export class TelaAnalise {
     const massaTotal = num('meta-massa-total');       if (massaTotal        !== undefined) meta.massaTotal_g      = massaTotal;
     const descricao  = txt('meta-descricao');         if (descricao         !== undefined) meta.descricao         = descricao;
     const observacoes = txt('meta-observacoes');      if (observacoes       !== undefined) meta.observacoes       = observacoes;
+    meta.detrend = this.detrend;
     return meta;
   }
 
@@ -155,6 +183,21 @@ export class TelaAnalise {
               <p id="analise-config-gravacao" class="analise-config" title="Configuração do pipeline vigente quando a sessão foi gravada"></p>
             </div>
             <div class="analise-stats">
+
+              <div class="stats-secao">
+                <h3>Remover deriva</h3>
+                <div class="stat-item">
+                  <span class="stat-label" title="Aplicado na análise, após a gravação; as leituras gravadas não mudam">Método</span>
+                  <span class="stat-valor">
+                    <select id="sel-detrend" class="stat-input" style="width:auto">
+                      <option value="nenhum">Nenhum</option>
+                      <option value="media">Média</option>
+                      <option value="linear">Linear</option>
+                    </select>
+                  </span>
+                </div>
+                <div id="detrend-info" class="analise-config" style="text-align:left;margin:0 0 4px"></div>
+              </div>
 
               <div class="stats-secao">
                 <h3>Geral</h3>
@@ -445,6 +488,7 @@ export class TelaAnalise {
     const ls = this.dados.leituras;
     if (ls.length === 0 || this.burnInicio >= this.burnFim) return;
     this.dados.leituras = ls.slice(this.burnInicio, this.burnFim + 1);
+    this.leiturasOriginais = this.dados.leituras;   // o recorte é destrutivo: passa a ser a base do detrend
     this.leiturasMutadas = true;
     this.burnInicio = 0;
     this.burnFim    = this.dados.leituras.length - 1;
@@ -535,6 +579,10 @@ export class TelaAnalise {
   }
 
   private bindEventos() {
+    this.overlay.querySelector<HTMLSelectElement>('#sel-detrend')?.addEventListener('change', (e) => {
+      const v = (e.target as HTMLSelectElement).value;
+      this.aplicarDetrendEscolhido(v === 'media' || v === 'linear' ? v : 'nenhum');
+    });
     this.overlay.querySelector('#btn-fechar-analise')!.addEventListener('click', () => this.destruir());
     this.overlay.querySelector('#btn-descartar')!.addEventListener('click',      () => this.destruir());
     this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(true); this.renderizarGrafico(); this.atualizarStats(); });

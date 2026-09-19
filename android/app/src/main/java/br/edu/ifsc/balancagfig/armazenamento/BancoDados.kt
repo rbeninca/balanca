@@ -53,6 +53,10 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
         for ((coluna, tipo) in COLUNAS_RESUMO) {
             if (coluna !in colunasSessoes) db.execSQL("ALTER TABLE sessoes ADD COLUMN $coluna $tipo")
         }
+        val colunasMeta = db.rawQuery("PRAGMA table_info(metadados_sessao)", null).use { c ->
+            generateSequence { if (c.moveToNext()) c.getString(c.getColumnIndexOrThrow("name")) else null }.toSet()
+        }
+        if ("detrend" !in colunasMeta) db.execSQL("ALTER TABLE metadados_sessao ADD COLUMN detrend TEXT")
     }
 
     // ─── Acesso genérico, espelhando executar/consultar/consultarUm ──────────

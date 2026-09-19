@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS metadados_sessao (
   comprimento_mm     REAL,
   fabricante         TEXT,
   descricao          TEXT,
-  observacoes        TEXT
+  observacoes        TEXT,
+  -- remoção de deriva escolhida na análise ('nenhum' | 'media' | 'linear'); não altera as leituras gravadas
+  detrend            TEXT
 );
 
