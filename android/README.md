@@ -104,6 +104,19 @@ sobe no boot, liga o hotspot `balancaGFIG`, conecta à balança e serve tudo.
   WebView com o frontend entra quando a WebView do box (Chromium 52) for
   atualizada.
 
+## Gravação compartilhada
+
+No gateway a gravação é feita **no próprio box**, alimentada direto pelo
+pipeline (`armazenamento/GravadorSessao.kt`): há um único estado, difundido a
+todos os clientes pelo WebSocket (`GRAVACAO_ESTADO`, com a lista de clientes
+conectados). Qualquer cliente pode iniciar (`GRAVACAO_INICIAR {nome}`) ou parar
+(`GRAVACAO_PARAR`); só quem parou abre a análise, os outros recebem o aviso de
+sessão salva. A gravação continua mesmo que todos os celulares caiam.
+
+O frontend escolhe sozinho (`nucleo/ControladorGravacao.ts`): se o gateway
+anunciou `GRAVACAO_ESTADO`, usa o controle remoto; senão (WebSerial/GitHub
+Pages, gateway Node), grava no cliente como sempre.
+
 ## Atualização automática pelo repositório
 
 O app se atualiza sozinho a partir de **GitHub Releases** — as equipes não

@@ -86,3 +86,29 @@ class MensagensTest {
         assertFalse(JSONObject(Mensagens.serialOff()).has("carga"))
     }
 }
+
+class MensagensGravacaoTest {
+    @Test
+    fun interpretaComandosDeGravacao() {
+        val ini = Mensagens.interpretar("""{"tipo":"GRAVACAO_INICIAR","carga":{"nome":"Motor B"}}""")
+        assertEquals(Mensagens.Entrada.GravacaoIniciar("Motor B"), ini)
+        assertEquals(Mensagens.Entrada.GravacaoIniciar(""), Mensagens.interpretar("""{"tipo":"GRAVACAO_INICIAR"}"""))
+        assertEquals(Mensagens.Entrada.GravacaoParar, Mensagens.interpretar("""{"tipo":"GRAVACAO_PARAR"}"""))
+    }
+
+    @Test
+    fun gravacaoEstadoIncluiClientes() {
+        val estado = br.edu.ifsc.balancagfig.armazenamento.GravadorSessao.EstadoGravacao(
+            gravando = true, idSessao = "s1", nome = "A", inicioMs = 5L, amostras = 10, iniciadaPor = "192.168.43.10",
+        )
+        val json = org.json.JSONObject(Mensagens.gravacaoEstado(estado, listOf(
+            Mensagens.ClienteWs("192.168.43.10", 1L), Mensagens.ClienteWs("192.168.43.11", 2L),
+        )))
+        assertEquals("GRAVACAO_ESTADO", json.getString("tipo"))
+        val carga = json.getJSONObject("carga")
+        assertTrue(carga.getBoolean("gravando"))
+        assertEquals("s1", carga.getString("idSessao"))
+        assertEquals(2, carga.getJSONArray("clientes").length())
+        assertEquals("192.168.43.11", carga.getJSONArray("clientes").getJSONObject(1).getString("endereco"))
+    }
+}

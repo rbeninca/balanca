@@ -26,6 +26,8 @@ import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import br.edu.ifsc.balancagfig.serial.PortaSerialUsb
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
 import br.edu.ifsc.balancagfig.armazenamento.BackupPendrive
+import br.edu.ifsc.balancagfig.armazenamento.EscritaSessoes
+import br.edu.ifsc.balancagfig.armazenamento.GravadorSessao
 import br.edu.ifsc.balancagfig.atualizacao.ArmazemPreferencias
 import br.edu.ifsc.balancagfig.atualizacao.Atualizador
 import br.edu.ifsc.balancagfig.atualizacao.InstaladorRoot
@@ -72,6 +74,8 @@ class ServicoBalanca : Service() {
     private var bd: BancoDados? = null
     private var backup: BackupPendrive? = null
     private var atualizadorApp: Atualizador? = null
+    private var gravador: GravadorSessao? = null
+    private var destinoGravacao: EscritaSessoes.DestinoBanco? = null
 
     /** Mesmos padrões do gateway Node (variáveis de ambiente do principal.ts). */
     private val pipeline = PipelineProcessamento(ConfiguracaoPipeline())
@@ -126,6 +130,8 @@ class ServicoBalanca : Service() {
         ws?.encerrar()
         saude?.stop()
         api?.stop()
+        gravador?.parar("serviço encerrado")
+        destinoGravacao?.encerrar()
         atualizador?.stop()
         try { unregisterReceiver(receptorMidia) } catch (_: Exception) { }
         bd?.close()
@@ -160,8 +166,14 @@ class ServicoBalanca : Service() {
     private fun iniciarWebSocket() {
         try {
             ws = ServidorWs(
-                estadoInicial = { Mensagens.pipelineEstado(pipeline.obterConfig()) },
+                estadoInicial = {
+                    listOfNotNull(
+                        Mensagens.pipelineEstado(pipeline.obterConfig()),
+                        gravador?.let { Mensagens.gravacaoEstado(it.estado, ws?.listarClientes() ?: emptyList()) },
+                    )
+                },
                 aoReceber = ::tratarMensagemCliente,
+                aoMudarClientes = { difundirGravacao() },
             ).also { it.iniciar() }
             EstadoHost.registrar("WebSocket em :${ServidorWs.PORTA_PADRAO}")
         } catch (e: IOException) {
@@ -189,6 +201,10 @@ class ServicoBalanca : Service() {
         try {
             val banco = BancoDados(this).also { bd = it }
             val bkp = BackupPendrive(this, banco).also { backup = it }
+            // Gravação compartilhada no gateway (ver GravadorSessao); alimentada em aoReceber da serial
+            val destino = EscritaSessoes.DestinoBanco(banco) { bkp.aoSalvarSessao(it) }.also { destinoGravacao = it }
+            gravador = GravadorSessao(destino, aoMudar = { difundirGravacao() })
+            iniciarContadorGravacao()
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
                 atualizacao = atualizadorApp?.let { a -> ServidorApi.Atualizacao(a) { escopo.launch(Dispatchers.IO) { a.executarPendente() } } })
@@ -278,13 +294,37 @@ class ServicoBalanca : Service() {
     }
 
     /** Mensagens vindas do frontend: config do pipeline fica aqui, comandos vão para o ESP. */
-    private fun tratarMensagemCliente(entrada: Mensagens.Entrada) {
+    private fun tratarMensagemCliente(entrada: Mensagens.Entrada, remetente: String) {
         when (entrada) {
             is Mensagens.Entrada.ConfigPipeline -> {
                 pipeline.atualizarConfig(entrada.patch)
                 ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
             }
             is Mensagens.Entrada.Comando -> enviarAoEsp(entrada.comando)
+            is Mensagens.Entrada.GravacaoIniciar -> {
+                val g = gravador ?: return
+                if (g.iniciar(entrada.nome, remetente)) EstadoHost.registrar("Gravação iniciada por $remetente: ${g.estado.nome}")
+                else difundirGravacao()   // já havia gravação: reenvia o estado para quem pediu
+            }
+            Mensagens.Entrada.GravacaoParar -> {
+                val g = gravador ?: return
+                val fim = g.parar(remetente)
+                if (fim != null) EstadoHost.registrar("Gravação parada por $remetente: ${fim.nome} (${fim.amostras} amostras)")
+                else difundirGravacao()
+            }
+        }
+    }
+
+    private fun difundirGravacao() {
+        val g = gravador ?: return
+        ws?.difundir(Mensagens.gravacaoEstado(g.estado, ws?.listarClientes() ?: emptyList()))
+    }
+
+    /** Enquanto grava, difunde o contador de amostras 1× por segundo para os clientes. */
+    private fun iniciarContadorGravacao() = escopo.launch {
+        while (true) {
+            delay(1000)
+            if (gravador?.estado?.gravando == true) difundirGravacao()
         }
     }
 
@@ -329,6 +369,7 @@ class ServicoBalanca : Service() {
                         pacotesNoIntervalo.incrementAndGet()
                         val leitura = pipeline.processar(pacote)
                         EstadoHost.atualizarEstatisticas { it.copy(pacotes = it.pacotes + 1, ultimo = pacote) }
+                        gravador?.receber(leitura)
                         ws?.difundir(Mensagens.leitura(leitura))
                     }
                     is PacoteConfiguracao -> {

@@ -17,12 +17,19 @@ import java.util.concurrent.TimeUnit
  */
 class ServidorWs(
     porta: Int = PORTA_PADRAO,
-    /** JSON enviado a cada cliente recém-conectado (PIPELINE_ESTADO). */
-    private val estadoInicial: () -> String,
-    private val aoReceber: (Mensagens.Entrada) -> Unit,
+    /** JSONs enviados a cada cliente recém-conectado (PIPELINE_ESTADO, GRAVACAO_ESTADO). */
+    private val estadoInicial: () -> List<String>,
+    /** Mensagem de um cliente, com o endereço de quem enviou. */
+    private val aoReceber: (Mensagens.Entrada, remetente: String) -> Unit,
+    /** Alguém entrou ou saiu; recebe a lista atual. */
+    private val aoMudarClientes: (List<Mensagens.ClienteWs>) -> Unit = {},
 ) : NanoWSD(porta) {
 
     private val clientes = CopyOnWriteArraySet<Cliente>()
+
+    /** Clientes conectados, na ordem de chegada. */
+    fun listarClientes(): List<Mensagens.ClienteWs> =
+        clientes.sortedBy { it.conectadoEm }.map { Mensagens.ClienteWs(it.endereco, it.conectadoEm) }
 
     /**
      * Envio fora da thread serial: um cliente lento não pode atrasar a leitura
@@ -77,21 +84,28 @@ class ServidorWs(
     override fun openWebSocket(handshake: NanoHTTPD.IHTTPSession): WebSocket = Cliente(handshake)
 
     private fun remover(c: Cliente) {
-        if (clientes.remove(c)) Log.i(TAG, "cliente saiu (${clientes.size} restantes)")
+        if (clientes.remove(c)) {
+            Log.i(TAG, "cliente ${c.endereco} saiu (${clientes.size} restantes)")
+            aoMudarClientes(listarClientes())
+        }
     }
 
     private inner class Cliente(handshake: NanoHTTPD.IHTTPSession) : WebSocket(handshake) {
+        val endereco: String = handshake.remoteIpAddress ?: "?"
+        val conectadoEm: Long = System.currentTimeMillis()
+
         override fun onOpen() {
             clientes += this
-            Log.i(TAG, "cliente conectado (${clientes.size})")
-            try { send(estadoInicial()) } catch (e: IOException) { remover(this) }
+            Log.i(TAG, "cliente $endereco conectado (${clientes.size})")
+            try { for (m in estadoInicial()) send(m) } catch (e: IOException) { remover(this); return }
+            aoMudarClientes(listarClientes())
         }
 
         override fun onClose(code: WebSocketFrame.CloseCode?, reason: String?, initiatedByRemote: Boolean) = remover(this)
 
         override fun onMessage(message: WebSocketFrame) {
             val entrada = Mensagens.interpretar(message.textPayload) ?: return
-            aoReceber(entrada)
+            aoReceber(entrada, endereco)
         }
 
         override fun onPong(pong: WebSocketFrame) = Unit

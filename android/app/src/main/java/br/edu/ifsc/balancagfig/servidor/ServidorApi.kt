@@ -2,6 +2,7 @@ package br.edu.ifsc.balancagfig.servidor
 
 import android.util.Log
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
+import br.edu.ifsc.balancagfig.armazenamento.EscritaSessoes
 import br.edu.ifsc.balancagfig.armazenamento.ResumoSessao
 import br.edu.ifsc.balancagfig.atualizacao.Atualizador
 import br.edu.ifsc.balancagfig.armazenamento.ModoRestauracao
@@ -9,7 +10,6 @@ import fi.iki.elonen.NanoHTTPD
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.UUID
 
 /**
  * API REST de sessões (porta 3000) — papel do pacote api (Fastify + SQLite),
@@ -204,11 +204,7 @@ class ServidorApi(
     private fun criarSessao(body: JSONObject): Response {
         val nome = body.optString("nome", "")
         if (nome.isEmpty()) return erro(Response.Status.BAD_REQUEST, "Campo \"nome\" é obrigatório")
-        val id = UUID.randomUUID().toString()
-        bd.executar(
-            "INSERT INTO sessoes (id, nome, id_motor, observacoes) VALUES (?, ?, ?, ?)",
-            id, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"),
-        )
+        val id = EscritaSessoes.criarSessao(bd, nome, body.optStringOrNull("id_motor"), body.optStringOrNull("observacoes"))
         return json(Response.Status.CREATED, bd.consultarUm("SELECT * FROM sessoes WHERE id = ?", id)!!)
     }
 
@@ -253,27 +249,10 @@ class ServidorApi(
                 stmt.executeInsert()
             }
         }
-        atualizarMetricasSessao(id)
+        EscritaSessoes.atualizarMetricas(bd, id)
         ResumoSessao.gravar(bd, id)
         aoSalvarSessao?.invoke(id)
         return json(Response.Status.CREATED, JSONObject().put("inseridas", lote.length()))
-    }
-
-    /** duracao_ms, forca_maxima_n e impulso_total_ns derivados das leituras (como atualizarMetricasSessao do Node). */
-    private fun atualizarMetricasSessao(id: String) {
-        val m = bd.consultarUm(
-            """SELECT MAX(forca_crua) AS forca_maxima,
-                      MAX(marca_temporal) - MIN(marca_temporal) AS duracao,
-                      (SELECT impulso_acumulado_ns FROM leituras WHERE id_sessao = ? ORDER BY marca_temporal DESC LIMIT 1) AS ultimo_impulso,
-                      COUNT(*) AS n
-               FROM leituras WHERE id_sessao = ?""",
-            id, id,
-        ) ?: return
-        if (m.optLong("n") == 0L) return
-        bd.executar(
-            "UPDATE sessoes SET duracao_ms = ?, forca_maxima_n = ?, impulso_total_ns = ? WHERE id = ?",
-            m.optLong("duracao"), m.optDouble("forca_maxima", 0.0), m.optDouble("ultimo_impulso", 0.0), id,
-        )
     }
 
     private fun exportarCsv(id: String): Response {

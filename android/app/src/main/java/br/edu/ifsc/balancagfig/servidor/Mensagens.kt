@@ -1,5 +1,6 @@
 package br.edu.ifsc.balancagfig.servidor
 
+import br.edu.ifsc.balancagfig.armazenamento.GravadorSessao
 import br.edu.ifsc.balancagfig.processamento.EstadoPipeline
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelinePatch
@@ -10,6 +11,7 @@ import br.edu.ifsc.balancagfig.protocolo.ComandoObterConfig
 import br.edu.ifsc.balancagfig.protocolo.ComandoTarar
 import br.edu.ifsc.balancagfig.protocolo.PacoteConfiguracao
 import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -17,8 +19,9 @@ import org.json.JSONObject
  * gateway Node (pacotes/gateway/src/ServidorWebSocket.ts) para o frontend
  * não distinguir os dois.
  *
- * Gateway → frontend: LEITURA, CONFIG, STATUS, PIPELINE_ESTADO, SERIAL_OK, SERIAL_OFF.
- * Frontend → gateway: PIPELINE_CONFIG e os comandos CMD_* (repassados ao ESP).
+ * Gateway → frontend: LEITURA, CONFIG, STATUS, PIPELINE_ESTADO, SERIAL_OK, SERIAL_OFF,
+ *   GRAVACAO_ESTADO (gravação compartilhada no gateway + clientes conectados — só no app Android).
+ * Frontend → gateway: PIPELINE_CONFIG, GRAVACAO_INICIAR/GRAVACAO_PARAR e os comandos CMD_* (repassados ao ESP).
  */
 object Mensagens {
 
@@ -89,10 +92,21 @@ object Mensagens {
         put("ativoKalman", e.ativoKalman)
     })
 
+    /** Estado da gravação no gateway + lista de clientes; enviado ao conectar e a cada mudança. */
+    fun gravacaoEstado(estado: GravadorSessao.EstadoGravacao, clientes: List<ClienteWs>): String =
+        envelope("GRAVACAO_ESTADO", estado.paraJson().put("clientes", JSONArray().apply {
+            for (c in clientes) put(JSONObject().put("endereco", c.endereco).put("conectadoEm", c.conectadoEm))
+        }))
+
+    /** Cliente conectado ao WebSocket. */
+    data class ClienteWs(val endereco: String, val conectadoEm: Long)
+
     /** Mensagem recebida de um cliente, já classificada. */
     sealed interface Entrada {
         data class ConfigPipeline(val patch: PipelinePatch) : Entrada
         data class Comando(val comando: ComandoHost) : Entrada
+        data class GravacaoIniciar(val nome: String) : Entrada
+        data object GravacaoParar : Entrada
     }
 
     /** Interpreta o JSON do cliente; null se inválido ou desconhecido (o gateway TS ignora). */
@@ -100,6 +114,8 @@ object Mensagens {
         val obj = try { JSONObject(json) } catch (_: Exception) { return null }
         return when (obj.optString("tipo")) {
             "PIPELINE_CONFIG" -> Entrada.ConfigPipeline(lerPatch(obj.optJSONObject("carga") ?: JSONObject()))
+            "GRAVACAO_INICIAR" -> Entrada.GravacaoIniciar(obj.optJSONObject("carga")?.optString("nome") ?: "")
+            "GRAVACAO_PARAR" -> Entrada.GravacaoParar
             "CMD_TARAR" -> Entrada.Comando(ComandoTarar)
             "CMD_OBTER_CONFIG" -> Entrada.Comando(ComandoObterConfig)
             "CMD_CALIBRAR" -> obj.optDoubleOrNull("massaG")?.let { Entrada.Comando(ComandoCalibrar(it.toFloat())) }

@@ -1,6 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import type { EstadoPipeline, PipelinePatch } from '@balancagfig/processamento';
-import type { GerenciadorSessao } from '../nucleo/GerenciadorSessao.js';
+import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorGravacao.js';
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { WizardCalibracao } from './WizardCalibracao.js';
@@ -89,7 +89,7 @@ export class TelaMedicao {
   constructor(
     container: HTMLElement,
     private fonte: Fonte,
-    private gerenciador: GerenciadorSessao,
+    private controlador: ControladorGravacao,
     private armazenamento: IArmazenamento,
     private onConexao:       () => void,
     private onSessoes:       () => void,
@@ -102,6 +102,10 @@ export class TelaMedicao {
     this.fonte.on('dados',  (l) => this.onDados(l as LeituraProcessada));
     this.fonte.on('config', (c) => this.onConfig(c));
     this.fonte.on('status', (s) => this.onStatus(s));
+    // Gravação compartilhada: o estado pode mudar por ação de outro cliente
+    this.controlador.aoMudar((e) => this.refletirGravacao(e));
+    this.controlador.aoEncerradaPorOutro((ultima) => this.avisarSessaoSalvaPorOutro(ultima));
+    this.refletirGravacao(this.controlador.estado);
     this.iniciarLoop();
   }
 
@@ -161,6 +165,7 @@ export class TelaMedicao {
           <button id="btn-parar"   class="btn-danger hidden">Parar</button>
         </div>
         <div id="status-grav" class="status-box hidden" style="margin-top:0.75rem"></div>
+        <div id="grav-clientes" class="grav-clientes hidden"></div>
       </div>
     `;
 
@@ -483,7 +488,7 @@ export class TelaMedicao {
 
     if (this.gravando) {
       this.dadosGravados.push(l);
-      this.gerenciador.adicionarLeitura(l).catch(() => {});
+      this.controlador.adicionarLeitura(l);   // no modo remoto é ignorado: o gateway já gravou
     }
 
     this.atualizarDisplay();
@@ -557,7 +562,8 @@ export class TelaMedicao {
     const s        = Math.floor(elapsed / 1000);
     const ms       = elapsed % 1000;
     this.elStatsTempo.textContent    = `${s}s ${String(ms).padStart(3, '0')}ms`;
-    this.elStatsAmostras.textContent = `${this.dadosGravados.length} amostras`;
+    const amostras = this.controlador.remota ? this.controlador.estado.amostras : this.dadosGravados.length;
+    this.elStatsAmostras.textContent = `${amostras} amostras`;
   }
 
   private renderizarGrafico() {
@@ -763,60 +769,111 @@ export class TelaMedicao {
   }
 
   private async iniciarGravacao() {
-    this.nomeSessao       = this.elNome?.value.trim() ||
+    const nome = this.elNome?.value.trim() ||
       `Sessão ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`;
-    this.dadosGravados    = [];
-    this.dadosGrafico     = [];
-    this.inicioGravacaoMs = Date.now();
-    await this.gerenciador.iniciarGravacao(this.nomeSessao);
-    this.gravando = true;
+    if (this.elBtnIniciar) this.elBtnIniciar.disabled = true;
+    try {
+      await this.controlador.iniciar(nome);
+    } catch (e) {
+      alert(String(e instanceof Error ? e.message : e));
+    } finally {
+      if (this.elBtnIniciar) this.elBtnIniciar.disabled = false;
+    }
+    // A tela (REC, nome, contador) é atualizada por refletirGravacao, no modo local e no remoto.
+  }
 
-    this.elBtnIniciar?.classList.add('hidden');
-    this.elBtnParar?.classList.remove('hidden');
-    this.elBadge?.classList.remove('hidden');
+  /**
+   * Espelha o estado da gravação (local ou compartilhada no gateway). No modo
+   * remoto isto também roda quando OUTRO cliente inicia ou para.
+   */
+  private refletirGravacao(e: EstadoGravacao) {
+    const comecou = e.gravando && !this.gravando;
+    this.gravando = e.gravando;
 
-    if (this.elStatus) {
-      this.elStatus.className = 'status-box ok';
-      this.elStatus.classList.remove('hidden');
-      this.elStatus.innerHTML = '';
+    if (comecou) {
+      this.nomeSessao       = e.nome ?? '';
+      this.dadosGravados    = [];
+      this.dadosGrafico     = [];
+      this.inicioGravacaoMs = e.inicioMs ?? Date.now();
+      this.montarStatusGravando(e);
+    }
+    if (!e.gravando) {
+      this.elStatsTempo    = null;
+      this.elStatsAmostras = null;
+    }
 
-      const nomeEl = document.createElement('div');
-      nomeEl.textContent = `Gravando: ${this.nomeSessao}`;
+    this.elBtnIniciar?.classList.toggle('hidden', e.gravando);
+    this.elBtnParar?.classList.toggle('hidden', !e.gravando);
+    this.elBadge?.classList.toggle('hidden', !e.gravando);
+    if (this.elNome) {
+      this.elNome.disabled = e.gravando && e.remota;
+      if (e.gravando && e.remota && e.nome) this.elNome.value = e.nome;
+    }
 
-      const statsEl = document.createElement('div');
-      statsEl.style.cssText = 'margin-top:4px;font-size:0.82rem;opacity:0.85;font-variant-numeric:tabular-nums';
-
-      const spanTempo    = document.createElement('span');
-      const spanAmostras = document.createElement('span');
-      statsEl.appendChild(spanTempo);
-      statsEl.appendChild(document.createTextNode(' · '));
-      statsEl.appendChild(spanAmostras);
-
-      this.elStatus.appendChild(nomeEl);
-      this.elStatus.appendChild(statsEl);
-      this.elStatsTempo    = spanTempo;
-      this.elStatsAmostras = spanAmostras;
+    const elClientes = this.cardMedicao?.parentElement?.querySelector<HTMLElement>('#grav-clientes')
+      ?? document.querySelector<HTMLElement>('#grav-clientes');
+    if (elClientes) {
+      const n = e.clientes.length;
+      elClientes.classList.toggle('hidden', !e.remota || n === 0);
+      elClientes.textContent = n === 1
+        ? 'Gravação compartilhada no gateway — 1 cliente conectado'
+        : `Gravação compartilhada no gateway — ${n} clientes conectados: ${e.clientes.map(c => c.endereco).join(', ')}`;
     }
   }
 
-  private async pararGravacao() {
-    this.gravando = false;
-    const sessao = await indicador.envolver('Salvando sessão…', () => this.gerenciador.pararGravacao());
-    this.elStatsTempo    = null;
-    this.elStatsAmostras = null;
+  private montarStatusGravando(e: EstadoGravacao) {
+    if (!this.elStatus) return;
+    this.elStatus.className = 'status-box ok';
+    this.elStatus.classList.remove('hidden');
+    this.elStatus.innerHTML = '';
 
-    this.elBtnIniciar?.classList.remove('hidden');
-    this.elBtnParar?.classList.add('hidden');
-    this.elBadge?.classList.add('hidden');
+    const nomeEl = document.createElement('div');
+    nomeEl.textContent = `Gravando: ${this.nomeSessao}` + (e.remota && e.iniciadaPor ? ` — iniciada por ${e.iniciadaPor}` : '');
+
+    const statsEl = document.createElement('div');
+    statsEl.style.cssText = 'margin-top:4px;font-size:0.82rem;opacity:0.85;font-variant-numeric:tabular-nums';
+
+    const spanTempo    = document.createElement('span');
+    const spanAmostras = document.createElement('span');
+    statsEl.appendChild(spanTempo);
+    statsEl.appendChild(document.createTextNode(' · '));
+    statsEl.appendChild(spanAmostras);
+
+    this.elStatus.appendChild(nomeEl);
+    this.elStatus.appendChild(statsEl);
+    this.elStatsTempo    = spanTempo;
+    this.elStatsAmostras = spanAmostras;
+  }
+
+  /** Outro cliente parou: a sessão está salva no gateway, mas só quem parou abre a análise. */
+  private avisarSessaoSalvaPorOutro(ultima: NonNullable<EstadoGravacao['ultima']>) {
+    if (!this.elStatus) return;
+    this.elStatus.className  = 'status-box aviso';
+    this.elStatus.classList.remove('hidden');
+    this.elStatus.textContent = `Sessão "${ultima.nome}" salva no gateway — ${ultima.amostras} amostras, parada por ${ultima.paradaPor}. Veja em Sessões.`;
+  }
+
+  private async pararGravacao() {
+    if (this.elBtnParar) this.elBtnParar.disabled = true;
+    let sessao;
+    try {
+      sessao = await indicador.envolver('Salvando sessão…', () => this.controlador.parar());
+    } catch (e) {
+      alert(String(e instanceof Error ? e.message : e));
+      return;
+    } finally {
+      if (this.elBtnParar) this.elBtnParar.disabled = false;
+    }
 
     if (this.elStatus) {
       this.elStatus.className  = 'status-box aviso';
       this.elStatus.textContent = `Sessão salva — ${sessao.totalLeituras} leituras, F_máx ${sessao.forcaMaximaN.toFixed(1)} N`;
     }
 
-    if (this.dadosGravados.length > 0) {
+    // Só quem parou abre a análise, com os dados que o armazenamento tem (no remoto, os do gateway).
+    if (sessao.leituras.length > 0) {
       new TelaAnalise(
-        { leituras: [...this.dadosGravados], nomeSessao: this.nomeSessao, modo: 'nova', idSessao: sessao.id },
+        { leituras: [...sessao.leituras], nomeSessao: sessao.nome, modo: 'nova', idSessao: sessao.id },
         this.armazenamento,
         () => {},
       );

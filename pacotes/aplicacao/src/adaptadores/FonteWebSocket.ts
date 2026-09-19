@@ -6,10 +6,23 @@ export interface StatusFonteWS {
   transporte: 'websocket';
 }
 
+/** Estado da gravação compartilhada no gateway (GRAVACAO_ESTADO — só o app Android envia). */
+export interface EstadoGravacaoRemota {
+  gravando: boolean;
+  idSessao: string | null;
+  nome: string | null;
+  inicioMs: number | null;
+  amostras: number;
+  iniciadaPor: string | null;
+  ultima: { id: string; nome: string; amostras: number; paradaPor: string; emMs: number } | null;
+  clientes: Array<{ endereco: string; conectadoEm: number }>;
+}
+
 export interface EventosDadosWS {
   dados: LeituraProcessada;
   config: unknown;
   status: unknown;
+  gravacao: EstadoGravacaoRemota;
 }
 
 type Ouvinte<T> = (detalhe: T) => void;
@@ -36,6 +49,7 @@ export class FonteWebSocket {
   private _status: StatusFonteWS = { conectado: false, transporte: 'websocket' };
   private ouvintes: { [K in keyof EventosDadosWS]?: Array<Ouvinte<EventosDadosWS[K]>> } = {};
   private cfgGateway: EstadoPipeline = { ...CFG_GATEWAY_PADRAO };
+  private gravacaoRemota: EstadoGravacaoRemota | null = null;
 
   constructor(url: string, factory?: (url: string) => WebSocket) {
     const criar = factory ?? ((u: string) => new WebSocket(u));
@@ -78,7 +92,24 @@ export class FonteWebSocket {
         this._status = { ...this._status, conectado: true };
         this._emitir('status', { conectado: true } as any);
         break;
+      case 'GRAVACAO_ESTADO':
+        this.gravacaoRemota = msg.carga as EstadoGravacaoRemota;
+        this._emitir('gravacao', this.gravacaoRemota);
+        break;
     }
+  }
+
+  /** true depois que o gateway anunciou GRAVACAO_ESTADO (app Android); gateways antigos nunca anunciam. */
+  get suportaGravacaoRemota(): boolean { return this.gravacaoRemota !== null; }
+
+  obterEstadoGravacao(): EstadoGravacaoRemota | null { return this.gravacaoRemota; }
+
+  iniciarGravacaoRemota(nome: string): void {
+    this.enviarComando({ tipo: 'GRAVACAO_INICIAR', carga: { nome } });
+  }
+
+  pararGravacaoRemota(): void {
+    this.enviarComando({ tipo: 'GRAVACAO_PARAR' });
   }
 
   private _emitir<K extends keyof EventosDadosWS>(evento: K, detalhe: EventosDadosWS[K]): void {

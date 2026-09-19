@@ -1,6 +1,7 @@
 import { ArmazenamentoLocal, type IArmazenamento } from './armazenamento/ArmazenamentoLocal.js';
 import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
+import { ControladorGravacao } from './nucleo/ControladorGravacao.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaJogos } from './interface/TelaJogos.js';
@@ -19,7 +20,13 @@ const _temaGuardado = localStorage.getItem('balancagfig:tema') ?? '';
 if (_temaGuardado) document.documentElement.dataset['tema'] = _temaGuardado;
 
 let armazenamento: IArmazenamento = new ArmazenamentoLocal();
-let gerenciador = new GerenciadorSessao(armazenamento);
+let controlador: ControladorGravacao | null = null;
+
+/** Gravação local (GerenciadorSessao) ou compartilhada no gateway, conforme a fonte anuncia. */
+function criarControlador(fonte: unknown): ControladorGravacao {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new ControladorGravacao(fonte as any, new GerenciadorSessao(armazenamento), armazenamento);
+}
 const ponteJogos = new PonteJogosLegados(globalThis.window as Window, globalThis.document);
 
 class ContadorHz {
@@ -99,7 +106,7 @@ async function tentarAutoConectar(): Promise<boolean> {
     enderecoAtual = host;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fonteAtual = fonte as any;
-    gerenciador = new GerenciadorSessao(armazenamento);
+    controlador = criarControlador(fonte);
     contadorHz.iniciar(fonte);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     conectarPonteJogos(fonteAtual as any);
@@ -191,7 +198,7 @@ function renderizar() {
             armazenamento = new ArmazenamentoLocal();
             enderecoAtual = 'WebSerial';
           }
-          gerenciador = new GerenciadorSessao(armazenamento);
+          controlador = criarControlador(fonte);
           contadorHz.iniciar(fonte);
           conectarPonteJogos(fonteAtual);
           atualizarStatusPonteJogos(true);
@@ -210,7 +217,7 @@ function renderizar() {
       telaMedicaoAtual = new TelaMedicao(
         app,
         fonteAtual,
-        gerenciador,
+        controlador ?? (controlador = criarControlador(fonteAtual)),
         armazenamento,
         () => navegar('conexao'),
         () => navegar('sessoes'),
