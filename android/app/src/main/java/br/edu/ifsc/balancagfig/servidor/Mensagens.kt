@@ -2,6 +2,7 @@ package br.edu.ifsc.balancagfig.servidor
 
 import br.edu.ifsc.balancagfig.armazenamento.GravadorSessao
 import br.edu.ifsc.balancagfig.processamento.EstadoPipeline
+import br.edu.ifsc.balancagfig.processamento.FiltroPrincipal
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelinePatch
 import br.edu.ifsc.balancagfig.protocolo.ComandoCalibrar
@@ -83,6 +84,7 @@ object Mensagens {
         c.janelaSG?.let { put("janelaSG", it) }
         c.kalmanQ?.let { put("kalmanQ", it) }
         c.kalmanR?.let { put("kalmanR", it) }
+        put("filtroPrincipal", e.filtroPrincipal.valor)
         put("ativoZonaMorta", e.ativoZonaMorta)
         put("ativoMediaMovel", e.ativoMediaMovel)
         put("ativoDetectorQueima", e.ativoDetectorQueima)
@@ -167,6 +169,7 @@ object Mensagens {
         ativoNotch = c.optBooleanOrNull("ativoNotch"),
         ativoSG = c.optBooleanOrNull("ativoSG"),
         ativoKalman = c.optBooleanOrNull("ativoKalman"),
+        filtroPrincipal = FiltroPrincipal.deValor(c.optString("filtroPrincipal").takeIf { c.has("filtroPrincipal") }),
     )
 
     // `!= null` no TS: ausente ou null não altera o campo

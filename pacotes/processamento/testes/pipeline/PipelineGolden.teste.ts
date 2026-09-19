@@ -34,9 +34,11 @@ export const CASOS: Record<string, PipelinePatch> = {
   'ema-0.2':               { ativoZonaMorta: true, ativoEMA: true, alphaEMA: 0.2 },
   'sg-7':                  { ativoSG: true, janelaSG: 7, ativoDetectorQueima: true },
   'kalman':                { ativoKalman: true, kalmanQ: 0.01, kalmanR: 1.0 },
-  'sg-e-kalman-encadeados': { ativoSG: true, ativoKalman: true },           // trava o encadeamento atual
+  // Fase 2: flags antigas viram um só filtro principal (a última na ordem MM→EMA→SG→Kalman vence)
+  'flags-sg-e-kalman-vira-kalman': { ativoSG: true, ativoKalman: true },
+  'filtro-principal-sg-vence-flag': { filtroPrincipal: 'savitzkyGolay', ativoKalman: true, ativoDetectorQueima: true },
   'tudo-ligado':           { ativoZonaMorta: true, ativoDetectorQueima: true, ativoMediana: true, ativoNotch: true,
-                             ativoMediaMovel: true, ativoEMA: true, ativoSG: true, ativoKalman: true },
+                             ativoMediaMovel: true, ativoEMA: true, ativoSG: true, ativoKalman: true },   // principal = kalman
 };
 
 interface Amostra { t: number; f: number }

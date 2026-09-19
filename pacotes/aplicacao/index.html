@@ -189,7 +189,8 @@
     .filtro-linha { display: flex; align-items: center; gap: 0.3rem; }
     .filtro-linha:has(.filtro-chk input:not(:checked)) { opacity: 0.45; }
     .filtro-chk { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; cursor: pointer; color: #374151; user-select: none; white-space: nowrap; }
-    .filtro-chk input[type="checkbox"] { accent-color: #2563eb; width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+    .filtro-chk input[type="checkbox"], .filtro-chk input[type="radio"] { accent-color: #2563eb; width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+    .filtro-linha.filtro-principal-nenhum { opacity: 1; }
     .filtro-params { display: flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; color: #9ca3af; }
     .filtro-num { width: 50px; padding: 0.15rem 0.3rem; border: 1px solid #d1d5db; border-radius: 3px; font-size: 0.75rem; color: #1a1a1a; background: #fff; text-align: right; }
     .filtro-num:focus { outline: none; border-color: #2563eb; }

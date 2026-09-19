@@ -35,14 +35,34 @@ describe('Pipeline — etapas (Fase 1)', () => {
     expect(r.forcaNewtonBruta).toBeUndefined();
   });
 
-  it('suavizadores continuam encadeáveis até a Fase 2 (média móvel + EMA)', () => {
+  it('Fase 2: nunca dois suavizadores — ligar média móvel e EMA deixa só a EMA (última vence)', () => {
     const p = new PipelineProcessamento({ ...cfg });
     p.atualizarConfig({ ativoMediaMovel: true, janelaMediaMovel: 2, ativoEMA: true, alphaEMA: 0.5 });
-    const r1 = p.processar(pacote(10));
-    // MM(2) de [10] = 10 → EMA parte de 10 na 1ª amostra (implementação atual) → 10
-    expect(r1.forcaNewton).toBeCloseTo(10, 9);
+    expect(p.obterConfig().filtroPrincipal).toBe('ema');
+    expect(p.obterConfig()).toMatchObject({ ativoMediaMovel: false, ativoEMA: true, ativoSG: false, ativoKalman: false });
+    p.processar(pacote(10));
     const r2 = p.processar(pacote(0));
-    // MM(2) de [10, 0] = 5 → EMA: 0.5·5 + 0.5·10 = 7.5
-    expect(r2.forcaNewton).toBeCloseTo(7.5, 9);
+    expect(r2.forcaNewton).toBeCloseTo(5, 9);        // só EMA: 0.5·0 + 0.5·10 (antes, MM+EMA dava 7.5)
+  });
+
+  it('Fase 2: filtroPrincipal explícito e troca reinicia o filtro novo', () => {
+    const p = new PipelineProcessamento({ ...cfg, filtroPrincipal: 'mediaMovel' });
+    expect(p.obterConfig().filtroPrincipal).toBe('mediaMovel');
+    p.processar(pacote(10)); p.processar(pacote(10)); p.processar(pacote(10));
+    p.atualizarConfig({ filtroPrincipal: 'kalman' });
+    expect(p.obterConfig().ativoKalman).toBe(true);
+    const r = p.processar(pacote(10));
+    expect(r.forcaNewton).toBeCloseTo(10, 6);        // Kalman recém-reiniciado converge na 1ª amostra
+    p.atualizarConfig({ filtroPrincipal: 'nenhum' });
+    expect(p.processar(pacote(3.3)).forcaNewton).toBe(3.3);
+    expect(p.processar(pacote(3.3)).forcaNewtonBruta).toBeUndefined();
+  });
+
+  it('Fase 2: cliente antigo que desliga a flag do filtro atual volta a nenhum', () => {
+    const p = new PipelineProcessamento({ ...cfg });
+    p.atualizarConfig({ ativoSG: true });
+    expect(p.obterConfig().filtroPrincipal).toBe('savitzkyGolay');
+    p.atualizarConfig({ ativoSG: false });
+    expect(p.obterConfig().filtroPrincipal).toBe('nenhum');
   });
 });

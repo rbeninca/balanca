@@ -76,6 +76,15 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   e a limpeza mantém `Notch → Mediana`; a ordem `Hampel → Mediana → Notch` da
   proposta é decidida na Fase 4 (trocar Mediana/Notch muda resultado).
 
+- Fase 2 ✔: `filtroPrincipal: 'nenhum' | 'mediaMovel' | 'ema' | 'savitzkyGolay' | 'kalman'`
+  exclusivo nos dois lados (`resolverFiltroPrincipal`: campo explícito vence;
+  flags antigas — a última na ordem MM → EMA → SG → Kalman — continuam aceitas
+  e são devolvidas no `PIPELINE_ESTADO` para clientes antigos). Painel com
+  radio + "Sem suavização"; o frontend manda campo novo + flags exclusivas,
+  então funciona com gateway anterior. **Mudança de comportamento**: encadear
+  dois suavizadores deixou de existir; golden `sg-e-kalman-encadeados` virou
+  `flags-sg-e-kalman-vira-kalman`, `tudo-ligado` regravado (principal = Kalman).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

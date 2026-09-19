@@ -1,3 +1,5 @@
+import type { TipoFiltroPrincipal } from './pipeline/filtroPrincipal.js';
+
 export interface ConfiguracaoPipeline {
   limiarZonaMortaN:  number;  // força abaixo disso → zero
   janelaMediaMovel:  number;  // amostras para suavização
@@ -14,6 +16,9 @@ export interface ConfiguracaoPipeline {
   janelaSG?:         number;   // janela Savitzky-Golay (padrão 7)
   kalmanQ?:          number;   // ruído de processo Kalman (padrão 0.01)
   kalmanR?:          number;   // ruído de medição Kalman (padrão 1.0)
+
+  /** Etapa 2: um só suavizador (padrão 'nenhum'). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
+  filtroPrincipal?:  TipoFiltroPrincipal;
 }
 
 export interface LeituraProcessada {

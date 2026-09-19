@@ -40,6 +40,7 @@ class PipelineGoldenTest {
         ativoNotch = o.optBooleanOrNull("ativoNotch"),
         ativoSG = o.optBooleanOrNull("ativoSG"),
         ativoKalman = o.optBooleanOrNull("ativoKalman"),
+        filtroPrincipal = FiltroPrincipal.deValor(if (o.has("filtroPrincipal")) o.getString("filtroPrincipal") else null),
     )
 
     private fun JSONObject.optDoubleOrNull(k: String) = if (has(k) && !isNull(k)) getDouble(k) else null
@@ -47,7 +48,8 @@ class PipelineGoldenTest {
     private fun JSONObject.optBooleanOrNull(k: String) = if (has(k) && !isNull(k)) getBoolean(k) else null
 
     private fun tolerancia(patch: PipelinePatch): Double =
-        if (patch.ativoNotch == true || patch.ativoEMA == true || patch.ativoKalman == true) 1e-6 else 1e-9
+        if (patch.ativoNotch == true || patch.ativoEMA == true || patch.ativoKalman == true ||
+            patch.filtroPrincipal == FiltroPrincipal.EMA || patch.filtroPrincipal == FiltroPrincipal.KALMAN) 1e-6 else 1e-9
 
     private fun reproduzir(arquivo: File) {
         val fx = JSONObject(arquivo.readText())

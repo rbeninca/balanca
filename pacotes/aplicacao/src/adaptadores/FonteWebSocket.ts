@@ -63,6 +63,7 @@ const CFG_GATEWAY_PADRAO: EstadoPipeline = {
   fatorCalibracao:     1.0,
   deslocamentoTara:    0,
   tempoMinFimMs:       100,
+  filtroPrincipal:     'nenhum',
   ativoZonaMorta:      false,
   ativoMediaMovel:     false,
   ativoDetectorQueima: false,

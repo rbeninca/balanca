@@ -1,7 +1,40 @@
+import { flagsDoFiltroPrincipal, type EstadoPipeline, type PipelinePatch, type TipoFiltroPrincipal } from '@balancagfig/processamento';
+
 // Markup do painel "Processamento de Sinal" (controles dos filtros da medição).
 // Extraído como string pura para ser testável — os passos (step) dos campos
 // numéricos vivem aqui. O limiar da Zona Morta usa passo de 0.001 N (a célula
 // tem resolução fina; um passo grande atrapalhava o ajuste).
+// Os suavizadores (média móvel, EMA, Savitzky-Golay, Kalman) são um grupo de
+// radio `filtro-principal`: só um ativo por vez (Fase 2 do
+// PLANEJAMENTO-PROCESSAMENTO.MD). A reorganização em 3 blocos é a Fase 9.
+
+/** ids dos radios do filtro principal → valor enviado ao pipeline. */
+export const RADIOS_FILTRO_PRINCIPAL: ReadonlyArray<{ id: string; valor: TipoFiltroPrincipal }> = [
+  { id: 'rd-fp-nenhum',      valor: 'nenhum' },
+  { id: 'rd-fp-media-movel', valor: 'mediaMovel' },
+  { id: 'rd-fp-ema',         valor: 'ema' },
+  { id: 'rd-fp-sg',          valor: 'savitzkyGolay' },
+  { id: 'rd-fp-kalman',      valor: 'kalman' },
+];
+
+/** Filtro principal de um estado do pipeline, inclusive de gateways antigos que só mandam as flags. */
+export function filtroPrincipalDe(cfg: Partial<EstadoPipeline>): TipoFiltroPrincipal {
+  if (cfg.filtroPrincipal) return cfg.filtroPrincipal;
+  if (cfg.ativoKalman) return 'kalman';
+  if (cfg.ativoSG) return 'savitzkyGolay';
+  if (cfg.ativoEMA) return 'ema';
+  if (cfg.ativoMediaMovel) return 'mediaMovel';
+  return 'nenhum';
+}
+
+/**
+ * Patch enviado ao pipeline para o filtro escolhido: o campo novo e as quatro
+ * flags exclusivas, para funcionar também com um gateway anterior à Fase 2.
+ */
+export function patchFiltroPrincipal(tipo: TipoFiltroPrincipal): Pick<PipelinePatch, 'filtroPrincipal' | 'ativoMediaMovel' | 'ativoEMA' | 'ativoSG' | 'ativoKalman'> {
+  return { filtroPrincipal: tipo, ...flagsDoFiltroPrincipal(tipo) };
+}
+
 export function htmlPainelFiltros(): string {
   return `
         <div class="filtros-painel" id="filtros-painel">
@@ -24,9 +57,15 @@ export function htmlPainelFiltros(): string {
                 <button type="button" id="btn-sugerir-zm" class="filtro-sugerir" title="Sugerir a partir da capacidade e acurácia gravadas na ESP">sugerir</button>
               </div>
             </div>
+            <div class="filtro-linha filtro-principal-nenhum">
+              <label class="filtro-chk" title="Etapa 2 — filtro principal: só um suavizador por vez">
+                <input type="radio" name="filtro-principal" id="rd-fp-nenhum" value="nenhum" checked>
+                Sem suavização
+              </label>
+            </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-media-movel">
+                <input type="radio" name="filtro-principal" id="rd-fp-media-movel" value="mediaMovel">
                 Média Móvel
               </label>
               <button class="filtro-info-btn" data-filtro="media-movel" type="button" title="Saiba mais">ℹ</button>
@@ -70,7 +109,7 @@ export function htmlPainelFiltros(): string {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-ema">
+                <input type="radio" name="filtro-principal" id="rd-fp-ema" value="ema">
                 EMA
               </label>
               <button class="filtro-info-btn" data-filtro="ema" type="button" title="Saiba mais">ℹ</button>
@@ -81,7 +120,7 @@ export function htmlPainelFiltros(): string {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-sg">
+                <input type="radio" name="filtro-principal" id="rd-fp-sg" value="savitzkyGolay">
                 Sav-Golay
               </label>
               <button class="filtro-info-btn" data-filtro="sg" type="button" title="Saiba mais">ℹ</button>
@@ -92,7 +131,7 @@ export function htmlPainelFiltros(): string {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
-                <input type="checkbox" id="ck-kalman">
+                <input type="radio" name="filtro-principal" id="rd-fp-kalman" value="kalman">
                 Kalman
               </label>
               <button class="filtro-info-btn" data-filtro="kalman" type="button" title="Saiba mais">ℹ</button>

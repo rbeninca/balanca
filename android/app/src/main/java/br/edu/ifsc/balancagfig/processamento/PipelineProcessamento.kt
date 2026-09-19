@@ -19,6 +19,9 @@ data class ConfiguracaoPipeline(
     var janelaSG: Int? = null,            // padrão 7
     var kalmanQ: Double? = null,          // padrão 0.01
     var kalmanR: Double? = null,          // padrão 1.0
+
+    /** Etapa 2: um só suavizador (padrão NENHUM). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
+    var filtroPrincipal: FiltroPrincipal = FiltroPrincipal.NENHUM,
 )
 
 /** Alteração parcial vinda do frontend (mensagem PIPELINE_CONFIG); null = não alterar. */
@@ -44,11 +47,14 @@ data class PipelinePatch(
     val ativoNotch: Boolean? = null,
     val ativoSG: Boolean? = null,
     val ativoKalman: Boolean? = null,
+    /** Vence as flags de suavizador quando presente (ver resolverFiltroPrincipal). */
+    val filtroPrincipal: FiltroPrincipal? = null,
 )
 
 /** Configuração + flags de ativação (mensagem PIPELINE_ESTADO). */
 data class EstadoPipeline(
     val config: ConfiguracaoPipeline,
+    val filtroPrincipal: FiltroPrincipal,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
     val ativoDetectorQueima: Boolean,
@@ -91,13 +97,11 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private val calculador = CalculadorImpulso()
 
     private var ativoZonaMorta = false
-    private var ativoMediaMovel = false
     private var ativoDetectorQueima = false
     private var ativoMediana = false
-    private var ativoEMA = false
     private var ativoNotch = false
-    private var ativoSG = false
-    private var ativoKalman = false
+    /** Etapa 2: só um suavizador (as flags antigas são derivadas dele). */
+    private var filtroPrincipal = config.filtroPrincipal
 
     /**
      * Três etapas, espelho do TS (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza →
@@ -120,14 +124,21 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         return forca
     }
 
-    /** Etapa 2 — filtro principal; encadeamento suportado até a Fase 2. */
-    private fun aplicarFiltroPrincipal(entrada: Double): Double {
-        var forca = entrada
-        if (ativoMediaMovel) forca = mediaMovel.aplicar(forca)
-        if (ativoEMA) forca = ema.aplicar(forca)
-        if (ativoSG) forca = sg.aplicar(forca)
-        if (ativoKalman) forca = kalman.aplicar(forca)
-        return forca
+    /** Etapa 2 — filtro principal: exatamente um suavizador (ou nenhum). */
+    private fun aplicarFiltroPrincipal(entrada: Double): Double = when (filtroPrincipal) {
+        FiltroPrincipal.MEDIA_MOVEL -> mediaMovel.aplicar(entrada)
+        FiltroPrincipal.EMA -> ema.aplicar(entrada)
+        FiltroPrincipal.SAVITZKY_GOLAY -> sg.aplicar(entrada)
+        FiltroPrincipal.KALMAN -> kalman.aplicar(entrada)
+        FiltroPrincipal.NENHUM -> entrada
+    }
+
+    private fun reiniciarFiltroPrincipal() = when (filtroPrincipal) {
+        FiltroPrincipal.MEDIA_MOVEL -> mediaMovel.reiniciar()
+        FiltroPrincipal.EMA -> ema.reiniciar()
+        FiltroPrincipal.SAVITZKY_GOLAY -> sg.reiniciar()
+        FiltroPrincipal.KALMAN -> kalman.reiniciar()
+        FiltroPrincipal.NENHUM -> Unit
     }
 
     /** Etapa 3 — tratamento: vazia até a Fase 6. */
@@ -142,7 +153,8 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
 
         val emQueima = if (ativoDetectorQueima) detector.atualizar(filtrada, pacote.marcaTemporal) else false
         val impulso = calculador.integrar(filtrada, pacote.marcaTemporal)
-        val algumFiltroNovo = ativoNotch || ativoMediana || ativoEMA || ativoSG || ativoKalman
+        val algumFiltroNovo = ativoNotch || ativoMediana ||
+            (filtroPrincipal != FiltroPrincipal.NENHUM && filtroPrincipal != FiltroPrincipal.MEDIA_MOVEL)
 
         return LeituraProcessada(
             marcaTemporal = pacote.marcaTemporal,
@@ -205,26 +217,37 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         // Flags de ativação — ao ligar um filtro, começa com estado limpo
         patch.ativoZonaMorta?.let { ativoZonaMorta = it }
         patch.ativoDetectorQueima?.let { if (it && !ativoDetectorQueima) detector.reiniciar(); ativoDetectorQueima = it }
-        patch.ativoMediaMovel?.let { if (it && !ativoMediaMovel) mediaMovel.reiniciar(); ativoMediaMovel = it }
         patch.ativoMediana?.let { if (it && !ativoMediana) mediana.reiniciar(); ativoMediana = it }
-        patch.ativoEMA?.let { if (it && !ativoEMA) ema.reiniciar(); ativoEMA = it }
         patch.ativoNotch?.let { if (it && !ativoNotch) notch.reiniciar(); ativoNotch = it }
-        patch.ativoSG?.let { if (it && !ativoSG) sg.reiniciar(); ativoSG = it }
-        patch.ativoKalman?.let { if (it && !ativoKalman) kalman.reiniciar(); ativoKalman = it }
+
+        // Etapa 2: `filtroPrincipal` explícito ou flags antigas → um só suavizador
+        val novo = resolverFiltroPrincipal(
+            filtroPrincipal, patch.filtroPrincipal,
+            FlagsSuavizadores(patch.ativoMediaMovel, patch.ativoEMA, patch.ativoSG, patch.ativoKalman),
+        )
+        if (novo != filtroPrincipal) {
+            filtroPrincipal = novo
+            config.filtroPrincipal = novo
+            reiniciarFiltroPrincipal()   // começa limpo, como as flags faziam ao ligar
+        }
     }
 
     @Synchronized
-    fun obterConfig(): EstadoPipeline = EstadoPipeline(
-        config = config.copy(),
-        ativoZonaMorta = ativoZonaMorta,
-        ativoMediaMovel = ativoMediaMovel,
-        ativoDetectorQueima = ativoDetectorQueima,
-        ativoMediana = ativoMediana,
-        ativoEMA = ativoEMA,
-        ativoNotch = ativoNotch,
-        ativoSG = ativoSG,
-        ativoKalman = ativoKalman,
-    )
+    fun obterConfig(): EstadoPipeline {
+        val flags = FlagsSuavizadores.de(filtroPrincipal)   // compat com clientes antigos
+        return EstadoPipeline(
+            config = config.copy(),
+            filtroPrincipal = filtroPrincipal,
+            ativoZonaMorta = ativoZonaMorta,
+            ativoMediaMovel = flags.ativoMediaMovel!!,
+            ativoDetectorQueima = ativoDetectorQueima,
+            ativoMediana = ativoMediana,
+            ativoEMA = flags.ativoEMA!!,
+            ativoNotch = ativoNotch,
+            ativoSG = flags.ativoSG!!,
+            ativoKalman = flags.ativoKalman!!,
+        )
+    }
 
     @Synchronized
     fun atualizarCalibracao(fator: Double, offset: Double) = calibrador.atualizar(fator, offset)

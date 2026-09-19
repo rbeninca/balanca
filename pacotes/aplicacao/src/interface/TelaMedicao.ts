@@ -4,7 +4,7 @@ import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorG
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-import { htmlPainelFiltros } from './filtrosPainel.js';
+import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal } from './filtrosPainel.js';
 import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
@@ -283,13 +283,11 @@ export class TelaMedicao {
     const inp = (id: string, v: number | undefined, fb: number) => { const el = c.querySelector<HTMLInputElement>(id); if (el) el.value = String(v ?? fb); };
 
     ck('#ck-zona-morta',  cfg.ativoZonaMorta);
-    ck('#ck-media-movel', cfg.ativoMediaMovel);
     ck('#ck-det-queima',  cfg.ativoDetectorQueima);
     ck('#ck-notch',       cfg.ativoNotch);
     ck('#ck-mediana',     cfg.ativoMediana);
-    ck('#ck-ema',         cfg.ativoEMA);
-    ck('#ck-sg',          cfg.ativoSG);
-    ck('#ck-kalman',      cfg.ativoKalman);
+    const principal = filtroPrincipalDe(cfg);
+    for (const r of RADIOS_FILTRO_PRINCIPAL) ck(`#${r.id}`, r.valor === principal);
 
     inp('#in-zona-morta',   cfg.limiarZonaMortaN,  0.05);
     inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
@@ -340,12 +338,14 @@ export class TelaMedicao {
       Math.max(0, +(container.querySelector<HTMLInputElement>(id)!.value) || fb);
     const chk = (id: string) =>
       container.querySelector<HTMLInputElement>(id)!.checked;
+    const principalEscolhido = () =>
+      RADIOS_FILTRO_PRINCIPAL.find(r => chk(`#${r.id}`))?.valor ?? 'nenhum';
 
     const aplicar = () => {
       const patch: PipelinePatch = {
         ativoZonaMorta:      chk('#ck-zona-morta'),
         limiarZonaMortaN:    num('#in-zona-morta', 0.05),
-        ativoMediaMovel:     chk('#ck-media-movel'),
+        ...patchFiltroPrincipal(principalEscolhido()),
         janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
         ativoDetectorQueima: chk('#ck-det-queima'),
         tempoMinFimMs:       num('#in-det-hister', 100),
@@ -353,11 +353,8 @@ export class TelaMedicao {
         freqNotchHz:         Math.max(1, num('#in-notch-freq', 60)),
         ativoMediana:        chk('#ck-mediana'),
         janelaMediana:       Math.max(1, num('#in-mediana-jan', 5)),
-        ativoEMA:            chk('#ck-ema'),
         alphaEMA:            Math.min(1, Math.max(0.001, num('#in-ema-alpha', 0.2))),
-        ativoSG:             chk('#ck-sg'),
         janelaSG:            Math.max(5, num('#in-sg-jan', 7)),
-        ativoKalman:         chk('#ck-kalman'),
         kalmanQ:             Math.max(0.0001, num('#in-kalman-q', 0.01)),
         kalmanR:             Math.max(0.01,   num('#in-kalman-r', 1.0)),
       };
@@ -366,8 +363,8 @@ export class TelaMedicao {
       this.atualizarBotaoSinalBruto(patch);
     };
 
-    ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
-     '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'].forEach(id =>
+    ['#ck-zona-morta', '#ck-det-queima', '#ck-notch', '#ck-mediana',
+     ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
     ['#in-zona-morta','#in-media-movel','#in-det-hister',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
@@ -399,16 +396,17 @@ export class TelaMedicao {
   private atualizarBadgeFiltros(container: HTMLElement) {
     const badge = container.querySelector<HTMLElement>('#filtros-badge');
     if (!badge) return;
-    const ids = ['#ck-zona-morta','#ck-media-movel','#ck-det-queima',
-                 '#ck-notch','#ck-mediana','#ck-ema','#ck-sg','#ck-kalman'];
-    const total  = ids.length;
-    const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length;
+    const ids = ['#ck-zona-morta', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
+    const total  = ids.length + 1;   // + o filtro principal (um só)
+    const principal = RADIOS_FILTRO_PRINCIPAL.some(r => r.valor !== 'nenhum' && container.querySelector<HTMLInputElement>(`#${r.id}`)?.checked);
+    const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length + (principal ? 1 : 0);
     badge.textContent = ativos === total ? `${total} ativos` : ativos === 0 ? 'inativo' : `${ativos}/${total} ativos`;
     badge.className   = 'filtros-badge' + (ativos === total ? '' : ativos === 0 ? ' inativo' : ' parcial');
   }
 
   private atualizarBotaoSinalBruto(patch: PipelinePatch) {
-    const algumNovo = patch.ativoNotch || patch.ativoMediana || patch.ativoEMA || patch.ativoSG || patch.ativoKalman;
+    const fp = patch.filtroPrincipal ?? 'nenhum';
+    const algumNovo = patch.ativoNotch || patch.ativoMediana || (fp !== 'nenhum' && fp !== 'mediaMovel');
     if (this.elBtnSinalBruto) {
       this.elBtnSinalBruto.disabled = !algumNovo;
       if (!algumNovo) {

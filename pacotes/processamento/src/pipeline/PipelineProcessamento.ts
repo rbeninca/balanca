@@ -10,7 +10,12 @@ import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
 import { DetectorQueima }    from '../analise/DetectorQueima.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
+import { resolverFiltroPrincipal, flagsDoFiltroPrincipal, type TipoFiltroPrincipal } from './filtroPrincipal.js';
 
+// Reexportado aqui porque o vitest do pacote aplicacao resolve '@balancagfig/processamento' neste arquivo
+export { resolverFiltroPrincipal, flagsDoFiltroPrincipal, ehFiltroPrincipal, FILTROS_PRINCIPAIS, type TipoFiltroPrincipal } from './filtroPrincipal.js';
+
+/** `filtroPrincipal` vence; as flags ativoMediaMovel/EMA/SG/Kalman seguem aceitas (ver resolverFiltroPrincipal). */
 export type PipelinePatch = Partial<ConfiguracaoPipeline> & {
   ativoZonaMorta?:      boolean;
   ativoMediaMovel?:     boolean;
@@ -31,6 +36,7 @@ export interface SinaisPipeline {
 }
 
 export type EstadoPipeline = ConfiguracaoPipeline & {
+  filtroPrincipal:     TipoFiltroPrincipal;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
   ativoDetectorQueima: boolean;
@@ -54,15 +60,14 @@ export class PipelineProcessamento {
   private calculador:  CalculadorImpulso;
 
   private ativoZonaMorta      = false;
-  private ativoMediaMovel     = false;
   private ativoDetectorQueima = false;
   private ativoMediana        = false;
-  private ativoEMA            = false;
   private ativoNotch          = false;
-  private ativoSG             = false;
-  private ativoKalman         = false;
+  /** Etapa 2: só um suavizador (as flags antigas são derivadas dele). */
+  private filtroPrincipal: TipoFiltroPrincipal = 'nenhum';
 
   constructor(private config: ConfiguracaoPipeline) {
+    this.filtroPrincipal = config.filtroPrincipal ?? 'nenhum';
     this.calibrador = new Calibrador(config.fatorCalibracao, config.deslocamentoTara);
     this.zonaMorta  = new ZonaMorta(config.limiarZonaMortaN);
     this.mediaMovel = new MediaMovel(config.janelaMediaMovel);
@@ -97,16 +102,19 @@ export class PipelineProcessamento {
     return forca;
   }
 
-  /**
-   * Etapa 2 — filtro principal (suavização). A interface liga só um; o
-   * encadeamento continua suportado até a Fase 2 (seleção exclusiva).
-   */
+  /** Etapa 2 — filtro principal: exatamente um suavizador (ou nenhum). */
   private aplicarFiltroPrincipal(forca: number): number {
-    if (this.ativoMediaMovel) forca = this.mediaMovel.aplicar(forca);
-    if (this.ativoEMA)        forca = this.ema.aplicar(forca);
-    if (this.ativoSG)         forca = this.sg.aplicar(forca);
-    if (this.ativoKalman)     forca = this.kalman.aplicar(forca);
-    return forca;
+    switch (this.filtroPrincipal) {
+      case 'mediaMovel':    return this.mediaMovel.aplicar(forca);
+      case 'ema':           return this.ema.aplicar(forca);
+      case 'savitzkyGolay': return this.sg.aplicar(forca);
+      case 'kalman':        return this.kalman.aplicar(forca);
+      default:              return forca;
+    }
+  }
+
+  private get algumFiltroNovo(): boolean {
+    return this.ativoNotch || this.ativoMediana || (this.filtroPrincipal !== 'nenhum' && this.filtroPrincipal !== 'mediaMovel');
   }
 
   /** Etapa 3 — tratamento (zona morta, zero tracking…): vazia até a Fase 6. */
@@ -122,7 +130,7 @@ export class PipelineProcessamento {
       : false;
     const impulsoAcumuladoNs = this.calculador.integrar(filtrada, pacote.marcaTemporal);
 
-    const algumFiltroNovo = this.ativoNotch || this.ativoMediana || this.ativoEMA || this.ativoSG || this.ativoKalman;
+    const algumFiltroNovo = this.algumFiltroNovo;
 
     return {
       marcaTemporal:     pacote.marcaTemporal,
@@ -143,7 +151,7 @@ export class PipelineProcessamento {
       : l.emQueima;
     const impulsoAcumuladoNs = this.calculador.integrar(filtrada, l.marcaTemporal);
 
-    const algumFiltroNovo = this.ativoNotch || this.ativoMediana || this.ativoEMA || this.ativoSG || this.ativoKalman;
+    const algumFiltroNovo = this.algumFiltroNovo;
 
     return {
       ...l,
@@ -206,43 +214,42 @@ export class PipelineProcessamento {
       if (patch.ativoDetectorQueima && !this.ativoDetectorQueima) this.detector.reiniciar();
       this.ativoDetectorQueima = patch.ativoDetectorQueima;
     }
-    if (patch.ativoMediaMovel != null) {
-      if (patch.ativoMediaMovel && !this.ativoMediaMovel) this.mediaMovel.reiniciar();
-      this.ativoMediaMovel = patch.ativoMediaMovel;
-    }
     if (patch.ativoMediana != null) {
       if (patch.ativoMediana && !this.ativoMediana) this.mediana.reiniciar();
       this.ativoMediana = patch.ativoMediana;
-    }
-    if (patch.ativoEMA != null) {
-      if (patch.ativoEMA && !this.ativoEMA) this.ema.reiniciar();
-      this.ativoEMA = patch.ativoEMA;
     }
     if (patch.ativoNotch != null) {
       if (patch.ativoNotch && !this.ativoNotch) this.notch.reiniciar();
       this.ativoNotch = patch.ativoNotch;
     }
-    if (patch.ativoSG != null) {
-      if (patch.ativoSG && !this.ativoSG) this.sg.reiniciar();
-      this.ativoSG = patch.ativoSG;
+
+    // Etapa 2: `filtroPrincipal` explícito ou flags antigas → um só suavizador
+    const novo = resolverFiltroPrincipal(this.filtroPrincipal, patch);
+    if (novo !== this.filtroPrincipal) {
+      this.filtroPrincipal = novo;
+      this.config.filtroPrincipal = novo;
+      this.reiniciarFiltroPrincipal();   // começa limpo, como as flags faziam ao ligar
     }
-    if (patch.ativoKalman != null) {
-      if (patch.ativoKalman && !this.ativoKalman) this.kalman.reiniciar();
-      this.ativoKalman = patch.ativoKalman;
+  }
+
+  private reiniciarFiltroPrincipal(): void {
+    switch (this.filtroPrincipal) {
+      case 'mediaMovel':    this.mediaMovel.reiniciar(); break;
+      case 'ema':           this.ema.reiniciar(); break;
+      case 'savitzkyGolay': this.sg.reiniciar(); break;
+      case 'kalman':        this.kalman.reiniciar(); break;
     }
   }
 
   obterConfig(): EstadoPipeline {
     return {
       ...this.config,
+      filtroPrincipal:     this.filtroPrincipal,
       ativoZonaMorta:      this.ativoZonaMorta,
-      ativoMediaMovel:     this.ativoMediaMovel,
       ativoDetectorQueima: this.ativoDetectorQueima,
       ativoMediana:        this.ativoMediana,
-      ativoEMA:            this.ativoEMA,
       ativoNotch:          this.ativoNotch,
-      ativoSG:             this.ativoSG,
-      ativoKalman:         this.ativoKalman,
+      ...flagsDoFiltroPrincipal(this.filtroPrincipal),   // compat com clientes antigos
     };
   }
 

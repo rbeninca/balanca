@@ -15,3 +15,29 @@ describe('htmlPainelFiltros', () => {
     }
   });
 });
+
+import { RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal } from '../../src/interface/filtrosPainel.js';
+
+describe('filtro principal no painel (Fase 2)', () => {
+  const html = htmlPainelFiltros();
+
+  it('os suavizadores são um grupo de radio com "nenhum" marcado por padrão', () => {
+    for (const r of RADIOS_FILTRO_PRINCIPAL) {
+      expect(html).toMatch(new RegExp(`<input type="radio" name="filtro-principal" id="${r.id}" value="${r.valor}"`));
+    }
+    expect(html).toMatch(/id="rd-fp-nenhum" value="nenhum" checked/);
+    expect(html).not.toContain('id="ck-ema"');
+  });
+
+  it('filtroPrincipalDe entende o campo novo e as flags de gateways antigos', () => {
+    expect(filtroPrincipalDe({ filtroPrincipal: 'ema', ativoKalman: true })).toBe('ema');
+    expect(filtroPrincipalDe({ ativoSG: true })).toBe('savitzkyGolay');
+    expect(filtroPrincipalDe({ ativoMediaMovel: true, ativoEMA: true })).toBe('ema');
+    expect(filtroPrincipalDe({})).toBe('nenhum');
+  });
+
+  it('patchFiltroPrincipal manda o campo novo e as flags exclusivas', () => {
+    expect(patchFiltroPrincipal('kalman')).toEqual({ filtroPrincipal: 'kalman', ativoMediaMovel: false, ativoEMA: false, ativoSG: false, ativoKalman: true });
+    expect(patchFiltroPrincipal('nenhum')).toEqual({ filtroPrincipal: 'nenhum', ativoMediaMovel: false, ativoEMA: false, ativoSG: false, ativoKalman: false });
+  });
+});
