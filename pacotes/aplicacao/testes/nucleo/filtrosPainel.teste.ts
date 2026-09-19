@@ -104,3 +104,53 @@ describe('zero tracking no painel (Fase 8)', () => {
     for (const id of ['ck-zero-tracking', 'in-zt-limiar', 'in-zt-tempo', 'in-zt-alpha', 'zt-offset']) expect(html).toContain(`id="${id}"`);
   });
 });
+
+import { descreverPipeline, atrasoFiltroPrincipal, textoAtraso } from '../../src/interface/filtrosPainel.js';
+
+describe('painel em três blocos (Fase 9)', () => {
+  const html = htmlPainelFiltros();
+
+  it('tem os blocos 1. Limpeza, 2. Filtro principal e 3. Tratamento, nessa ordem', () => {
+    const b1 = html.indexOf('data-etapa="1"'), b2 = html.indexOf('data-etapa="2"'), b3 = html.indexOf('data-etapa="3"');
+    expect(b1).toBeGreaterThan(0); expect(b2).toBeGreaterThan(b1); expect(b3).toBeGreaterThan(b2);
+    // cada controle no bloco certo
+    const entre = (id: string, ini: number, fim: number) => { const p = html.indexOf(`id="${id}"`); return p > ini && (fim < 0 || p < fim); };
+    expect(entre('ck-hampel', b1, b2) && entre('ck-mediana', b1, b2) && entre('ck-notch', b1, b2)).toBe(true);
+    expect(entre('rd-fp-butterworth', b2, b3) && entre('in-kalman-q', b2, b3)).toBe(true);
+    expect(entre('ck-zero-tracking', b3, -1) && entre('ck-zona-morta', b3, -1) && entre('ck-det-queima', b3, -1) && entre('sel-impulso', b3, -1)).toBe(true);
+    expect(html).toContain('id="pipeline-atual"');
+    expect(html).toContain('id="fp-atraso"');
+  });
+
+  it('todos os ids dos controles continuam existindo (a TelaMedicao depende deles)', () => {
+    for (const id of ['in-zona-morta', 'btn-sugerir-zm', 'in-media-movel', 'in-det-hister', 'in-notch-freq', 'in-mediana-jan', 'in-ema-alpha', 'in-sg-jan', 'in-kalman-q', 'in-kalman-r', 'fs-estimada', 'bw-nyquist', 'zt-offset']) {
+      expect(html).toContain(`id="${id}"`);
+    }
+  });
+});
+
+describe('descreverPipeline e atraso (Fase 9)', () => {
+  it('tudo desligado: BRUTO → SAÍDA', () => {
+    expect(descreverPipeline({})).toEqual(['BRUTO', 'SAÍDA']);
+  });
+
+  it('lista os estágios ativos na ordem real do pipeline', () => {
+    expect(descreverPipeline({
+      ativoHampel: true, janelaHampel: 7, limiarHampelSigma: 3, ativoNotch: true, freqNotchHz: 60,
+      filtroPrincipal: 'butterworth', frequenciaCorteHz: 10, ativoZeroTracking: true, ativoZonaMorta: true, limiarZonaMortaN: 0.05,
+      ativoDetectorQueima: true,
+    })).toEqual(['BRUTO', 'Hampel 7/3.0σ', 'Notch 60 Hz', 'Butterworth 10.0 Hz', 'Zero tracking', 'Zona morta 0.050 N', 'SAÍDA', '→ Detector']);
+    expect(descreverPipeline({ filtroPrincipal: 'butterworth', butterworthValido: false })[1]).toContain('(ignorado)');
+    expect(descreverPipeline({ ativoSG: true, janelaSG: 9 })).toEqual(['BRUTO', 'Sav-Golay 9', 'SAÍDA']);   // flags antigas
+  });
+
+  it('atraso: (N−1)/2 para média móvel e SG; variável para IIR; nada sem suavizador', () => {
+    expect(atrasoFiltroPrincipal({ filtroPrincipal: 'mediaMovel', janelaMediaMovel: 5 })).toBe(2);
+    expect(atrasoFiltroPrincipal({ filtroPrincipal: 'savitzkyGolay', janelaSG: 7 })).toBe(3);
+    expect(atrasoFiltroPrincipal({ filtroPrincipal: 'ema' })).toBe('variável');
+    expect(atrasoFiltroPrincipal({ filtroPrincipal: 'nenhum' })).toBeNull();
+    expect(textoAtraso({ filtroPrincipal: 'mediaMovel', janelaMediaMovel: 5 })).toBe('atraso ≈ 2 am');
+    expect(textoAtraso({ filtroPrincipal: 'kalman' })).toBe('atraso variável');
+    expect(textoAtraso({})).toBe('');
+  });
+});

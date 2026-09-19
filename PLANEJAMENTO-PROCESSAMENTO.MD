@@ -159,6 +159,16 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   painel (`zeroTrackingOffsetN`), publicado junto com o batimento quando muda
   ≥ 1 mN. Golden `zero-tracking` novo, demais idênticos.
 
+- Fase 9 ✔ (frontend): painel em três blocos — 1. Limpeza (Hampel, Mediana,
+  Notch + Fs), 2. Filtro principal (radio; "atraso ≈ 2 am" / "atraso
+  variável"), 3. Tratamento (Zero tracking, Zona morta + sugerir, Detector de
+  evento, Impulso de). Linha "Pipeline atual" (`descreverPipeline`) mostra
+  os estágios ativos na ordem real: `BRUTO → Hampel 7/3σ → Notch 60 Hz →
+  Butterworth 10 Hz → Zona morta 0,050 N → SAÍDA → Detector`, atualizada a
+  cada mudança. `atrasoFiltroPrincipal`: (N−1)/2 para média móvel e SG,
+  'variável' para os IIR — registrado, sem compensação automática. Mesmos ids
+  dos controles (teste garante).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

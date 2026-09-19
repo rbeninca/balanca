@@ -4,7 +4,7 @@ import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorG
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth } from './filtrosPainel.js';
+import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth, descreverPipeline, textoAtraso } from './filtrosPainel.js';
 import { sugerirZonaMortaN, sugerirLimiaresDetector, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
@@ -315,6 +315,7 @@ export class TelaMedicao {
     inp('#in-zt-alpha',     cfg.zeroTrackingAlpha,   0.01);
     const off = c.querySelector<HTMLElement>('#zt-offset');
     if (off) off.textContent = `offset ${(cfg.zeroTrackingOffsetN ?? 0).toFixed(4)} N`;
+    this.mostrarPipeline(c, cfg);
     const selImpulso = c.querySelector<HTMLSelectElement>('#sel-impulso');
     if (selImpulso) selImpulso.value = cfg.fonteCalculoImpulso ?? 'final';
     const bw = situacaoButterworth(cfg);
@@ -401,6 +402,7 @@ export class TelaMedicao {
       this.fonte.atualizarConfigPipeline?.(patch);
       this.atualizarBadgeFiltros(container);
       this.atualizarBotaoSinalBruto(patch);
+      this.mostrarPipeline(container, { ...this.fonte.obterConfigPipeline?.(), ...patch });
     };
 
     ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana',
@@ -440,6 +442,19 @@ export class TelaMedicao {
     this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
 
     this.atualizarBadgeFiltros(container);
+  }
+
+  /** "BRUTO → Hampel → … → SAÍDA" e o atraso do filtro principal, sempre que a configuração muda. */
+  private mostrarPipeline(container: HTMLElement, cfg: Partial<EstadoPipeline>) {
+    const el = container.querySelector<HTMLElement>('#pipeline-atual');
+    if (el) {
+      el.innerHTML = descreverPipeline(cfg).map((e, i, a) => {
+        const cls = e === 'BRUTO' || e === 'SAÍDA' ? 'pipeline-ponta' : e.startsWith('→') ? 'pipeline-ramo' : 'pipeline-estagio';
+        return `<span class="${cls}">${e}</span>${i < a.length - 1 && !a[i + 1]!.startsWith('→') ? '<span class="pipeline-seta">→</span>' : ''}`;
+      }).join('');
+    }
+    const atraso = container.querySelector<HTMLElement>('#fp-atraso');
+    if (atraso) atraso.textContent = textoAtraso(cfg);
   }
 
   private atualizarBadgeFiltros(container: HTMLElement) {
