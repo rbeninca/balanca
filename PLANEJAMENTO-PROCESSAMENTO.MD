@@ -67,6 +67,15 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
 9. "Sugerir" passa a sugerir também os limiares do detector (entrada ≈ 4× e
    saída ≈ 2× o piso de ruído).
 
+## Andamento
+
+- Fase 0 ✔ (`408b50d`): 9 golden files; Kotlin coincide com o TS até 1e-12.
+- Fase 1 ✔: `aplicarLimpeza` / `aplicarFiltroPrincipal` / `aplicarTratamento`
+  nos dois lados, `SinaisPipeline {bruta, limpa, suavizada, filtrada}` interno.
+  A zona morta ainda roda entre a limpeza e o principal (legado até a Fase 6)
+  e a limpeza mantém `Notch → Mediana`; a ordem `Hampel → Mediana → Notch` da
+  proposta é decidida na Fase 4 (trocar Mediana/Notch muda resultado).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

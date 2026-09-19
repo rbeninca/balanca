@@ -22,6 +22,14 @@ export type PipelinePatch = Partial<ConfiguracaoPipeline> & {
   ativoKalman?:         boolean;
 };
 
+/** Sinal em cada ponto do pipeline (uso interno; só `filtrada` e `bruta` saem na LeituraProcessada). */
+export interface SinaisPipeline {
+  bruta:     number;   // como veio da ESP
+  limpa:     number;   // após a etapa 1 (limpeza)
+  suavizada: number;   // após a etapa 2 (filtro principal)
+  filtrada:  number;   // após a etapa 3 (tratamento) — o que o usuário vê
+}
+
 export type EstadoPipeline = ConfiguracaoPipeline & {
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
@@ -67,23 +75,43 @@ export class PipelineProcessamento {
     this.calculador = new CalculadorImpulso();
   }
 
-  private aplicarFiltros(forca: number): { filtrada: number; bruta: number } {
+  /**
+   * Três etapas (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza → filtro
+   * principal → tratamento. A ordem numérica é a mesma de sempre; a zona
+   * morta ainda roda entre a limpeza e o filtro principal (posição legada —
+   * migra para o tratamento na Fase 6, com golden files regravados).
+   */
+  private aplicarFiltros(forca: number): SinaisPipeline {
     const bruta = forca;
+    const limpa = this.aplicarLimpeza(bruta);
+    const zonada = this.ativoZonaMorta ? this.zonaMorta.aplicar(limpa) : limpa;   // legado (Fase 6)
+    const suavizada = this.aplicarFiltroPrincipal(zonada);
+    const filtrada = this.aplicarTratamento(suavizada);
+    return { bruta, limpa, suavizada, filtrada };
+  }
 
-    // Pré-processamento: remove ruído antes da zona morta
+  /** Etapa 1 — limpeza: remove interferências antes de suavizar (combináveis). */
+  private aplicarLimpeza(forca: number): number {
     if (this.ativoNotch)   forca = this.notch.aplicar(forca);
     if (this.ativoMediana) forca = this.mediana.aplicar(forca);
+    return forca;
+  }
 
-    if (this.ativoZonaMorta) forca = this.zonaMorta.aplicar(forca);
-
-    // Suavização: apenas um dos quatro deve estar ativo ao mesmo tempo,
-    // mas o pipeline suporta encadeamento caso o usuário ative mais de um.
+  /**
+   * Etapa 2 — filtro principal (suavização). A interface liga só um; o
+   * encadeamento continua suportado até a Fase 2 (seleção exclusiva).
+   */
+  private aplicarFiltroPrincipal(forca: number): number {
     if (this.ativoMediaMovel) forca = this.mediaMovel.aplicar(forca);
     if (this.ativoEMA)        forca = this.ema.aplicar(forca);
     if (this.ativoSG)         forca = this.sg.aplicar(forca);
     if (this.ativoKalman)     forca = this.kalman.aplicar(forca);
+    return forca;
+  }
 
-    return { filtrada: forca, bruta };
+  /** Etapa 3 — tratamento (zona morta, zero tracking…): vazia até a Fase 6. */
+  private aplicarTratamento(forca: number): number {
+    return forca;
   }
 
   processar(pacote: PacoteDados): LeituraProcessada {

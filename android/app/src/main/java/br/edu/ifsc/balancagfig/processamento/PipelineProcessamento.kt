@@ -59,6 +59,9 @@ data class EstadoPipeline(
     val ativoKalman: Boolean,
 )
 
+/** Sinal em cada ponto do pipeline (uso interno; só filtrada e bruta saem na LeituraProcessada). */
+data class SinaisPipeline(val bruta: Double, val limpa: Double, val suavizada: Double, val filtrada: Double)
+
 /** Saída do pipeline por amostra (mensagem LEITURA). */
 data class LeituraProcessada(
     val marcaTemporal: Long,
@@ -96,28 +99,46 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private var ativoSG = false
     private var ativoKalman = false
 
-    private fun aplicarFiltros(entrada: Double): Pair<Double, Double> {
-        var forca = entrada
+    /**
+     * Três etapas, espelho do TS (ver PLANEJAMENTO-PROCESSAMENTO.MD): limpeza →
+     * filtro principal → tratamento. Ordem numérica igual à de sempre; a zona
+     * morta ainda roda entre a limpeza e o principal (legado, migra na Fase 6).
+     */
+    private fun aplicarFiltros(entrada: Double): SinaisPipeline {
+        val limpa = aplicarLimpeza(entrada)
+        val zonada = if (ativoZonaMorta) zonaMorta.aplicar(limpa) else limpa   // legado (Fase 6)
+        val suavizada = aplicarFiltroPrincipal(zonada)
+        val filtrada = aplicarTratamento(suavizada)
+        return SinaisPipeline(bruta = entrada, limpa = limpa, suavizada = suavizada, filtrada = filtrada)
+    }
 
-        // Pré-processamento: remove ruído antes da zona morta
+    /** Etapa 1 — limpeza (combináveis). */
+    private fun aplicarLimpeza(entrada: Double): Double {
+        var forca = entrada
         if (ativoNotch) forca = notch.aplicar(forca)
         if (ativoMediana) forca = mediana.aplicar(forca)
+        return forca
+    }
 
-        if (ativoZonaMorta) forca = zonaMorta.aplicar(forca)
-
-        // Suavização: normalmente só um ativo, mas o encadeamento é suportado
+    /** Etapa 2 — filtro principal; encadeamento suportado até a Fase 2. */
+    private fun aplicarFiltroPrincipal(entrada: Double): Double {
+        var forca = entrada
         if (ativoMediaMovel) forca = mediaMovel.aplicar(forca)
         if (ativoEMA) forca = ema.aplicar(forca)
         if (ativoSG) forca = sg.aplicar(forca)
         if (ativoKalman) forca = kalman.aplicar(forca)
-
-        return forca to entrada
+        return forca
     }
+
+    /** Etapa 3 — tratamento: vazia até a Fase 6. */
+    private fun aplicarTratamento(entrada: Double): Double = entrada
 
     @Synchronized
     fun processar(pacote: PacoteDados): LeituraProcessada {
         // Float → Double exato, como o DataView.getFloat32 do gateway Node
-        val (filtrada, bruta) = aplicarFiltros(pacote.forcaNewtons.toDouble())
+        val sinais = aplicarFiltros(pacote.forcaNewtons.toDouble())
+        val filtrada = sinais.filtrada
+        val bruta = sinais.bruta
 
         val emQueima = if (ativoDetectorQueima) detector.atualizar(filtrada, pacote.marcaTemporal) else false
         val impulso = calculador.integrar(filtrada, pacote.marcaTemporal)
