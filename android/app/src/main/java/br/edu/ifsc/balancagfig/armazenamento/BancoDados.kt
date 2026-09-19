@@ -57,6 +57,7 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
             generateSequence { if (c.moveToNext()) c.getString(c.getColumnIndexOrThrow("name")) else null }.toSet()
         }
         if ("detrend" !in colunasMeta) db.execSQL("ALTER TABLE metadados_sessao ADD COLUMN detrend TEXT")
+        if ("massa_total_g" !in colunasMeta) db.execSQL("ALTER TABLE metadados_sessao ADD COLUMN massa_total_g REAL")
     }
 
     // ─── Acesso genérico, espelhando executar/consultar/consultarUm ──────────

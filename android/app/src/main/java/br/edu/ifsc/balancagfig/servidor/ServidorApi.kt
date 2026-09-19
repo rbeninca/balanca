@@ -283,6 +283,7 @@ class ServidorApi(
         val existente = bd.consultarUm("SELECT id_sessao FROM metadados_sessao WHERE id_sessao = ?", id) != null
         val valores = arrayOf<Any?>(
             body.optDoubleOrNull("massa_propelente_g"),
+            body.optDoubleOrNull("massa_total_g"),
             body.optDoubleOrNull("diametro_mm"),
             body.optDoubleOrNull("comprimento_mm"),
             body.optStringOrNull("fabricante"),
@@ -292,14 +293,14 @@ class ServidorApi(
         )
         if (existente) {
             bd.executar(
-                """UPDATE metadados_sessao SET massa_propelente_g = ?, diametro_mm = ?, comprimento_mm = ?,
+                """UPDATE metadados_sessao SET massa_propelente_g = ?, massa_total_g = ?, diametro_mm = ?, comprimento_mm = ?,
                    fabricante = ?, descricao = ?, observacoes = ?, detrend = ? WHERE id_sessao = ?""",
                 *valores, id,
             )
         } else {
             bd.executar(
-                """INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes, detrend)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, massa_total_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes, detrend)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 id, *valores,
             )
         }

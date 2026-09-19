@@ -169,3 +169,19 @@ describe('detrend nos metadados (Fase 11)', () => {
     expect(JSON.parse((await app.inject({ method: 'GET', url: `/sessoes/${id}/metadados` })).body).detrend).toBeNull();
   });
 });
+
+describe('massa_total_g nos metadados (pendência)', () => {
+  let app: FastifyInstance;
+  beforeEach(async () => { app = criarApp({ caminhoBanco: ':memory:', chaveAPI: CHAVE }); await app.ready(); });
+  afterEach(async () => { await app.close(); });
+
+  it('é guardada e devolvida (antes era ignorada em silêncio)', async () => {
+    const h = { 'x-chave-api': CHAVE, 'content-type': 'application/json' };
+    const { id } = JSON.parse((await app.inject({ method: 'POST', url: '/sessoes', headers: h, body: JSON.stringify({ nome: 'M' }) })).body);
+    await app.inject({ method: 'POST', url: `/sessoes/${id}/metadados`, headers: h, body: JSON.stringify({ massa_propelente_g: 12.5, massa_total_g: 40.2 }) });
+    const m = JSON.parse((await app.inject({ method: 'GET', url: `/sessoes/${id}/metadados` })).body);
+    expect(m.massa_total_g).toBe(40.2);
+    await app.inject({ method: 'POST', url: `/sessoes/${id}/metadados`, headers: h, body: JSON.stringify({ massa_total_g: 41 }) });
+    expect(JSON.parse((await app.inject({ method: 'GET', url: `/sessoes/${id}/metadados` })).body).massa_total_g).toBe(41);
+  });
+});

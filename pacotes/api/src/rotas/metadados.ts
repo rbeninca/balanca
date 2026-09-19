@@ -4,6 +4,7 @@ import type { ContextoRotas } from './tipos.js';
 interface MetadadosSessao {
   id_sessao: string;
   massa_propelente_g: number | null;
+  massa_total_g: number | null;
   diametro_mm: number | null;
   comprimento_mm: number | null;
   fabricante: string | null;
@@ -42,11 +43,12 @@ export async function rotasMetadados(app: FastifyInstance, { db, verificarChave 
     if (existente) {
       db.executar(
         `UPDATE metadados_sessao SET
-          massa_propelente_g = ?, diametro_mm = ?, comprimento_mm = ?,
+          massa_propelente_g = ?, massa_total_g = ?, diametro_mm = ?, comprimento_mm = ?,
           fabricante = ?, descricao = ?, observacoes = ?, detrend = ?
          WHERE id_sessao = ?`,
         [
           body.massa_propelente_g ?? null,
+          body.massa_total_g ?? null,
           body.diametro_mm ?? null,
           body.comprimento_mm ?? null,
           body.fabricante ?? null,
@@ -58,11 +60,12 @@ export async function rotasMetadados(app: FastifyInstance, { db, verificarChave 
       );
     } else {
       db.executar(
-        `INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes, detrend)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO metadados_sessao (id_sessao, massa_propelente_g, massa_total_g, diametro_mm, comprimento_mm, fabricante, descricao, observacoes, detrend)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           req.params.id,
           body.massa_propelente_g ?? null,
+          body.massa_total_g ?? null,
           body.diametro_mm ?? null,
           body.comprimento_mm ?? null,
           body.fabricante ?? null,

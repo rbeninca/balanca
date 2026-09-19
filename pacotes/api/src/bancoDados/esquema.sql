@@ -31,6 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_leituras_sessao ON leituras(id_sessao);
 CREATE TABLE IF NOT EXISTS metadados_sessao (
   id_sessao          TEXT    PRIMARY KEY REFERENCES sessoes(id) ON DELETE CASCADE,
   massa_propelente_g REAL,
+  massa_total_g      REAL,
   diametro_mm        REAL,
   comprimento_mm     REAL,
   fabricante         TEXT,
