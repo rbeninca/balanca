@@ -198,13 +198,14 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   como estão. Biomecânica/vibração da proposta ficaram de fora por falta de
   valores definidos — entram quando houver um caso real.
 
-**Todas as 12 fases concluídas.** Pendências que sobraram do caminho:
-- Firmware: marcas de tempo com resolução de 10 ms (grosseiro a 83 Hz) e um
-  gap de 30–40 ms a cada 500 ms (display) — vale usar `micros()`/1000 e
-  atualizar o display fora do laço de leitura.
-- `massa_total_g` é enviado pelo frontend nos metadados mas não existe na
-  tabela (ignorado silenciosamente) — pré-existente.
-- Merge da branch em `main` e nova versão (2.4.0) com release.
+**Todas as 12 fases concluídas**, e as pendências do caminho resolvidas:
+- Firmware **V18** (`7ef0a91`): a quantização de 10/20 ms vinha do laço, que
+  só consultava a célula a cada 10 ms (as marcas eram `millis()`); agora
+  `is_ready()` a cada volta, marca no instante da amostra, I2C a 400 kHz e
+  OLED redesenhado a cada 1 s só quando o texto muda. No TX9: Δt 11/12 ms,
+  nenhum gap > 20 ms, taxa real 86,7 Hz (era 83,5 — amostras perdidas).
+- `massa_total_g` guardada nos metadados (coluna + migração, Node e Kotlin).
+- Merge em `main` e versão 2.4.0: ver `registro/log-modificacoes.md`.
 
 ## Fases
 
