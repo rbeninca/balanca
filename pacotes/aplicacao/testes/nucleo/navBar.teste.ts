@@ -16,10 +16,15 @@ describe('itensMenu (engrenagem)', () => {
     expect(porId['nav-creditos']!.disponivel).toBe(true);
   });
 
+  it('Calibração só com fonte conectada', () => {
+    expect(itensMenu({ ativo: 'conexao', onFirmware: noop }, false).find(i => i.id === 'nav-calibracao')!.disponivel).toBe(false);
+    expect(itensMenu({ ativo: 'sessoes', onFirmware: noop }, true).find(i => i.id === 'nav-calibracao')!.disponivel).toBe(true);
+  });
+
   it('agrupa em operação / box / ajuda, nessa ordem', () => {
-    const itens = itensMenu({ ativo: 'medicao', onConfiguracoes: noop, onJogos: noop, onFirmware: noop });
+    const itens = itensMenu({ ativo: 'medicao', onConfiguracoes: noop, onJogos: noop, onFirmware: noop }, true);
     expect(itens.map(i => `${i.grupo}:${i.label}`)).toEqual([
-      'operacao:Configurações', 'operacao:Jogos',
+      'operacao:Calibração', 'operacao:Configurações', 'operacao:Jogos',
       'box:Firmware', 'box:Atualização', 'box:Pendrive',
       'ajuda:Montagem', 'ajuda:Créditos',
     ]);

@@ -2,6 +2,7 @@ import { TelaCreditos } from './TelaCreditos.js';
 import { TelaEsquema } from './TelaEsquema.js';
 import { TelaPendrive } from './TelaPendrive.js';
 import { TelaAtualizacao } from './TelaAtualizacao.js';
+import { WizardCalibracao, type Fonte as FonteCalibracao } from './WizardCalibracao.js';
 import { resumir, type EstadoAtualizacaoApp } from './atualizacaoApp.js';
 import { estadoGateway, linhasClientes, type EstadoGatewayDados } from '../nucleo/EstadoGateway.js';
 
@@ -27,6 +28,10 @@ export interface NavProps {
  * Jogos, Firmware, Atualização, Pendrive, Montagem, Créditos).
  */
 
+/** Fonte conectada (para o assistente de calibração no menu); null quando desconectado. */
+let fonteCalibracao: FonteCalibracao | null = null;
+export function definirFonteCalibracao(fonte: FonteCalibracao | null): void { fonteCalibracao = fonte; }
+
 export interface ItemMenu {
   id: string;
   label: string;
@@ -38,8 +43,9 @@ export interface ItemMenu {
 }
 
 /** Itens da engrenagem, na ordem e agrupamento exibidos. */
-export function itensMenu(props: Pick<NavProps, 'ativo' | 'onConfiguracoes' | 'onJogos' | 'onFirmware'>): ItemMenu[] {
+export function itensMenu(props: Pick<NavProps, 'ativo' | 'onConfiguracoes' | 'onJogos' | 'onFirmware'>, temFonte = fonteCalibracao !== null): ItemMenu[] {
   return [
+    { id: 'nav-calibracao',  label: 'Calibração',    tipo: 'modal', disponivel: temFonte,                ativo: false,                           grupo: 'operacao' },
     { id: 'nav-config',      label: 'Configurações', tipo: 'tela',  disponivel: !!props.onConfiguracoes, ativo: props.ativo === 'configuracoes', grupo: 'operacao' },
     { id: 'nav-jogos',       label: 'Jogos',         tipo: 'tela',  disponivel: !!props.onJogos,         ativo: props.ativo === 'jogos',         grupo: 'operacao' },
     { id: 'nav-firmware',    label: 'Firmware',      tipo: 'tela',  disponivel: !!props.onFirmware,      ativo: props.ativo === 'firmware',      grupo: 'box' },
@@ -121,6 +127,7 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   bind('nav-firmware', props.onFirmware);
 
   const modais: Record<string, () => void> = {
+    'nav-calibracao':  () => { if (fonteCalibracao) new WizardCalibracao(fonteCalibracao, () => {}); },
     'nav-atualizacao': () => new TelaAtualizacao(),
     'nav-pendrive':    () => new TelaPendrive(),
     'nav-montagem':    () => new TelaEsquema(),

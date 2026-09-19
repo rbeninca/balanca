@@ -1,6 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 
-type Fonte = {
+export type Fonte = {
   on(evento: 'dados',  fn: (l: LeituraProcessada) => void): void;
   on(evento: string,   fn: (v: unknown) => void): void;
   enviarComando?(cmd: object): void;

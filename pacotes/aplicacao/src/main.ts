@@ -3,6 +3,7 @@ import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { ControladorGravacao } from './nucleo/ControladorGravacao.js';
 import { estadoGateway } from './nucleo/EstadoGateway.js';
+import { definirFonteCalibracao } from './interface/navBar.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaJogos } from './interface/TelaJogos.js';
@@ -27,6 +28,8 @@ let controlador: ControladorGravacao | null = null;
 function criarControlador(fonte: unknown): ControladorGravacao {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const c = new ControladorGravacao(fonte as any, new GerenciadorSessao(armazenamento), armazenamento);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  definirFonteCalibracao(fonte as any);   // "Calibração" na engrenagem, em qualquer tela
   // O chip da barra (👥 N) mostra os clientes do gateway em qualquer tela
   estadoGateway.limpar();
   c.aoMudar((e) => estadoGateway.definir({
@@ -336,6 +339,7 @@ function renderizar() {
       fonteAtual = null;
       enderecoAtual = null;
       controlador = null;
+      definirFonteCalibracao(null);
       estadoGateway.limpar();
       fontePonteAtual = null;
       atualizarStatusPonteJogos(false);
