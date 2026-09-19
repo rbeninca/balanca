@@ -4,7 +4,7 @@ import type { ControladorGravacao, EstadoGravacao } from '../nucleo/ControladorG
 import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal } from './filtrosPainel.js';
+import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth } from './filtrosPainel.js';
 import { sugerirZonaMortaN, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
@@ -303,6 +303,10 @@ export class TelaMedicao {
     inp('#in-notch-freq',   cfg.freqNotchHz,       60);
     inp('#in-hampel-jan',   cfg.janelaHampel,      7);
     inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
+    inp('#in-bw-corte',     cfg.frequenciaCorteHz, 10);
+    const bw = situacaoButterworth(cfg);
+    const ny = c.querySelector<HTMLElement>('#bw-nyquist'); if (ny) ny.textContent = bw.nyquist;
+    c.querySelector<HTMLElement>('#bw-aviso')?.classList.toggle('hidden', !(bw.invalido && principal === 'butterworth'));
     inp('#in-mediana-jan',  cfg.janelaMediana,     5);
     inp('#in-ema-alpha',    cfg.alphaEMA,          0.2);
     inp('#in-sg-jan',       cfg.janelaSG,          7);
@@ -359,6 +363,7 @@ export class TelaMedicao {
         janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
         ativoDetectorQueima: chk('#ck-det-queima'),
         tempoMinFimMs:       num('#in-det-hister', 100),
+        frequenciaCorteHz:   Math.max(0.1, num('#in-bw-corte', 10)),
         ativoHampel:         chk('#ck-hampel'),
         janelaHampel:        janelaImpar(num('#in-hampel-jan', 7)),
         limiarHampelSigma:   Math.max(0.5, num('#in-hampel-k', 3)),
@@ -379,7 +384,7 @@ export class TelaMedicao {
     ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k',
+    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k', '#in-bw-corte',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -1019,6 +1024,16 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
       refs: [
         { texto: 'Wikipedia — Hampel filter (Median absolute deviation)', url: 'https://en.wikipedia.org/wiki/Median_absolute_deviation' },
         { texto: 'Pearson, R. K. — Outliers in process modeling and identification (1999)', url: 'https://doi.org/10.1109/87.748144' },
+      ],
+    },
+    'butterworth': {
+      nome: 'Butterworth passa-baixa (2ª ordem)',
+      oque: 'Deixa passar as componentes lentas do sinal e atenua as rápidas acima da frequência de corte, com a resposta mais plana possível na banda passante (sem ondulação). −3 dB no corte e −12 dB por oitava acima.',
+      como: 'Filtro IIR biquad com Q = 1/√2, coeficientes calculados para a taxa de amostragem real (medida pelas marcas de tempo) e recalculados quando ela muda. Exige corte < Fs/2 (Nyquist) — acima disso o filtro é ignorado e o painel avisa. Quando usar: para eliminar oscilações acima de uma frequência conhecida mantendo a forma da curva de empuxo (ex.: corte em 10–20 Hz para um motor de queima de 1–3 s). Quando não usar: quando picos muito rápidos forem o fenômeno estudado (impacto) — o filtro os achata e atrasa.',
+      svg: _svg(ema_e, ema_s),
+      refs: [
+        { texto: 'Wikipedia — Butterworth filter', url: 'https://en.wikipedia.org/wiki/Butterworth_filter' },
+        { texto: 'Audio EQ Cookbook — LPF biquad', url: 'https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html' },
       ],
     },
     'notch': {

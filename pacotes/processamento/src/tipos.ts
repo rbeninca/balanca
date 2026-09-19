@@ -20,6 +20,9 @@ export interface ConfiguracaoPipeline {
   /** Etapa 2: um só suavizador (padrão 'nenhum'). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
   filtroPrincipal?:  TipoFiltroPrincipal;
 
+  // Etapa 2 — Butterworth passa-baixa (filtroPrincipal = 'butterworth')
+  frequenciaCorteHz?:  number;   // Hz, exige 0 < fc < Fs/2 (padrão 10)
+
   // Etapa 1 — Hampel (remoção de spikes), desativado por padrão
   janelaHampel?:       number;   // amostras, ímpar (padrão 7)
   limiarHampelSigma?:  number;   // K em múltiplos de σ (padrão 3)

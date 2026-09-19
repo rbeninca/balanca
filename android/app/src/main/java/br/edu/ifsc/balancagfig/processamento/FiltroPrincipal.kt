@@ -5,7 +5,7 @@ package br.edu.ifsc.balancagfig.processamento
  * pacotes/processamento/src/pipeline/filtroPrincipal.ts.
  */
 enum class FiltroPrincipal(val valor: String) {
-    NENHUM("nenhum"), MEDIA_MOVEL("mediaMovel"), EMA("ema"), SAVITZKY_GOLAY("savitzkyGolay"), KALMAN("kalman");
+    NENHUM("nenhum"), MEDIA_MOVEL("mediaMovel"), EMA("ema"), BUTTERWORTH("butterworth"), SAVITZKY_GOLAY("savitzkyGolay"), KALMAN("kalman");
 
     companion object {
         fun deValor(v: String?): FiltroPrincipal? = entries.firstOrNull { it.valor == v }
@@ -20,7 +20,7 @@ data class FlagsSuavizadores(
     val ativoKalman: Boolean? = null,
 ) {
     companion object {
-        /** Flags equivalentes ao filtro escolhido (compat com mensagens antigas). */
+        /** Flags equivalentes ao filtro escolhido (compat com mensagens antigas; Butterworth não tem flag). */
         fun de(tipo: FiltroPrincipal) = FlagsSuavizadores(
             ativoMediaMovel = tipo == FiltroPrincipal.MEDIA_MOVEL,
             ativoEMA = tipo == FiltroPrincipal.EMA,

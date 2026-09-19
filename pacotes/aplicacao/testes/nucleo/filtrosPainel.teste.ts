@@ -58,3 +58,23 @@ describe('Hampel no painel (Fase 4)', () => {
     expect(janelaImpar(6.4)).toBe(7);
   });
 });
+
+import { situacaoButterworth } from '../../src/interface/filtrosPainel.js';
+
+describe('Butterworth no painel (Fase 5)', () => {
+  it('é uma opção do filtro principal com corte, Nyquist e aviso', () => {
+    const html = htmlPainelFiltros();
+    expect(html).toMatch(/id="rd-fp-butterworth" value="butterworth"/);
+    expect(html).toContain('id="in-bw-corte"');
+    expect(html).toContain('id="bw-nyquist"');
+    expect(html).toContain('id="bw-aviso"');
+    expect(RADIOS_FILTRO_PRINCIPAL.map(r => r.valor)).toContain('butterworth');
+  });
+
+  it('situacaoButterworth: Nyquist da Fs fixada ou estimada; inválido quando fc ≥ Fs/2', () => {
+    expect(situacaoButterworth({ taxaEstimadaHz: 83.4, frequenciaCorteHz: 10 })).toEqual({ nyquist: 'Nyquist 41.7 Hz', invalido: false });
+    expect(situacaoButterworth({ taxaAmostragemHz: 80, taxaEstimadaHz: 200, frequenciaCorteHz: 45 })).toEqual({ nyquist: 'Nyquist 40.0 Hz', invalido: true });
+    expect(situacaoButterworth({ taxaEstimadaHz: null })).toEqual({ nyquist: 'Nyquist —', invalido: false });
+    expect(situacaoButterworth({ taxaEstimadaHz: 80, frequenciaCorteHz: 10, butterworthValido: false }).invalido).toBe(true);
+  });
+});

@@ -21,15 +21,17 @@ describe('resolverFiltroPrincipal (Fase 2)', () => {
 
   it('patch sem nada relevante mantém o atual; valor desconhecido é ignorado', () => {
     expect(resolverFiltroPrincipal('kalman', { limiar: 1 } as never)).toBe('kalman');
-    expect(resolverFiltroPrincipal('kalman', { filtroPrincipal: 'butterworth' as never })).toBe('kalman');
+    expect(resolverFiltroPrincipal('kalman', { filtroPrincipal: 'hampel' as never })).toBe('kalman');
+    expect(resolverFiltroPrincipal('kalman', { filtroPrincipal: 'butterworth' })).toBe('butterworth');
   });
 
   it('flags derivadas são exclusivas', () => {
     for (const tipo of FILTROS_PRINCIPAIS) {
       const f = flagsDoFiltroPrincipal(tipo);
       const ligadas = Object.values(f).filter(Boolean).length;
-      expect(ligadas).toBe(tipo === 'nenhum' ? 0 : 1);
-      expect(resolverFiltroPrincipal('nenhum', f)).toBe(tipo);   // ida e volta
+      // Butterworth não tem flag antiga: clientes anteriores o veem como 'nenhum'
+      expect(ligadas).toBe(tipo === 'nenhum' || tipo === 'butterworth' ? 0 : 1);
+      if (tipo !== 'butterworth') expect(resolverFiltroPrincipal('nenhum', f)).toBe(tipo);   // ida e volta
     }
     expect(ehFiltroPrincipal('ema')).toBe(true);
     expect(ehFiltroPrincipal('hampel')).toBe(false);

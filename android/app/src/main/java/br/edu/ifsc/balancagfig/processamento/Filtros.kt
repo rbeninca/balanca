@@ -123,6 +123,44 @@ class SavitzkyGolay(janela: Int) {
 
 /** Notch IIR de 2ª ordem normalizado para ganho DC unitário. */
 /**
+ * Porta de FiltroButterworth.ts: passa-baixa Butterworth de 2ª ordem (biquad,
+ * Q = 1/√2). Exige 0 < fc < Fs/2; `configurar` recalcula mantendo o estado.
+ */
+class FiltroButterworth(frequenciaCorteHz: Double, taxaAmostragemHz: Double) {
+    private var b0 = 1.0; private var b1 = 0.0; private var b2 = 0.0; private var a1 = 0.0; private var a2 = 0.0
+    private var x1 = 0.0; private var x2 = 0.0; private var y1 = 0.0; private var y2 = 0.0
+
+    init { configurar(frequenciaCorteHz, taxaAmostragemHz) }
+
+    fun configurar(frequenciaCorteHz: Double, taxaAmostragemHz: Double) {
+        require(valido(frequenciaCorteHz, taxaAmostragemHz)) { "Butterworth: exige 0 < fc < Fs/2 (fc = $frequenciaCorteHz Hz, Fs = $taxaAmostragemHz Hz)" }
+        val w0 = 2 * Math.PI * frequenciaCorteHz / taxaAmostragemHz
+        val cosW0 = kotlin.math.cos(w0)
+        val alpha = kotlin.math.sin(w0) / (2 * (1.0 / kotlin.math.sqrt(2.0)))
+        val a0 = 1 + alpha
+        b0 = ((1 - cosW0) / 2) / a0
+        b1 = (1 - cosW0) / a0
+        b2 = b0
+        a1 = (-2 * cosW0) / a0
+        a2 = (1 - alpha) / a0
+    }
+
+    fun aplicar(x: Double): Double {
+        val y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+        x2 = x1; x1 = x
+        y2 = y1; y1 = y
+        return y
+    }
+
+    fun reiniciar() { x1 = 0.0; x2 = 0.0; y1 = 0.0; y2 = 0.0 }
+
+    companion object {
+        fun valido(frequenciaCorteHz: Double, taxaAmostragemHz: Double) =
+            frequenciaCorteHz > 0 && taxaAmostragemHz > 0 && frequenciaCorteHz < taxaAmostragemHz / 2
+    }
+}
+
+/**
  * Porta de FiltroHampel.ts: Hampel causal — a amostra mais recente contra a
  * mediana robusta da janela; outlier se |x − m| > K·max(1,4826·MAD, piso).
  */

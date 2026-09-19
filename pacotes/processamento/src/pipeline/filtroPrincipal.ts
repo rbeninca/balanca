@@ -2,9 +2,9 @@
  * Etapa 2 do pipeline: um só suavizador ativo por vez (Fase 2 do
  * PLANEJAMENTO-PROCESSAMENTO.MD). Butterworth entra na Fase 5.
  */
-export type TipoFiltroPrincipal = 'nenhum' | 'mediaMovel' | 'ema' | 'savitzkyGolay' | 'kalman';
+export type TipoFiltroPrincipal = 'nenhum' | 'mediaMovel' | 'ema' | 'butterworth' | 'savitzkyGolay' | 'kalman';
 
-export const FILTROS_PRINCIPAIS: readonly TipoFiltroPrincipal[] = ['nenhum', 'mediaMovel', 'ema', 'savitzkyGolay', 'kalman'];
+export const FILTROS_PRINCIPAIS: readonly TipoFiltroPrincipal[] = ['nenhum', 'mediaMovel', 'ema', 'butterworth', 'savitzkyGolay', 'kalman'];
 
 /** Flags antigas (uma por suavizador) que o frontend/gateway anteriores ainda mandam. */
 export interface FlagsSuavizadores {
@@ -14,7 +14,8 @@ export interface FlagsSuavizadores {
   ativoKalman?:     boolean | undefined;
 }
 
-const FLAG_DE: Record<Exclude<TipoFiltroPrincipal, 'nenhum'>, keyof FlagsSuavizadores> = {
+/** Butterworth (Fase 5) não tem flag antiga: clientes anteriores o veem como 'nenhum'. */
+const FLAG_DE: Record<Exclude<TipoFiltroPrincipal, 'nenhum' | 'butterworth'>, keyof FlagsSuavizadores> = {
   mediaMovel:    'ativoMediaMovel',
   ema:           'ativoEMA',
   savitzkyGolay: 'ativoSG',

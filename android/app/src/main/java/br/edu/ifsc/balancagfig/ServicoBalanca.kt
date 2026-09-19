@@ -304,6 +304,7 @@ class ServicoBalanca : Service() {
     private fun tratarMensagemCliente(entrada: Mensagens.Entrada, remetente: String) {
         when (entrada) {
             is Mensagens.Entrada.ConfigPipeline -> {
+                Log.d(TAG, "PIPELINE_CONFIG de $remetente: ${entrada.patch}")
                 pipeline.atualizarConfig(entrada.patch)
                 ws?.difundir(Mensagens.pipelineEstado(pipeline.obterConfig()))
             }

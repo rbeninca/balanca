@@ -23,6 +23,9 @@ data class ConfiguracaoPipeline(
     /** Etapa 2: um só suavizador (padrão NENHUM). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
     var filtroPrincipal: FiltroPrincipal = FiltroPrincipal.NENHUM,
 
+    // Etapa 2 — Butterworth passa-baixa (filtroPrincipal = BUTTERWORTH)
+    var frequenciaCorteHz: Double? = null, // Hz, exige 0 < fc < Fs/2 (padrão 10)
+
     // Etapa 1 — Hampel (remoção de spikes), desativado por padrão
     var janelaHampel: Int? = null,        // amostras, ímpar (padrão 7)
     var limiarHampelSigma: Double? = null, // K em múltiplos de σ (padrão 3)
@@ -43,6 +46,7 @@ data class PipelinePatch(
     val janelaSG: Int? = null,
     val kalmanQ: Double? = null,
     val kalmanR: Double? = null,
+    val frequenciaCorteHz: Double? = null,
     val janelaHampel: Int? = null,
     val limiarHampelSigma: Double? = null,
     val ativoHampel: Boolean? = null,
@@ -64,6 +68,8 @@ data class EstadoPipeline(
     val filtroPrincipal: FiltroPrincipal,
     /** Fs medida pelas marcas de tempo (null até haver amostras); usada se taxaAmostragemHz não foi fixada. */
     val taxaEstimadaHz: Double?,
+    /** false quando filtroPrincipal = BUTTERWORTH e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
+    val butterworthValido: Boolean,
     val ativoHampel: Boolean,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
@@ -104,6 +110,10 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private var taxaMudou = false
     private var notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, taxaParaFiltros())
     private var hampel = FiltroHampel(config.janelaHampel ?: 7, config.limiarHampelSigma ?: 3.0)
+    /** null enquanto fc/Fs forem inválidos (o filtro passa direto). */
+    private var butterworth: FiltroButterworth? = null
+
+    init { reconstruirButterworth() }
     private var sg = SavitzkyGolay(config.janelaSG ?: 7)
     private var kalman = FiltroKalman(config.kalmanQ ?: 0.01, config.kalmanR ?: 1.0)
     private var detector = DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs)
@@ -143,6 +153,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private fun aplicarFiltroPrincipal(entrada: Double): Double = when (filtroPrincipal) {
         FiltroPrincipal.MEDIA_MOVEL -> mediaMovel.aplicar(entrada)
         FiltroPrincipal.EMA -> ema.aplicar(entrada)
+        FiltroPrincipal.BUTTERWORTH -> butterworth?.aplicar(entrada) ?: entrada
         FiltroPrincipal.SAVITZKY_GOLAY -> sg.aplicar(entrada)
         FiltroPrincipal.KALMAN -> kalman.aplicar(entrada)
         FiltroPrincipal.NENHUM -> entrada
@@ -151,6 +162,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private fun reiniciarFiltroPrincipal() = when (filtroPrincipal) {
         FiltroPrincipal.MEDIA_MOVEL -> mediaMovel.reiniciar()
         FiltroPrincipal.EMA -> ema.reiniciar()
+        FiltroPrincipal.BUTTERWORTH -> butterworth?.reiniciar() ?: Unit
         FiltroPrincipal.SAVITZKY_GOLAY -> sg.reiniciar()
         FiltroPrincipal.KALMAN -> kalman.reiniciar()
         FiltroPrincipal.NENHUM -> Unit
@@ -167,11 +179,21 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, taxaParaFiltros())
     }
 
+    /** Coeficientes para a Fs atual; se fc ≥ Fs/2 o filtro fica desligado (passa direto) até corrigir. */
+    private fun reconstruirButterworth() {
+        val fc = config.frequenciaCorteHz ?: 10.0
+        val fs = taxaParaFiltros()
+        if (!FiltroButterworth.valido(fc, fs)) { butterworth = null; return }
+        val atual = butterworth
+        if (atual != null) atual.configurar(fc, fs) else butterworth = FiltroButterworth(fc, fs)
+    }
+
     /** Alimenta o estimador; se a Fs estável mudou e não há taxa fixada, reconstrói os filtros IIR. */
     private fun acompanharTaxa(marcaTemporal: Long) {
         estimadorFs.adicionarTimestamp(marcaTemporal)
         if (estimadorFs.consumirMudanca() && config.taxaAmostragemHz == null) {
             reconstruirNotch()
+            reconstruirButterworth()
             taxaMudou = true
         }
     }
@@ -240,6 +262,11 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             // taxaAmostragemHz só fica fixada se vier no patch; sem ela, vale a estimada
             patch.taxaAmostragemHz?.let { config.taxaAmostragemHz = it }
             reconstruirNotch()
+            reconstruirButterworth()
+        }
+        patch.frequenciaCorteHz?.let {
+            config.frequenciaCorteHz = it
+            reconstruirButterworth()
         }
         if (patch.janelaHampel != null || patch.limiarHampelSigma != null) {
             config.janelaHampel = patch.janelaHampel ?: config.janelaHampel ?: 7
@@ -282,6 +309,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             config = config.copy(),
             filtroPrincipal = filtroPrincipal,
             taxaEstimadaHz = estimadorFs.obterHzEstavel(),
+            butterworthValido = butterworth != null,
             ativoHampel = ativoHampel,
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,
@@ -307,6 +335,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         ema.reiniciar()
         notch.reiniciar()
         hampel.reiniciar()
+        butterworth?.reiniciar()
         sg.reiniciar()
         kalman.reiniciar()
         detector.reiniciar()

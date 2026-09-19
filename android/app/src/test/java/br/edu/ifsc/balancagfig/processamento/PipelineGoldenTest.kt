@@ -32,6 +32,7 @@ class PipelineGoldenTest {
         janelaSG = o.optIntOrNull("janelaSG"),
         kalmanQ = o.optDoubleOrNull("kalmanQ"),
         kalmanR = o.optDoubleOrNull("kalmanR"),
+        frequenciaCorteHz = o.optDoubleOrNull("frequenciaCorteHz"),
         janelaHampel = o.optIntOrNull("janelaHampel"),
         limiarHampelSigma = o.optDoubleOrNull("limiarHampelSigma"),
         ativoHampel = o.optBooleanOrNull("ativoHampel"),
@@ -52,7 +53,8 @@ class PipelineGoldenTest {
 
     private fun tolerancia(patch: PipelinePatch): Double =
         if (patch.ativoNotch == true || patch.ativoEMA == true || patch.ativoKalman == true ||
-            patch.filtroPrincipal == FiltroPrincipal.EMA || patch.filtroPrincipal == FiltroPrincipal.KALMAN) 1e-6 else 1e-9
+            patch.filtroPrincipal == FiltroPrincipal.EMA || patch.filtroPrincipal == FiltroPrincipal.KALMAN ||
+            patch.filtroPrincipal == FiltroPrincipal.BUTTERWORTH) 1e-6 else 1e-9
 
     private fun reproduzir(arquivo: File) {
         val fx = JSONObject(arquivo.readText())

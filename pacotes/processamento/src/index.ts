@@ -8,6 +8,7 @@ export * from './filtros/FiltroKalman.js';
 export * from './filtros/SavitzkyGolay.js';
 export * from './filtros/FiltroNotch.js';
 export * from './filtros/FiltroHampel.js';
+export * from './filtros/FiltroButterworth.js';
 export * from './filtros/FiltroPassaAlta.js';
 export * from './filtros/FiltroPassaBaixa.js';
 export * from './filtros/FiltroBandaPassante.js';

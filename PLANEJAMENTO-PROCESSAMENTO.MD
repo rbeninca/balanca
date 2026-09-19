@@ -111,6 +111,20 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   PIPELINE_ESTADO). Agora salto = 8 períodos (~100 ms) e janela 256 (~3 s):
   1 difusão em 15 s, 83,33 Hz.
 
+- Fase 5 ✔: `FiltroButterworth` passa-baixa 2ª ordem (biquad, Q = 1/√2) em TS
+  e Kotlin, opção `'butterworth'` do filtro principal com `frequenciaCorteHz`
+  (padrão 10). Usa a Fs real (fixada ou estimada) e recalcula os coeficientes
+  mantendo o estado quando ela muda. `fc ≥ Fs/2` → filtro ignorado (passa
+  direto) e `butterworthValido: false` no estado; o painel mostra "Nyquist
+  41,7 Hz" e o aviso. Ganhos medidos (fc 10 Hz, Fs 80): 2 Hz > 0,97; 10 Hz
+  0,66–0,75; 30 Hz < 0,12 — nos dois lados. Golden `butterworth-10` novo,
+  demais idênticos. Clientes antigos (só flags) veem Butterworth como
+  'nenhum' no estado — não há flag para ele. O gateway agora loga (debug)
+  cada `PIPELINE_CONFIG` com o remetente: foi assim que se viu que uma aba
+  antiga do frontend (bundle anterior à Fase 2) reenvia flags e derruba o
+  filtro principal para 'nenhum' — basta recarregar a página (o box já serve
+  index.html com `Cache-Control: no-cache`).
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

@@ -36,6 +36,7 @@ export const CASOS: Record<string, PipelinePatch> = {
   'ema-0.2':               { ativoZonaMorta: true, ativoEMA: true, alphaEMA: 0.2 },
   'sg-7':                  { ativoSG: true, janelaSG: 7, ativoDetectorQueima: true },
   'kalman':                { ativoKalman: true, kalmanQ: 0.01, kalmanR: 1.0 },
+  'butterworth-10':        { filtroPrincipal: 'butterworth', frequenciaCorteHz: 10, ativoDetectorQueima: true },
   // Fase 2: flags antigas viram um só filtro principal (a última na ordem MM→EMA→SG→Kalman vence)
   'flags-sg-e-kalman-vira-kalman': { ativoSG: true, ativoKalman: true },
   'filtro-principal-sg-vence-flag': { filtroPrincipal: 'savitzkyGolay', ativoKalman: true, ativoDetectorQueima: true },

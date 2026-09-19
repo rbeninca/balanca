@@ -13,6 +13,7 @@ export const RADIOS_FILTRO_PRINCIPAL: ReadonlyArray<{ id: string; valor: TipoFil
   { id: 'rd-fp-nenhum',      valor: 'nenhum' },
   { id: 'rd-fp-media-movel', valor: 'mediaMovel' },
   { id: 'rd-fp-ema',         valor: 'ema' },
+  { id: 'rd-fp-butterworth', valor: 'butterworth' },
   { id: 'rd-fp-sg',          valor: 'savitzkyGolay' },
   { id: 'rd-fp-kalman',      valor: 'kalman' },
 ];
@@ -134,6 +135,19 @@ export function htmlPainelFiltros(): string {
             </div>
             <div class="filtro-linha">
               <label class="filtro-chk">
+                <input type="radio" name="filtro-principal" id="rd-fp-butterworth" value="butterworth">
+                Butterworth
+              </label>
+              <button class="filtro-info-btn" data-filtro="butterworth" type="button" title="Saiba mais">ℹ</button>
+              <div class="filtro-params">
+                <input type="number" id="in-bw-corte" class="filtro-num" value="10" min="0.1" max="500" step="0.5" title="Frequência de corte (Hz) — deve ser menor que Fs/2">
+                <span>Hz</span>
+                <span id="bw-nyquist" class="filtro-fs" title="Metade da taxa de amostragem: o corte precisa ficar abaixo">Nyquist —</span>
+                <span id="bw-aviso" class="filtro-aviso hidden">corte ≥ Nyquist: filtro ignorado</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
+              <label class="filtro-chk">
                 <input type="radio" name="filtro-principal" id="rd-fp-sg" value="savitzkyGolay">
                 Sav-Golay
               </label>
@@ -158,4 +172,13 @@ export function htmlPainelFiltros(): string {
             </div>
           </div>
         </div>`;
+}
+
+/** Texto do Nyquist e se o corte é válido, a partir do estado do pipeline. */
+export function situacaoButterworth(cfg: { taxaAmostragemHz?: number | undefined; taxaEstimadaHz?: number | null; frequenciaCorteHz?: number | undefined; butterworthValido?: boolean }): { nyquist: string; invalido: boolean } {
+  const fs = cfg.taxaAmostragemHz ?? cfg.taxaEstimadaHz ?? null;
+  const nyquist = fs != null ? `Nyquist ${(fs / 2).toFixed(1)} Hz` : 'Nyquist —';
+  const fc = cfg.frequenciaCorteHz ?? 10;
+  const invalido = cfg.butterworthValido === false || (fs != null && fc >= fs / 2);
+  return { nyquist, invalido };
 }

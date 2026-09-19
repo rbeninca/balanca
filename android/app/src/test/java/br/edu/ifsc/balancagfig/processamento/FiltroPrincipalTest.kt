@@ -36,10 +36,11 @@ class FiltroPrincipalTest {
         for (tipo in FiltroPrincipal.entries) {
             val f = FlagsSuavizadores.de(tipo)
             val ligadas = listOf(f.ativoMediaMovel, f.ativoEMA, f.ativoSG, f.ativoKalman).count { it == true }
-            assertEquals(if (tipo == N) 0 else 1, ligadas)
-            assertEquals(tipo, resolverFiltroPrincipal(N, null, f))
+            // Butterworth não tem flag antiga: clientes anteriores o veem como NENHUM
+            assertEquals(if (tipo == N || tipo == FiltroPrincipal.BUTTERWORTH) 0 else 1, ligadas)
+            if (tipo != FiltroPrincipal.BUTTERWORTH) assertEquals(tipo, resolverFiltroPrincipal(N, null, f))
         }
-        assertNull(FiltroPrincipal.deValor("butterworth"))
+        assertNull(FiltroPrincipal.deValor("hampel"))
         assertEquals(FiltroPrincipal.EMA, FiltroPrincipal.deValor("ema"))
     }
 

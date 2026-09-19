@@ -9,6 +9,7 @@ import { FiltroKalman }      from '../filtros/FiltroKalman.js';
 import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
 import { FiltroHampel }      from '../filtros/FiltroHampel.js';
+import { FiltroButterworth } from '../filtros/FiltroButterworth.js';
 import { DetectorQueima }    from '../analise/DetectorQueima.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
 import { EstimadorTaxaAmostragem } from '../analise/EstimadorTaxaAmostragem.js';
@@ -42,6 +43,8 @@ export type EstadoPipeline = ConfiguracaoPipeline & {
   filtroPrincipal:     TipoFiltroPrincipal;
   /** Fs medida pelas marcas de tempo (null até haver amostras); os filtros usam-na se taxaAmostragemHz não foi fixada. */
   taxaEstimadaHz:      number | null;
+  /** false quando filtroPrincipal = 'butterworth' e fc ≥ Fs/2: o filtro é ignorado até corrigir. */
+  butterworthValido:   boolean;
   ativoHampel:         boolean;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
@@ -61,6 +64,8 @@ export class PipelineProcessamento {
   private ema:         MediaExponencial;
   private notch:       FiltroNotch;
   private hampel:      FiltroHampel;
+  /** null enquanto fc/Fs forem inválidos (o filtro passa direto). */
+  private butterworth: FiltroButterworth | null = null;
   private sg:          SavitzkyGolay;
   private kalman:      FiltroKalman;
   private detector:    DetectorQueima;
@@ -84,6 +89,7 @@ export class PipelineProcessamento {
     this.ema        = new MediaExponencial(config.alphaEMA ?? 0.2);
     this.notch      = new FiltroNotch(config.freqNotchHz ?? 60, config.qNotch ?? 30, this.taxaParaFiltros());
     this.hampel     = new FiltroHampel(config.janelaHampel ?? 7, config.limiarHampelSigma ?? 3);
+    this.reconstruirButterworth();
     this.sg         = new SavitzkyGolay(config.janelaSG ?? 7);
     this.kalman     = new FiltroKalman(config.kalmanQ ?? 0.01, config.kalmanR ?? 1.0);
     this.detector   = new DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs);
@@ -122,6 +128,7 @@ export class PipelineProcessamento {
     switch (this.filtroPrincipal) {
       case 'mediaMovel':    return this.mediaMovel.aplicar(forca);
       case 'ema':           return this.ema.aplicar(forca);
+      case 'butterworth':   return this.butterworth ? this.butterworth.aplicar(forca) : forca;
       case 'savitzkyGolay': return this.sg.aplicar(forca);
       case 'kalman':        return this.kalman.aplicar(forca);
       default:              return forca;
@@ -150,6 +157,7 @@ export class PipelineProcessamento {
     this.estimadorFs.adicionarTimestamp(marcaTemporal);
     if (this.estimadorFs.consumirMudanca() && this.config.taxaAmostragemHz == null) {
       this.reconstruirNotch();
+      this.reconstruirButterworth();
       this.taxaMudou = true;
     }
   }
@@ -161,6 +169,15 @@ export class PipelineProcessamento {
 
   private reconstruirNotch(): void {
     this.notch = new FiltroNotch(this.config.freqNotchHz ?? 60, this.config.qNotch ?? 30, this.taxaParaFiltros());
+  }
+
+  /** Coeficientes para a Fs atual; se fc ≥ Fs/2 o filtro fica desligado (passa direto) até corrigir. */
+  private reconstruirButterworth(): void {
+    const fc = this.config.frequenciaCorteHz ?? 10;
+    const fs = this.taxaParaFiltros();
+    if (!FiltroButterworth.valido(fc, fs)) { this.butterworth = null; return; }
+    if (this.butterworth) this.butterworth.configurar(fc, fs);   // mantém o estado: sem salto na saída
+    else this.butterworth = new FiltroButterworth(fc, fs);
   }
 
   processar(pacote: PacoteDados): LeituraProcessada {
@@ -241,6 +258,11 @@ export class PipelineProcessamento {
       // taxaAmostragemHz só fica fixada se vier no patch; sem ela, vale a estimada
       if (patch.taxaAmostragemHz != null) this.config.taxaAmostragemHz = patch.taxaAmostragemHz;
       this.reconstruirNotch();
+      this.reconstruirButterworth();
+    }
+    if (patch.frequenciaCorteHz != null) {
+      this.config.frequenciaCorteHz = patch.frequenciaCorteHz;
+      this.reconstruirButterworth();
     }
     if (patch.janelaHampel != null || patch.limiarHampelSigma != null) {
       this.config.janelaHampel      = patch.janelaHampel      ?? this.config.janelaHampel      ?? 7;
@@ -289,6 +311,7 @@ export class PipelineProcessamento {
     switch (this.filtroPrincipal) {
       case 'mediaMovel':    this.mediaMovel.reiniciar(); break;
       case 'ema':           this.ema.reiniciar(); break;
+      case 'butterworth':   this.butterworth?.reiniciar(); break;
       case 'savitzkyGolay': this.sg.reiniciar(); break;
       case 'kalman':        this.kalman.reiniciar(); break;
     }
@@ -299,6 +322,7 @@ export class PipelineProcessamento {
       ...this.config,
       filtroPrincipal:     this.filtroPrincipal,
       taxaEstimadaHz:      this.estimadorFs.obterHzEstavel(),
+      butterworthValido:   this.butterworth !== null,
       ativoHampel:         this.ativoHampel,
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,
@@ -322,6 +346,7 @@ export class PipelineProcessamento {
     this.ema.reiniciar();
     this.notch.reiniciar();
     this.hampel.reiniciar();
+    this.butterworth?.reiniciar();
     this.sg.reiniciar();
     this.kalman.reiniciar();
     this.detector.reiniciar();

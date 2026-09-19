@@ -86,6 +86,8 @@ object Mensagens {
         c.kalmanR?.let { put("kalmanR", it) }
         put("filtroPrincipal", e.filtroPrincipal.valor)
         put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
+        put("butterworthValido", e.butterworthValido)
+        c.frequenciaCorteHz?.let { put("frequenciaCorteHz", it) }
         c.janelaHampel?.let { put("janelaHampel", it) }
         c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
         put("ativoHampel", e.ativoHampel)
@@ -165,6 +167,7 @@ object Mensagens {
         janelaSG = c.optIntOrNull("janelaSG"),
         kalmanQ = c.optDoubleOrNull("kalmanQ"),
         kalmanR = c.optDoubleOrNull("kalmanR"),
+        frequenciaCorteHz = c.optDoubleOrNull("frequenciaCorteHz"),
         janelaHampel = c.optIntOrNull("janelaHampel"),
         limiarHampelSigma = c.optDoubleOrNull("limiarHampelSigma"),
         ativoHampel = c.optBooleanOrNull("ativoHampel"),
