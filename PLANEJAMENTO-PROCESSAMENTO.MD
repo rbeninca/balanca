@@ -188,6 +188,24 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   nova, migração nos dois provedores; Node e Kotlin validam o valor) e é
   reaplicada ao reabrir. Só offline, como decidido.
 
+- Fase 12 ✔ (frontend): perfis **Pesagem** (Hampel, EMA 0,10, zero tracking,
+  zona morta), **Teste de motor** (Hampel, SG 5, zona morta, detector),
+  **Impacto** (Hampel 5/3,5σ, Butterworth 25 Hz, sem zona morta/zero
+  tracking, detector imediato, impulso do filtrado) e **Dados brutos**; só
+  Hampel na limpeza (Hampel + Mediana é redundante). São valores iniciais:
+  `detectarPerfil` compara apenas as chaves do perfil, e qualquer outra
+  mudança volta a "Personalizado"; limiares do detector e da zona morta ficam
+  como estão. Biomecânica/vibração da proposta ficaram de fora por falta de
+  valores definidos — entram quando houver um caso real.
+
+**Todas as 12 fases concluídas.** Pendências que sobraram do caminho:
+- Firmware: marcas de tempo com resolução de 10 ms (grosseiro a 83 Hz) e um
+  gap de 30–40 ms a cada 500 ms (display) — vale usar `micros()`/1000 e
+  atualizar o display fora do laço de leitura.
+- `massa_total_g` é enviado pelo frontend nos metadados mas não existe na
+  tabela (ignorado silenciosamente) — pré-existente.
+- Merge da branch em `main` e nova versão (2.4.0) com release.
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento

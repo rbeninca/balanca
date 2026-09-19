@@ -1,4 +1,5 @@
 import { flagsDoFiltroPrincipal, type EstadoPipeline, type PipelinePatch, type TipoFiltroPrincipal } from '@balancagfig/processamento';
+import { htmlSeletorPerfil } from './presetsProcessamento.js';
 
 // Markup do painel "Processamento de Sinal" (controles dos filtros da medição).
 // Extraído como string pura para ser testável — os passos (step) dos campos
@@ -49,6 +50,7 @@ export function htmlPainelFiltros(): string {
             <span class="filtros-seta" id="filtros-seta">▼</span>
           </button>
           <div class="filtros-corpo hidden" id="filtros-corpo">
+            ${htmlSeletorPerfil()}
 
             <div class="filtros-bloco" data-etapa="1">
               <div class="filtros-bloco-titulo"><b>1. Limpeza</b><span>remove interferências e amostras anômalas — combináveis, nesta ordem</span></div>

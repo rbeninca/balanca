@@ -5,6 +5,7 @@ import type { IArmazenamento } from '../armazenamento/ArmazenamentoLocal.js';
 import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth, descreverPipeline, textoAtraso } from './filtrosPainel.js';
+import { PERFIS, detectarPerfil, type PerfilProcessamento } from './presetsProcessamento.js';
 import { sugerirZonaMortaN, sugerirLimiaresDetector, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
@@ -316,6 +317,7 @@ export class TelaMedicao {
     const off = c.querySelector<HTMLElement>('#zt-offset');
     if (off) off.textContent = `offset ${(cfg.zeroTrackingOffsetN ?? 0).toFixed(4)} N`;
     this.mostrarPipeline(c, cfg);
+    this.mostrarPerfil(c, cfg);
     const selImpulso = c.querySelector<HTMLSelectElement>('#sel-impulso');
     if (selImpulso) selImpulso.value = cfg.fonteCalculoImpulso ?? 'final';
     const bw = situacaoButterworth(cfg);
@@ -402,8 +404,19 @@ export class TelaMedicao {
       this.fonte.atualizarConfigPipeline?.(patch);
       this.atualizarBadgeFiltros(container);
       this.atualizarBotaoSinalBruto(patch);
-      this.mostrarPipeline(container, { ...this.fonte.obterConfigPipeline?.(), ...patch });
+      const estadoNovo = { ...this.fonte.obterConfigPipeline?.(), ...patch };
+      this.mostrarPipeline(container, estadoNovo);
+      this.mostrarPerfil(container, estadoNovo);
     };
+
+    // Perfil: aplica os valores do preset nos controles e envia; o usuário pode mudar tudo depois
+    container.querySelector<HTMLSelectElement>('#sel-perfil')?.addEventListener('change', (e) => {
+      const chave = (e.target as HTMLSelectElement).value as PerfilProcessamento;
+      if (chave === 'personalizado') return;
+      const perfil = PERFIS[chave];
+      this.sincronizarPainel({ ...this.fonte.obterConfigPipeline?.(), ...perfil.patch } as EstadoPipeline);
+      aplicar();
+    });
 
     ['#ck-zona-morta', '#ck-hampel', '#ck-zero-tracking', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
@@ -442,6 +455,16 @@ export class TelaMedicao {
     this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
 
     this.atualizarBadgeFiltros(container);
+  }
+
+  /** Seletor de perfil reflete o estado: um dos presets ou "Personalizado". */
+  private mostrarPerfil(container: HTMLElement, cfg: Partial<EstadoPipeline>) {
+    const sel = container.querySelector<HTMLSelectElement>('#sel-perfil');
+    const desc = container.querySelector<HTMLElement>('#perfil-descricao');
+    if (!sel) return;
+    const perfil = detectarPerfil(cfg);
+    sel.value = perfil;
+    if (desc) desc.textContent = perfil === 'personalizado' ? '' : PERFIS[perfil].descricao;
   }
 
   /** "BRUTO → Hampel → … → SAÍDA" e o atraso do filtro principal, sempre que a configuração muda. */
