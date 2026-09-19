@@ -283,6 +283,7 @@ export class TelaMedicao {
     const inp = (id: string, v: number | undefined, fb: number) => { const el = c.querySelector<HTMLInputElement>(id); if (el) el.value = String(v ?? fb); };
 
     ck('#ck-zona-morta',  cfg.ativoZonaMorta);
+    ck('#ck-hampel',      cfg.ativoHampel ?? false);
     ck('#ck-det-queima',  cfg.ativoDetectorQueima);
     ck('#ck-notch',       cfg.ativoNotch);
     ck('#ck-mediana',     cfg.ativoMediana);
@@ -300,6 +301,8 @@ export class TelaMedicao {
     inp('#in-media-movel',  cfg.janelaMediaMovel,  5);
     inp('#in-det-hister',   cfg.tempoMinFimMs,     100);
     inp('#in-notch-freq',   cfg.freqNotchHz,       60);
+    inp('#in-hampel-jan',   cfg.janelaHampel,      7);
+    inp('#in-hampel-k',     cfg.limiarHampelSigma, 3);
     inp('#in-mediana-jan',  cfg.janelaMediana,     5);
     inp('#in-ema-alpha',    cfg.alphaEMA,          0.2);
     inp('#in-sg-jan',       cfg.janelaSG,          7);
@@ -356,6 +359,9 @@ export class TelaMedicao {
         janelaMediaMovel:    Math.max(1, num('#in-media-movel', 5)),
         ativoDetectorQueima: chk('#ck-det-queima'),
         tempoMinFimMs:       num('#in-det-hister', 100),
+        ativoHampel:         chk('#ck-hampel'),
+        janelaHampel:        janelaImpar(num('#in-hampel-jan', 7)),
+        limiarHampelSigma:   Math.max(0.5, num('#in-hampel-k', 3)),
         ativoNotch:          chk('#ck-notch'),
         freqNotchHz:         Math.max(1, num('#in-notch-freq', 60)),
         ativoMediana:        chk('#ck-mediana'),
@@ -370,10 +376,10 @@ export class TelaMedicao {
       this.atualizarBotaoSinalBruto(patch);
     };
 
-    ['#ck-zona-morta', '#ck-det-queima', '#ck-notch', '#ck-mediana',
+    ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana',
      ...RADIOS_FILTRO_PRINCIPAL.map(r => `#${r.id}`)].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
-    ['#in-zona-morta','#in-media-movel','#in-det-hister',
+    ['#in-zona-morta','#in-media-movel','#in-det-hister', '#in-hampel-jan', '#in-hampel-k',
      '#in-notch-freq','#in-mediana-jan','#in-ema-alpha',
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
@@ -403,7 +409,7 @@ export class TelaMedicao {
   private atualizarBadgeFiltros(container: HTMLElement) {
     const badge = container.querySelector<HTMLElement>('#filtros-badge');
     if (!badge) return;
-    const ids = ['#ck-zona-morta', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
+    const ids = ['#ck-zona-morta', '#ck-hampel', '#ck-det-queima', '#ck-notch', '#ck-mediana'];
     const total  = ids.length + 1;   // + o filtro principal (um só)
     const principal = RADIOS_FILTRO_PRINCIPAL.some(r => r.valor !== 'nenhum' && container.querySelector<HTMLInputElement>(`#${r.id}`)?.checked);
     const ativos = ids.filter(id => container.querySelector<HTMLInputElement>(id)?.checked).length + (principal ? 1 : 0);
@@ -413,7 +419,7 @@ export class TelaMedicao {
 
   private atualizarBotaoSinalBruto(patch: PipelinePatch) {
     const fp = patch.filtroPrincipal ?? 'nenhum';
-    const algumNovo = patch.ativoNotch || patch.ativoMediana || (fp !== 'nenhum' && fp !== 'mediaMovel');
+    const algumNovo = patch.ativoHampel || patch.ativoNotch || patch.ativoMediana || (fp !== 'nenhum' && fp !== 'mediaMovel');
     if (this.elBtnSinalBruto) {
       this.elBtnSinalBruto.disabled = !algumNovo;
       if (!algumNovo) {
@@ -1001,6 +1007,20 @@ const FILTROS_INFO: Record<string, FiltroInfo> = (() => {
         { texto: 'Wikipedia — Solid-fuel rocket', url: 'https://en.wikipedia.org/wiki/Solid-fuel_rocket' },
       ],
     },
+    'hampel': {
+      nome: 'Filtro de Hampel',
+      oque: 'Remove amostras anômalas (spikes) comparando cada leitura com a mediana robusta das últimas N amostras. Diferente da mediana, só mexe no sinal quando encontra um outlier — o resto passa intacto.',
+      como: 'm = mediana da janela; MAD = mediana de |xᵢ − m|; σ ≈ 1,4826·MAD (com um piso da ordem da resolução da célula). Se |x − m| > K·σ a amostra é trocada por m. Janela causal (só o passado): sem atraso na saída; um degrau real fica preso na mediana por até (N+1)/2 amostras e depois passa. Quando usar: leituras isoladas absurdas (falha de comunicação, ruído impulsivo). Quando não usar: quando picos muito rápidos forem o fenômeno estudado, ou com K pequeno em sinais muito lisos (logo após um pico a janela se concentra no topo e a amostra nova pode ser marcada — suba K para 3,5).',
+      svg: _svg(med_e, med_e.map((v, i, a) => {
+        const win = a.slice(Math.max(0, i - 6), i + 1).slice().sort((x, y) => x - y);
+        const m = win[Math.floor(win.length / 2)] ?? v;
+        return Math.abs(v - m) > 0.3 ? m : v;
+      })),
+      refs: [
+        { texto: 'Wikipedia — Hampel filter (Median absolute deviation)', url: 'https://en.wikipedia.org/wiki/Median_absolute_deviation' },
+        { texto: 'Pearson, R. K. — Outliers in process modeling and identification (1999)', url: 'https://doi.org/10.1109/87.748144' },
+      ],
+    },
     'notch': {
       nome: 'Filtro Notch (Rejeita-Banda)',
       oque: 'Atenua uma frequência específica — tipicamente interferência eletromagnética da rede elétrica (50/60 Hz) — mantendo todas as demais frequências praticamente inalteradas.',
@@ -1070,4 +1090,10 @@ export function textoDuracao(ms: number): string {
   const m = Math.floor(s / 60);
   if (m < 60) return `${m} min ${String(s % 60).padStart(2, '0')} s`;
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
+}
+
+/** Janela ímpar ≥ 3 para o Hampel (o campo tem step 2, mas o usuário pode digitar). */
+export function janelaImpar(v: number): number {
+  const n = Math.max(3, Math.round(v));
+  return n % 2 === 0 ? n + 1 : n;
 }

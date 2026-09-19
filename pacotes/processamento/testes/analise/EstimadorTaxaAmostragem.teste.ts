@@ -35,7 +35,7 @@ describe('EstimadorTaxaAmostragem (Fase 3)', () => {
   });
 
   it('histerese de 1 % com janela cheia: flutuação pequena não muda o valor estável', () => {
-    const e = new EstimadorTaxaAmostragem();
+    const e = new EstimadorTaxaAmostragem(64);
     for (const t of marcas(80, 64)) e.adicionarTimestamp(t);
     const estavel = e.obterHzEstavel()!;
     e.consumirMudanca();
@@ -70,6 +70,13 @@ describe('EstimadorTaxaAmostragem (Fase 3)', () => {
     expect(e.obterHz()).toBeNull();                       // janela recomeçou
     for (const t of marcas(80, 20, 1000 + 64 * 12.5 + 5000 + 12.5)) e.adicionarTimestamp(t);
     expect(e.obterHz()!).toBeCloseTo(80, 0);
+  });
+
+  it('gap de 40 ms (display da ESP) não recomeça a janela; 5000 ms sim', () => {
+    const e = new EstimadorTaxaAmostragem();
+    for (const t of marcas(80, 64)) e.adicionarTimestamp(t);
+    e.adicionarTimestamp(marcas(80, 64)[63]! + 40);
+    expect(e.obterHz()).not.toBeNull();
   });
 
   it('marca repetida ou no passado (Δt ≤ 0) recomeça a janela', () => {

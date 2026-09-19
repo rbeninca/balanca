@@ -31,13 +31,15 @@ export const CASOS: Record<string, PipelinePatch> = {
   'zona-morta-detector':   { ativoZonaMorta: true, ativoDetectorQueima: true },
   'media-movel-5':         { ativoZonaMorta: true, ativoDetectorQueima: true, ativoMediaMovel: true },
   'mediana-5-notch-60':    { ativoMediana: true, janelaMediana: 5, ativoNotch: true, freqNotchHz: 60, qNotch: 30 },
+  'hampel-7':              { ativoHampel: true, janelaHampel: 7, limiarHampelSigma: 3, ativoDetectorQueima: true },
+  'hampel-mediana-notch':  { ativoHampel: true, ativoMediana: true, janelaMediana: 3, ativoNotch: true },
   'ema-0.2':               { ativoZonaMorta: true, ativoEMA: true, alphaEMA: 0.2 },
   'sg-7':                  { ativoSG: true, janelaSG: 7, ativoDetectorQueima: true },
   'kalman':                { ativoKalman: true, kalmanQ: 0.01, kalmanR: 1.0 },
   // Fase 2: flags antigas viram um só filtro principal (a última na ordem MM→EMA→SG→Kalman vence)
   'flags-sg-e-kalman-vira-kalman': { ativoSG: true, ativoKalman: true },
   'filtro-principal-sg-vence-flag': { filtroPrincipal: 'savitzkyGolay', ativoKalman: true, ativoDetectorQueima: true },
-  'tudo-ligado':           { ativoZonaMorta: true, ativoDetectorQueima: true, ativoMediana: true, ativoNotch: true,
+  'tudo-ligado':           { ativoHampel: true, ativoZonaMorta: true, ativoDetectorQueima: true, ativoMediana: true, ativoNotch: true,
                              ativoMediaMovel: true, ativoEMA: true, ativoSG: true, ativoKalman: true },   // principal = kalman
 };
 

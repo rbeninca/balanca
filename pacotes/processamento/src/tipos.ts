@@ -19,6 +19,10 @@ export interface ConfiguracaoPipeline {
 
   /** Etapa 2: um só suavizador (padrão 'nenhum'). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
   filtroPrincipal?:  TipoFiltroPrincipal;
+
+  // Etapa 1 — Hampel (remoção de spikes), desativado por padrão
+  janelaHampel?:       number;   // amostras, ímpar (padrão 7)
+  limiarHampelSigma?:  number;   // K em múltiplos de σ (padrão 3)
 }
 
 export interface LeituraProcessada {

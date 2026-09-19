@@ -122,6 +122,40 @@ class SavitzkyGolay(janela: Int) {
 }
 
 /** Notch IIR de 2ª ordem normalizado para ganho DC unitário. */
+/**
+ * Porta de FiltroHampel.ts: Hampel causal — a amostra mais recente contra a
+ * mediana robusta da janela; outlier se |x − m| > K·max(1,4826·MAD, piso).
+ */
+class FiltroHampel(private val janela: Int = 7, private val limiarSigma: Double = 3.0, private val pisoSigma: Double = 1e-3) {
+    init { require(janela >= 3 && janela % 2 == 1) { "Hampel: janela deve ser ímpar ≥ 3 (recebeu $janela)" } }
+
+    data class Resultado(val valor: Double, val outlier: Boolean)
+
+    private val buffer = ArrayDeque<Double>()
+
+    fun aplicarDetalhado(x: Double): Resultado {
+        buffer.addLast(x)
+        if (buffer.size > janela) buffer.removeFirst()
+        if (buffer.size < 3) return Resultado(x, false)
+        val m = mediana(buffer)
+        val mad = mediana(buffer.map { kotlin.math.abs(it - m) })
+        val sigma = maxOf(FATOR_MAD * mad, pisoSigma)
+        return if (kotlin.math.abs(x - m) > limiarSigma * sigma) Resultado(m, true) else Resultado(x, false)
+    }
+
+    fun aplicar(x: Double): Double = aplicarDetalhado(x).valor
+
+    fun reiniciar() = buffer.clear()
+
+    private fun mediana(valores: Collection<Double>): Double {
+        val ordenado = valores.sorted()
+        val meio = ordenado.size / 2
+        return if (ordenado.size % 2 == 1) ordenado[meio] else (ordenado[meio - 1] + ordenado[meio]) / 2
+    }
+
+    companion object { const val FATOR_MAD = 1.4826 }
+}
+
 class FiltroNotch(freqHz: Double, q: Double, taxaAmostragemHz: Double) {
     private val b0: Double
     private val b1: Double

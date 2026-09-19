@@ -34,7 +34,7 @@ class EstimadorTaxaAmostragemTest {
 
     @Test
     fun histereseDe1PorCentoComJanelaCheia() {
-        val e = EstimadorTaxaAmostragem()
+        val e = EstimadorTaxaAmostragem(64)
         marcas(80.0, 64).forEach(e::adicionarTimestamp)
         val estavel = e.obterHzEstavel()!!; e.consumirMudanca()
         marcas(80.4, 64, 1000 + 64 * 12.5).forEach(e::adicionarTimestamp)
@@ -65,6 +65,11 @@ class EstimadorTaxaAmostragemTest {
         marcas(80.0, 20, 1000 + 64 * 12.5 + 5000 + 12.5).forEach(e::adicionarTimestamp)
         assertEquals(80.0, e.obterHz()!!, 0.5)
         e.adicionarTimestamp(500); assertNull(e.obterHz())
+
+        val g = EstimadorTaxaAmostragem()
+        marcas(80.0, 64).forEach(g::adicionarTimestamp)
+        g.adicionarTimestamp(marcas(80.0, 64)[63] + 40)   // gap do display da ESP: não recomeça
+        assertTrue(g.obterHz() != null)
     }
 
     private fun pacote(f: Double, t: Long) = PacoteDados(t, f.toFloat(), 0, 0)

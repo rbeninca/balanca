@@ -86,6 +86,9 @@ object Mensagens {
         c.kalmanR?.let { put("kalmanR", it) }
         put("filtroPrincipal", e.filtroPrincipal.valor)
         put("taxaEstimadaHz", e.taxaEstimadaHz ?: JSONObject.NULL)
+        c.janelaHampel?.let { put("janelaHampel", it) }
+        c.limiarHampelSigma?.let { put("limiarHampelSigma", it) }
+        put("ativoHampel", e.ativoHampel)
         put("ativoZonaMorta", e.ativoZonaMorta)
         put("ativoMediaMovel", e.ativoMediaMovel)
         put("ativoDetectorQueima", e.ativoDetectorQueima)
@@ -162,6 +165,9 @@ object Mensagens {
         janelaSG = c.optIntOrNull("janelaSG"),
         kalmanQ = c.optDoubleOrNull("kalmanQ"),
         kalmanR = c.optDoubleOrNull("kalmanR"),
+        janelaHampel = c.optIntOrNull("janelaHampel"),
+        limiarHampelSigma = c.optDoubleOrNull("limiarHampelSigma"),
+        ativoHampel = c.optBooleanOrNull("ativoHampel"),
         ativoZonaMorta = c.optBooleanOrNull("ativoZonaMorta"),
         ativoMediaMovel = c.optBooleanOrNull("ativoMediaMovel"),
         ativoDetectorQueima = c.optBooleanOrNull("ativoDetectorQueima"),

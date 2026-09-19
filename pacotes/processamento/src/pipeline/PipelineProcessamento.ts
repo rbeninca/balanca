@@ -8,6 +8,7 @@ import { FiltroMediana }     from '../filtros/FiltroMediana.js';
 import { FiltroKalman }      from '../filtros/FiltroKalman.js';
 import { SavitzkyGolay }     from '../filtros/SavitzkyGolay.js';
 import { FiltroNotch }       from '../filtros/FiltroNotch.js';
+import { FiltroHampel }      from '../filtros/FiltroHampel.js';
 import { DetectorQueima }    from '../analise/DetectorQueima.js';
 import { CalculadorImpulso } from '../analise/CalculadorImpulso.js';
 import { EstimadorTaxaAmostragem } from '../analise/EstimadorTaxaAmostragem.js';
@@ -18,6 +19,7 @@ export { resolverFiltroPrincipal, flagsDoFiltroPrincipal, ehFiltroPrincipal, FIL
 
 /** `filtroPrincipal` vence; as flags ativoMediaMovel/EMA/SG/Kalman seguem aceitas (ver resolverFiltroPrincipal). */
 export type PipelinePatch = Partial<ConfiguracaoPipeline> & {
+  ativoHampel?:         boolean;
   ativoZonaMorta?:      boolean;
   ativoMediaMovel?:     boolean;
   ativoDetectorQueima?: boolean;
@@ -40,6 +42,7 @@ export type EstadoPipeline = ConfiguracaoPipeline & {
   filtroPrincipal:     TipoFiltroPrincipal;
   /** Fs medida pelas marcas de tempo (null até haver amostras); os filtros usam-na se taxaAmostragemHz não foi fixada. */
   taxaEstimadaHz:      number | null;
+  ativoHampel:         boolean;
   ativoZonaMorta:      boolean;
   ativoMediaMovel:     boolean;
   ativoDetectorQueima: boolean;
@@ -57,12 +60,14 @@ export class PipelineProcessamento {
   private mediana:     FiltroMediana;
   private ema:         MediaExponencial;
   private notch:       FiltroNotch;
+  private hampel:      FiltroHampel;
   private sg:          SavitzkyGolay;
   private kalman:      FiltroKalman;
   private detector:    DetectorQueima;
   private calculador:  CalculadorImpulso;
   private estimadorFs = new EstimadorTaxaAmostragem();
 
+  private ativoHampel         = false;
   private ativoZonaMorta      = false;
   private ativoDetectorQueima = false;
   private ativoMediana        = false;
@@ -78,6 +83,7 @@ export class PipelineProcessamento {
     this.mediana    = new FiltroMediana(config.janelaMediana ?? 5);
     this.ema        = new MediaExponencial(config.alphaEMA ?? 0.2);
     this.notch      = new FiltroNotch(config.freqNotchHz ?? 60, config.qNotch ?? 30, this.taxaParaFiltros());
+    this.hampel     = new FiltroHampel(config.janelaHampel ?? 7, config.limiarHampelSigma ?? 3);
     this.sg         = new SavitzkyGolay(config.janelaSG ?? 7);
     this.kalman     = new FiltroKalman(config.kalmanQ ?? 0.01, config.kalmanR ?? 1.0);
     this.detector   = new DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs);
@@ -99,10 +105,15 @@ export class PipelineProcessamento {
     return { bruta, limpa, suavizada, filtrada };
   }
 
-  /** Etapa 1 — limpeza: remove interferências antes de suavizar (combináveis). */
+  /**
+   * Etapa 1 — limpeza: remove interferências antes de suavizar (combináveis).
+   * Ordem Hampel → Mediana → Notch: spikes saem antes do IIR (um spike no
+   * Notch "toca o sino" por várias amostras).
+   */
   private aplicarLimpeza(forca: number): number {
-    if (this.ativoNotch)   forca = this.notch.aplicar(forca);
+    if (this.ativoHampel)  forca = this.hampel.aplicar(forca);
     if (this.ativoMediana) forca = this.mediana.aplicar(forca);
+    if (this.ativoNotch)   forca = this.notch.aplicar(forca);
     return forca;
   }
 
@@ -118,7 +129,7 @@ export class PipelineProcessamento {
   }
 
   private get algumFiltroNovo(): boolean {
-    return this.ativoNotch || this.ativoMediana || (this.filtroPrincipal !== 'nenhum' && this.filtroPrincipal !== 'mediaMovel');
+    return this.ativoHampel || this.ativoNotch || this.ativoMediana || (this.filtroPrincipal !== 'nenhum' && this.filtroPrincipal !== 'mediaMovel');
   }
 
   /** Etapa 3 — tratamento (zona morta, zero tracking…): vazia até a Fase 6. */
@@ -231,6 +242,11 @@ export class PipelineProcessamento {
       if (patch.taxaAmostragemHz != null) this.config.taxaAmostragemHz = patch.taxaAmostragemHz;
       this.reconstruirNotch();
     }
+    if (patch.janelaHampel != null || patch.limiarHampelSigma != null) {
+      this.config.janelaHampel      = patch.janelaHampel      ?? this.config.janelaHampel      ?? 7;
+      this.config.limiarHampelSigma = patch.limiarHampelSigma ?? this.config.limiarHampelSigma ?? 3;
+      this.hampel = new FiltroHampel(this.config.janelaHampel, this.config.limiarHampelSigma);
+    }
     if (patch.janelaSG != null) {
       this.config.janelaSG = patch.janelaSG;
       this.sg = new SavitzkyGolay(patch.janelaSG);
@@ -242,6 +258,10 @@ export class PipelineProcessamento {
     }
 
     // Flags de ativação
+    if (patch.ativoHampel != null) {
+      if (patch.ativoHampel && !this.ativoHampel) this.hampel.reiniciar();
+      this.ativoHampel = patch.ativoHampel;
+    }
     if (patch.ativoZonaMorta != null)      this.ativoZonaMorta = patch.ativoZonaMorta;
     if (patch.ativoDetectorQueima != null) {
       if (patch.ativoDetectorQueima && !this.ativoDetectorQueima) this.detector.reiniciar();
@@ -279,6 +299,7 @@ export class PipelineProcessamento {
       ...this.config,
       filtroPrincipal:     this.filtroPrincipal,
       taxaEstimadaHz:      this.estimadorFs.obterHzEstavel(),
+      ativoHampel:         this.ativoHampel,
       ativoZonaMorta:      this.ativoZonaMorta,
       ativoDetectorQueima: this.ativoDetectorQueima,
       ativoMediana:        this.ativoMediana,
@@ -300,6 +321,7 @@ export class PipelineProcessamento {
     this.mediana.reiniciar();
     this.ema.reiniciar();
     this.notch.reiniciar();
+    this.hampel.reiniciar();
     this.sg.reiniciar();
     this.kalman.reiniciar();
     this.detector.reiniciar();

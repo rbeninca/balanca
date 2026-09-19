@@ -86,6 +86,19 @@ export function htmlPainelFiltros(): string {
               </div>
             </div>
             <div class="filtro-linha">
+              <label class="filtro-chk" title="Etapa 1 — limpeza: remove amostras anômalas (spikes) antes dos outros filtros">
+                <input type="checkbox" id="ck-hampel">
+                Hampel
+              </label>
+              <button class="filtro-info-btn" data-filtro="hampel" type="button" title="Saiba mais">ℹ</button>
+              <div class="filtro-params">
+                <input type="number" id="in-hampel-jan" class="filtro-num" value="7" min="3" max="21" step="2" title="Janela (amostras, ímpar)">
+                <span>am</span>
+                <input type="number" id="in-hampel-k" class="filtro-num" value="3" min="1" max="10" step="0.5" title="Limiar K (múltiplos de σ)">
+                <span>σ</span>
+              </div>
+            </div>
+            <div class="filtro-linha">
               <label class="filtro-chk">
                 <input type="checkbox" id="ck-notch">
                 Notch

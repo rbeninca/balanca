@@ -10,14 +10,9 @@
  },
  "patch": {
   "ativoHampel": true,
-  "ativoZonaMorta": true,
-  "ativoDetectorQueima": true,
   "ativoMediana": true,
-  "ativoNotch": true,
-  "ativoMediaMovel": true,
-  "ativoEMA": true,
-  "ativoSG": true,
-  "ativoKalman": true
+  "janelaMediana": 3,
+  "ativoNotch": true
  },
  "entrada": [
   {
@@ -1623,2802 +1618,2802 @@
  ],
  "saida": [
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0028689361813612957,
    "emQueima": false,
    "impulsoAcumuladoNs": 0,
    "forcaNewtonCrua": 0.003103080904111266,
    "forcaNewtonBruta": 0.003103080904111266
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00037011011775030657,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000014992956381665934,
    "forcaNewtonCrua": -0.003903713310137391,
    "forcaNewtonBruta": -0.003903713310137391
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0028826918397762778,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000031324737574834745,
    "forcaNewtonCrua": 0.0026496697682887316,
    "forcaNewtonBruta": 0.0026496697682887316
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0023938837028856194,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00006298419083080613,
    "forcaNewtonCrua": 0.00991762150079012,
    "forcaNewtonBruta": 0.00991762150079012
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0033204781885504083,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0001001275431251403,
    "forcaNewtonCrua": 0.0035892296582460403,
    "forcaNewtonBruta": 0.0035892296582460403
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0037355197371845028,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00014246353067954976,
    "forcaNewtonCrua": 0.003462467109784484,
    "forcaNewtonBruta": 0.003462467109784484
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.003700225931228815,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00019079587752423633,
    "forcaNewtonCrua": -0.00654603959992528,
    "forcaNewtonBruta": -0.00654603959992528
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0033478187716664944,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00023308414574160817,
    "forcaNewtonCrua": 0.007663441356271505,
    "forcaNewtonBruta": 0.007663441356271505
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0038920617033869815,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00028014336882945575,
    "forcaNewtonCrua": 0.004145476967096329,
    "forcaNewtonBruta": 0.004145476967096329
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.006415014033189004,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003419858232489117,
    "forcaNewtonCrua": 0.006550691090524197,
    "forcaNewtonBruta": 0.006550691090524197
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004955047603154933,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0004158912238851473,
    "forcaNewtonCrua": 0.004788386635482311,
    "forcaNewtonBruta": 0.004788386635482311
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0050365641930841054,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0004758408946625815,
    "forcaNewtonCrua": -0.0032451653387397528,
    "forcaNewtonBruta": -0.0032451653387397528
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004646876662756193,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005387832602255434,
    "forcaNewtonCrua": 0.005877921357750893,
    "forcaNewtonBruta": 0.005877921357750893
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004577661833521176,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005941304912032077,
    "forcaNewtonCrua": -0.006155798211693764,
    "forcaNewtonBruta": -0.006155798211693764
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004908541178328136,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006557908107802282,
    "forcaNewtonCrua": 0.001597431255504489,
    "forcaNewtonBruta": 0.001597431255504489
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0020171306804700776,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006973448419330175,
    "forcaNewtonCrua": -0.005324759520590305,
    "forcaNewtonBruta": -0.005324759520590305
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004663688248835133,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006801422177386446,
    "forcaNewtonCrua": -0.0058210319839417934,
    "forcaNewtonBruta": -0.0058210319839417934
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.005158803815302244,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006212072653538203,
    "forcaNewtonCrua": 0.005751470103859901,
    "forcaNewtonBruta": 0.005751470103859901
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004354398680700413,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006159786319789084,
    "forcaNewtonCrua": 0.007426128257066011,
    "forcaNewtonBruta": 0.007426128257066011
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.00581793999612084,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000677012664039836,
    "forcaNewtonCrua": 0.006879749242216349,
    "forcaNewtonBruta": 0.006879749242216349
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.007980852098493352,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007667048126548282,
    "forcaNewtonCrua": -0.007773227524012327,
    "forcaNewtonBruta": -0.007773227524012327
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0008731241501825516,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0008198286701468836,
    "forcaNewtonCrua": -0.0005922502023167908,
    "forcaNewtonBruta": -0.0005922502023167908
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00096338044288423,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0008192420042443227,
    "forcaNewtonCrua": 0.004626662936061621,
    "forcaNewtonBruta": 0.004626662936061621
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0018364832555117607,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0008024428220539468,
    "forcaNewtonCrua": -0.0026797319296747446,
    "forcaNewtonBruta": -0.0026797319296747446
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0022070972599714227,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007761595487033061,
    "forcaNewtonCrua": -0.004413655027747154,
    "forcaNewtonBruta": -0.004413655027747154
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0014657553793415343,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007541224328674284,
    "forcaNewtonCrua": -0.0026348901446908712,
    "forcaNewtonBruta": -0.0026348901446908712
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0030395825445657058,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007248377363620313,
    "forcaNewtonCrua": 0.008374487981200218,
    "forcaNewtonBruta": 0.008374487981200218
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00366904768432619,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00068458595498868,
    "forcaNewtonCrua": 0.00741529231891036,
    "forcaNewtonBruta": 0.00741529231891036
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0013479858728841147,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000651975236866813,
    "forcaNewtonCrua": -0.0016146206762641668,
    "forcaNewtonBruta": -0.0016146206762641668
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0006399485937164731,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006400476300672095,
    "forcaNewtonCrua": -0.0014268899103626609,
    "forcaNewtonBruta": -0.0014268899103626609
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0016674518852885826,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006250495269536766,
    "forcaNewtonCrua": 0.006394164636731148,
    "forcaNewtonBruta": 0.006394164636731148
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.002095073023726108,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006024743774995884,
    "forcaNewtonCrua": -0.006545469630509615,
    "forcaNewtonBruta": -0.006545469630509615
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.005954985810438638,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005501489950775175,
    "forcaNewtonCrua": -0.0068337745033204556,
    "forcaNewtonBruta": -0.0068337745033204556
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.005591897461184164,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00048086769544778075,
    "forcaNewtonCrua": -0.003642591182142496,
    "forcaNewtonBruta": -0.003642591182142496
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004363002755066417,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000416160844042152,
    "forcaNewtonCrua": -0.002460421295836568,
    "forcaNewtonBruta": -0.002460421295836568
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.003578328441620102,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00036851285686203286,
    "forcaNewtonCrua": 0.00008994698873721063,
    "forcaNewtonBruta": 0.00008994698873721063
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.00041999966074245934,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003479837197863282,
    "forcaNewtonCrua": 0.009459486231207848,
    "forcaNewtonBruta": 0.009459486231207848
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0008467100242152488,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003555839778960745,
    "forcaNewtonCrua": -0.000649309135042131,
    "forcaNewtonBruta": -0.000649309135042131
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0044141153661281475,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00038977934293330657,
    "forcaNewtonCrua": 0.005070142913609743,
    "forcaNewtonBruta": 0.005070142913609743
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0012360872172746571,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00040884751182642754,
    "forcaNewtonCrua": -0.005493974778801203,
    "forcaNewtonBruta": -0.005493974778801203
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00024349625967674425,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003992302192262434,
    "forcaNewtonCrua": -0.0012796490918844938,
    "forcaNewtonBruta": -0.0012796490918844938
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0007338596954959596,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003933660834952072,
    "forcaNewtonCrua": 0.00746873626485467,
    "forcaNewtonBruta": 0.00746873626485467
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004921080556813781,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00042058301909377304,
    "forcaNewtonCrua": 0.006378734018653631,
    "forcaNewtonBruta": 0.006378734018653631
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.005337442692457746,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0004821341585894022,
    "forcaNewtonCrua": -0.0038426232058554888,
    "forcaNewtonBruta": -0.0038426232058554888
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0023809154493230657,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005323034865109775,
    "forcaNewtonCrua": 0.0007159495144151151,
    "forcaNewtonBruta": 0.0007159495144151151
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.002027386994028703,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005587533011710881,
    "forcaNewtonCrua": 0.006931436248123646,
    "forcaNewtonBruta": 0.006931436248123646
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.002342590104477556,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005871581523113788,
    "forcaNewtonCrua": 0.0040044281631708145,
    "forcaNewtonBruta": 0.0040044281631708145
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0026427671811214606,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006170702960249729,
    "forcaNewtonCrua": -0.007778665982186794,
    "forcaNewtonBruta": -0.007778665982186794
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.003363463424372501,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006561107949606837,
    "forcaNewtonCrua": 0.001784942694939673,
    "forcaNewtonBruta": 0.001784942694939673
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0057333947717517555,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006418912068764082,
    "forcaNewtonCrua": -0.008157496340572834,
    "forcaNewtonBruta": -0.008157496340572834
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0004446383124015996,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006075142898906322,
    "forcaNewtonCrua": 0.003818841651082039,
    "forcaNewtonBruta": 0.003818841651082039
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004180210702751767,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005851008555485312,
    "forcaNewtonCrua": -0.0020081782713532448,
    "forcaNewtonBruta": -0.0020081782713532448
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004803410189986524,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005891516522155571,
    "forcaNewtonCrua": 0.003993208520114422,
    "forcaNewtonBruta": 0.003993208520114422
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0001639297084190922,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006169885351049616,
    "forcaNewtonCrua": -0.004917170852422714,
    "forcaNewtonBruta": -0.004917170852422714
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.002724748440708326,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005982121271356334,
    "forcaNewtonCrua": -0.0023545813746750355,
    "forcaNewtonBruta": -0.0023545813746750355
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0038943742612406445,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005584973909239395,
    "forcaNewtonCrua": -0.0019922710489481688,
    "forcaNewtonBruta": -0.0019922710489481688
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0017053046434325507,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005220994780435638,
    "forcaNewtonCrua": -0.0016361784655600786,
    "forcaNewtonBruta": -0.0016361784655600786
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0007121883770706758,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005075945199205444,
    "forcaNewtonCrua": 0.008882000111043453,
    "forcaNewtonBruta": 0.008882000111043453
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.001906707613626909,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0004905716959810101,
    "forcaNewtonCrua": -0.0013894247822463512,
    "forcaNewtonBruta": -0.0013894247822463512
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.003079174998410341,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0004606564003087866,
    "forcaNewtonCrua": -0.009544112719595432,
    "forcaNewtonBruta": -0.009544112719595432
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.001735698593235599,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000429359721963088,
    "forcaNewtonCrua": -0.004962708335369825,
    "forcaNewtonBruta": -0.004962708335369825
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0038156942654067956,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003960513648112336,
    "forcaNewtonCrua": -0.007341925986111164,
    "forcaNewtonBruta": -0.007341925986111164
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004956425128243925,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003390325887525039,
    "forcaNewtonCrua": 0.00333734811283648,
    "forcaNewtonBruta": 0.00333734811283648
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00813631765472186,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00026047613205470917,
    "forcaNewtonCrua": -0.009890136308968067,
    "forcaNewtonBruta": -0.009890136308968067
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004332029846771183,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0001794318732950044,
    "forcaNewtonCrua": -0.0042747873812913895,
    "forcaNewtonBruta": -0.0042747873812913895
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.003936900135937783,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0001298182933987506,
    "forcaNewtonCrua": -0.004388561472296715,
    "forcaNewtonBruta": -0.004388561472296715
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004226183440957063,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0000767582501489341,
    "forcaNewtonCrua": -0.0016440772451460361,
    "forcaNewtonBruta": -0.0016440772451460361
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.004772062086040565,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000022768776986948335,
    "forcaNewtonCrua": -0.005639858078211546,
    "forcaNewtonBruta": -0.005639858078211546
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0018838480295059494,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": -0.000020494638764104006,
    "forcaNewtonCrua": 0.006066113244742155,
    "forcaNewtonBruta": 0.006066113244742155
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0003869029908622878,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": -0.000034119144886313426,
    "forcaNewtonCrua": -0.0004125142004340887,
    "forcaNewtonBruta": -0.0004125142004340887
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0007866469232656338,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": -0.00003152080932569168,
    "forcaNewtonCrua": 0.0007648253231309354,
    "forcaNewtonBruta": 0.0007648253231309354
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0006542423112289368,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": -0.000022875473918724255,
    "forcaNewtonCrua": 0.006961047649383545,
    "forcaNewtonBruta": 0.006961047649383545
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0021344501272241067,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": -0.000004748973068779473,
    "forcaNewtonCrua": 0.0022662710398435593,
    "forcaNewtonBruta": 0.0022662710398435593
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.003838482208317279,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00003108862094446884,
    "forcaNewtonCrua": 0.003987777046859264,
    "forcaNewtonBruta": 0.003987777046859264
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0023781987095913633,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00007149704691087502,
    "forcaNewtonCrua": -0.009583876468241215,
    "forcaNewtonBruta": -0.009583876468241215
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0014275533068167767,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009433155900932386,
    "forcaNewtonCrua": 0.0010814934503287077,
    "forcaNewtonBruta": 0.0010814934503287077
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.0008729545560335564,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009793645088941479,
    "forcaNewtonCrua": -0.0010263657895848155,
    "forcaNewtonBruta": -0.0010263657895848155
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.000011316837057039281,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009263082253087121,
    "forcaNewtonCrua": 0.0002173113898606971,
    "forcaNewtonBruta": 0.0002173113898606971
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.000006790745299967041,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009251312324555067,
    "forcaNewtonCrua": 0.003273236798122525,
    "forcaNewtonBruta": 0.003273236798122525
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.00041143707272065785,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009494100121007482,
    "forcaNewtonCrua": -0.0041631245985627174,
    "forcaNewtonBruta": -0.0041631245985627174
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.000014473793251796281,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009752126252662242,
    "forcaNewtonCrua": -0.00023920297098811716,
    "forcaNewtonBruta": -0.00023920297098811716
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00036958637868726843,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009521690149498803,
    "forcaNewtonCrua": 0.009084460325539112,
    "forcaNewtonBruta": 0.009084460325539112
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": -0.00043001801458427774,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009001947293872298,
    "forcaNewtonCrua": -0.005969202611595392,
    "forcaNewtonBruta": -0.005969202611595392
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.00029357194116778966,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00008920079649822405,
    "forcaNewtonCrua": 0.0003836518444586545,
    "forcaNewtonBruta": 0.0003836518444586545
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0004986729122279676,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00009435038804529647,
    "forcaNewtonCrua": 0.008125233463943005,
    "forcaNewtonBruta": 0.008125233463943005
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.001977423539668865,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00010920696675667746,
    "forcaNewtonCrua": 0.0021911095827817917,
    "forcaNewtonBruta": 0.0021911095827817917
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.001957063729520707,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00013478113400640967,
    "forcaNewtonCrua": -0.009716296568512917,
    "forcaNewtonBruta": -0.009716296568512917
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.002372548023678531,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0001607588045256051,
    "forcaNewtonCrua": 0.002796388231217861,
    "forcaNewtonBruta": 0.002796388231217861
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.002949442317929529,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00019535174174605747,
    "forcaNewtonCrua": 0.002978463191539049,
    "forcaNewtonBruta": 0.002978463191539049
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.002596659228070736,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00022862835102205906,
    "forcaNewtonCrua": -0.0020197629928588867,
    "forcaNewtonBruta": -0.0020197629928588867
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0028347681009963546,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00026393262866099515,
    "forcaNewtonCrua": 0.0060935067012906075,
    "forcaNewtonBruta": 0.0060935067012906075
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0038119450249286483,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00030381290741654515,
    "forcaNewtonCrua": 0.0037114000879228115,
    "forcaNewtonBruta": 0.0037114000879228115
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.003778105822386592,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00035314823792409423,
    "forcaNewtonCrua": -0.00434644240885973,
    "forcaNewtonBruta": -0.00434644240885973
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0036260285009691476,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0003975730438642287,
    "forcaNewtonCrua": 0.005854611285030842,
    "forcaNewtonBruta": 0.005854611285030842
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0056362549766118975,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.00045777788646850546,
    "forcaNewtonCrua": 0.009908127598464489,
    "forcaNewtonBruta": 0.009908127598464489
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.005765382137617689,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.000526187709153883,
    "forcaNewtonCrua": -0.0001433515571989119,
    "forcaNewtonBruta": -0.0001433515571989119
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0004946320288853976,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005668778012361531,
    "forcaNewtonCrua": -0.006194052752107382,
    "forcaNewtonBruta": -0.006194052752107382
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.00038499159365148767,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005721555429713744,
    "forcaNewtonCrua": 0.0013791328528895974,
    "forcaNewtonBruta": 0.0013791328528895974
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0007225481693445778,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0005793545514308488,
    "forcaNewtonCrua": 0.003460056846961379,
    "forcaNewtonBruta": 0.003460056846961379
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0027395493410625627,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006001271364932917,
    "forcaNewtonCrua": 0.00724762212485075,
    "forcaNewtonBruta": 0.00724762212485075
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.003860538298398,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006430277061497854,
    "forcaNewtonCrua": 20.00144386291504,
    "forcaNewtonBruta": 20.00144386291504
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.004071831751022817,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0006906219264463103,
    "forcaNewtonCrua": 19.650306701660156,
    "forcaNewtonBruta": 19.650306701660156
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.0031200125038765873,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007373689141031564,
    "forcaNewtonCrua": 19.491724014282227,
    "forcaNewtonBruta": 19.491724014282227
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 0.006442377984940607,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.0007947432570360596,
    "forcaNewtonCrua": 19.65513038635254,
    "forcaNewtonBruta": 19.65513038635254
   },
   {
-   "forcaNewton": 0,
+   "forcaNewton": 18.172591227012518,
    "emQueima": false,
-   "impulsoAcumuladoNs": 0,
+   "impulsoAcumuladoNs": 0.11895846168951953,
    "forcaNewtonCrua": 19.991748809814453,
    "forcaNewtonBruta": 19.991748809814453
   },
   {
-   "forcaNewton": 1.7286871335632226,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.010372122801379335,
+   "forcaNewton": 18.48449070600241,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 0.3389009532876091,
    "forcaNewtonCrua": 20.348417282104492,
    "forcaNewtonBruta": 20.348417282104492
   },
   {
-   "forcaNewton": 3.3225190481649265,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.043204962982612304,
+   "forcaNewton": 21.554912427343424,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 0.599157073654357,
    "forcaNewtonCrua": 20.499065399169922,
    "forcaNewtonBruta": 20.499065399169922
   },
   {
-   "forcaNewton": 5.056856378764014,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.09348121554418595,
+   "forcaNewton": 21.611676754965668,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 0.8581566087482115,
    "forcaNewtonCrua": 20.35964012145996,
    "forcaNewtonBruta": 20.35964012145996
   },
   {
-   "forcaNewton": 6.6306985072892095,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.1694503223035319,
+   "forcaNewton": 19.334371696158588,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 1.1243059236805193,
    "forcaNewtonCrua": 19.99619483947754,
    "forcaNewtonBruta": 19.99619483947754
   },
   {
-   "forcaNewton": 7.838162413496251,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.25626348782824465,
+   "forcaNewton": 18.960528438132066,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 1.3540753244862633,
    "forcaNewtonCrua": 19.653663635253906,
    "forcaNewtonBruta": 19.653663635253906
   },
   {
-   "forcaNewton": 8.895982534679192,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.365035429991385,
+   "forcaNewton": 20.577477498630977,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 1.611072363075223,
    "forcaNewtonCrua": 19.494693756103516,
    "forcaNewtonBruta": 19.494693756103516
   },
   {
-   "forcaNewton": 10.007022142024892,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.47845345805160955,
+   "forcaNewton": 20.55784367585138,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 1.8578842901221173,
    "forcaNewtonCrua": 19.65254020690918,
    "forcaNewtonBruta": 19.65254020690918
   },
   {
-   "forcaNewton": 11.010931810704966,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.6150701587443537,
+   "forcaNewton": 18.868224906418686,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 2.1141537359068727,
    "forcaNewtonCrua": 19.998178482055664,
    "forcaNewtonBruta": 19.998178482055664
   },
   {
-   "forcaNewton": 11.758592295179279,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.7516873033796592,
+   "forcaNewton": 19.203415051215497,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 2.342583575652678,
    "forcaNewtonCrua": 20.352157592773438,
    "forcaNewtonBruta": 20.352157592773438
   },
   {
-   "forcaNewton": 12.466655467443061,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 0.9091514138367044,
+   "forcaNewton": 20.965320959937145,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 2.60368035972517,
    "forcaNewtonCrua": 20.49017906188965,
    "forcaNewtonBruta": 20.49017906188965
   },
   {
-   "forcaNewton": 13.274799313813224,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.063600142524242,
+   "forcaNewton": 21.000272682454614,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 2.8554739215795206,
    "forcaNewtonCrua": 20.350004196166992,
    "forcaNewtonBruta": 20.350004196166992
   },
   {
-   "forcaNewton": 14.009601126081375,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.240948745383557,
+   "forcaNewton": 19.82953649133044,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 3.1208676812091234,
    "forcaNewtonCrua": 20.004167556762695,
    "forcaNewtonBruta": 20.004167556762695
   },
   {
-   "forcaNewton": 14.563279762007827,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.4123860307120923,
+   "forcaNewton": 19.480118032358387,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 3.3567256083512564,
    "forcaNewtonCrua": 19.652971267700195,
    "forcaNewtonBruta": 19.652971267700195
   },
   {
-   "forcaNewton": 15.03087491113844,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.604748036087543,
+   "forcaNewton": 20.147489616524666,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 3.614305058068996,
    "forcaNewtonCrua": 19.505884170532227,
    "forcaNewtonBruta": 19.505884170532227
   },
   {
-   "forcaNewton": 15.517844397127643,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.7880403519371395,
+   "forcaNewton": 20.12443560064261,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 3.855936609372,
    "forcaNewtonCrua": 19.65639305114746,
    "forcaNewtonBruta": 19.65639305114746
   },
   {
-   "forcaNewton": 15.956447755697763,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 1.9926232509305046,
+   "forcaNewton": 19.23624483251142,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 4.111781032187501,
    "forcaNewtonCrua": 20.0018310546875,
    "forcaNewtonBruta": 20.0018310546875
   },
   {
-   "forcaNewton": 16.268525237951906,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 2.1859730888924025,
+   "forcaNewton": 19.57519252463007,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 4.3446496563303505,
    "forcaNewtonCrua": 20.360750198364258,
    "forcaNewtonBruta": 20.360750198364258
   },
   {
-   "forcaNewton": 16.583031537674696,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 2.3995082079339753,
+   "forcaNewton": 20.6643457081084,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 4.606206654843151,
    "forcaNewtonCrua": 20.496145248413086,
    "forcaNewtonBruta": 20.496145248413086
   },
   {
-   "forcaNewton": 16.969689990748545,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 2.600824537104515,
+   "forcaNewton": 20.69592177901689,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 4.854368259765902,
    "forcaNewtonCrua": 20.34366798400879,
    "forcaNewtonBruta": 20.34366798400879
   },
   {
-   "forcaNewton": 17.32267927179091,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 2.823724937311021,
+   "forcaNewton": 20.087177363816487,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 5.119458404194319,
    "forcaNewtonCrua": 19.99508285522461,
    "forcaNewtonBruta": 19.99508285522461
   },
   {
-   "forcaNewton": 17.585487970824644,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 3.0331739407667144,
+   "forcaNewton": 19.73808403249393,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 5.358409972572181,
    "forcaNewtonCrua": 19.647016525268555,
    "forcaNewtonBruta": 19.647016525268555
   },
   {
-   "forcaNewton": 17.789997825287532,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 3.2631145984414434,
+   "forcaNewton": 19.91736608555401,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 5.616170398339492,
    "forcaNewtonCrua": 19.502939224243164,
    "forcaNewtonBruta": 19.502939224243164
   },
   {
-   "forcaNewton": 17.992779232405642,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 3.4778112607876026,
+   "forcaNewton": 19.8914949068425,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 5.855023564293871,
    "forcaNewtonCrua": 19.65015983581543,
    "forcaNewtonBruta": 19.65015983581543
   },
   {
-   "forcaNewton": 18.17388795150043,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 3.712894597482992,
+   "forcaNewton": 19.42037185287524,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 6.110550698232037,
    "forcaNewtonCrua": 20.003440856933594,
    "forcaNewtonBruta": 20.003440856933594
   },
   {
-   "forcaNewton": 18.292383142254806,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 3.9316922240455234,
+   "forcaNewton": 19.768962784853294,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 6.345686706058408,
    "forcaNewtonCrua": 20.353315353393555,
    "forcaNewtonBruta": 20.353315353393555
   },
   {
-   "forcaNewton": 18.432700052731278,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 4.170405264812933,
+   "forcaNewton": 20.49536877534748,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 6.607404861199713,
    "forcaNewtonCrua": 20.503114700317383,
    "forcaNewtonBruta": 20.503114700317383
   },
   {
-   "forcaNewton": 18.628976203470938,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 4.392775322350146,
+   "forcaNewton": 20.533962923128502,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 6.853580851390569,
    "forcaNewtonCrua": 20.361919403076172,
    "forcaNewtonBruta": 20.361919403076172
   },
   {
-   "forcaNewton": 18.80955230526386,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 4.636125757656922,
+   "forcaNewton": 20.24065420010978,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 7.118615862691618,
    "forcaNewtonCrua": 20.003643035888672,
    "forcaNewtonBruta": 20.003643035888672
   },
   {
-   "forcaNewton": 18.944873911269617,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 4.862652314956123,
+   "forcaNewton": 19.884596743543895,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 7.35936736835354,
    "forcaNewtonCrua": 19.639055252075195,
    "forcaNewtonBruta": 19.639055252075195
   },
   {
-   "forcaNewton": 19.034047960597885,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 5.109515307123262,
+   "forcaNewton": 19.796564309147175,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 7.617294915196032,
    "forcaNewtonCrua": 19.501394271850586,
    "forcaNewtonBruta": 19.501394271850586
   },
   {
-   "forcaNewton": 19.10666016743438,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 5.338359555891455,
+   "forcaNewton": 19.767646311135152,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 7.854680178917726,
    "forcaNewtonCrua": 19.64070701599121,
    "forcaNewtonBruta": 19.64070701599121
   },
   {
-   "forcaNewton": 19.169865953095798,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 5.587156975674901,
+   "forcaNewton": 19.50684319391651,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 8.109964360700562,
    "forcaNewtonCrua": 20.00352668762207,
    "forcaNewtonBruta": 20.00352668762207
   },
   {
-   "forcaNewton": 19.202000011975134,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 5.817388171465327,
+   "forcaNewton": 19.866840052501015,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 8.346206460179067,
    "forcaNewtonCrua": 20.352401733398438,
    "forcaNewtonBruta": 20.352401733398438
   },
   {
-   "forcaNewton": 19.265108336470075,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 6.06742437573022,
+   "forcaNewton": 20.412362687843114,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 8.608021277991304,
    "forcaNewtonCrua": 20.496416091918945,
    "forcaNewtonBruta": 20.496416091918945
   },
   {
-   "forcaNewton": 19.37417363285176,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 6.299260067546151,
+   "forcaNewton": 20.44662243255334,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 8.853175188713683,
    "forcaNewtonCrua": 20.357254028320312,
    "forcaNewtonBruta": 20.357254028320312
   },
   {
-   "forcaNewton": 19.475877725442544,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 6.5517854013750645,
+   "forcaNewton": 20.305975716607787,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 9.11806707668323,
    "forcaNewtonCrua": 19.99711036682129,
    "forcaNewtonBruta": 19.99711036682129
   },
   {
-   "forcaNewton": 19.554471031666655,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 6.7859674939177195,
+   "forcaNewton": 19.94840349289776,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 9.359593351940264,
    "forcaNewtonCrua": 19.64397430419922,
    "forcaNewtonBruta": 19.64397430419922
   },
   {
-   "forcaNewton": 19.591782434156,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 7.040418141445567,
+   "forcaNewton": 19.74133507251158,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 9.617576652615424,
    "forcaNewtonCrua": 19.494911193847656,
    "forcaNewtonBruta": 19.494911193847656
   },
   {
-   "forcaNewton": 19.60589577988246,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 7.275604210729798,
+   "forcaNewton": 19.711142748147267,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 9.854291519539377,
    "forcaNewtonCrua": 19.6430721282959,
    "forcaNewtonBruta": 19.6430721282959
   },
   {
-   "forcaNewton": 19.616123769663012,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 7.530547337801843,
+   "forcaNewton": 19.560472257732776,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 10.109557017077597,
    "forcaNewtonCrua": 19.992374420166016,
    "forcaNewtonBruta": 19.992374420166016
   },
   {
-   "forcaNewton": 19.61100507671241,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 7.765910110880095,
+   "forcaNewton": 19.90821961269495,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 10.346369168300162,
    "forcaNewtonCrua": 20.354415893554688,
    "forcaNewtonBruta": 20.354415893554688
   },
   {
-   "forcaNewton": 19.639173204151394,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 8.02103626970571,
+   "forcaNewton": 20.370875678627648,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 10.608183287693759,
    "forcaNewtonCrua": 20.50939178466797,
    "forcaNewtonBruta": 20.50939178466797
   },
   {
-   "forcaNewton": 19.708706968527654,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 8.257123550741785,
+   "forcaNewton": 20.401464180585663,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 10.852817326849038,
    "forcaNewtonCrua": 20.35756492614746,
    "forcaNewtonBruta": 20.35756492614746
   },
   {
-   "forcaNewton": 19.774417125301014,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 8.513763857351671,
+   "forcaNewton": 20.34335149380487,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 11.117658628732578,
    "forcaNewtonCrua": 20.000362396240234,
    "forcaNewtonBruta": 20.000362396240234
   },
   {
-   "forcaNewton": 19.82831892080105,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 8.751380273628284,
+   "forcaNewton": 19.9900409465932,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 11.359658983374967,
    "forcaNewtonCrua": 19.652969360351562,
    "forcaNewtonBruta": 19.652969360351562
   },
   {
-   "forcaNewton": 19.8435856667733,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 9.009247653447517,
+   "forcaNewton": 19.718203484047706,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 11.617762572174133,
    "forcaNewtonCrua": 19.506000518798828,
    "forcaNewtonBruta": 19.506000518798828
   },
   {
-   "forcaNewton": 19.831566884731405,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 9.247298568756545,
+   "forcaNewton": 19.678583883910523,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 11.854143296381881,
    "forcaNewtonCrua": 19.64284324645996,
    "forcaNewtonBruta": 19.64284324645996
   },
   {
-   "forcaNewton": 19.818004337352093,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 9.505020781700088,
+   "forcaNewton": 19.5882177497253,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 12.109377507000515,
    "forcaNewtonCrua": 19.999553680419922,
    "forcaNewtonBruta": 19.999553680419922
   },
   {
-   "forcaNewton": 19.797114425959006,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 9.742711494279954,
+   "forcaNewton": 19.942290915628252,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 12.346560558992635,
    "forcaNewtonCrua": 20.353126525878906,
    "forcaNewtonBruta": 20.353126525878906
   },
   {
-   "forcaNewton": 19.810974337379754,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 10.000164071241656,
+   "forcaNewton": 20.34591360104509,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 12.608433888351012,
    "forcaNewtonCrua": 20.492717742919922,
    "forcaNewtonBruta": 20.492717742919922
   },
   {
-   "forcaNewton": 19.861928597230147,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 10.238201488849315,
+   "forcaNewton": 20.382623191291614,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 12.852805109105033,
    "forcaNewtonCrua": 20.361297607421875,
    "forcaNewtonBruta": 20.361297607421875
   },
   {
-   "forcaNewton": 19.91069854374962,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 10.496723565265683,
+   "forcaNewton": 20.366805468044728,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 13.117676395390719,
    "forcaNewtonCrua": 19.996896743774414,
    "forcaNewtonBruta": 19.996896743774414
   },
   {
-   "forcaNewton": 19.95330914407951,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 10.735907611392657,
+   "forcaNewton": 20.00628550090289,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 13.359914941204405,
    "forcaNewtonCrua": 19.636606216430664,
    "forcaNewtonBruta": 19.636606216430664
   },
   {
-   "forcaNewton": 19.958276121752128,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 10.995332915620562,
+   "forcaNewton": 19.68661155160998,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 13.617918772045739,
    "forcaNewtonCrua": 19.502174377441406,
    "forcaNewtonBruta": 19.502174377441406
   },
   {
-   "forcaNewton": 19.93304693251347,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 11.234680853946156,
+   "forcaNewton": 19.655820252541123,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 13.853973362870645,
    "forcaNewtonCrua": 19.644248962402344,
    "forcaNewtonBruta": 19.644248962402344
   },
   {
-   "forcaNewton": 19.907409393508345,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 11.493643820065298,
+   "forcaNewton": 19.601213301142234,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 14.109144080969587,
    "forcaNewtonCrua": 19.99193572998047,
    "forcaNewtonBruta": 19.99193572998047
   },
   {
-   "forcaNewton": 19.87843428124,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 11.732358882113788,
+   "forcaNewton": 19.948809716576505,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 14.346444219075899,
    "forcaNewtonCrua": 20.34617042541504,
    "forcaNewtonBruta": 20.34617042541504
   },
   {
-   "forcaNewton": 19.885177982503706,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 11.990822361828123,
+   "forcaNewton": 20.329747645854887,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 14.608254841931704,
    "forcaNewtonCrua": 20.492435455322266,
    "forcaNewtonBruta": 20.492435455322266
   },
   {
-   "forcaNewton": 19.927325856821223,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 12.229697384864073,
+   "forcaNewton": 20.356059264332877,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 14.85236968339283,
    "forcaNewtonCrua": 20.346023559570312,
    "forcaNewtonBruta": 20.346023559570312
   },
   {
-   "forcaNewton": 19.968054360234365,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 12.489017356274934,
+   "forcaNewton": 20.359979040755757,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 15.117023932375906,
    "forcaNewtonCrua": 20.005399703979492,
    "forcaNewtonBruta": 20.005399703979492
   },
   {
-   "forcaNewton": 20.0054436324526,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 12.728858344231055,
+   "forcaNewton": 20.022716248225677,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 15.359320104109795,
    "forcaNewtonCrua": 19.650653839111328,
    "forcaNewtonBruta": 19.650653839111328
   },
   {
-   "forcaNewton": 20.007120241618026,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 12.988940009412515,
+   "forcaNewton": 19.69127391047665,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 15.61746104014136,
    "forcaNewtonCrua": 19.504051208496094,
    "forcaNewtonBruta": 19.504051208496094
   },
   {
-   "forcaNewton": 19.976984134499958,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 13.228844635669223,
+   "forcaNewton": 19.65613698837484,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 15.853545505534468,
    "forcaNewtonCrua": 19.643535614013672,
    "forcaNewtonBruta": 19.643535614013672
   },
   {
-   "forcaNewton": 19.94706111342275,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 13.48835092978072,
+   "forcaNewton": 19.609582673212167,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 16.108772683334784,
    "forcaNewtonCrua": 19.994373321533203,
    "forcaNewtonBruta": 19.994373321533203
   },
   {
-   "forcaNewton": 19.9156620101652,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 13.727527268522248,
+   "forcaNewton": 19.95720097738383,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 16.34617338523836,
    "forcaNewtonCrua": 20.35297393798828,
    "forcaNewtonBruta": 20.35297393798828
   },
   {
-   "forcaNewton": 19.919732065841508,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 13.986457330016291,
+   "forcaNewton": 20.32827193258612,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 16.608028959153163,
    "forcaNewtonCrua": 20.50849723815918,
    "forcaNewtonBruta": 20.50849723815918
   },
   {
-   "forcaNewton": 19.958345960484408,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 14.225725798174247,
+   "forcaNewton": 20.35747814956877,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 16.852143459646094,
    "forcaNewtonCrua": 20.349822998046875,
    "forcaNewtonBruta": 20.349822998046875
   },
   {
-   "forcaNewton": 19.995935505585454,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 14.485428627703701,
+   "forcaNewton": 20.37103495185574,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 17.116878794805352,
    "forcaNewtonCrua": 19.991907119750977,
    "forcaNewtonBruta": 19.991907119750977
   },
   {
-   "forcaNewton": 20.031550632452095,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 14.725593544531927,
+   "forcaNewton": 20.01532714458953,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 17.359196967384023,
    "forcaNewtonCrua": 19.65416717529297,
    "forcaNewtonBruta": 19.65416717529297
   },
   {
-   "forcaNewton": 20.030051105999853,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 14.985993955831864,
+   "forcaNewton": 19.688647444528073,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 17.617272802213286,
    "forcaNewtonCrua": 19.497116088867188,
    "forcaNewtonBruta": 19.497116088867188
   },
   {
-   "forcaNewton": 19.997802569602484,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 15.226161077885479,
+   "forcaNewton": 19.659765851185885,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 17.85336328198757,
    "forcaNewtonCrua": 19.65611457824707,
    "forcaNewtonBruta": 19.65611457824707
   },
   {
-   "forcaNewton": 19.96578098982498,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 15.485924371021758,
+   "forcaNewton": 19.626690823012368,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 18.108725250369858,
    "forcaNewtonCrua": 19.9945011138916,
    "forcaNewtonBruta": 19.9945011138916
   },
   {
-   "forcaNewton": 19.933503198859732,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 15.725320076153867,
+   "forcaNewton": 19.964067250890274,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 18.346269798813275,
    "forcaNewtonCrua": 20.34854507446289,
    "forcaNewtonBruta": 20.34854507446289
   },
   {
-   "forcaNewton": 19.936467976628055,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 15.984474888794537,
+   "forcaNewton": 20.321280723257825,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 18.608124560645237,
    "forcaNewtonCrua": 20.501638412475586,
    "forcaNewtonBruta": 20.501638412475586
   },
   {
-   "forcaNewton": 19.973091824712828,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 16.223932247602583,
+   "forcaNewton": 20.361066545116657,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 18.852218644255483,
    "forcaNewtonCrua": 20.363033294677734,
    "forcaNewtonBruta": 20.363033294677734
   },
   {
-   "forcaNewton": 20.00867497484547,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 16.483813731799714,
+   "forcaNewton": 20.385089934994028,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 19.1170686613762,
    "forcaNewtonCrua": 519.9950561523438,
    "forcaNewtonBruta": 519.9950561523438
   },
   {
-   "forcaNewton": 20.0431914560744,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 16.724124930385234,
+   "forcaNewton": 20.35130823646706,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 19.361487050404968,
    "forcaNewtonCrua": 19.65108871459961,
    "forcaNewtonBruta": 19.65108871459961
   },
   {
-   "forcaNewton": 20.072350114411755,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 16.984875950593395,
+   "forcaNewton": 19.68608084730902,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 19.621730079449513,
    "forcaNewtonCrua": 19.49610137939453,
    "forcaNewtonBruta": 19.49610137939453
   },
   {
-   "forcaNewton": 20.03558019126608,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 17.225523532427463,
+   "forcaNewton": 19.701369508167165,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 19.85805478158237,
    "forcaNewtonCrua": 19.6528263092041,
    "forcaNewtonBruta": 19.6528263092041
   },
   {
-   "forcaNewton": 20.00406939261309,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 17.485781254722678,
+   "forcaNewton": 19.622983767597926,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 20.113663077874843,
    "forcaNewtonCrua": 19.99574851989746,
    "forcaNewtonBruta": 19.99574851989746
   },
   {
-   "forcaNewton": 19.967993620972468,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 17.72561363280419,
+   "forcaNewton": 19.927049157371624,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 20.35096327542466,
    "forcaNewtonCrua": 20.354040145874023,
    "forcaNewtonBruta": 20.354040145874023
   },
   {
-   "forcaNewton": 19.964013033150085,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 17.985171676055987,
+   "forcaNewton": 20.326468629599674,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 20.612611141039974,
    "forcaNewtonCrua": 20.504549026489258,
    "forcaNewtonBruta": 20.504549026489258
   },
   {
-   "forcaNewton": 19.99834302950185,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 18.224945812431898,
+   "forcaNewton": 20.38535983748695,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 20.856882111842495,
    "forcaNewtonCrua": 20.35406494140625,
    "forcaNewtonBruta": 20.35406494140625
   },
   {
-   "forcaNewton": 20.035228600916593,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 18.48516402802962,
+   "forcaNewton": 20.377473738044895,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 21.121840530083453,
    "forcaNewtonCrua": 20.0039005279541,
    "forcaNewtonBruta": 20.0039005279541
   },
   {
-   "forcaNewton": 20.067908606204394,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 18.725782851272346,
+   "forcaNewton": 20.00375023364941,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 21.36412787391362,
    "forcaNewtonCrua": 19.650117874145508,
    "forcaNewtonBruta": 19.650117874145508
   },
   {
-   "forcaNewton": 20.061743396084076,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 18.98662558928722,
+   "forcaNewton": 19.683358449123073,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 21.62209408035164,
    "forcaNewtonCrua": 19.495433807373047,
    "forcaNewtonBruta": 19.495433807373047
   },
   {
-   "forcaNewton": 20.025642120952924,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 19.227149902389442,
+   "forcaNewton": 19.666821804283558,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 21.85819516187208,
    "forcaNewtonCrua": 19.63917350769043,
    "forcaNewtonBruta": 19.63917350769043
   },
   {
-   "forcaNewton": 19.992524663721717,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 19.487267986489826,
+   "forcaNewton": 19.61177511879626,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 22.113506041872096,
    "forcaNewtonCrua": 20.005388259887695,
    "forcaNewtonBruta": 20.005388259887695
   },
   {
-   "forcaNewton": 19.957359642744677,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 19.726967292328624,
+   "forcaNewton": 19.9542794579487,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 22.350902369332566,
    "forcaNewtonCrua": 20.34416389465332,
    "forcaNewtonBruta": 20.34416389465332
   },
   {
-   "forcaNewton": 19.957167089263354,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 19.986411716086675,
+   "forcaNewton": 20.314232113778484,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 22.61264769454879,
    "forcaNewtonCrua": 20.492595672607422,
    "forcaNewtonBruta": 20.492595672607422
   },
   {
-   "forcaNewton": 19.991200671227833,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 20.226101922649622,
+   "forcaNewton": 20.370562275161006,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 22.856756460882426,
    "forcaNewtonCrua": 20.35342788696289,
    "forcaNewtonBruta": 20.35342788696289
   },
   {
-   "forcaNewton": 20.02638738185062,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 20.486216244994633,
+   "forcaNewton": 20.37814360919158,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 23.12162304913072,
    "forcaNewtonCrua": 19.99925994873047,
    "forcaNewtonBruta": 19.99925994873047
   },
   {
-   "forcaNewton": 20.058975855496506,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 20.726728424418717,
+   "forcaNewton": 20.01143527228757,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 23.363960522419593,
    "forcaNewtonCrua": 19.643754959106445,
    "forcaNewtonBruta": 19.643754959106445
   },
   {
-   "forcaNewton": 20.054403026335745,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 20.987465387150625,
+   "forcaNewton": 19.67631788615765,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 23.621930917949488,
    "forcaNewtonCrua": 19.503969192504883,
    "forcaNewtonBruta": 19.503969192504883
   },
   {
-   "forcaNewton": 20.018823928310184,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 21.2279047488785,
+   "forcaNewton": 19.660241857224342,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 23.85795027640978,
    "forcaNewtonCrua": 19.648988723754883,
    "forcaNewtonBruta": 19.648988723754883
   },
   {
-   "forcaNewton": 19.985217040428697,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 21.487931015175302,
+   "forcaNewton": 19.620944988150328,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 24.113277990904717,
    "forcaNewtonCrua": 20.00153923034668,
    "forcaNewtonBruta": 20.00153923034668
   },
   {
-   "forcaNewton": 19.950698048595477,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 21.727546505709448,
+   "forcaNewton": 19.960543574330966,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 24.350766922279604,
    "forcaNewtonCrua": 20.350467681884766,
    "forcaNewtonBruta": 20.350467681884766
   },
   {
-   "forcaNewton": 19.951667633879687,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 21.986911882645536,
+   "forcaNewton": 20.32134881456548,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 24.612599222807432,
    "forcaNewtonCrua": 20.498676300048828,
    "forcaNewtonBruta": 20.498676300048828
   },
   {
-   "forcaNewton": 19.986721143034067,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 22.22654221530702,
+   "forcaNewton": 20.36057216139358,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 24.856690748663187,
    "forcaNewtonCrua": 20.352224349975586,
    "forcaNewtonBruta": 20.352224349975586
   },
   {
-   "forcaNewton": 20.022101152155336,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 22.486599560225752,
+   "forcaNewton": 20.376816305742228,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 25.12148377369957,
    "forcaNewtonCrua": 20.00181007385254,
    "forcaNewtonBruta": 20.00181007385254
   },
   {
-   "forcaNewton": 20.055784333661933,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 22.727066873140657,
+   "forcaNewton": 20.021162747264523,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 25.36387164801761,
    "forcaNewtonCrua": 19.642704010009766,
    "forcaNewtonBruta": 19.642704010009766
   },
   {
-   "forcaNewton": 20.0524914564247,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 22.98777066577622,
+   "forcaNewton": 19.675360512180884,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 25.621899049204007,
    "forcaNewtonCrua": 19.50865936279297,
    "forcaNewtonBruta": 19.50865936279297
   },
   {
-   "forcaNewton": 20.01760006356793,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 23.228191214896178,
+   "forcaNewton": 19.653368421338925,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 25.857871422805125,
    "forcaNewtonCrua": 19.65506935119629,
    "forcaNewtonBruta": 19.65506935119629
   },
   {
-   "forcaNewton": 19.984039631125484,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 23.488201872911684,
+   "forcaNewton": 19.62640804486213,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 26.11318996983543,
    "forcaNewtonCrua": 20.002296447753906,
    "forcaNewtonBruta": 20.002296447753906
   },
   {
-   "forcaNewton": 19.950272662550624,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 23.72780774667374,
+   "forcaNewton": 19.966108164241543,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 26.350745067090052,
    "forcaNewtonCrua": 20.35158920288086,
    "forcaNewtonBruta": 20.35158920288086
   },
   {
-   "forcaNewton": 19.951943488237905,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 23.987172151653866,
+   "forcaNewton": 20.32336890017311,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 26.612626668008748,
    "forcaNewtonCrua": 20.507707595825195,
    "forcaNewtonBruta": 20.507707595825195
   },
   {
-   "forcaNewton": 19.986829072645666,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 24.226804787019166,
+   "forcaNewton": 20.355960189462117,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 26.85670264254656,
    "forcaNewtonCrua": 20.348955154418945,
    "forcaNewtonBruta": 20.348955154418945
   },
   {
-   "forcaNewton": 20.021571330355226,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 24.48685938963867,
+   "forcaNewton": 20.373115452972975,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 27.121441634222386,
    "forcaNewtonCrua": 19.99085235595703,
    "forcaNewtonBruta": 19.99085235595703
   },
   {
-   "forcaNewton": 20.0551591683673,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 24.727319772631006,
+   "forcaNewton": 20.014360602487777,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 27.36376649055515,
    "forcaNewtonCrua": 19.644514083862305,
    "forcaNewtonBruta": 19.644514083862305
   },
   {
-   "forcaNewton": 20.051361826755514,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 24.988012159099306,
+   "forcaNewton": 19.677153842225458,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 27.621761334445786,
    "forcaNewtonCrua": 19.49798011779785,
    "forcaNewtonBruta": 19.49798011779785
   },
   {
-   "forcaNewton": 20.016579519290104,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 25.22841980717558,
+   "forcaNewton": 19.65068664336786,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 27.857728377359347,
    "forcaNewtonCrua": 19.655193328857422,
    "forcaNewtonBruta": 19.655193328857422
   },
   {
-   "forcaNewton": 19.98264219811838,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 25.488414748338734,
+   "forcaNewton": 19.626673464844956,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 28.11303121806273,
    "forcaNewtonCrua": 20.00951385498047,
    "forcaNewtonBruta": 20.00951385498047
   },
   {
-   "forcaNewton": 19.949028583675886,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 25.7280047730295,
+   "forcaNewton": 19.976731539462847,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 28.350651648088576,
    "forcaNewtonCrua": 20.344196319580078,
    "forcaNewtonBruta": 20.344196319580078
   },
   {
-   "forcaNewton": 19.95186584752974,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 25.987360586832338,
+   "forcaNewton": 20.316423108761864,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 28.612557153302035,
    "forcaNewtonCrua": 20.49831199645996,
    "forcaNewtonBruta": 20.49831199645996
   },
   {
-   "forcaNewton": 19.98633385340849,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 26.22698978503797,
+   "forcaNewton": 20.353175483201905,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 28.856574744853816,
    "forcaNewtonCrua": 20.351116180419922,
    "forcaNewtonBruta": 20.351116180419922
   },
   {
-   "forcaNewton": 20.02044951738861,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 26.48703387694815,
+   "forcaNewton": 20.374175962602664,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 29.121302529251547,
    "forcaNewtonCrua": 19.993431091308594,
    "forcaNewtonBruta": 19.993431091308594
   },
   {
-   "forcaNewton": 20.053667847492324,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 26.727478581137436,
+   "forcaNewton": 20.018671890714543,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 29.36365961637145,
    "forcaNewtonCrua": 19.654407501220703,
    "forcaNewtonBruta": 19.654407501220703
   },
   {
-   "forcaNewton": 20.050392666357283,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 26.98815497447746,
+   "forcaNewton": 19.687398243827648,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 29.621749072245976,
    "forcaNewtonCrua": 19.49589729309082,
    "forcaNewtonBruta": 19.49589729309082
   },
   {
-   "forcaNewton": 20.015718068299382,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 27.2285516388854,
+   "forcaNewton": 19.658557035899758,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 29.85782480392434,
    "forcaNewtonCrua": 19.65553092956543,
    "forcaNewtonBruta": 19.65553092956543
   },
   {
-   "forcaNewton": 19.981796268837794,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 27.48853548207679,
+   "forcaNewton": 19.627434088282037,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 30.113183746231524,
    "forcaNewtonCrua": 20.004352569580078,
    "forcaNewtonBruta": 20.004352569580078
   },
   {
-   "forcaNewton": 19.94830932919152,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 27.728116115664967,
+   "forcaNewton": 19.974423943028555,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 30.350794894419387,
    "forcaNewtonCrua": 20.363370895385742,
    "forcaNewtonBruta": 20.363370895385742
   },
   {
-   "forcaNewton": 19.950847182091778,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 27.98746063298831,
+   "forcaNewton": 20.33381714607827,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 30.61279846149858,
    "forcaNewtonCrua": 20.505674362182617,
    "forcaNewtonBruta": 20.505674362182617
   },
   {
-   "forcaNewton": 19.98616746840049,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 28.227082720891264,
+   "forcaNewton": 20.361693028480914,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 30.856971522545937,
    "forcaNewtonCrua": 20.352893829345703,
    "forcaNewtonBruta": 20.352893829345703
   },
   {
-   "forcaNewton": 20.020922281176336,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 28.487128804263513,
+   "forcaNewton": 20.37877814188877,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 31.12178458515334,
    "forcaNewtonCrua": 20.003385543823242,
    "forcaNewtonBruta": 20.003385543823242
   },
   {
-   "forcaNewton": 20.054984098506864,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 28.727584242541614,
+   "forcaNewton": 20.03197310001865,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 31.364249092604783,
    "forcaNewtonCrua": 19.65435218811035,
    "forcaNewtonBruta": 19.65435218811035
   },
   {
-   "forcaNewton": 20.052694841982653,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 28.988284155654796,
+   "forcaNewton": 19.68508296061117,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 31.622409956998876,
    "forcaNewtonCrua": 19.496145248413086,
    "forcaNewtonBruta": 19.496145248413086
   },
   {
-   "forcaNewton": 20.017708123881025,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 29.228706573449976,
+   "forcaNewton": 19.65434329280617,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 31.85844651451938,
    "forcaNewtonCrua": 19.652111053466797,
    "forcaNewtonBruta": 19.652111053466797
   },
   {
-   "forcaNewton": 19.983425369337954,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 29.4887139411559,
+   "forcaNewton": 19.62618700264835,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 32.113769961439836,
    "forcaNewtonCrua": 20.001968383789062,
    "forcaNewtonBruta": 20.001968383789062
   },
   {
-   "forcaNewton": 19.94965519962435,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 29.728312424569673,
+   "forcaNewton": 19.973674331694262,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 32.35136912944589,
    "forcaNewtonCrua": 20.3560733795166,
    "forcaNewtonBruta": 20.3560733795166
   },
   {
-   "forcaNewton": 19.951897424291246,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 29.987672516625125,
+   "forcaNewton": 20.324967327507952,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 32.61331030023071,
    "forcaNewtonCrua": 20.501195907592773,
    "forcaNewtonBruta": 20.501195907592773
   },
   {
-   "forcaNewton": 19.986451893442194,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 30.227302612531524,
+   "forcaNewton": 20.353378351730168,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 32.85738037430614,
    "forcaNewtonCrua": 20.34526252746582,
    "forcaNewtonBruta": 20.34526252746582
   },
   {
-   "forcaNewton": 20.02044112538201,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 30.48734741715388,
+   "forcaNewton": 20.37249006896745,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 33.12209851904068,
    "forcaNewtonCrua": 20.008207321166992,
    "forcaNewtonBruta": 20.008207321166992
   },
   {
-   "forcaNewton": 20.053771828366077,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 30.72779269487637,
+   "forcaNewton": 20.036744069229698,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 33.364553923869856,
    "forcaNewtonCrua": 19.651350021362305,
    "forcaNewtonBruta": 19.651350021362305
   },
   {
-   "forcaNewton": 20.051977872374735,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 30.988480067931185,
+   "forcaNewton": 19.680590979097776,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 33.62271660168398,
    "forcaNewtonCrua": 19.490503311157227,
    "forcaNewtonBruta": 19.490503311157227
   },
   {
-   "forcaNewton": 20.016783815748934,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 31.22889263805993,
+   "forcaNewton": 19.652401376512326,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 33.85871455581764,
    "forcaNewtonCrua": 19.64957046508789,
    "forcaNewtonBruta": 19.64957046508789
   },
   {
-   "forcaNewton": 19.98242637593167,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 31.488887504305854,
+   "forcaNewton": 19.62487657074855,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 34.114016862474834,
    "forcaNewtonCrua": 19.99576187133789,
    "forcaNewtonBruta": 19.99576187133789
   },
   {
-   "forcaNewton": 19.94845712908444,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 31.72847280533595,
+   "forcaNewton": 19.967236107810827,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 34.351569538546194,
    "forcaNewtonCrua": 20.360000610351562,
    "forcaNewtonBruta": 20.360000610351562
   },
   {
-   "forcaNewton": 19.950141512760222,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 31.987813696507942,
+   "forcaNewton": 20.327362013215197,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 34.61348442633286,
    "forcaNewtonCrua": 20.504589080810547,
    "forcaNewtonBruta": 20.504589080810547
   },
   {
-   "forcaNewton": 19.98614487641353,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 32.22743141484298,
+   "forcaNewton": 20.359120070828627,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 34.85760331883712,
    "forcaNewtonCrua": 20.362577438354492,
    "forcaNewtonBruta": 20.362577438354492
   },
   {
-   "forcaNewton": 20.021484065352965,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 32.487481002964465,
+   "forcaNewton": 20.390096071904942,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 35.12247322376489,
    "forcaNewtonCrua": 20.000511169433594,
    "forcaNewtonBruta": 20.000511169433594
   },
   {
-   "forcaNewton": 20.056219489430777,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 32.72794722429317,
+   "forcaNewton": 20.030766696595535,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 35.364998400375896,
    "forcaNewtonCrua": 19.654190063476562,
    "forcaNewtonBruta": 19.654190063476562
   },
   {
-   "forcaNewton": 20.053690582272793,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 32.98866163975924,
+   "forcaNewton": 19.684276067594368,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 35.62314617834313,
    "forcaNewtonCrua": 19.494037628173828,
    "forcaNewtonBruta": 19.494037628173828
   },
   {
-   "forcaNewton": 20.018602580630382,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 33.22909539873666,
+   "forcaNewton": 19.64050722401555,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 35.85909487809278,
    "forcaNewtonCrua": 19.638912200927734,
    "forcaNewtonBruta": 19.638912200927734
   },
   {
-   "forcaNewton": 19.9840713920827,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 33.48911277955929,
+   "forcaNewton": 19.61451930943646,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 36.114252550560224,
    "forcaNewtonCrua": 19.994489669799805,
    "forcaNewtonBruta": 19.994489669799805
   },
   {
-   "forcaNewton": 19.950216825954506,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 33.728718508867516,
+   "forcaNewton": 19.966305054646085,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 36.35173749674472,
    "forcaNewtonCrua": 20.361726760864258,
    "forcaNewtonBruta": 20.361726760864258
   },
   {
-   "forcaNewton": 19.921943929773946,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 33.98788755377975,
+   "forcaNewton": 19.98837110367155,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 36.611442891773784,
    "forcaNewtonCrua": 0.0059765721671283245,
    "forcaNewtonBruta": 0.0059765721671283245
   },
   {
-   "forcaNewton": 19.898575045336372,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 34.22681066763041,
+   "forcaNewton": 19.703798805563114,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 36.849595911229194,
    "forcaNewtonCrua": -0.004113103728741407,
    "forcaNewtonBruta": -0.004113103728741407
   },
   {
-   "forcaNewton": 19.87542420718108,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 34.48534166277177,
+   "forcaNewton": 19.670937706130392,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.105531698555204,
    "forcaNewtonCrua": -0.0025362148880958557,
    "forcaNewtonBruta": -0.0025362148880958557
   },
   {
-   "forcaNewton": 19.851251591454496,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 34.723701717563586,
+   "forcaNewton": 19.463999789896096,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.34034132353136,
    "forcaNewtonCrua": 0.008665002882480621,
    "forcaNewtonBruta": 0.008665002882480621
   },
   {
-   "forcaNewton": 19.81833943112237,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 34.98155405921033,
+   "forcaNewton": 1.4626838955759212,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.47636476748693,
    "forcaNewtonCrua": 0.007511789444833994,
    "forcaNewtonBruta": 0.007511789444833994
   },
   {
-   "forcaNewton": 18.076267554517905,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 35.208921701124176,
+   "forcaNewton": 1.5033833999622175,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49416117126016,
    "forcaNewtonCrua": 0.0064443303272128105,
    "forcaNewtonBruta": 0.0064443303272128105
   },
   {
-   "forcaNewton": 16.496440452252706,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 35.43364430316819,
+   "forcaNewton": -1.2274028942854422,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49595504454706,
    "forcaNewtonCrua": 0.007067850325256586,
    "forcaNewtonBruta": 0.007067850325256586
   },
   {
-   "forcaNewton": 14.80705772868216,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 35.621465292253795,
+   "forcaNewton": -1.2636030594877683,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48100900882442,
    "forcaNewtonCrua": -0.0025231684558093548,
    "forcaNewtonBruta": -0.0025231684558093548
   },
   {
-   "forcaNewton": 13.28122204707792,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 35.80403911079623,
+   "forcaNewton": 1.0552432200026973,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.47965466986777,
    "forcaNewtonCrua": 0.010594858787953854,
    "forcaNewtonBruta": 0.010594858787953854
   },
   {
-   "forcaNewton": 12.121116646028229,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 35.95645314295487,
+   "forcaNewton": 1.0886647814729153,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49251811787662,
    "forcaNewtonCrua": 0.0109639260917902,
    "forcaNewtonBruta": 0.0109639260917902
   },
   {
-   "forcaNewton": 11.069235232472028,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.107190430165126,
+   "forcaNewton": -0.8796653139041047,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49387661441582,
    "forcaNewtonCrua": 0.010301673784852028,
    "forcaNewtonBruta": 0.010301673784852028
   },
   {
-   "forcaNewton": 9.930117449816294,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.23318654625886,
+   "forcaNewton": -0.9050533762854099,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.483168302274684,
    "forcaNewtonCrua": 0.000009713651706988458,
    "forcaNewtonBruta": 0.000009713651706988458
   },
   {
-   "forcaNewton": 8.90145192757882,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.355591747211925,
+   "forcaNewton": 0.7567184258586765,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.482204125096914,
    "forcaNewtonCrua": -0.0009164389339275658,
    "forcaNewtonBruta": -0.0009164389339275658
   },
   {
-   "forcaNewton": 8.128764362688822,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.457773044953534,
+   "forcaNewton": 0.7771478152772194,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49140732254373,
    "forcaNewtonCrua": -0.001797551871277392,
    "forcaNewtonBruta": -0.001797551871277392
   },
   {
-   "forcaNewton": 7.427800845123027,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.558890718804314,
+   "forcaNewton": -0.6433595009881775,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49227694658661,
    "forcaNewtonCrua": 0.001894964138045907,
    "forcaNewtonBruta": 0.001894964138045907
   },
   {
-   "forcaNewton": 6.658348056420571,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.64340761221357,
+   "forcaNewton": -0.6589628703200192,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48446301235876,
    "forcaNewtonCrua": 0.004397454205900431,
    "forcaNewtonBruta": 0.004397454205900431
   },
   {
-   "forcaNewton": 5.963764714380808,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.72545134522378,
+   "forcaNewton": 0.5494877450415937,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48375142404445,
    "forcaNewtonCrua": 0.007564328145235777,
    "forcaNewtonBruta": 0.007564328145235777
   },
   {
-   "forcaNewton": 5.450243605038411,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.793935395140295,
+   "forcaNewton": 0.568263575018777,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49045793196481,
    "forcaNewtonCrua": 0.008392258547246456,
    "forcaNewtonBruta": 0.008392258547246456
   },
   {
-   "forcaNewton": 4.984314466463292,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.861760022605054,
+   "forcaNewton": -0.45550472924948376,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49119086446231,
    "forcaNewtonCrua": 0.0002519121044315398,
    "forcaNewtonBruta": 0.0002519121044315398
   },
   {
-   "forcaNewton": 4.46543235044688,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.918458503506514,
+   "forcaNewton": -0.46995187306000297,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48563812484846,
    "forcaNewtonCrua": 0.006014687940478325,
    "forcaNewtonBruta": 0.006014687940478325
   },
   {
-   "forcaNewton": 3.9971121787567885,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 36.97346504294634,
+   "forcaNewton": 0.399318399625834,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.485179007271135,
    "forcaNewtonCrua": 0.01250315923243761,
    "forcaNewtonBruta": 0.01250315923243761
   },
   {
-   "forcaNewton": 3.6561506254093423,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.01938461977134,
+   "forcaNewton": 0.4161514774369167,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49007182653351,
    "forcaNewtonCrua": 0.018611785024404526,
    "forcaNewtonBruta": 0.018611785024404526
   },
   {
-   "forcaNewton": 3.3465284704306164,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.0649020338943,
+   "forcaNewton": -0.3219362361843768,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49068422560165,
    "forcaNewtonCrua": 0.0047341808676719666,
    "forcaNewtonBruta": 0.0047341808676719666
   },
   {
-   "forcaNewton": 2.99611911958527,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.102957919434395,
+   "forcaNewton": -0.33741290089099607,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.4867281307792,
    "forcaNewtonCrua": 0.0023380920756608248,
    "forcaNewtonBruta": 0.0023380920756608248
   },
   {
-   "forcaNewton": 2.679853260002739,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.139851739901715,
+   "forcaNewton": 0.28928916188113696,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48641532647564,
    "forcaNewtonCrua": 0.00704446155577898,
    "forcaNewtonBruta": 0.00704446155577898
   },
   {
-   "forcaNewton": 2.453312150208256,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.17065073236298,
+   "forcaNewton": 0.29738341706985433,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48993536194934,
    "forcaNewtonCrua": 0.018122173845767975,
    "forcaNewtonBruta": 0.018122173845767975
   },
   {
-   "forcaNewton": 2.2477228455616247,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.20120745983548,
+   "forcaNewton": -0.22926188864311764,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.490378151884116,
    "forcaNewtonCrua": 0.012972181662917137,
    "forcaNewtonBruta": 0.012972181662917137
   },
   {
-   "forcaNewton": 2.0115718868540116,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.22676322822998,
+   "forcaNewton": -0.23098253385253975,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48761668534914,
    "forcaNewtonCrua": 0.01623447984457016,
    "forcaNewtonBruta": 0.01623447984457016
   },
   {
-   "forcaNewton": 1.7986062370620948,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.25152938603543,
+   "forcaNewton": 0.22089797349660853,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48755113570682,
    "forcaNewtonCrua": 0.015403150580823421,
    "forcaNewtonBruta": 0.015403150580823421
   },
   {
-   "forcaNewton": 1.6489751628058655,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.27221487443464,
+   "forcaNewton": 0.22537509382254403,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49022877411074,
    "forcaNewtonCrua": 0.006803876720368862,
    "forcaNewtonBruta": 0.006803876720368862
   },
   {
-   "forcaNewton": 1.513178939829325,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.29276887610177,
+   "forcaNewton": -0.15908021641422015,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49065969081389,
    "forcaNewtonCrua": 0.02118617109954357,
    "forcaNewtonBruta": 0.02118617109954357
   },
   {
-   "forcaNewton": 1.3537247705053121,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.30997029836377,
+   "forcaNewton": -0.1639541614144682,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48872148454692,
    "forcaNewtonCrua": 0.014243150129914284,
    "forcaNewtonBruta": 0.014243150129914284
   },
   {
-   "forcaNewton": 1.2097772772802715,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.32663306167438,
+   "forcaNewton": 0.16668620527103112,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48873924283199,
    "forcaNewtonCrua": 0.01878986693918705,
    "forcaNewtonBruta": 0.01878986693918705
   },
   {
-   "forcaNewton": 1.1108765240590441,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.34055698448241,
+   "forcaNewton": 0.16975214576255393,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49075787293819,
    "forcaNewtonCrua": 0.018970852717757225,
    "forcaNewtonBruta": 0.018970852717757225
   },
   {
-   "forcaNewton": 1.0210961867080766,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.3544148071024,
+   "forcaNewton": -0.10678726786266508,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.491167144644535,
    "forcaNewtonCrua": 0.013384894467890263,
    "forcaNewtonBruta": 0.013384894467890263
   },
   {
-   "forcaNewton": 0.9131320614156883,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.36602017659114,
+   "forcaNewton": -0.11438766103017564,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48984009507118,
    "forcaNewtonCrua": 0.009846474975347519,
    "forcaNewtonBruta": 0.009846474975347519
   },
   {
-   "forcaNewton": 0.8160820082275478,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.377260068043825,
+   "forcaNewton": 0.12041887721501135,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.48987929797638,
    "forcaNewtonCrua": 0.01974368654191494,
    "forcaNewtonBruta": 0.01974368654191494
   },
   {
-   "forcaNewton": 0.7505710459188828,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.386659986368706,
+   "forcaNewton": 0.12757208345546883,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.491367243740406,
    "forcaNewtonCrua": 0.01954677700996399,
    "forcaNewtonBruta": 0.01954677700996399
   },
   {
-   "forcaNewton": 0.6911448724970537,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.396031139838406,
+   "forcaNewton": -0.07179953478846493,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.491729765306744,
    "forcaNewtonCrua": 0.024512356147170067,
    "forcaNewtonBruta": 0.024512356147170067
   },
   {
-   "forcaNewton": 0.6184467208281504,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.40388868939836,
+   "forcaNewton": -0.07270877597830543,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49086271544214,
    "forcaNewtonCrua": 0.01796174794435501,
    "forcaNewtonBruta": 0.01796174794435501
   },
   {
-   "forcaNewton": 0.552788737133696,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.41150171987511,
+   "forcaNewton": 0.0956424838780843,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49101178454349,
    "forcaNewtonCrua": 0.010873036459088326,
    "forcaNewtonBruta": 0.010873036459088326
   },
   {
-   "forcaNewton": 0.5094453760862747,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.417875124554435,
+   "forcaNewton": 0.09588204285322652,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49216093170388,
    "forcaNewtonCrua": 0.030326608568429947,
    "forcaNewtonBruta": 0.030326608568429947
   },
   {
-   "forcaNewton": 0.47011911487689045,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.42424229374569,
+   "forcaNewton": -0.03970979086337903,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49252605134181,
    "forcaNewtonCrua": 0.026924334466457367,
    "forcaNewtonBruta": 0.026924334466457367
   },
   {
-   "forcaNewton": 0.4253990707564436,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.42961540285949,
+   "forcaNewton": -0.03939077512237873,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.4920514479459,
    "forcaNewtonCrua": 0.027489393949508667,
    "forcaNewtonBruta": 0.027489393949508667
   },
   {
-   "forcaNewton": 0.3849330173435612,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.43488256143214,
+   "forcaNewton": 0.08350262865095032,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49233817499383,
    "forcaNewtonCrua": 0.016692224889993668,
    "forcaNewtonBruta": 0.016692224889993668
   },
   {
-   "forcaNewton": 0.35628695726661924,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.439329881279804,
+   "forcaNewton": 0.07429413856881464,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.493284955597154,
    "forcaNewtonCrua": 0.01643560081720352,
    "forcaNewtonBruta": 0.01643560081720352
   },
   {
-   "forcaNewton": 0.33024328930319685,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.443792327882505,
+   "forcaNewton": -0.030575705380803155,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.493569125412876,
    "forcaNewtonCrua": 0.026399146765470505,
    "forcaNewtonBruta": 0.026399146765470505
   },
   {
-   "forcaNewton": 0.2988289221762872,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.447566761151386,
+   "forcaNewton": -0.023242438308197312,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.493246216550745,
    "forcaNewtonCrua": 0.032076574862003326,
    "forcaNewtonBruta": 0.032076574862003326
   },
   {
-   "forcaNewton": 0.2704028442711404,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.45126676763329,
+   "forcaNewton": 0.06580137899552581,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49352284966521,
    "forcaNewtonCrua": 0.02213284932076931,
    "forcaNewtonBruta": 0.02213284932076931
   },
   {
-   "forcaNewton": 0.25087377043233816,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.45439442732151,
+   "forcaNewton": 0.06628885698056619,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49431539108107,
    "forcaNewtonCrua": 0.023954259231686592,
    "forcaNewtonBruta": 0.023954259231686592
   },
   {
-   "forcaNewton": 0.23331165306303853,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.457541632574234,
+   "forcaNewton": -0.00931725724067766,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49468570647937,
    "forcaNewtonCrua": 0.03442557156085968,
    "forcaNewtonBruta": 0.03442557156085968
   },
   {
-   "forcaNewton": 0.21111790027014107,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.46020820989423,
+   "forcaNewton": -0.007339285176709717,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49458576722487,
    "forcaNewtonCrua": 0.028986241668462753,
    "forcaNewtonBruta": 0.028986241668462753
   },
   {
-   "forcaNewton": 0.19103532647994503,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.46282220586811,
+   "forcaNewton": 0.056857024917879646,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.494907632533184,
    "forcaNewtonCrua": 0.025536658242344856,
    "forcaNewtonBruta": 0.025536658242344856
   },
   {
-   "forcaNewton": 0.17847313006046683,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.46503925660735,
+   "forcaNewton": 0.059829842212170956,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49560775373597,
    "forcaNewtonCrua": 0.030219396576285362,
    "forcaNewtonBruta": 0.030219396576285362
   },
   {
-   "forcaNewton": 0.16695632348997266,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.467284548055424,
+   "forcaNewton": 0.0040171543512057956,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49602275921363,
    "forcaNewtonCrua": 0.027575476095080376,
    "forcaNewtonBruta": 0.027575476095080376
   },
   {
-   "forcaNewton": 0.15107461624517288,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.46919273369384,
+   "forcaNewton": 0.0014930802102513796,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.496055820621,
    "forcaNewtonCrua": 0.027575597167015076,
    "forcaNewtonBruta": 0.027575597167015076
   },
   {
-   "forcaNewton": 0.13670365516282484,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47106329245799,
+   "forcaNewton": 0.04757869682174389,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49637478717171,
    "forcaNewtonCrua": 0.03202640265226364,
    "forcaNewtonBruta": 0.03202640265226364
   },
   {
-   "forcaNewton": 0.128603441590137,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47265513503851,
+   "forcaNewton": 0.053836939461258705,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49698328098941,
    "forcaNewtonCrua": 0.032851722091436386,
    "forcaNewtonBruta": 0.032851722091436386
   },
   {
-   "forcaNewton": 0.11637004924347975,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.474247462728925,
+   "forcaNewton": 0.014706155326072404,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49742881110553,
    "forcaNewtonCrua": 0.02474881522357464,
    "forcaNewtonBruta": 0.02474881522357464
   },
   {
-   "forcaNewton": 0.1053003573892573,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47557748516872,
+   "forcaNewton": 0.006778865639788474,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.497557721231324,
    "forcaNewtonCrua": 0.024719640612602234,
    "forcaNewtonBruta": 0.024719640612602234
   },
   {
-   "forcaNewton": 0.09528366910892742,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47688128134096,
+   "forcaNewton": 0.039977405701914645,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49786163699505,
    "forcaNewtonCrua": 0.020977087318897247,
    "forcaNewtonBruta": 0.020977087318897247
   },
   {
-   "forcaNewton": 0.08621981751968683,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47797030226073,
+   "forcaNewton": 0.039061476105663955,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49833587028589,
    "forcaNewtonCrua": 0.02372623234987259,
    "forcaNewtonBruta": 0.02372623234987259
   },
   {
-   "forcaNewton": 0.07801816410564309,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47903784914129,
+   "forcaNewton": 0.01084599201208121,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49866026882866,
    "forcaNewtonCrua": 0.038066934794187546,
    "forcaNewtonBruta": 0.038066934794187546
   },
   {
-   "forcaNewton": 0.07059669233265578,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.47992953827992,
+   "forcaNewton": 0.017792036431726464,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49883209699932,
    "forcaNewtonCrua": 0.03139140084385872,
    "forcaNewtonBruta": 0.03139140084385872
   },
   {
-   "forcaNewton": 0.06388118748299504,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48080364449872,
+   "forcaNewton": 0.041749489939258304,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.499219116920735,
    "forcaNewtonCrua": 0.028519684448838234,
    "forcaNewtonBruta": 0.028519684448838234
   },
   {
-   "forcaNewton": 0.05780449450816424,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.481533758590665,
+   "forcaNewton": 0.04028344039422579,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.49971131450273,
    "forcaNewtonCrua": 0.022586675360798836,
    "forcaNewtonBruta": 0.022586675360798836
   },
   {
-   "forcaNewton": 0.05230584647841508,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48224947580708,
+   "forcaNewton": 0.016726964752233578,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.500081882136186,
    "forcaNewtonCrua": 0.02504287101328373,
    "forcaNewtonBruta": 0.02504287101328373
   },
   {
-   "forcaNewton": 0.04733025691345008,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48284729242743,
+   "forcaNewton": 0.015316741691876946,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.50027414437485,
    "forcaNewtonCrua": 0.04311462491750717,
    "forcaNewtonBruta": 0.04311462491750717
   },
   {
-   "forcaNewton": 0.04282796991761958,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48343332090183,
+   "forcaNewton": 0.04600071819348511,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.500672707864105,
    "forcaNewtonCrua": 0.040073953568935394,
    "forcaNewtonBruta": 0.040073953568935394
   },
   {
-   "forcaNewton": 0.03875396262096527,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48392281249706,
+   "forcaNewton": 0.047198122898351666,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.50123190091065,
    "forcaNewtonCrua": 0.03622882068157196,
    "forcaNewtonBruta": 0.03622882068157196
   },
   {
-   "forcaNewton": 0.03506749495052061,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48440265197128,
+   "forcaNewton": 0.03504160369069857,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.501766459133485,
    "forcaNewtonCrua": 0.044535331428050995,
    "forcaNewtonBruta": 0.044535331428050995
   },
   {
-   "forcaNewton": 0.03173170222958116,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48480344715436,
+   "forcaNewton": 0.03520944937882209,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.5021879654519,
    "forcaNewtonCrua": 0.04135517776012421,
    "forcaNewtonBruta": 0.04135517776012421
   },
   {
-   "forcaNewton": 0.028713226530937525,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.485196339191305,
+   "forcaNewton": 0.04553141453684698,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.50271278106735,
    "forcaNewtonCrua": 0.04042554646730423,
    "forcaNewtonBruta": 0.04042554646730423
   },
   {
-   "forcaNewton": 0.025981883097603263,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.48552450984908,
+   "forcaNewton": 0.04657344732716846,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.503265410238534,
    "forcaNewtonCrua": 0.04316183552145958,
    "forcaNewtonBruta": 0.04316183552145958
   },
   {
-   "forcaNewton": 0.023510358495245035,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.485846209419435,
+   "forcaNewton": 0.03947951697348339,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.50382475450649,
    "forcaNewtonCrua": 0.046655721962451935,
    "forcaNewtonBruta": 0.046655721962451935
   },
   {
-   "forcaNewton": 0.021273937477839254,
+   "forcaNewton": 0.03859473852897219,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48611491519527,
+   "impulsoAcumuladoNs": 37.504293200039506,
    "forcaNewtonCrua": 0.04046226665377617,
    "forcaNewtonBruta": 0.04046226665377617
   },
   {
-   "forcaNewton": 0.019250255835211866,
+   "forcaNewton": 0.044654762087194905,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.486378322451806,
+   "impulsoAcumuladoNs": 37.50483432179351,
    "forcaNewtonCrua": 0.04139481484889984,
    "forcaNewtonBruta": 0.04139481484889984
   },
   {
-   "forcaNewton": 0.0174190767509366,
+   "forcaNewton": 0.045369371367059735,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48659833844732,
+   "impulsoAcumuladoNs": 37.50537446659423,
    "forcaNewtonCrua": 0.031171508133411407,
    "forcaNewtonBruta": 0.031171508133411407
   },
   {
-   "forcaNewton": 0.0157620884341707,
+   "forcaNewton": 0.03862682993184418,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48681401602103,
+   "impulsoAcumuladoNs": 37.505920441902674,
    "forcaNewtonCrua": 0.04488207399845123,
    "forcaNewtonBruta": 0.04488207399845123
   },
   {
-   "forcaNewton": 0.014262721001746505,
+   "forcaNewton": 0.037946770646164314,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48699416487764,
+   "impulsoAcumuladoNs": 37.50637988350614,
    "forcaNewtonCrua": 0.03661501035094261,
    "forcaNewtonBruta": 0.03661501035094261
   },
   {
-   "forcaNewton": 0.012905980779339776,
+   "forcaNewton": 0.045548034196687195,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.487170761439224,
+   "impulsoAcumuladoNs": 37.50692259973762,
    "forcaNewtonCrua": 0.04334491491317749,
    "forcaNewtonBruta": 0.04334491491317749
   },
   {
-   "forcaNewton": 0.011678300364726444,
+   "forcaNewton": 0.043383981058835425,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.487318267126085,
+   "impulsoAcumuladoNs": 37.50745619182916,
    "forcaNewtonCrua": 0.0404193252325058,
    "forcaNewtonBruta": 0.0404193252325058
   },
   {
-   "forcaNewton": 0.010567402953760376,
+   "forcaNewton": 0.04147427085011018,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48746286419765,
+   "impulsoAcumuladoNs": 37.50800777046656,
    "forcaNewtonCrua": 0.049126848578453064,
    "forcaNewtonBruta": 0.049126848578453064
   },
   {
-   "forcaNewton": 0.009562179572331913,
+   "forcaNewton": 0.03823993774663105,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48758364169281,
+   "impulsoAcumuladoNs": 37.508486055718144,
    "forcaNewtonCrua": 0.040784768760204315,
    "forcaNewtonBruta": 0.040784768760204315
   },
   {
-   "forcaNewton": 0.00865257798662677,
+   "forcaNewton": 0.042566289088383565,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48770203761694,
+   "impulsoAcumuladoNs": 37.509011296192575,
    "forcaNewtonCrua": 0.03264971822500229,
    "forcaNewtonBruta": 0.03264971822500229
   },
   {
-   "forcaNewton": 0.007829502180787894,
+   "forcaNewton": 0.04294555645004137,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48780093009795,
+   "impulsoAcumuladoNs": 37.509524367265804,
    "forcaNewtonCrua": 0.04592789337038994,
    "forcaNewtonBruta": 0.04592789337038994
   },
   {
-   "forcaNewton": 0.007084721396756896,
+   "forcaNewton": 0.034283573809968645,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.4878978725512,
+   "impulsoAcumuladoNs": 37.51002635661249,
    "forcaNewtonCrua": 0.03538911044597626,
    "forcaNewtonBruta": 0.03538911044597626
   },
   {
-   "forcaNewton": 0.006410787826693467,
+   "forcaNewton": 0.03505062801838422,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48797884560654,
+   "impulsoAcumuladoNs": 37.510442361823465,
    "forcaNewtonCrua": 0.0365670807659626,
    "forcaNewtonBruta": 0.0365670807659626
   },
   {
-   "forcaNewton": 0.005800962134896974,
+   "forcaNewton": 0.03741689520304674,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48805822198129,
+   "impulsoAcumuladoNs": 37.510913400724405,
    "forcaNewtonCrua": 0.05385831743478775,
    "forcaNewtonBruta": 0.05385831743478775
   },
   {
-   "forcaNewton": 0.005249146064449449,
+   "forcaNewton": 0.043404996105031984,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.488124522630486,
+   "impulsoAcumuladoNs": 37.511398332072254,
    "forcaNewtonCrua": 0.04257037490606308,
    "forcaNewtonBruta": 0.04257037490606308
   },
   {
-   "forcaNewton": 0.004749821454646419,
+   "forcaNewton": 0.04261548725336109,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48818951591936,
+   "impulsoAcumuladoNs": 37.51195746521408,
    "forcaNewtonCrua": 0.04388957843184471,
    "forcaNewtonBruta": 0.04388957843184471
   },
   {
-   "forcaNewton": 0.004297995059389853,
+   "forcaNewton": 0.04186170733529312,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.488243802818445,
+   "impulsoAcumuladoNs": 37.51246432838161,
    "forcaNewtonCrua": 0.03659321740269661,
    "forcaNewtonBruta": 0.03659321740269661
   },
   {
-   "forcaNewton": 0.003889148614727186,
+   "forcaNewton": 0.04497139507095104,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48829701925233,
+   "impulsoAcumuladoNs": 37.51302874354725,
    "forcaNewtonCrua": 0.05449659004807472,
    "forcaNewtonBruta": 0.05449659004807472
   },
   {
-   "forcaNewton": 0.003519193656211791,
+   "forcaNewton": 0.045674560218533326,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48834146930596,
+   "impulsoAcumuladoNs": 37.51357261927899,
    "forcaNewtonCrua": 0.04527707397937775,
    "forcaNewtonBruta": 0.04527707397937775
   },
   {
-   "forcaNewton": 0.0031844306342585136,
+   "forcaNewton": 0.0482466609333866,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48838504286385,
+   "impulsoAcumuladoNs": 37.514183107216475,
    "forcaNewtonCrua": 0.04959578439593315,
    "forcaNewtonBruta": 0.04959578439593315
   },
   {
-   "forcaNewton": 0.0028815119186478212,
+   "forcaNewton": 0.04893241251986086,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48842143851916,
+   "impulsoAcumuladoNs": 37.514766181657194,
    "forcaNewtonCrua": 0.057131316512823105,
    "forcaNewtonBruta": 0.057131316512823105
   },
   {
-   "forcaNewton": 0.0076429027184390565,
+   "forcaNewton": 0.05458875648705515,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.4884898472143,
+   "impulsoAcumuladoNs": 37.51543906925574,
    "forcaNewtonCrua": 0.053757235407829285,
    "forcaNewtonBruta": 0.053757235407829285
   },
   {
-   "forcaNewton": 0.012064427445065577,
+   "forcaNewton": 0.054265089602527315,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48860809119528,
+   "impulsoAcumuladoNs": 37.51609219233228,
    "forcaNewtonCrua": 0.0540369376540184,
    "forcaNewtonBruta": 0.0540369376540184
   },
   {
-   "forcaNewton": 0.016096816000155726,
+   "forcaNewton": 0.053051200114229036,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48879113927767,
+   "impulsoAcumuladoNs": 37.51678974821544,
    "forcaNewtonCrua": 0.04659859091043472,
    "forcaNewtonBruta": 0.04659859091043472
   },
   {
-   "forcaNewton": 0.019649625194834885,
+   "forcaNewton": 0.046966134286208994,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.489005617924846,
+   "impulsoAcumuladoNs": 37.51738985222184,
    "forcaNewtonCrua": 0.04390862584114075,
    "forcaNewtonBruta": 0.04390862584114075
   },
   {
-   "forcaNewton": 0.022837760487545766,
+   "forcaNewton": 0.04773823718503837,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48928178593178,
+   "impulsoAcumuladoNs": 37.5180054306364,
    "forcaNewtonCrua": 0.05449548736214638,
    "forcaNewtonBruta": 0.05449548736214638
   },
   {
-   "forcaNewton": 0.020665320303141242,
+   "forcaNewton": 0.043799521685540514,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48954280441652,
+   "impulsoAcumuladoNs": 37.518554657189625,
    "forcaNewtonCrua": 0.041643232107162476,
    "forcaNewtonBruta": 0.041643232107162476
   },
   {
-   "forcaNewton": 0.01869953332176813,
+   "forcaNewton": 0.041049480537680656,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.48979867596508,
+   "impulsoAcumuladoNs": 37.519106175704074,
    "forcaNewtonCrua": 0.04151713848114014,
    "forcaNewtonBruta": 0.04151713848114014
   },
   {
-   "forcaNewton": 0.0169207416736127,
+   "forcaNewton": 0.0419068077954253,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.490012397615054,
+   "impulsoAcumuladoNs": 37.519603913434075,
    "forcaNewtonCrua": 0.05836952105164528,
    "forcaNewtonBruta": 0.05836952105164528
   },
   {
-   "forcaNewton": 0.015311157442193395,
+   "forcaNewton": 0.0501282512225155,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.490221904959306,
+   "impulsoAcumuladoNs": 37.52020214131769,
    "forcaNewtonCrua": 0.05027545243501663,
    "forcaNewtonBruta": 0.05027545243501663
   },
   {
-   "forcaNewton": 0.01863022575950358,
+   "forcaNewton": 0.05688363028625614,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49042555325852,
+   "impulsoAcumuladoNs": 37.52084421260674,
    "forcaNewtonCrua": 0.059728462249040604,
    "forcaNewtonBruta": 0.059728462249040604
   },
   {
-   "forcaNewton": 0.02227111112180418,
+   "forcaNewton": 0.05572369977510182,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49069141194825,
+   "impulsoAcumuladoNs": 37.52157616025214,
    "forcaNewtonCrua": 0.056033164262771606,
    "forcaNewtonBruta": 0.056033164262771606
   },
   {
-   "forcaNewton": 0.0254472617317579,
+   "forcaNewton": 0.057471108695267975,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49097772218537,
+   "impulsoAcumuladoNs": 37.52225532910296,
    "forcaNewtonCrua": 0.048762157559394836,
    "forcaNewtonBruta": 0.048762157559394836
   },
   {
-   "forcaNewton": 0.023026592945110544,
+   "forcaNewton": 0.04957355833022081,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49129280224077,
+   "impulsoAcumuladoNs": 37.52295111943862,
    "forcaNewtonCrua": 0.04703211411833763,
    "forcaNewtonBruta": 0.04703211411833763
   },
   {
-   "forcaNewton": 0.020836190087914295,
+   "forcaNewton": 0.046490350828845325,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49155597893897,
+   "impulsoAcumuladoNs": 37.52352750289358,
    "forcaNewtonCrua": 0.046200547367334366,
    "forcaNewtonBruta": 0.046200547367334366
   },
   {
-   "forcaNewton": 0.01885414913159719,
+   "forcaNewton": 0.04647370415992003,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.491813966143894,
+   "impulsoAcumuladoNs": 37.52413176925101,
    "forcaNewtonCrua": 0.0568108856678009,
    "forcaNewtonBruta": 0.0568108856678009
   },
   {
-   "forcaNewton": 0.017060649666596053,
+   "forcaNewton": 0.05653302811519937,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.492029454936684,
+   "impulsoAcumuladoNs": 37.52474980964466,
    "forcaNewtonCrua": 0.056870415806770325,
    "forcaNewtonBruta": 0.056870415806770325
   },
   {
-   "forcaNewton": 0.020753920388400578,
+   "forcaNewton": 0.056602200875208696,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49227524964204,
+   "impulsoAcumuladoNs": 37.5254851886331,
    "forcaNewtonCrua": 0.059210874140262604,
    "forcaNewtonBruta": 0.059210874140262604
   },
   {
-   "forcaNewton": 0.024185399042882236,
+   "forcaNewton": 0.05710184968188117,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49254488555863,
+   "impulsoAcumuladoNs": 37.52616741293644,
    "forcaNewtonCrua": 0.04808446019887924,
    "forcaNewtonBruta": 0.04808446019887924
   },
   {
-   "forcaNewton": 0.02736358803245228,
+   "forcaNewton": 0.05309951441102792,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49287995397462,
+   "impulsoAcumuladoNs": 37.52688372180304,
    "forcaNewtonCrua": 0.05254543200135231,
    "forcaNewtonBruta": 0.05254543200135231
   },
   {
-   "forcaNewton": 0.029803936700369196,
+   "forcaNewton": 0.05267526817033796,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49322295912302,
+   "impulsoAcumuladoNs": 37.52751837049853,
    "forcaNewtonCrua": 0.052723247557878494,
    "forcaNewtonBruta": 0.052723247557878494
   },
   {
-   "forcaNewton": 0.03193441558554427,
+   "forcaNewton": 0.052074966794194516,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49362425841287,
+   "impulsoAcumuladoNs": 37.528199247025796,
    "forcaNewtonCrua": 0.049837809056043625,
    "forcaNewtonBruta": 0.049837809056043625
   },
   {
-   "forcaNewton": 0.03383604716896468,
+   "forcaNewton": 0.052051688617186946,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.4940188811894,
+   "impulsoAcumuladoNs": 37.52882400695827,
    "forcaNewtonCrua": 0.05213063210248947,
    "forcaNewtonBruta": 0.05213063210248947
   },
   {
-   "forcaNewton": 0.03560714902444028,
+   "forcaNewton": 0.05161957199226961,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49447026196466,
+   "impulsoAcumuladoNs": 37.52949787015223,
    "forcaNewtonCrua": 0.051111940294504166,
    "forcaNewtonBruta": 0.051111940294504166
   },
   {
-   "forcaNewton": 0.03719552841318116,
+   "forcaNewton": 0.05219766213722448,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.494907078029286,
+   "impulsoAcumuladoNs": 37.530120773557,
    "forcaNewtonCrua": 0.05516988784074783,
    "forcaNewtonBruta": 0.05516988784074783
   },
   {
-   "forcaNewton": 0.03859005081974403,
+   "forcaNewton": 0.052006242650072323,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.4953996842943,
+   "impulsoAcumuladoNs": 37.53079809893812,
    "forcaNewtonCrua": 0.06688889861106873,
    "forcaNewtonBruta": 0.06688889861106873
   },
   {
-   "forcaNewton": 0.03990049646734965,
+   "forcaNewton": 0.052503718679972396,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49587062757802,
+   "impulsoAcumuladoNs": 37.5314251587061,
    "forcaNewtonCrua": 0.052595727145671844,
    "forcaNewtonBruta": 0.052595727145671844
   },
   {
-   "forcaNewton": 0.04112701856999957,
+   "forcaNewton": 0.053049751774174994,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49639730642576,
+   "impulsoAcumuladoNs": 37.53211125626405,
    "forcaNewtonCrua": 0.06067957729101181,
    "forcaNewtonBruta": 0.06067957729101181
   },
   {
-   "forcaNewton": 0.04245849236531826,
+   "forcaNewton": 0.06014772917538535,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49689881949138,
+   "impulsoAcumuladoNs": 37.53279044114975,
    "forcaNewtonCrua": 0.06982305645942688,
    "forcaNewtonBruta": 0.06982305645942688
   },
   {
-   "forcaNewton": 0.04344863881917547,
+   "forcaNewton": 0.05968409855240739,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49745721584408,
+   "impulsoAcumuladoNs": 37.53356934802998,
    "forcaNewtonCrua": 0.05307193845510483,
    "forcaNewtonBruta": 0.05307193845510483
   },
   {
-   "forcaNewton": 0.04505187969768496,
+   "forcaNewton": 0.06659880474913701,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49798821895518,
+   "impulsoAcumuladoNs": 37.534327045449785,
    "forcaNewtonCrua": 0.06659345328807831,
    "forcaNewtonBruta": 0.06659345328807831
   },
   {
-   "forcaNewton": 0.04701953193079808,
+   "forcaNewton": 0.06698242507418754,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.49858668313076,
+   "impulsoAcumuladoNs": 37.53519532344364,
    "forcaNewtonCrua": 0.066582590341568,
    "forcaNewtonBruta": 0.066582590341568
   },
   {
-   "forcaNewton": 0.04886853676550441,
+   "forcaNewton": 0.06657886614531053,
    "emQueima": false,
-   "impulsoAcumuladoNs": 37.499162011542936,
+   "impulsoAcumuladoNs": 37.53599669119095,
    "forcaNewtonCrua": 0.061729174107313156,
    "forcaNewtonBruta": 0.061729174107313156
   },
   {
-   "forcaNewton": 0.05019505366928317,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.49980592488076,
+   "forcaNewton": 0.061755896149941106,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.53683086714587,
    "forcaNewtonCrua": 0.05426383763551712,
    "forcaNewtonBruta": 0.05426383763551712
   },
   {
-   "forcaNewton": 0.05133720162988074,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.500415118412555,
+   "forcaNewton": 0.057925978472829806,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.53754895839361,
    "forcaNewtonCrua": 0.057216059416532516,
    "forcaNewtonBruta": 0.057216059416532516
   },
   {
-   "forcaNewton": 0.05199667563401517,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50108678861477,
+   "forcaNewton": 0.05753390964629357,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.53829944766638,
    "forcaNewtonCrua": 0.0589834563434124,
    "forcaNewtonBruta": 0.0589834563434124
   },
   {
-   "forcaNewton": 0.052642820718946576,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50171462559289,
+   "forcaNewton": 0.058247312040424874,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.5389941349965,
    "forcaNewtonCrua": 0.06944521516561508,
    "forcaNewtonBruta": 0.06944521516561508
   },
   {
-   "forcaNewton": 0.05330360541673218,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.502403277362774,
+   "forcaNewton": 0.06825257421709068,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.53981638425717,
    "forcaNewtonCrua": 0.07240009307861328,
    "forcaNewtonBruta": 0.07240009307861328
   },
   {
-   "forcaNewton": 0.05477966764069539,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50305177700112,
+   "forcaNewton": 0.0694032965833414,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.540642319481975,
    "forcaNewtonCrua": 0.06957763433456421,
    "forcaNewtonBruta": 0.06957763433456421
   },
   {
-   "forcaNewton": 0.05605070040491815,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50377217439342,
+   "forcaNewton": 0.07058030072674226,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54155221286449,
    "forcaNewtonCrua": 0.061333004385232925,
    "forcaNewtonBruta": 0.061333004385232925
   },
   {
-   "forcaNewton": 0.0573752945210856,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50445273036298,
+   "forcaNewton": 0.06746285997650675,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54238047182871,
    "forcaNewtonCrua": 0.06713015586137772,
    "forcaNewtonBruta": 0.06713015586137772
   },
   {
-   "forcaNewton": 0.058425151107781084,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50520543325957,
+   "forcaNewton": 0.06228907836217916,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54322385942791,
    "forcaNewtonCrua": 0.06261506676673889,
    "forcaNewtonBruta": 0.06261506676673889
   },
   {
-   "forcaNewton": 0.059227001124028004,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50591134617296,
+   "forcaNewton": 0.06684766050019475,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54399867986108,
    "forcaNewtonCrua": 0.07397909462451935,
    "forcaNewtonBruta": 0.07397909462451935
   },
   {
-   "forcaNewton": 0.0594781724324335,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50668292980107,
+   "forcaNewton": 0.06289185989282282,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.544841986743634,
    "forcaNewtonCrua": 0.05933427810668945,
    "forcaNewtonBruta": 0.05933427810668945
   },
   {
-   "forcaNewton": 0.0600315616933474,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.507399988205826,
+   "forcaNewton": 0.06530155915302618,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54561114725791,
    "forcaNewtonCrua": 0.06489288061857224,
    "forcaNewtonBruta": 0.06489288061857224
   },
   {
-   "forcaNewton": 0.060538030449411646,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50818369055475,
+   "forcaNewton": 0.06448598492482832,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54645476629442,
    "forcaNewtonCrua": 0.06624911725521088,
    "forcaNewtonBruta": 0.06624911725521088
   },
   {
-   "forcaNewton": 0.06103902914840718,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.50891315291234,
+   "forcaNewton": 0.06579977725852604,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54723648086752,
    "forcaNewtonCrua": 0.06814958155155182,
    "forcaNewtonBruta": 0.06814958155155182
   },
   {
-   "forcaNewton": 0.06148751308286431,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.509709575436844,
+   "forcaNewton": 0.0682493359475716,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54810780010336,
    "forcaNewtonCrua": 0.06945902854204178,
    "forcaNewtonBruta": 0.06945902854204178
   },
   {
-   "forcaNewton": 0.06214349013254332,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.510451361456134,
+   "forcaNewton": 0.06959835246247124,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54893488623382,
    "forcaNewtonCrua": 0.07003968209028244,
    "forcaNewtonBruta": 0.07003968209028244
   },
   {
-   "forcaNewton": 0.06274119169795218,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.511263111888034,
+   "forcaNewton": 0.06927552313218235,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.54983756642519,
    "forcaNewtonCrua": 0.06354464590549469,
    "forcaNewtonBruta": 0.06354464590549469
   },
   {
-   "forcaNewton": 0.06323677357141388,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.51201897967965,
+   "forcaNewton": 0.06387262059857966,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.550636455287574,
    "forcaNewtonCrua": 0.06339691579341888,
    "forcaNewtonBruta": 0.06339691579341888
   },
   {
-   "forcaNewton": 0.0636817113764009,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.51284394983181,
+   "forcaNewton": 0.06414673138986049,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.5514685810755,
    "forcaNewtonCrua": 0.08099717646837234,
    "forcaNewtonBruta": 0.08099717646837234
   },
   {
-   "forcaNewton": 0.063857674547695,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.513609186147356,
+   "forcaNewton": 0.06473695521553037,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.55224188319513,
    "forcaNewtonCrua": 0.06513547152280807,
    "forcaNewtonBruta": 0.06513547152280807
   },
   {
-   "forcaNewton": 0.06401987264459681,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.51444039020411,
+   "forcaNewton": 0.06729088944714742,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.553100064185436,
    "forcaNewtonCrua": 0.07443487644195557,
    "forcaNewtonBruta": 0.07443487644195557
   },
   {
-   "forcaNewton": 0.06435908761837936,
-   "emQueima": true,
-   "impulsoAcumuladoNs": 37.51521066396568,
+   "forcaNewton": 0.07407156035099988,
+   "emQueima": false,
+   "impulsoAcumuladoNs": 37.553948238884225,
    "forcaNewtonCrua": 0.08324163407087326,
    "forcaNewtonBruta": 0.08324163407087326
   }

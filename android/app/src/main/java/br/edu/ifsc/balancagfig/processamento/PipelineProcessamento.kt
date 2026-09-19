@@ -22,6 +22,10 @@ data class ConfiguracaoPipeline(
 
     /** Etapa 2: um só suavizador (padrão NENHUM). Substitui as flags ativoMediaMovel/EMA/SG/Kalman. */
     var filtroPrincipal: FiltroPrincipal = FiltroPrincipal.NENHUM,
+
+    // Etapa 1 — Hampel (remoção de spikes), desativado por padrão
+    var janelaHampel: Int? = null,        // amostras, ímpar (padrão 7)
+    var limiarHampelSigma: Double? = null, // K em múltiplos de σ (padrão 3)
 )
 
 /** Alteração parcial vinda do frontend (mensagem PIPELINE_CONFIG); null = não alterar. */
@@ -39,6 +43,9 @@ data class PipelinePatch(
     val janelaSG: Int? = null,
     val kalmanQ: Double? = null,
     val kalmanR: Double? = null,
+    val janelaHampel: Int? = null,
+    val limiarHampelSigma: Double? = null,
+    val ativoHampel: Boolean? = null,
     val ativoZonaMorta: Boolean? = null,
     val ativoMediaMovel: Boolean? = null,
     val ativoDetectorQueima: Boolean? = null,
@@ -57,6 +64,7 @@ data class EstadoPipeline(
     val filtroPrincipal: FiltroPrincipal,
     /** Fs medida pelas marcas de tempo (null até haver amostras); usada se taxaAmostragemHz não foi fixada. */
     val taxaEstimadaHz: Double?,
+    val ativoHampel: Boolean,
     val ativoZonaMorta: Boolean,
     val ativoMediaMovel: Boolean,
     val ativoDetectorQueima: Boolean,
@@ -95,11 +103,13 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
     private val estimadorFs = EstimadorTaxaAmostragem()
     private var taxaMudou = false
     private var notch = FiltroNotch(config.freqNotchHz ?: 60.0, config.qNotch ?: 30.0, taxaParaFiltros())
+    private var hampel = FiltroHampel(config.janelaHampel ?: 7, config.limiarHampelSigma ?: 3.0)
     private var sg = SavitzkyGolay(config.janelaSG ?: 7)
     private var kalman = FiltroKalman(config.kalmanQ ?: 0.01, config.kalmanR ?: 1.0)
     private var detector = DetectorQueima(config.limiarZonaMortaN, config.tempoMinFimMs)
     private val calculador = CalculadorImpulso()
 
+    private var ativoHampel = false
     private var ativoZonaMorta = false
     private var ativoDetectorQueima = false
     private var ativoMediana = false
@@ -120,11 +130,12 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         return SinaisPipeline(bruta = entrada, limpa = limpa, suavizada = suavizada, filtrada = filtrada)
     }
 
-    /** Etapa 1 — limpeza (combináveis). */
+    /** Etapa 1 — limpeza (combináveis): Hampel → Mediana → Notch, spikes antes do IIR. */
     private fun aplicarLimpeza(entrada: Double): Double {
         var forca = entrada
-        if (ativoNotch) forca = notch.aplicar(forca)
+        if (ativoHampel) forca = hampel.aplicar(forca)
         if (ativoMediana) forca = mediana.aplicar(forca)
+        if (ativoNotch) forca = notch.aplicar(forca)
         return forca
     }
 
@@ -178,7 +189,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
 
         val emQueima = if (ativoDetectorQueima) detector.atualizar(filtrada, pacote.marcaTemporal) else false
         val impulso = calculador.integrar(filtrada, pacote.marcaTemporal)
-        val algumFiltroNovo = ativoNotch || ativoMediana ||
+        val algumFiltroNovo = ativoHampel || ativoNotch || ativoMediana ||
             (filtroPrincipal != FiltroPrincipal.NENHUM && filtroPrincipal != FiltroPrincipal.MEDIA_MOVEL)
 
         return LeituraProcessada(
@@ -230,6 +241,11 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             patch.taxaAmostragemHz?.let { config.taxaAmostragemHz = it }
             reconstruirNotch()
         }
+        if (patch.janelaHampel != null || patch.limiarHampelSigma != null) {
+            config.janelaHampel = patch.janelaHampel ?: config.janelaHampel ?: 7
+            config.limiarHampelSigma = patch.limiarHampelSigma ?: config.limiarHampelSigma ?: 3.0
+            hampel = FiltroHampel(config.janelaHampel!!, config.limiarHampelSigma!!)
+        }
         patch.janelaSG?.let {
             config.janelaSG = it
             sg = SavitzkyGolay(it)
@@ -241,6 +257,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         }
 
         // Flags de ativação — ao ligar um filtro, começa com estado limpo
+        patch.ativoHampel?.let { if (it && !ativoHampel) hampel.reiniciar(); ativoHampel = it }
         patch.ativoZonaMorta?.let { ativoZonaMorta = it }
         patch.ativoDetectorQueima?.let { if (it && !ativoDetectorQueima) detector.reiniciar(); ativoDetectorQueima = it }
         patch.ativoMediana?.let { if (it && !ativoMediana) mediana.reiniciar(); ativoMediana = it }
@@ -265,6 +282,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
             config = config.copy(),
             filtroPrincipal = filtroPrincipal,
             taxaEstimadaHz = estimadorFs.obterHzEstavel(),
+            ativoHampel = ativoHampel,
             ativoZonaMorta = ativoZonaMorta,
             ativoMediaMovel = flags.ativoMediaMovel!!,
             ativoDetectorQueima = ativoDetectorQueima,
@@ -288,6 +306,7 @@ class PipelineProcessamento(private val config: ConfiguracaoPipeline) {
         mediana.reiniciar()
         ema.reiniciar()
         notch.reiniciar()
+        hampel.reiniciar()
         sg.reiniciar()
         kalman.reiniciar()
         detector.reiniciar()

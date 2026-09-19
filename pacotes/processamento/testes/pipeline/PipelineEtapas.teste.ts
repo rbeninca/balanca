@@ -20,6 +20,17 @@ describe('Pipeline — etapas (Fase 1)', () => {
     expect(r.forcaNewtonCrua).toBe(50);
   });
 
+  it('Fase 4: Hampel vem antes da mediana e do Notch — o spike some antes de entrar no IIR', () => {
+    const p = new PipelineProcessamento({ ...cfg, taxaAmostragemHz: 80 });
+    p.atualizarConfig({ ativoHampel: true, janelaHampel: 5, ativoNotch: true, freqNotchHz: 20, qNotch: 5 });
+    for (let i = 0; i < 20; i++) p.processar(pacote(10, i));
+    const comSpike = p.processar(pacote(10 + 500, 20));
+    expect(Math.abs(comSpike.forcaNewton - 10)).toBeLessThan(0.5);   // Hampel removeu; Notch não "tocou o sino"
+    const depois = p.processar(pacote(10, 21));
+    expect(Math.abs(depois.forcaNewton - 10)).toBeLessThan(0.5);
+    expect(p.obterConfig().ativoHampel).toBe(true);
+  });
+
   it('zona morta vem antes do filtro principal: a média móvel recebe zeros, não o ruído', () => {
     const p = new PipelineProcessamento({ ...cfg });
     p.atualizarConfig({ ativoZonaMorta: true, ativoMediaMovel: true, janelaMediaMovel: 3 });

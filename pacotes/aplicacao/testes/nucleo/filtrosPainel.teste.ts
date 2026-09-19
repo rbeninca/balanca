@@ -41,3 +41,20 @@ describe('filtro principal no painel (Fase 2)', () => {
     expect(patchFiltroPrincipal('nenhum')).toEqual({ filtroPrincipal: 'nenhum', ativoMediaMovel: false, ativoEMA: false, ativoSG: false, ativoKalman: false });
   });
 });
+
+import { janelaImpar } from '../../src/interface/TelaMedicao.js';
+
+describe('Hampel no painel (Fase 4)', () => {
+  it('tem checkbox, janela e K', () => {
+    const html = htmlPainelFiltros();
+    expect(html).toContain('id="ck-hampel"');
+    expect(html).toMatch(/id="in-hampel-jan"[^>]*step="2"/);
+    expect(html).toContain('id="in-hampel-k"');
+  });
+  it('janelaImpar força ímpar ≥ 3', () => {
+    expect(janelaImpar(7)).toBe(7);
+    expect(janelaImpar(8)).toBe(9);
+    expect(janelaImpar(1)).toBe(3);
+    expect(janelaImpar(6.4)).toBe(7);
+  });
+});

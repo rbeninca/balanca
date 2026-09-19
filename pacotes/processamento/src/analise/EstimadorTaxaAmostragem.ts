@@ -4,10 +4,13 @@
  * alterna 12 e 13 ms, então a mediana de Δt "salta" entre 76,9 e 83,3 Hz. A
  * média em janela `Fs = (n−1)·1000 / (t_último − t_primeiro)` não sofre disso.
  *
- * - Janela de `tamanhoJanela` marcas (padrão 128 ≈ 1,5 s a 80 Hz — a ESP tem
- *   jitter de polling e janelas menores oscilam ±1,5 %).
+ * - Janela de `tamanhoJanela` marcas (padrão 256 ≈ 3 s a 80 Hz). A ESP marca
+ *   com resolução de 10 ms e tem um gap de 30–40 ms a cada 500 ms (display);
+ *   janelas curtas oscilam mais de 1 % conforme contêm 3 ou 4 desses gaps.
  * - Um salto (Δt > `fatorSalto` × período estimado, ou Δt ≤ 0) é uma pausa ou
- *   perda de pacotes: a janela recomeça, sem contaminar a estimativa.
+ *   perda de pacotes: a janela recomeça, sem contaminar a estimativa. O fator
+ *   (8 ≈ 100 ms) precisa ficar acima dos gaps normais da ESP; uma pausa real
+ *   (USB, WiFi) é de centenas de ms.
  * - `obterHzEstavel()` só muda com a janela cheia e quando a estimativa se
  *   afasta mais de `histerese` (1 %) do valor estável — é o que os filtros IIR
  *   usam para decidir reconstruir coeficientes. Com 64 marcas inteiras a
@@ -21,9 +24,9 @@ export class EstimadorTaxaAmostragem {
   private mudou = false;
 
   constructor(
-    private readonly tamanhoJanela = 128,
+    private readonly tamanhoJanela = 256,
     private readonly histerese = 0.01,
-    private readonly fatorSalto = 3,
+    private readonly fatorSalto = 8,
     private readonly minimoIntervalos = 8,
   ) {}
 

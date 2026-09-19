@@ -6,13 +6,14 @@ import kotlin.math.abs
  * Espelho de pacotes/processamento/src/analise/EstimadorTaxaAmostragem.ts:
  * Fs = (n−1)·1000 / (t_último − t_primeiro) numa janela de marcas de tempo
  * (média, imune ao Δt 12/13 ms das marcas inteiras da ESP), janela recomeça
- * em salto (Δt > fatorSalto × período) ou Δt ≤ 0, valor estável com histerese
- * de 1 % avaliada só com a janela cheia.
+ * em salto (Δt > fatorSalto × período, 8 ≈ 100 ms — acima dos gaps de 30–40 ms
+ * que a ESP tem a cada 500 ms) ou Δt ≤ 0, valor estável com histerese de 1 %
+ * avaliada só com a janela cheia (256 ≈ 3 s).
  */
 class EstimadorTaxaAmostragem(
-    private val tamanhoJanela: Int = 128,
+    private val tamanhoJanela: Int = 256,
     private val histerese: Double = 0.01,
-    private val fatorSalto: Double = 3.0,
+    private val fatorSalto: Double = 8.0,
     private val minimoIntervalos: Int = 8,
 ) {
     private val marcas = ArrayDeque<Long>()

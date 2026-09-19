@@ -96,6 +96,21 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   assumir 100 Hz — passa a rejeitar a frequência certa. Golden files intactos
   (fixam `taxaAmostragemHz: 80`). No TX9: 83,55 Hz estável (real 83,46).
 
+- Fase 4 ✔: `FiltroHampel` causal (TS e Kotlin), janela ímpar (7), K (3), piso
+  em σ (1e-3 N); `aplicarDetalhado` devolve `{valor, outlier}` para o gráfico
+  no futuro. Limpeza passa a `Hampel → Mediana → Notch` (spikes antes do
+  IIR) — **mudança de comportamento** para quem usa Mediana + Notch juntos;
+  golden `mediana-5-notch-60` e `tudo-ligado` regravados, `hampel-7` e
+  `hampel-mediana-notch` novos, os demais idênticos. Caso limite documentado
+  nos testes e na ajuda: em sinal perfeitamente liso, logo após um pico o
+  Hampel com K = 3 pode marcar 1 amostra (K = 3,5 resolve); com ruído real
+  ~4 % de falsos positivos em janela 7, inofensivos (viram a mediana).
+  Achado no TX9 que corrigiu a Fase 3: as marcas da ESP têm resolução de
+  10 ms e um gap de 30–40 ms a cada 500 ms (display) — o `fatorSalto = 3`
+  tratava isso como pausa e a Fs oscilava a cada 0,5 s (2 difusões/s de
+  PIPELINE_ESTADO). Agora salto = 8 períodos (~100 ms) e janela 256 (~3 s):
+  1 difusão em 15 s, 83,33 Hz.
+
 ## Fases
 
 Cada fase termina compilando, com testes passando (TS, JUnit) e comportamento
