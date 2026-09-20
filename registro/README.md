@@ -6,6 +6,7 @@ TVBox TX9 (substitui os contêineres Docker do "Cenário A").
 - [log-modificacoes.md](log-modificacoes.md) — o que mudou, por commit.
 - [pendencias.md](pendencias.md) — o que falta / decisões em aberto.
 - [comandos-tvbox.md](comandos-tvbox.md) — tudo que roda no TVBox: comando e porquê.
+- [inventario.md](inventario.md) — os boxes do parque: serial, IP, MAC, hotspot.
 
 ## Endereços
 
