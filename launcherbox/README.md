@@ -33,6 +33,33 @@ removê-lo de vez: `adb -s <ip>:5555 uninstall com.ifsc.laucherbox`.
 > No API 25 o comando é `cmd package set-home-activity` — o `pm` **não** tem
 > essa opção nessa versão do Android. É o que o `box.sh` usa.
 
+## A tela
+
+```
+        [ logo do projeto ]
+APLICATIVOS              REDE
+  BalançaGFIG              eth0  192.168.1.110/24  a8:20:03:ac:10:e7
+  Settings                 wlan0 192.168.43.1/24   84:ea:97:b9:f0:d6
+  mais (12)              ARMAZENAMENTO
+                           /data   2.6G livres · 32%
+                           pendrive 15G livres · 2%
+                         HOTSPOT
+                           ligado · rede balancaGFIG-10E7 · senha …
+```
+
+A lista abre com **só duas coisas**: o app da balança e as configurações do
+Android — o que alguém realmente precisa alcançar num box que existe para pesar.
+O resto fica atrás do **"mais (N)"**, que abre e fecha. O estado de expansão
+sobrevive às atualizações de 3 em 3 s.
+
+As configurações são reconhecidas por `com.android.settings`,
+`com.android.tv.settings` e qualquer pacote terminado em `.settings` — no MXQ
+quem abre tela é o `com.android.tv.settings`, não o do AOSP.
+
+Os ícones são decodificados **uma vez por pacote** e guardados em cache: a lista
+é remontada a cada 3 s e decodificar 12 ícones toda vez pesaria no rk322x. Trocar
+o ícone de um app reinstalado só aparece quando o launcher reiniciar.
+
 ## De onde vem cada dado
 
 Tudo que exige privilégio é lido por `su`, com os **mesmos comandos** que o
@@ -82,3 +109,13 @@ layout conhecido de 12 bytes.
   box ficaria com a tela preta, sem launcher nenhum.
 - **Cada fonte de dado é isolada com `runCatching`.** Uma exceção em qualquer
   ponto derrubava a coleta inteira e a tela ficava com "—" em tudo.
+- **Uma chamada de root por ciclo, e só a cada 15 s** (`ColetaRoot`). Ler cada
+  dado com o seu próprio `su` eram quatro por ciclo a cada 3 s — e no MXQ isso
+  virou ~80 processos `app_process` vivos ao mesmo tempo (cada `su` do SuperSU
+  sobe uma VM e leva perto de um minuto para sair), com o load em 25 num box de
+  quatro núcleos, ao ponto de uma instalação por adb levar mais de cinco
+  minutos. Agora é um `su` com marcações de seção a cada 15 s: load 2,5 e zero
+  processos pendurados.
+- **Nada de `#` nas marcas de seção do script.** `echo ###LINK` em shell é
+  `echo` seguido de comentário: a marca saía vazia e nenhuma seção era
+  encontrada — a tela ficou com "—" em tudo até isso aparecer.

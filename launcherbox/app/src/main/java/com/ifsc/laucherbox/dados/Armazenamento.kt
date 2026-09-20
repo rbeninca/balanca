@@ -1,7 +1,5 @@
 package com.ifsc.laucherbox.dados
 
-import com.ifsc.laucherbox.sistema.Root
-
 /** Espaço de um ponto de montagem. */
 data class Volume(
     val ponto: String,
@@ -24,8 +22,8 @@ object Armazenamento {
     /** Só os que importam para quem está no local. */
     private val INTERESSANTES = setOf("/data", "/system", "/cache", "/storage", "/sdcard")
 
-    fun listar(): List<Volume> {
-        val saida = Root.executarLendo("df -h") ?: return emptyList()
+    /** Recebe a saída de `df -h` já lida por [ColetaRoot]. */
+    fun listar(saida: String): List<Volume> {
         return saida.lineSequence()
             .drop(1) // cabeçalho
             .mapNotNull { interpretar(it) }

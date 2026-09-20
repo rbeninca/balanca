@@ -42,6 +42,7 @@ import androidx.compose.foundation.Image
 import com.ifsc.laucherbox.dados.AppAbrivel
 import com.ifsc.laucherbox.dados.AppsInstalados
 import com.ifsc.laucherbox.dados.Armazenamento
+import com.ifsc.laucherbox.dados.ColetaRoot
 import com.ifsc.laucherbox.dados.ConfigHotspot
 import com.ifsc.laucherbox.dados.Hotspot
 import com.ifsc.laucherbox.dados.InterfaceRede
@@ -72,8 +73,8 @@ private const val TAG = "LauncherBox"
 /** De quanto em quanto tempo a tela se atualiza. */
 private const val INTERVALO_MS = 3_000L
 
-/** A cada quantas atualizações reconferimos o root (não precisa ser toda vez). */
-private const val CICLOS_ENTRE_CHECAGEM_DE_ROOT = 10
+/** A cada quantas atualizações reconferimos o root e relemos o que depende dele. */
+private const val CICLOS_ENTRE_LEITURA_ROOT = 5
 
 @Composable
 fun TelaInicial(contexto: Context) {
@@ -86,8 +87,10 @@ fun TelaInicial(contexto: Context) {
             // Uma exceção aqui dentro mataria este laço e a tela ficaria vazia
             // para sempre — sem nenhum sinal de que parou de atualizar.
             runCatching {
-                val reconferir = rootCacheado == null || ciclos % CICLOS_ENTRE_CHECAGEM_DE_ROOT == 0
-                val retrato = withContext(Dispatchers.IO) { coletar(contexto, rootCacheado, reconferir) }
+                val lerRoot = rootCacheado == null || ciclos % CICLOS_ENTRE_LEITURA_ROOT == 0
+                val retrato = withContext(Dispatchers.IO) {
+                    coletar(contexto, rootCacheado, lerRoot, estado)
+                }
                 estado = retrato
                 rootCacheado = retrato.temRoot
                 ciclos++
@@ -146,29 +149,52 @@ fun TelaInicial(contexto: Context) {
 
 // ── coleta ──────────────────────────────────────────────────────────────────
 
-private fun coletar(contexto: Context, rootConhecido: Boolean?, reconferir: Boolean): EstadoBox {
-    // Cada fonte é isolada: se uma falhar, as outras ainda aparecem. Antes,
-    // uma exceção em qualquer ponto derrubava a coleta inteira e a tela ficava
-    // com "—" em tudo, sem dizer por quê.
-    val temRoot = runCatching {
-        if (reconferir || rootConhecido == null) Root.disponivel() else rootConhecido
-    }.getOrDefault(rootConhecido ?: false)
-
+/**
+ * O retrato da tela.
+ *
+ * Cada fonte é isolada: uma exceção em qualquer ponto deixava a tela com "—" em
+ * tudo, sem dizer por quê.
+ *
+ * O que depende de root só é relido quando [lerRoot] — a cada
+ * [CICLOS_ENTRE_LEITURA_ROOT] ciclos, não a cada um. Não é economia boba: cada
+ * `su` no SuperSU sobe uma VM e leva cerca de um minuto para sair, então quatro
+ * por ciclo a cada 3 s deixavam ~80 processos `app_process` vivos e o load em
+ * 24 num box de quatro núcleos. Nos ciclos intermediários a tela reaproveita o
+ * que já tinha; só o estado do AP é reconferido, porque vem por reflexão e é
+ * barato.
+ */
+private fun coletar(
+    contexto: Context,
+    rootConhecido: Boolean?,
+    lerRoot: Boolean,
+    anterior: EstadoBox,
+): EstadoBox {
     fun <T> ler(fonte: () -> T, padrao: T): T = runCatching(fonte)
         .onFailure { Log.w(TAG, "fonte falhou: ${it.message}") }
         .getOrDefault(padrao)
 
+    val aplicativos = ler({ AppsInstalados.listar(contexto) }, anterior.apps)
+    val temRoot = if (rootConhecido == null) ler({ Root.disponivel() }, false) else rootConhecido
+
+    if (!temRoot || !lerRoot) {
+        return anterior.copy(
+            apps = aplicativos,
+            temRoot = temRoot,
+            hotspot = anterior.hotspot.copy(
+                ligado = ler({ Hotspot.estaLigado(contexto) }, anterior.hotspot.ligado),
+            ),
+        )
+    }
+
+    val bruto = ler({ ColetaRoot.coletar() }, null)
+        ?: return anterior.copy(apps = aplicativos, temRoot = temRoot)
+
     return EstadoBox(
-        apps = ler({ AppsInstalados.listar(contexto) }, emptyList()),
-        redes = if (temRoot) ler({ InterfacesRede.listar() }, emptyList()) else emptyList(),
-        volumes = if (temRoot) ler({ Armazenamento.listar() }, emptyList()) else emptyList(),
-        // o estado do AP vem por reflexão (não precisa de root); o SSID e a
-        // senha vêm do softap.conf, que precisa
+        apps = aplicativos,
+        redes = ler({ InterfacesRede.listar(bruto.links, bruto.enderecos) }, emptyList()),
+        volumes = ler({ Armazenamento.listar(bruto.disco) }, emptyList()),
         hotspot = ler(
-            {
-                if (temRoot) Hotspot.ler(contexto)
-                else ConfigHotspot(Hotspot.estaLigado(contexto), null, null)
-            },
+            { Hotspot.ler(contexto, bruto.softap) },
             ConfigHotspot(false, null, null),
         ),
         temRoot = temRoot,

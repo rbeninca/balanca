@@ -3,8 +3,6 @@ package com.ifsc.laucherbox.dados
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
-import com.ifsc.laucherbox.sistema.Root
-
 /** Configuração do hotspot do box. */
 data class ConfigHotspot(
     val ligado: Boolean,
@@ -25,8 +23,13 @@ object Hotspot {
     private const val WIFI_AP_STATE_ENABLING = 12
     private const val WIFI_AP_STATE_ENABLED = 13
 
-    fun ler(context: Context): ConfigHotspot {
-        val (ssid, senha) = lerConfiguracao()
+    /**
+     * Monta o estado do hotspot. O [softap] vem de [ColetaRoot] — uma chamada
+     * de root por ciclo, não uma por consulta. O estado ligado/desligado sai
+     * por reflexão e não precisa de root.
+     */
+    fun ler(context: Context, softap: ByteArray?): ConfigHotspot {
+        val (ssid, senha) = interpretar(softap)
         return ConfigHotspot(ligado = estaLigado(context), ssid = ssid, senha = senha)
     }
 
@@ -38,11 +41,6 @@ object Hotspot {
     } catch (e: Throwable) {
         Log.w(TAG, "getWifiApState indisponível: ${e.message}")
         false
-    }
-
-    private fun lerConfiguracao(): Pair<String?, String?> {
-        val dados = Root.executarBytes("cat $ARQUIVO") ?: return null to null
-        return interpretar(dados)
     }
 
     /**
@@ -63,8 +61,8 @@ object Hotspot {
      * satisfazer isso, então o casamento é inequívoco. Se ainda assim nada
      * casar (arquivo com lixo no fim, por exemplo), cai no layout conhecido.
      */
-    private fun interpretar(dados: ByteArray): Pair<String?, String?> {
-        if (dados.size < 6) return null to null
+    private fun interpretar(dados: ByteArray?): Pair<String?, String?> {
+        if (dados == null || dados.size < 6) return null to null
 
         // apBand (int32) — não interessa, só ocupa espaço
         var pos = 4

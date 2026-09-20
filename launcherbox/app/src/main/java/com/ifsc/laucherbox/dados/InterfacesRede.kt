@@ -1,7 +1,5 @@
 package com.ifsc.laucherbox.dados
 
-import com.ifsc.laucherbox.sistema.Root
-
 /** Uma interface de rede do equipamento. */
 data class InterfaceRede(
     val nome: String,
@@ -33,9 +31,10 @@ object InterfacesRede {
      */
     private val RUIDO = setOf("lo", "sit0", "p2p0")
 
-    fun listar(): List<InterfaceRede> {
-        val links = Root.executarLendo("ip -o link show") ?: return emptyList()
-        val enderecos = enderecosPorInterface(Root.executarLendo("ip -4 -o addr show") ?: "")
+    /** Recebe as saídas de `ip -o link show` e `ip -4 -o addr show` já lidas
+     *  por [ColetaRoot] — uma chamada de root por ciclo, não uma por consulta. */
+    fun listar(links: String, enderecosBrutos: String): List<InterfaceRede> {
+        val enderecos = enderecosPorInterface(enderecosBrutos)
 
         return links.lineSequence()
             .filter { it.isNotBlank() }
