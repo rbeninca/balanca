@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Sem AppCompat/Material3 XML de propósito: o box roda API 25 e o app não
+      precisa dessas dependências. O tema do Compose vem de MaterialTheme no
+      MainActivity. Mesma escolha do app da balança.
+    -->
+    <style name="Theme.LauncherBox" parent="android:Theme.Material.NoActionBar" />
+</resources>

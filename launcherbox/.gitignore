@@ -1,0 +1,11 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea
+.DS_Store
+# sem a barra inicial: pega o build/ do root E o do módulo app/
+build/
+/captures
+.externalNativeBuild
+.cxx

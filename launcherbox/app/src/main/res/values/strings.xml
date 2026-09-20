@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Rótulo que aparece no seletor de tela inicial. Diferente de "BalançaGFIG"
+      de propósito: os dois apps convivem no box e nomes iguais confundem.
+    -->
+    <string name="app_name">Painel GFIG</string>
+</resources>

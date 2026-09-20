@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      ACCESS_WIFI_STATE é o que permite perguntar o estado do hotspot: sem ela
+      o getWifiApState (oculto, chamado por reflexão) estoura SecurityException
+      e o app mostraria "desligado" com o AP no ar.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Esperada pelo Superuser (Koush) do TX9 no pedido de root -->
+    <uses-permission
+        android:name="android.permission.ACCESS_SUPERUSER"
+        tools:ignore="ProtectedPermissions" />
+
+    <!--
+      Este app é a tela inicial (HOME) do box. O filtro com category.HOME é o
+      que o habilita como launcher; o segundo filtro, com LAUNCHER, permite
+      abri-lo também pela lista de apps — inclusive de dentro dele mesmo, já
+      que a lista ignora o próprio pacote.
+
+      Não há permissão declarada: tudo que precisa de privilégio (ler o
+      softap.conf, listar interfaces, ver o disco) passa por `su`, como no app
+      da balança. Os boxes são rooted e concedem root ao app.
+    -->
+
+    <!--
+      Visibilidade de pacotes: a partir do Android 11 o queryIntentActivities
+      só enxerga o que estiver declarado aqui. Sem isto o launcher listaria
+      quase nada. Nos boxes (API 25) a declaração é simplesmente ignorada.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LauncherBox">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:stateNotNeeded="true"
+            android:excludeFromRecents="true"
+            android:label="@string/app_name">
+
+            <!-- Ser a tela inicial do box -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- E aparecer na lista de apps -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
