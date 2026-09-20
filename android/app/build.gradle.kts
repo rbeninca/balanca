@@ -124,6 +124,12 @@ val copiarFrontend = tasks.register<Sync>("copiarFrontend") {
     from(firmware.file("firmware.bin"))
     from(firmware.file("versao.json")) { rename { "firmware-versao.json" } }
     into(layout.projectDirectory.dir("src/main/assets/web"))
+    // O firmware.bin chega por dois caminhos: o workflow de deploy copia ele
+    // para pacotes/aplicacao/public/ antes de buildar o frontend, e daí ele
+    // entra no dist-web; aqui ele é copiado de novo, do firmware/. É o mesmo
+    // arquivo. Sem uma estratégia explícita o Gradle 8 aborta com
+    // "Entry firmware.bin is a duplicate" — que é como o release quebrava.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     onlyIf {
         val existe = distWeb.asFile.exists()
         if (!existe) logger.warn("dist-web ausente em ${distWeb.asFile}; APK sem frontend embutido.")
