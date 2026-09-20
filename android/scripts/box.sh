@@ -262,9 +262,40 @@ fase_instalar() {
   conectar; detectar
   exigir_root
 
-  if [ ! -f "$APK" ]; then
-    echo "==> APK ausente; compilando"
-    (cd "$(dirname "$APK")/../../.." && ./gradlew :app:assembleDebug)
+  # Sempre compilar, e não só quando o APK falta: um APK velho aqui é armadilha,
+  # porque é empurrado calado. Já aconteceu de um box na 2.7.3 voltar para a
+  # 2.7.2 porque o APK da máquina era de horas antes. O Gradle não refaz nada
+  # quando está atualizado, então isto custa segundos.
+  #
+  # O caminho é resolvido a partir do próprio $APK: são cinco níveis até a raiz
+  # do Gradle (debug→apk→outputs→build→app→android). O antigo `../../..` parava
+  # em app/build, onde não existe gradlew — a compilação automática nunca rodou.
+  local raiz_android
+  raiz_android=$(cd "$(dirname "$APK")/../../../../.." 2>/dev/null && pwd) \
+    || falhar "não consegui localizar a raiz do Gradle a partir de $APK."
+
+  echo "==> Compilando o APK"
+  (cd "$raiz_android" && ./gradlew :app:assembleDebug) || falhar "a compilação do APK falhou."
+  [ -f "$APK" ] || falhar "o Gradle não produziu $APK"
+
+  # Guarda contra rebaixamento silencioso. Como os dois lados são depuráveis
+  # (DEBUGGABLE no box, debuggable no APK), o Android aceita instalar uma versão
+  # MAIS ANTIGA sem reclamar — num APK de release ele recusaria.
+  local codigo_fonte codigo_box
+  codigo_fonte=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' "$raiz_android/app/build.gradle.kts" | head -1)
+  codigo_box=$(sh_ "dumpsys package $PACOTE" | sed -n 's/.*versionCode=\([0-9]*\).*/\1/p' | head -1)
+  if [ -n "$codigo_fonte" ] && [ -n "$codigo_box" ] && [ "$codigo_fonte" -lt "$codigo_box" ]; then
+    echo "    ATENÇÃO: o APK local é a versão $codigo_fonte, e o box já está na $codigo_box."
+    echo "    Instalar isto REBAIXA o box."
+    if [ "$SIM" != 1 ]; then
+      if [ -t 0 ]; then
+        read -r -p "    rebaixar mesmo assim? [s/N] " r; [ "${r,,}" = "s" ] || { echo "    abortado."; exit 1; }
+      else
+        falhar "o APK local (versionCode $codigo_fonte) é mais antigo que o do box ($codigo_box).
+  Suba o versionCode em android/app/build.gradle.kts, ou passe --sim se o
+  rebaixamento for intencional."
+      fi
+    fi
   fi
 
   echo "==> Instalando APK ($(du -h "$APK" | cut -f1) — pode levar 1–2 min pela rede)"
