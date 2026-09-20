@@ -85,6 +85,16 @@
     .nav-clientes:hover { background: rgba(0,0,0,0.12); }
     .nav-clientes.gravando { background: #fee2e2; color: #b91c1c; }
     .nav-clientes-painel { position: absolute; right: 0; top: calc(100% + 6px); min-width: 16rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 0.6rem 0.9rem; z-index: 500; font-size: 0.85rem; }
+    /* Endereços do box: o chip vira botão de propósito — em tela estreita o
+       texto do endereço é escondido (.nav-endereco), e o toque é o que sobra. */
+    .nav-enderecos-wrap { position: relative; display: inline-flex; }
+    .nav-enderecos-wrap .nav-status-chip { cursor: pointer; }
+    .nav-enderecos-painel { position: absolute; right: 0; top: calc(100% + 6px); min-width: 14rem; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 0.6rem 0.9rem; z-index: 500; font-size: 0.85rem; }
+    .nav-enderecos-titulo { font-weight: 600; margin-bottom: 0.4rem; }
+    .nav-enderecos-linha { display: flex; gap: 0.8rem; align-items: baseline; padding: 0.2rem 0; }
+    .nav-enderecos-nome { color: #6b7280; font-size: 0.78rem; min-width: 4.5rem; }
+    .nav-enderecos-ip { font-family: monospace; font-variant-numeric: tabular-nums; }
+    .nav-enderecos-vazio { color: #6b7280; }
     .nav-clientes-titulo { font-weight: 600; margin-bottom: 0.4rem; }
     .nav-clientes-linha { display: flex; gap: 0.6rem; align-items: baseline; padding: 0.2rem 0; font-variant-numeric: tabular-nums; }
     .nav-clientes-end { font-family: monospace; }
@@ -528,7 +538,8 @@
     [data-tema="escuro"] .nav-status-chip.reconectando { background: rgba(239,68,68,0.18); color: #f87171; }
     [data-tema="escuro"] .nav-icone { color: #94a3b8; }
     [data-tema="escuro"] .nav-icone:hover, [data-tema="escuro"] .nav-icone.ativo { background: rgba(255,255,255,0.08); color: #f1f5f9; }
-    [data-tema="escuro"] .nav-menu, [data-tema="escuro"] .nav-clientes-painel { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .nav-menu, [data-tema="escuro"] .nav-clientes-painel, [data-tema="escuro"] .nav-enderecos-painel { background: #1e293b; border-color: #334155; }
+    [data-tema="escuro"] .nav-enderecos-nome, [data-tema="escuro"] .nav-enderecos-vazio { color: #94a3b8; }
     [data-tema="escuro"] .nav-menu-grupo + .nav-menu-grupo { border-top-color: #334155; }
     [data-tema="escuro"] .nav-menu-item { color: #e2e8f0 !important; }
     [data-tema="escuro"] .nav-menu-item:hover { background: #334155; }

@@ -100,17 +100,46 @@ let enderecoConexaoAtual = '';
 
 export function definirEnderecosDoBox(enderecos: Record<string, string>): void {
   enderecosDoBox = enderecos;
+
   const chip = document.querySelector<HTMLElement>('.nav-status-chip');
   const el   = document.querySelector<HTMLElement>('.nav-endereco');
-  if (!chip || !el || !enderecoConexaoAtual) return;
-  el.textContent = montarEndereco(enderecoConexaoAtual, enderecosDoBox);
+  if (chip && el && enderecoConexaoAtual) {
+    el.textContent = montarEndereco(enderecoConexaoAtual, enderecosDoBox);
+  }
+
+  // Painel aberto também se atualiza, senão mostraria a lista velha
+  const painel = document.querySelector<HTMLElement>('#nav-enderecos-painel');
+  if (painel && !painel.classList.contains('hidden')) painel.innerHTML = painelEnderecosHtml();
 }
 
 function statusHtml(s: StatusConexao): string {
   const classe = s.conectado ? 'conectado' : 'desconectado';
   const dono   = montarEndereco(s.endereco, s.enderecos);
   const texto  = s.conectado ? dono : `${dono} — desconectado`;
-  return `<span class="nav-status-chip ${classe}"><span class="nav-endereco">${texto}</span><span id="nav-hz" class="nav-hz"></span><button id="nav-clientes" class="nav-clientes hidden" type="button" title="Clientes conectados ao gateway"></button></span>`;
+  // O wrap existe para o painel de endereços se posicionar sob o chip
+  return `<span class="nav-enderecos-wrap"><span class="nav-status-chip ${classe}" role="button" tabindex="0" title="Endereços do box"><span class="nav-endereco">${texto}</span><span id="nav-hz" class="nav-hz"></span><button id="nav-clientes" class="nav-clientes hidden" type="button" title="Clientes conectados ao gateway"></button></span><div id="nav-enderecos-painel" class="nav-enderecos-painel hidden"></div></span>`;
+}
+
+/**
+ * Endereços em lista, para o painel que abre ao tocar no chip.
+ *
+ * Existe porque em tela estreita o texto do chip é escondido por CSS
+ * (`@media (max-width: 480px) { .nav-endereco { display: none } }`) — no
+ * celular, tocar no chip é como se chega aos endereços.
+ */
+function painelEnderecosHtml(): string {
+  const entradas = Object.entries(enderecosDoBox).filter(([, ip]) => ip);
+  const linhas = entradas.map(([nome, ip]) =>
+    `<div class="nav-enderecos-linha"><span class="nav-enderecos-nome">${nome}</span><span class="nav-enderecos-ip">${ip}</span></div>`);
+
+  // A conexão entra quando diz outra coisa: no próprio box é 127.0.0.1
+  if (enderecoConexaoAtual && !entradas.some(([, ip]) => ip === enderecoConexaoAtual)) {
+    const rotulo = /^(127\.|localhost)/.test(enderecoConexaoAtual) ? 'esta tela' : 'conexão';
+    linhas.unshift(`<div class="nav-enderecos-linha"><span class="nav-enderecos-nome">${rotulo}</span><span class="nav-enderecos-ip">${enderecoConexaoAtual}</span></div>`);
+  }
+
+  if (linhas.length === 0) return '<div class="nav-enderecos-vazio">sem endereço de rede</div>';
+  return '<div class="nav-enderecos-titulo">Endereços do box</div>' + linhas.join('');
 }
 
 function menuHtml(itens: ItemMenu[]): string {
@@ -203,7 +232,23 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   });
   painel?.addEventListener('click', (e) => e.stopPropagation());
 
-  fecharFlutuantes = () => { fecharMenu(); fecharPainelClientes(); };
+  // Endereços do box: em tela estreita o CSS esconde o texto do chip
+  // (.nav-endereco), então tocar no chip é como se chega aos endereços
+  const chipEnd   = container.querySelector<HTMLElement>('.nav-status-chip');
+  const painelEnd = container.querySelector<HTMLElement>('#nav-enderecos-painel');
+  const fecharPainelEnderecos = () => painelEnd?.classList.add('hidden');
+  chipEnd?.addEventListener('click', (e) => {
+    if (!painelEnd) return;
+    if ((e.target as HTMLElement).closest('#nav-clientes')) return; // tem painel próprio
+    e.stopPropagation();
+    if (!painelEnd.classList.contains('hidden')) { fecharPainelEnderecos(); return; }
+    fecharMenu(); fecharPainelClientes();
+    painelEnd.innerHTML = painelEnderecosHtml();
+    painelEnd.classList.remove('hidden');
+  });
+  painelEnd?.addEventListener('click', (e) => e.stopPropagation());
+
+  fecharFlutuantes = () => { fecharMenu(); fecharPainelClientes(); fecharPainelEnderecos(); };
   if (!ouvintesGlobais) {
     ouvintesGlobais = true;
     document.addEventListener('click', () => fecharFlutuantes());
