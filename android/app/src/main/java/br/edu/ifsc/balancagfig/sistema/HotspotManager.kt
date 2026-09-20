@@ -11,6 +11,7 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * Controle do hotspot (SoftAP) do TX9.
@@ -32,6 +33,12 @@ object HotspotManager {
     /** Constantes ocultas de WifiManager para o estado do AP. */
     private const val WIFI_AP_STATE_ENABLING = 12
     private const val WIFI_AP_STATE_ENABLED = 13
+
+    /** Nome base da rede. O sufixo com o MAC é acrescentado por [ssidDoBox]. */
+    const val SSID_BASE = "balancaGFIG"
+
+    /** Senha usada enquanto o box não tiver nenhuma gravada. */
+    const val SENHA_PADRAO = "12345678"
 
     /** Endereçamento da rede do hotspot (mesmo padrão do tethering do Android). */
     const val IP_HOTSPOT = "192.168.43.1"
@@ -56,18 +63,25 @@ object HotspotManager {
     )
 
     /**
-     * Liga o hotspot com o SSID e a senha informados.
+     * Liga o hotspot.
      *
-     * @param senha 8 a 63 caracteres para WPA2; vazio cria uma rede aberta.
+     * @param ssid nome da rede; por padrão [ssidDoBox] — `balancaGFIG-<4 últimos
+     *   do MAC do eth0>`, para distinguir os boxes no ar sem precisar consultar
+     *   a lista de clientes.
+     * @param senha 8 a 63 caracteres para WPA2; string vazia cria rede aberta.
+     *   **null preserva** a senha que já estiver gravada no box — é o padrão,
+     *   para a troca feita na tela não ser desfeita quando o app religa o AP.
      */
     suspend fun ligarHotspot(
         context: Context,
-        ssid: String = "balancaGFIG",
-        senha: String = "12345678"
+        ssid: String = ssidDoBox(),
+        senha: String? = null,
     ): Resultado = withContext(Dispatchers.IO) {
         val app = context.applicationContext
+        val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val senhaEfetiva = senha ?: senhaDoHotspot(wifiManager) ?: SENHA_PADRAO
 
-        if (senha.isNotEmpty() && senha.length !in 8..63) {
+        if (senhaEfetiva.isNotEmpty() && senhaEfetiva.length !in 8..63) {
             return@withContext Resultado(false, "Senha do hotspot deve ter entre 8 e 63 caracteres.")
         }
 
@@ -79,8 +93,6 @@ object HotspotManager {
             )
         }
         garantirWriteSecureSettings(app)
-
-        val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
         // Android 8+ removeu setWifiApEnabled; o caminho passa a ser o tethering do ConnectivityManager.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -95,7 +107,7 @@ object HotspotManager {
         // O AP sobe com o que estiver gravado na configuração do framework —
         // setWifiApEnabled não aceita config por chamada. Sem isto o rk322x
         // usaria o "AndroidAP" padrão em vez do SSID da balança.
-        definirConfiguracaoAp(wifiManager, ssid, senha)
+        definirConfiguracaoAp(wifiManager, ssid, senhaEfetiva)
 
         try {
             val metodo = wifiManager.javaClass.getMethod(
@@ -103,11 +115,11 @@ object HotspotManager {
                 WifiConfiguration::class.java,
                 Boolean::class.javaPrimitiveType
             )
-            metodo.invoke(wifiManager, montarConfiguracaoAp(ssid, senha), true)
+            metodo.invoke(wifiManager, montarConfiguracaoAp(ssid, senhaEfetiva), true)
         } catch (e: Throwable) {
             val causa = e.cause ?: e
             Log.w(TAG, "setWifiApEnabled falhou; tentando pela tela do Settings", causa)
-            val pelaTela = ligarPelaTelaDoSettings(app, wifiManager)
+            val pelaTela = acionarPelaTelaDoSettings(app, wifiManager, ligar = true)
             if (pelaTela.sucesso) return@withContext pelaTela
             return@withContext Resultado(
                 false,
@@ -150,10 +162,30 @@ object HotspotManager {
             metodo.invoke(wifiManager, null, false)
             Resultado(true, "Hotspot desligado.")
         } catch (e: Throwable) {
+            // Mesmo bug de firmware que impede ligar: sem este desvio, desligar
+            // falhava em silêncio no MXQ e o AP seguia no ar com a senha velha
+            // — a senha nova só valeria no próximo boot.
             val causa = e.cause ?: e
-            Log.e(TAG, "setWifiApEnabled(false) falhou", causa)
+            Log.w(TAG, "setWifiApEnabled(false) falhou; tentando pela tela do Settings", causa)
+            val pelaTela = acionarPelaTelaDoSettings(app, wifiManager, ligar = false)
+            if (pelaTela.sucesso) return@withContext pelaTela
             Resultado(false, "Falha ao desligar o hotspot: ${causa.message ?: causa.javaClass.simpleName}")
         }
+    }
+
+    /** Espera o rádio do AP cair — usado ao desligar pela tela do sistema. */
+    private suspend fun aguardarApDesligado(wifiManager: WifiManager): Boolean {
+        repeat(20) {
+            val estado = try {
+                wifiManager.javaClass.getMethod("getWifiApState").invoke(wifiManager) as Int
+            } catch (_: Throwable) {
+                return true
+            }
+            // 11 = WIFI_AP_STATE_DISABLED, 14 = FAILED
+            if (estado != WIFI_AP_STATE_ENABLED && estado != WIFI_AP_STATE_ENABLING) return true
+            delay(500)
+        }
+        return false
     }
 
     /** Espera o rádio do AP ficar pronto antes de configurar endereço e DHCP. */
@@ -176,6 +208,78 @@ object HotspotManager {
      * a config por chamada e isto é redundante; no rk322x é o único jeito de o
      * AP não subir com o "AndroidAP" padrão do framework.
      */
+    /**
+     * Nome da rede deste box: `balancaGFIG-<4 últimos do MAC do eth0>`.
+     *
+     * Com mais de um box no mesmo ambiente, o sufixo diz qual é qual sem
+     * precisar abrir a lista de clientes do roteador. Sem MAC legível devolve o
+     * nome base — melhor um nome genérico do que nome nenhum.
+     */
+    fun ssidDoBox(): String {
+        val sufixo = macEthernet()
+            ?.filter { it.isLetterOrDigit() }
+            ?.takeLast(4)
+            ?.uppercase()
+        return if (sufixo.isNullOrBlank()) SSID_BASE else "$SSID_BASE-$sufixo"
+    }
+
+    /**
+     * MAC da interface ethernet. Tenta o sysfs direto e só recorre ao root se o
+     * SELinux barrar — o arquivo é legível, mas nem todo contexto de app pode.
+     */
+    private fun macEthernet(): String? {
+        val caminho = "/sys/class/net/eth0/address"
+        val direto = runCatching { File(caminho).readText().trim() }.getOrNull()
+        if (!direto.isNullOrBlank()) return direto
+        return Root.executarLendo("cat $caminho")?.trim()?.takeIf { it.isNotBlank() }
+    }
+
+    /**
+     * Senha gravada na configuração do AP, ou null se o box não tem nenhuma.
+     * A API é oculta e devolve o `preSharedKey` entre aspas.
+     */
+    /** Atalho para a tela, que não precisa conhecer o WifiManager. */
+    fun senhaDoHotspot(context: Context): String? =
+        senhaDoHotspot(context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
+
+    fun senhaDoHotspot(wifiManager: WifiManager): String? = try {
+        val config = wifiManager.javaClass.getMethod("getWifiApConfiguration")
+            .invoke(wifiManager) as? WifiConfiguration
+        config?.preSharedKey?.trim('"')?.takeIf { it.isNotBlank() }
+    } catch (e: Throwable) {
+        Log.w(TAG, "getWifiApConfiguration indisponível: ${e.message}")
+        null
+    }
+
+    /**
+     * Troca a senha da rede mantendo o nome.
+     *
+     * Só grava a configuração: o AP precisa ser religado para a senha nova
+     * valer, e quem chamou decide quando fazê-lo.
+     */
+    suspend fun trocarSenha(context: Context, novaSenha: String): Resultado =
+        withContext(Dispatchers.IO) {
+            val app = context.applicationContext
+            if (novaSenha.length !in 8..63) {
+                return@withContext Resultado(false, "A senha precisa ter entre 8 e 63 caracteres.")
+            }
+            if (!garantirPermissaoEscrita(app)) {
+                return@withContext Resultado(
+                    sucesso = false,
+                    mensagem = "Falta a permissão \"modificar configurações do sistema\" para trocar a senha.",
+                    precisaPermissaoEscrita = true
+                )
+            }
+            garantirWriteSecureSettings(app)
+
+            val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val ssid = ssidDoBox()
+            if (!definirConfiguracaoAp(wifiManager, ssid, novaSenha)) {
+                return@withContext Resultado(false, "O sistema não aceitou gravar a nova senha.")
+            }
+            Resultado(true, "Senha da rede \"$ssid\" alterada. Religue o hotspot para valer.")
+        }
+
     private fun definirConfiguracaoAp(wifiManager: WifiManager, ssid: String, senha: String): Boolean = try {
         wifiManager.javaClass
             .getMethod("setWifiApConfiguration", WifiConfiguration::class.java)
@@ -207,7 +311,11 @@ object HotspotManager {
      * setWifiApEnabled levanta só o rádio), e configurar por cima duplicaria
      * as regras.
      */
-    private suspend fun ligarPelaTelaDoSettings(context: Context, wifiManager: WifiManager): Resultado {
+    private suspend fun acionarPelaTelaDoSettings(
+        context: Context,
+        wifiManager: WifiManager,
+        ligar: Boolean,
+    ): Resultado {
         val arquivo = "/data/local/tmp/balanca_ui.xml"
         val tela = "com.android.settings/.Settings${'$'}TetherSettingsActivity"
 
@@ -243,23 +351,30 @@ object HotspotManager {
             return Resultado(false, "não achei o botão do hotspot na tela do sistema.")
         }
 
-        if (botao.ligado) {
-            val respondeu = aguardarApLigado(wifiManager)
+        // já está no estado pedido?
+        if (botao.ligado == ligar) {
             voltarParaOApp(context)
-            return if (respondeu) {
-                Resultado(true, "Hotspot já estava ligado.")
-            } else {
-                Resultado(false, "o hotspot consta ligado, mas o rádio não respondeu.")
-            }
+            return Resultado(
+                true,
+                if (ligar) "Hotspot já estava ligado." else "Hotspot já estava desligado.",
+            )
         }
 
         Root.executar("input tap ${botao.x} ${botao.y}")
-        val subiu = aguardarApLigado(wifiManager)
+        val mudou = if (ligar) aguardarApLigado(wifiManager) else aguardarApDesligado(wifiManager)
         voltarParaOApp(context)
-        if (!subiu) {
-            return Resultado(false, "toquei no botão do hotspot, mas o rádio não subiu.")
+        if (!mudou) {
+            return Resultado(
+                false,
+                if (ligar) "toquei no botão do hotspot, mas o rádio não subiu."
+                else "toquei no botão do hotspot, mas o rádio não desligou.",
+            )
         }
-        return Resultado(true, "Hotspot ligado pela tela do sistema (DHCP do framework).")
+        return Resultado(
+            true,
+            if (ligar) "Hotspot ligado pela tela do sistema (DHCP do framework)."
+            else "Hotspot desligado pela tela do sistema.",
+        )
     }
 
     /** Traz o app de volta à frente — a tela do Settings ficou sobre o quiosque. */

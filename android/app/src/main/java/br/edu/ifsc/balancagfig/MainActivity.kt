@@ -32,6 +32,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -66,7 +67,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** SSID do hotspot local que os celulares usam para acessar a balança. */
-const val SSID_HOTSPOT = "balancaGFIG"
+// O nome da rede saiu daqui: é calculado por HotspotManager.ssidDoBox(), com os
+// 4 últimos dígitos do MAC do eth0 — ver SSID_BASE lá.
 
 /** Frontend servido pelo próprio box (ServidorHttp). */
 private const val URL_APP_LOCAL = "http://127.0.0.1:8080"
@@ -248,12 +250,17 @@ private fun ConteudoStatus(interno: PaddingValues) {
     var enderecosIP by remember { mutableStateOf(EnderecosRede.listarIPv4()) }
     var hotspotLigado by remember { mutableStateOf(HotspotManager.hotspotAtivo(contexto)) }
     var hotspotOcupado by remember { mutableStateOf(false) }
+    var ssidBox by remember { mutableStateOf(HotspotManager.ssidDoBox()) }
+    var senhaBox by remember { mutableStateOf(HotspotManager.senhaDoHotspot(contexto)) }
+    var novaSenha by remember { mutableStateOf("") }
 
     // Rede muda sem aviso (hotspot subindo, cabo): reavalia periodicamente
     LaunchedEffect(Unit) {
         while (true) {
             enderecosIP = EnderecosRede.listarIPv4()
             hotspotLigado = HotspotManager.hotspotAtivo(contexto)
+            ssidBox = HotspotManager.ssidDoBox()
+            senhaBox = HotspotManager.senhaDoHotspot(contexto)
             delay(3000)
         }
     }
@@ -309,9 +316,49 @@ private fun ConteudoStatus(interno: PaddingValues) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Hotspot $SSID_HOTSPOT: ${if (hotspotLigado) "ligado (${HotspotManager.IP_HOTSPOT})" else "desligado"}",
+                    "Hotspot $ssidBox: ${if (hotspotLigado) "ligado (${HotspotManager.IP_HOTSPOT})" else "desligado"}",
                     style = MaterialTheme.typography.bodyMedium
                 )
+                Mono("senha: ${senhaBox ?: "—"}")
+
+                // Troca da senha da rede. Fica aqui, junto do botão que liga o
+                // hotspot, porque é a mesma coisa que ele controla.
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = novaSenha,
+                        onValueChange = { novaSenha = it.take(63) },
+                        label = { Text("nova senha (8 a 63)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FilledTonalButton(
+                        enabled = novaSenha.length in 8..63 && !hotspotOcupado,
+                        onClick = {
+                            escopo.launch {
+                                hotspotOcupado = true
+                                val r = HotspotManager.trocarSenha(contexto, novaSenha)
+                                if (r.sucesso) {
+                                    // senha nova só vale com o AP religado
+                                    HotspotManager.desligarHotspot(contexto)
+                                    HotspotManager.ligarHotspot(contexto, senha = novaSenha)
+                                    novaSenha = ""
+                                }
+                                Toast.makeText(contexto, r.mensagem, Toast.LENGTH_LONG).show()
+                                if (r.precisaPermissaoEscrita) {
+                                    HotspotManager.intentPermissaoEscrita(contexto)?.let { contexto.startActivity(it) }
+                                }
+                                senhaBox = HotspotManager.senhaDoHotspot(contexto)
+                                hotspotLigado = HotspotManager.hotspotAtivo(contexto)
+                                hotspotOcupado = false
+                            }
+                        },
+                    ) { Text("TROCAR") }
+                }
+
                 Spacer(Modifier.height(4.dp))
                 val pd = pendrive
                 Text(
@@ -347,7 +394,8 @@ private fun ConteudoStatus(interno: PaddingValues) {
                     val resultado = if (hotspotLigado) {
                         HotspotManager.desligarHotspot(contexto)
                     } else {
-                        HotspotManager.ligarHotspot(contexto, SSID_HOTSPOT)
+                        // sem senha: preserva a que estiver gravada no box
+                        HotspotManager.ligarHotspot(contexto)
                     }
                     Toast.makeText(contexto, resultado.mensagem, Toast.LENGTH_LONG).show()
                     if (resultado.precisaPermissaoEscrita) {
@@ -363,8 +411,8 @@ private fun ConteudoStatus(interno: PaddingValues) {
             Text(
                 when {
                     hotspotOcupado -> "AGUARDE..."
-                    hotspotLigado -> "DESLIGAR HOTSPOT $SSID_HOTSPOT"
-                    else -> "LIGAR HOTSPOT $SSID_HOTSPOT"
+                    hotspotLigado -> "DESLIGAR HOTSPOT $ssidBox"
+                    else -> "LIGAR HOTSPOT $ssidBox"
                 }
             )
         }

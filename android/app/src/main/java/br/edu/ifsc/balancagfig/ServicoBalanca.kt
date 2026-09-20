@@ -440,7 +440,8 @@ class ServicoBalanca : Service() {
 
     private fun iniciarHotspot() = escopo.launch {
         if (HotspotManager.hotspotAtivo(this@ServicoBalanca)) return@launch
-        val r = HotspotManager.ligarHotspot(this@ServicoBalanca, SSID_HOTSPOT)
+        // sem ssid/senha: o nome sai do MAC do box e a senha gravada é preservada
+        val r = HotspotManager.ligarHotspot(this@ServicoBalanca)
         EstadoHost.registrar("Hotspot: ${r.mensagem}")
         // O tethering do Android reconstrói as chains de NAT ao subir o AP;
         // reaplica o redirect :80 para o frontend seguir acessível sem porta.
