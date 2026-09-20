@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#3DDC84</color>
+    <!--
+      Fundo do ícone adaptativo (API 26+). Escuro para casar com o emblema da
+      logo, que é um disco escuro — no verde padrão do Android Studio a borda
+      do disco sumia. Os boxes (API 25) usam os PNG de mipmap-*, não isto.
+    -->
+    <color name="ic_launcher_background">#10141A</color>
 </resources>
