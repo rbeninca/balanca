@@ -24,20 +24,28 @@ set -euo pipefail
 
 PACOTE="br.edu.ifsc.balancagfig"
 APK="app/build/outputs/apk/debug/app-debug.apk"
+
+# Launcher próprio (projeto separado, em ../launcherbox). O componente é o que
+# vira tela inicial; o arquivo no box guarda a tela inicial ANTERIOR, para o
+# 'launcher-desfazer' saber a quem devolver.
+LAUNCHER_PACOTE="com.ifsc.laucherbox"
+LAUNCHER_COMPONENTE="com.ifsc.laucherbox/.MainActivity"
+LAUNCHER_APK="../launcherbox/app/build/outputs/apk/debug/app-debug.apk"
+HOME_GUARDADO="/data/local/tmp/launcherbox.home-anterior"
 SU_DB_KOUSH="/data/data/com.thirdparty.superuser/databases/su.sqlite"
 USB_XML="/data/system/users/0/usb_device_manager.xml"
 
 TAREFA=""; IP=""; SIM=0
 for arg in "$@"; do
   case "$arg" in
-    instalar|desfazer|estado|ciclo) TAREFA="$arg" ;;
+    instalar|desfazer|estado|ciclo|launcher|launcher-desfazer) TAREFA="$arg" ;;
     --sim|-y) SIM=1 ;;
     *[0-9].[0-9]*) IP="$arg" ;;
     -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "não entendi o argumento '$arg'" >&2; exit 2 ;;
   esac
 done
-[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo] <IP> [--sim]" >&2; exit 2; }
+[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo|launcher|launcher-desfazer] <IP> [--sim]" >&2; exit 2; }
 [ -n "$TAREFA" ] || TAREFA="ciclo"
 DEVICE="$IP:5555"
 
@@ -454,9 +462,121 @@ fase_ciclo() {
   fase_instalar
 }
 
+# ── launcher próprio ───────────────────────────────────────────────────────
+
+# Componente que responde como tela inicial agora.
+home_atual() {
+  sh_ "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME" \
+    | tail -1 | tr -d '\r' | sed 's/^[[:space:]]*//'
+}
+
+# Candidatos a tela inicial, menos o nosso.
+outros_homes() {
+  sh_ "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME" \
+    | tr -d '\r' | sed 's/^[[:space:]]*//' | grep '/' | grep -v "^$LAUNCHER_PACOTE/" | sort -u
+}
+
+# Instala o launcherbox e o define como tela inicial, guardando a anterior.
+# O `cmd package set-home-activity` existe no API 25 — o `pm`, que seria o
+# comando natural, NÃO tem essa opção nessa versão.
+fase_launcher() {
+  conectar; detectar
+  echo "==> Instalando o launcher próprio em $IP"
+
+  [ -f "$LAUNCHER_APK" ] || falhar "APK do launcher ausente.
+  Compile antes:  (cd ../launcherbox && ./gradlew :app:assembleDebug)"
+
+  local anterior; anterior=$(home_atual)
+  echo "    tela inicial atual: ${anterior:-não identifiquei}"
+
+  # guarda a anterior só se ainda não houver registro — assim rodar 'launcher'
+  # duas vezes não sobrescreve o original com o nosso próprio componente
+  if [ -n "$anterior" ] && [ "$anterior" != "$LAUNCHER_COMPONENTE" ] \
+     && [ -z "$(sh_ "cat $HOME_GUARDADO 2>/dev/null" | tr -d '\r')" ]; then
+    sh_ "echo '$anterior' > $HOME_GUARDADO"
+    echo "    guardado para o desfazer: $anterior"
+  fi
+
+  local saida; saida=$(adb -s "$DEVICE" install -r "$LAUNCHER_APK" 2>&1 | tr -d '\r' || true)
+  echo "    $(tail -1 <<<"$saida")"
+  grep -q "Success" <<<"$saida" || falhar "instalação do launcher recusada."
+
+  # tira o pacote do estado 'parado', senão ele não recebe BOOT_COMPLETED
+  sh_ "am start -n $LAUNCHER_COMPONENTE" >/dev/null 2>&1 || true
+  sleep 4
+
+  # no TX9 o Koush pré-aprova root POR UID, e o launcher tem UID novo — sem
+  # isto ele pediria root na TV, onde não há quem clique
+  if [ "$ROOT_MGR" = "Koush (Superuser)" ]; then
+    local uid; uid=$(sh_ "dumpsys package $LAUNCHER_PACOTE" | sed -n 's/.*userId=\([0-9]*\).*/\1/p' | head -1)
+    if [ -n "$uid" ]; then
+      echo "==> Pré-aprovando o root do launcher (uid $uid) no Superuser"
+      local sql="INSERT OR REPLACE INTO uid_policy
+   (logging,desired_name,username,policy,until,command,uid,desired_uid,package_name,name,notification)
+   VALUES (0,'','','allow',0,'',$uid,0,'$LAUNCHER_PACOTE','Painel GFIG',0);"
+      sh_ "echo \"$sql\" > /data/local/tmp/lb_policy.sql" >/dev/null
+      shu "sqlite3 $SU_DB_KOUSH < /data/local/tmp/lb_policy.sql" >/dev/null || true
+      sh_ "rm -f /data/local/tmp/lb_policy.sql" >/dev/null
+    fi
+  else
+    echo "==> Root: no SuperSU deste box o launcher já ganha root sozinho."
+  fi
+
+  echo "==> Definindo como tela inicial"
+  shu "cmd package set-home-activity $LAUNCHER_COMPONENTE" >/dev/null || true
+  local agora; agora=$(home_atual)
+  if [ "$agora" = "$LAUNCHER_COMPONENTE" ]; then
+    echo "    tela inicial agora: $agora"
+  else
+    echo "    ATENÇÃO: continua '$agora' — o sistema recusou a troca."
+    echo "    (o launcher está instalado; dá para escolhê-lo no seletor da TV)"
+  fi
+
+  echo
+  echo "==> Para devolver a tela inicial anterior: bash scripts/box.sh launcher-desfazer $IP"
+}
+
+# Devolve a tela inicial que estava antes. O launcher NÃO é desinstalado: sai
+# do caminho como Home e continua abrível pela lista de apps — assim dá para
+# voltar atrás sem perder o app.
+fase_launcher_desfazer() {
+  conectar; detectar
+  echo "==> Devolvendo a tela inicial de $IP"
+
+  local destino; destino=$(sh_ "cat $HOME_GUARDADO 2>/dev/null" | tr -d '\r' | sed 's/^[[:space:]]*//')
+
+  if [ -z "$destino" ]; then
+    echo "    não há registro da tela inicial anterior; procurando candidatos"
+    destino=$(outros_homes | head -1)
+  fi
+
+  if [ -z "$destino" ]; then
+    falhar "não achei nenhuma outra tela inicial neste box.
+  O launcher segue instalado: escolha outra no seletor da TV, ou desinstale
+  com 'adb -s $DEVICE uninstall $LAUNCHER_PACOTE'."
+  fi
+
+  echo "    devolvendo para: $destino"
+  shu "cmd package set-home-activity $destino" >/dev/null || true
+
+  local agora; agora=$(home_atual)
+  if [ "$agora" = "$destino" ]; then
+    echo "    tela inicial agora: $agora"
+    sh_ "rm -f $HOME_GUARDADO" >/dev/null
+  else
+    falhar "o sistema não aceitou '$destino' (continua '$agora')."
+  fi
+
+  echo
+  echo "    O launcher continua instalado — abra pela lista de apps."
+  echo "    Para removê-lo de vez: adb -s $DEVICE uninstall $LAUNCHER_PACOTE"
+}
+
 case "$TAREFA" in
-  estado)   fase_estado ;;
-  desfazer) fase_desfazer ;;
-  instalar) fase_instalar ;;
-  ciclo)    fase_ciclo ;;
+  estado)            fase_estado ;;
+  desfazer)          fase_desfazer ;;
+  instalar)          fase_instalar ;;
+  ciclo)             fase_ciclo ;;
+  launcher)          fase_launcher ;;
+  launcher-desfazer) fase_launcher_desfazer ;;
 esac
