@@ -4,12 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.util.Log
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 
 /** Um app instalado que abre tela. */
 data class AppAbrivel(
     val rotulo: String,
     val pacote: String,
     val atividade: String,
+    val icone: ImageBitmap?,
 ) {
     val componente: String get() = "$pacote/$atividade"
 }
@@ -34,6 +38,10 @@ object AppsInstalados {
                     rotulo = info.loadLabel(pm).toString().ifBlank { info.activityInfo.packageName },
                     pacote = info.activityInfo.packageName,
                     atividade = info.activityInfo.name,
+                    // 96 px cobre com folga os 40 dp em que o ícone é desenhado
+                    // mesmo numa TV 1080p; um ícone que falhe não derruba a linha
+                    icone = runCatching { info.loadIcon(pm).toBitmap(96, 96).asImageBitmap() }
+                        .getOrNull(),
                 )
             }
             // a consulta devolve mais de uma entrada por pacote (atividade e
