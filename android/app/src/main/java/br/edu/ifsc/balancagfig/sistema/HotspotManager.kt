@@ -40,6 +40,11 @@ object HotspotManager {
     /** Senha usada enquanto o box não tiver nenhuma gravada. */
     const val SENHA_PADRAO = "12345678"
 
+    private const val PREFS_HOTSPOT = "hotspot"
+
+    /** Última senha que o app gravou no AP — o que torna uma senha "nossa". */
+    private const val CHAVE_SENHA_GRAVADA = "senhaGravada"
+
     /** Endereçamento da rede do hotspot (mesmo padrão do tethering do Android). */
     const val IP_HOTSPOT = "192.168.43.1"
     private const val DHCP_INICIO = "192.168.43.2"
@@ -71,8 +76,7 @@ object HotspotManager {
      * @param senha 8 a 63 caracteres para WPA2; string vazia cria rede aberta.
      *   **null preserva** a senha já gravada — é o padrão, para a troca feita na
      *   tela não ser desfeita quando o app religa o AP. Mas só preserva se a
-     *   configuração for NOSSA: numa caixa nova ela ainda é a do framework, com
-     *   senha aleatória (ver [configuracaoAp]).
+     *   senha gravada for uma que NÓS escrevemos (ver [senhaGravadaPorNos]).
      */
     suspend fun ligarHotspot(
         context: Context,
@@ -84,7 +88,7 @@ object HotspotManager {
         val configGravada = configuracaoAp(wifiManager)
         val senhaGravada = configGravada?.preSharedKey?.trim('"')?.takeIf { it.isNotBlank() }
         val senhaEfetiva = senha
-            ?: senhaGravada?.takeIf { configuracaoEhNossa(configGravada) }
+            ?: senhaGravada?.takeIf { senhaGravadaPorNos(app, it) }
             ?: SENHA_PADRAO
 
         if (senhaEfetiva.isNotEmpty() && senhaEfetiva.length !in 8..63) {
@@ -113,7 +117,7 @@ object HotspotManager {
         // O AP sobe com o que estiver gravado na configuração do framework —
         // setWifiApEnabled não aceita config por chamada. Sem isto o rk322x
         // usaria o "AndroidAP" padrão em vez do SSID da balança.
-        definirConfiguracaoAp(wifiManager, ssid, senhaEfetiva)
+        definirConfiguracaoAp(app, wifiManager, ssid, senhaEfetiva)
 
         try {
             val metodo = wifiManager.javaClass.getMethod(
@@ -250,16 +254,31 @@ object HotspotManager {
     }
 
     /**
-     * A configuração gravada é a nossa, ou ainda a que o framework criou sozinho?
+     * A senha gravada no AP é uma que NÓS escrevemos?
      *
-     * O `WifiApConfigStore` do Android, sem nada gravado, cria um AP chamado
-     * `AndroidAP` com senha **aleatória** — `UUID.randomUUID()` cortado em 12
-     * caracteres. Preservar essa senha numa caixa nova deixaria o `12345678`
-     * documentado sem efeito, então só preservamos quando o SSID já começa com
-     * [SSID_BASE]: aí quem gravou fomos nós, ou quem trocou pela tela.
+     * O `WifiApConfigStore` do Android, sem nada gravado, cria um AP com senha
+     * **aleatória** — `UUID.randomUUID()` cortado em 12 caracteres. Preservar
+     * essa senha deixaria o [SENHA_PADRAO] documentado sem efeito.
+     *
+     * A checagem é contra a última senha que gravamos, e não contra o SSID.
+     * Olhar só o SSID não bastava: existe um estado misto — SSID nosso, senha
+     * ainda a do framework — em que a checagem aprovava e a senha aleatória
+     * ficava preservada **para sempre**, porque o SSID nunca deixa de ser nosso.
+     * Foi assim que um box ficou com `7cf30fdd295a` no lugar do `12345678`.
+     *
+     * Sem nada registrado (app recém-instalado) devolve `false`, e aí o próximo
+     * AP sobe com [SENHA_PADRAO] — que é o desejado.
      */
-    private fun configuracaoEhNossa(config: WifiConfiguration?): Boolean =
-        config?.SSID?.trim('"')?.startsWith(SSID_BASE) == true
+    private fun senhaGravadaPorNos(context: Context, senha: String): Boolean =
+        preferencias(context).getString(CHAVE_SENHA_GRAVADA, null) == senha
+
+    /** Registra a senha que acabou de ser gravada, para as próximas subidas do AP. */
+    private fun registrarSenhaGravada(context: Context, senha: String) {
+        preferencias(context).edit().putString(CHAVE_SENHA_GRAVADA, senha).apply()
+    }
+
+    private fun preferencias(context: Context) = context.applicationContext
+        .getSharedPreferences(PREFS_HOTSPOT, Context.MODE_PRIVATE)
 
     /**
      * Troca a senha da rede mantendo o nome.
@@ -284,20 +303,31 @@ object HotspotManager {
 
             val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
             val ssid = ssidDoBox()
-            if (!definirConfiguracaoAp(wifiManager, ssid, novaSenha)) {
+            if (!definirConfiguracaoAp(app, wifiManager, ssid, novaSenha)) {
                 return@withContext Resultado(false, "O sistema não aceitou gravar a nova senha.")
             }
             Resultado(true, "Senha da rede \"$ssid\" alterada. Religue o hotspot para valer.")
         }
 
-    private fun definirConfiguracaoAp(wifiManager: WifiManager, ssid: String, senha: String): Boolean = try {
-        wifiManager.javaClass
-            .getMethod("setWifiApConfiguration", WifiConfiguration::class.java)
-            .invoke(wifiManager, montarConfiguracaoAp(ssid, senha))
-        true
-    } catch (e: Throwable) {
-        Log.w(TAG, "setWifiApConfiguration indisponível: ${e.message}")
-        false
+    private fun definirConfiguracaoAp(
+        context: Context,
+        wifiManager: WifiManager,
+        ssid: String,
+        senha: String,
+    ): Boolean {
+        val gravou = try {
+            wifiManager.javaClass
+                .getMethod("setWifiApConfiguration", WifiConfiguration::class.java)
+                .invoke(wifiManager, montarConfiguracaoAp(ssid, senha))
+            true
+        } catch (e: Throwable) {
+            Log.w(TAG, "setWifiApConfiguration indisponível: ${e.message}")
+            false
+        }
+        // Só uma gravação aceita torna esta senha "nossa" — é o que autoriza
+        // preservá-la quando o AP religar sem senha explícita.
+        if (gravou) registrarSenhaGravada(context, senha)
+        return gravou
     }
 
     /**
