@@ -69,8 +69,10 @@ object HotspotManager {
      *   do MAC do eth0>`, para distinguir os boxes no ar sem precisar consultar
      *   a lista de clientes.
      * @param senha 8 a 63 caracteres para WPA2; string vazia cria rede aberta.
-     *   **null preserva** a senha que já estiver gravada no box — é o padrão,
-     *   para a troca feita na tela não ser desfeita quando o app religa o AP.
+     *   **null preserva** a senha já gravada — é o padrão, para a troca feita na
+     *   tela não ser desfeita quando o app religa o AP. Mas só preserva se a
+     *   configuração for NOSSA: numa caixa nova ela ainda é a do framework, com
+     *   senha aleatória (ver [configuracaoAp]).
      */
     suspend fun ligarHotspot(
         context: Context,
@@ -79,7 +81,11 @@ object HotspotManager {
     ): Resultado = withContext(Dispatchers.IO) {
         val app = context.applicationContext
         val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val senhaEfetiva = senha ?: senhaDoHotspot(wifiManager) ?: SENHA_PADRAO
+        val configGravada = configuracaoAp(wifiManager)
+        val senhaGravada = configGravada?.preSharedKey?.trim('"')?.takeIf { it.isNotBlank() }
+        val senhaEfetiva = senha
+            ?: senhaGravada?.takeIf { configuracaoEhNossa(configGravada) }
+            ?: SENHA_PADRAO
 
         if (senhaEfetiva.isNotEmpty() && senhaEfetiva.length !in 8..63) {
             return@withContext Resultado(false, "Senha do hotspot deve ter entre 8 e 63 caracteres.")
@@ -242,14 +248,29 @@ object HotspotManager {
     fun senhaDoHotspot(context: Context): String? =
         senhaDoHotspot(context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
 
-    fun senhaDoHotspot(wifiManager: WifiManager): String? = try {
-        val config = wifiManager.javaClass.getMethod("getWifiApConfiguration")
+    fun senhaDoHotspot(wifiManager: WifiManager): String? =
+        configuracaoAp(wifiManager)?.preSharedKey?.trim('"')?.takeIf { it.isNotBlank() }
+
+    /** Configuração de AP gravada no box, ou null quando não dá para ler. */
+    private fun configuracaoAp(wifiManager: WifiManager): WifiConfiguration? = try {
+        wifiManager.javaClass.getMethod("getWifiApConfiguration")
             .invoke(wifiManager) as? WifiConfiguration
-        config?.preSharedKey?.trim('"')?.takeIf { it.isNotBlank() }
     } catch (e: Throwable) {
         Log.w(TAG, "getWifiApConfiguration indisponível: ${e.message}")
         null
     }
+
+    /**
+     * A configuração gravada é a nossa, ou ainda a que o framework criou sozinho?
+     *
+     * O `WifiApConfigStore` do Android, sem nada gravado, cria um AP chamado
+     * `AndroidAP` com senha **aleatória** — `UUID.randomUUID()` cortado em 12
+     * caracteres. Preservar essa senha numa caixa nova deixaria o `12345678`
+     * documentado sem efeito, então só preservamos quando o SSID já começa com
+     * [SSID_BASE]: aí quem gravou fomos nós, ou quem trocou pela tela.
+     */
+    private fun configuracaoEhNossa(config: WifiConfiguration?): Boolean =
+        config?.SSID?.trim('"')?.startsWith(SSID_BASE) == true
 
     /**
      * Troca a senha da rede mantendo o nome.
