@@ -13,9 +13,23 @@ box (Superuser Koush). O `<dev>` é o alvo adb (ex.: `192.168.1.105:5555`).
 | `su -c 'appops set <pkg> WRITE_SETTINGS allow'` | deixar o app mexer em configurações (necessário p/ o hotspot) |
 | escreve `/data/system/users/0/usb_device_manager.xml` com o VID:PID da balança | pré-aprovar a **permissão USB** — leitura da serial sem toque |
 | `adb reboot` | efetivar root + USB; ao voltar, o app sobe sozinho |
+| `curl :3000/saude`, `dumpsys package`, WebSocket `SAUDE`, `ip addr wlan0` | verificação automática pós-reboot (versão, API, frontend, serial, hotspot) |
 
 Resultado: após o reboot o app inicia no boot, liga o hotspot `balancaGFIG`,
-conecta a balança e serve tudo pela rede — zero-toque.
+conecta a balança e serve tudo pela rede — zero-toque. Antes de sobrescrever
+o `usb_device_manager.xml` o script guarda o original (`.balanca.bak`) ou marca
+que não existia (`.balanca.ausente`).
+
+## 1b. Desfazer — `android/scripts/desfazer-tx9.sh` (`./gradlew desfazerNoTx9`)
+
+| Comando | Porquê |
+|---|---|
+| `am force-stop <pkg>` + remove a chain `balanca_http` do nat | parar o app e tirar o redirect :80 |
+| `appops set <pkg> WRITE_SETTINGS default` | devolver o app-op ao padrão |
+| `sqlite3 su.sqlite "DELETE FROM uid_policy WHERE uid=…"` | remover a política de root |
+| `adb uninstall <pkg>` | remover o app e os dados (sessões!) |
+| restaura `usb_device_manager.xml` do `.bak` ou remove se não existia | permissão USB como era |
+| `ndc tether stop` + `adb reboot` | hotspot desligado; tethering não persiste |
 
 ## 2. Runtime — o app faz sozinho (via `ServicoBalanca` + root)
 

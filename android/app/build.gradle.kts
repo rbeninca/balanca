@@ -175,9 +175,17 @@ val dispositivoTx9 = providers.gradleProperty("tx9.device").orElse("192.168.1.11
 
 tasks.register<ExecutarScriptTx9>("instalarNoTx9") {
     group = "tx9"
-    description = "Instala o APK no TX9 e libera o app-op WRITE_SETTINGS exigido pelo hotspot."
+    description = "Instala o APK no TX9, pré-aprova root/USB, libera WRITE_SETTINGS, reinicia e verifica (reversível com desfazerNoTx9)."
     dependsOn("assembleDebug")
     script.set(rootProject.layout.projectDirectory.file("scripts/preparar-tx9.sh"))
+    diretorioRaiz.set(rootProject.layout.projectDirectory)
+    dispositivo.set(dispositivoTx9)
+}
+
+tasks.register<ExecutarScriptTx9>("desfazerNoTx9") {
+    group = "tx9"
+    description = "Desfaz a instalação no TX9: remove o app, a política de root, WRITE_SETTINGS, a permissão USB e as regras de rede."
+    script.set(rootProject.layout.projectDirectory.file("scripts/desfazer-tx9.sh"))
     diretorioRaiz.set(rootProject.layout.projectDirectory)
     dispositivo.set(dispositivoTx9)
 }

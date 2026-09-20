@@ -77,23 +77,39 @@ o firmware/frontend já compilados na raiz do repo.
 ```bash
 # na raiz do repo, uma vez, para preparar os assets embutidos:
 npm run compilar -w pacotes/aplicacao        # gera pacotes/aplicacao/dist-web
-bash scripts/compilar-firmware.sh            # gera firmware/firmware.bin
+(cd firmware && ~/.local/bin/pio run && cp .pio/build/nodemcuv2/firmware.bin .)   # se mexeu no firmware
 
-# instala no box e libera o app-op do hotspot:
+# instala num box (novo ou já em uso) — um comando, zero toque na TV:
 cd android
-./gradlew instalarNoTx9 -Ptx9.device=IP:5555   # IP padrão: 192.168.1.111:5555
+./gradlew instalarNoTx9 -Ptx9.device=IP:5555
+
+# desfaz tudo (app, root, USB, rede) e devolve o box ao estado original:
+./gradlew desfazerNoTx9 -Ptx9.device=IP:5555
 ```
 
-`instalarNoTx9` compila, instala, libera `WRITE_SETTINGS` e abre o app.
-As tarefas `copiarFrontend` e `copiarEsquema` copiam os assets automaticamente
-antes do build.
+O que `instalarNoTx9` faz (`scripts/preparar-tx9.sh`, ~2,5 min pela rede):
 
-### Primeira execução em cada aparelho
+1. **Pré-checagens com mensagem acionável**: ADB acessível (senão explica como
+   ligar a depuração pela rede na TV), `su` funcionando, banco do Superuser.
+2. Instala o APK (assinado com a chave fixa — ver `chaves/LEIA-ME.md`).
+3. Pré-aprova o **root** do app no Superuser (política `allow` permanente),
+   libera o app-op **WRITE_SETTINGS** (hotspot) e, se a balança estiver
+   plugada, pré-grava a **permissão USB** (guardando o arquivo original).
+4. Reinicia o box e **verifica**: versão instalada, API `:3000`, frontend na
+   porta 80, WebSocket com a serial e taxa, hotspot `balancaGFIG`.
 
-O app precisa de **root uma vez** (para NAT do hotspot e para conceder a
-permissão USB sem diálogo). Na primeira execução o Superuser pede: marque
-"lembrar para sempre" e Permitir. Depois disso o box opera sem toque na TV —
-sobe no boot, liga o hotspot `balancaGFIG`, conecta à balança e serve tudo.
+Se a balança não estava plugada na instalação, plugue depois: o app conecta
+sozinho (na 1ª vez o Android pode mostrar um diálogo na TV — marque "usar por
+padrão" e OK). Testado num TX9 novo: instalação, desfazer (estado original
+conferido: sem app, sem política de root, sem regras de NAT, sem hotspot) e
+reinstalação, sem nenhum toque na TV.
+
+### Pré-requisito do box
+
+TX9 com root (Superuser Koush, como vem no firmware `p281-userdebug`) e ADB
+pela rede. Se o box tiver uma versão do app assinada com outra chave, a
+instalação recusa (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`): rode `desfazerNoTx9`
+primeiro (apaga as sessões gravadas — exporte antes pela tela Sessões).
 
 ## Operação
 

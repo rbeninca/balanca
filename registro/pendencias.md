@@ -29,6 +29,9 @@
 
 ## Resolvidas nesta rodada
 
+- Instalação em box novo testada (TX9 `.103`): `instalarNoTx9` em 2 min 12 s
+  sem toque na TV; `desfazerNoTx9` devolve o estado original (conferido).
+  Boxes com a chave antiga: `desfazerNoTx9` antes.
 - "Portal cativo" no hotspot e WebSocket que não conectava pelo celular —
   redirect :80 restrito aos IPs do box + probes respondidos sem upstream.
 - Reorganização dos filtros em 3 etapas — 12 fases mergeadas em `main` (v2.4.0).
