@@ -38,14 +38,15 @@ USB_XML="/data/system/users/0/usb_device_manager.xml"
 TAREFA=""; IP=""; SIM=0
 for arg in "$@"; do
   case "$arg" in
-    instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar) TAREFA="$arg" ;;
+    instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar|inventario) TAREFA="$arg" ;;
     --sim|-y) SIM=1 ;;
     *[0-9].[0-9]*) IP="$arg" ;;
     -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "não entendi o argumento '$arg'" >&2; exit 2 ;;
   esac
 done
-[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar] <IP> [--sim]" >&2; exit 2; }
+[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar] <IP> [--sim]
+      bash scripts/box.sh inventario [192.168.1.0/24 | 192.168.1 | IP]" >&2; exit 2; }
 [ -n "$TAREFA" ] || TAREFA="ciclo"
 DEVICE="$IP:5555"
 
@@ -701,6 +702,60 @@ SCRIPT
   echo "    Nada de /system foi tocado — é o que tijolaria o box."
 }
 
+# ── inventário: varrer a rede e listar os boxes ────────────────────────────
+
+# Lista os boxes de uma faixa consultando o /saude de cada um.
+#
+# É tudo HTTP, sem ADB: não precisa de depuração ligada em cada box, e um box
+# recém-formatado (que ainda não tem o app) simplesmente não aparece. O que ele
+# não vê, não inventaria — por isso a varredura é da faixa inteira, e não de
+# uma lista de IPs conhecidos.
+fase_inventario() {
+  local faixa="$1"
+  local prefixo
+  case "$faixa" in
+    */*)     prefixo=$(cut -d/ -f1 <<<"$faixa" | cut -d. -f1-3) ;;
+    *.*.*.*) prefixo=$(cut -d. -f1-3 <<<"$faixa") ;;
+    *.*.*)   prefixo="$faixa" ;;
+    *)       falhar "não entendi a faixa '$faixa'. Use 192.168.1.0/24, 192.168.1 ou um IP." ;;
+  esac
+
+  echo "==> Procurando boxes em $prefixo.0/24 (porta 3000)"
+  local achados; achados=$(mktemp)
+  local i
+  for i in $(seq 1 254); do
+    (
+      r=$(curl -s -m 2 "http://$prefixo.$i:3000/saude" 2>/dev/null)
+      grep -q '"status":"ok"' <<<"$r" && printf '%s|%s\n' "$prefixo.$i" "$r" >> "$achados"
+    ) &
+  done
+  wait
+
+  local total; total=$(wc -l < "$achados")
+  if [ "$total" = 0 ]; then
+    rm -f "$achados"
+    echo "    nenhum box respondeu"
+    return 0
+  fi
+
+  echo
+  printf '    %-26s %-16s %-9s %-8s %s\n' SERIAL IP MODELO VERSÃO ETH0
+  printf '    %-26s %-16s %-9s %-8s %s\n' "--------------------------" "----------------" "---------" "--------" "----------------"
+  sort "$achados" | while IFS='|' read -r ip json; do
+    local serial modelo versao eth
+    serial=$(sed -n 's/.*"serial":"\([^"]*\)".*/\1/p' <<<"$json")
+    versao=$(sed -n 's/.*"versao":"\([^"]*\)".*/\1/p' <<<"$json")
+    eth=$(sed -n 's/.*"eth0":"\([^"]*\)".*/\1/p' <<<"$json")
+    # O modelo sai do próprio serial (GFIG-<MODELO>-<MAC>)
+    modelo=$(cut -d- -f2 <<<"${serial:-}"); [ -n "$modelo" ] || modelo="-"
+    printf '    %-26s %-16s %-9s %-8s %s\n' \
+      "${serial:-<sem serial>}" "$ip" "$modelo" "${versao:--}" "${eth:--}"
+  done
+  rm -f "$achados"
+  echo
+  echo "    $total box(es). Sem serial = app anterior à 2.7.3 (atualize para aparecer)."
+}
+
 case "$TAREFA" in
   estado)            fase_estado ;;
   desfazer)          fase_desfazer ;;
@@ -709,4 +764,5 @@ case "$TAREFA" in
   launcher)          fase_launcher ;;
   launcher-desfazer) fase_launcher_desfazer ;;
   limpar)            fase_limpar ;;
+  inventario)        fase_inventario "$IP" ;;
 esac

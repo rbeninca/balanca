@@ -71,6 +71,9 @@ android {
     }
     buildFeatures {
         compose = true
+        // BuildConfig.VERSION_NAME é publicado no /saude, para o inventário
+        // saber a versão de cada box sem precisar de ADB.
+        buildConfig = true
     }
     lintOptions {
         disable(

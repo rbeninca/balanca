@@ -82,6 +82,7 @@ class ServidorApi(
                     .put("status", "ok")
                     .put("modo", bd.modoJournal())
                     .put("serial", serial)
+                    .put("versao", br.edu.ifsc.balancagfig.BuildConfig.VERSION_NAME)
                     .put("enderecos", JSONObject(br.edu.ifsc.balancagfig.sistema.EnderecosRede.porInterface() as Map<*, *>)),
             )
         }
