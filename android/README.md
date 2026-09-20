@@ -79,37 +79,73 @@ o firmware/frontend já compilados na raiz do repo.
 npm run compilar -w pacotes/aplicacao        # gera pacotes/aplicacao/dist-web
 (cd firmware && ~/.local/bin/pio run && cp .pio/build/nodemcuv2/firmware.bin .)   # se mexeu no firmware
 
-# instala num box (novo ou já em uso) — um comando, zero toque na TV:
+# tudo se faz por um script só, passando o IP do box:
 cd android
-./gradlew instalarNoTx9 -Ptx9.device=IP:5555
-
-# desfaz tudo (app, root, USB, rede) e devolve o box ao estado original:
-./gradlew desfazerNoTx9 -Ptx9.device=IP:5555
+bash scripts/box.sh 192.168.1.110              # ciclo: desfaz e reinstala
+bash scripts/box.sh instalar 192.168.1.110
+bash scripts/box.sh desfazer 192.168.1.110     # (pede confirmação; --sim pula)
+bash scripts/box.sh estado   192.168.1.110     # só confere, não mexe em nada
 ```
 
-O que `instalarNoTx9` faz (`scripts/preparar-tx9.sh`, ~2,5 min pela rede):
+O `estado` é o diagnóstico de campo: confere app, app-op, API, frontend,
+WebSocket com a serial e a taxa, hotspot e permissão USB — e lista **interfaces
+de rede com MAC/IP/estado**, **espaço em disco** por ponto de montagem e os
+**apps instalados** (terceiros e sistema). Se o IP estiver errado, ele varre a
+`/24` e mostra os hosts com ADB aberto.
+
+O `box.sh` detecta sozinho o firmware e o gerenciador de root, e faz o que
+cada um precisa. Vale para os dois boxes em uso:
+
+| Box | Plataforma | Root | Como o hotspot sobe |
+|---|---|---|---|
+| **TX9** | Amlogic `gxl` | Superuser Koush | `setWifiApEnabled` funciona direto |
+| **MXQ** | Rockchip `rk322x` | SuperSU Chainfire (já libera root por padrão) | o framework recusa o app (bug do firmware); o app liga o AP **pela tela do Settings**, com o Settings rodando como uid 1000 |
+
+### O que o `instalar` faz (~3 min pela rede)
 
 1. **Pré-checagens com mensagem acionável**: ADB acessível (senão explica como
-   ligar a depuração pela rede na TV), `su` funcionando, banco do Superuser.
+   ligar a depuração pela rede na TV) e `su` funcionando.
 2. Instala o APK (assinado com a chave fixa — ver `chaves/LEIA-ME.md`).
-3. Pré-aprova o **root** do app no Superuser (política `allow` permanente),
-   libera o app-op **WRITE_SETTINGS** (hotspot) e, se a balança estiver
-   plugada, pré-grava a **permissão USB** (guardando o arquivo original).
-4. Reinicia o box e **verifica**: versão instalada, API `:3000`, frontend na
-   porta 80, WebSocket com a serial e taxa, hotspot `balancaGFIG`.
+3. **Abre o app uma vez.** Um pacote recém-instalado fica no estado *stopped*,
+   e nesse estado o Android **não entrega o `BOOT_COMPLETED`** — sem este passo
+   o app não subiria no boot seguinte.
+4. Pré-aprova o **root** do app (só onde há banco do Koush — no SuperSU do MXQ
+   não existe política por app), libera o app-op **WRITE_SETTINGS** (hotspot)
+   e, se a balança estiver plugada, pré-grava a **permissão USB**, guardando o
+   arquivo original (`.balanca.bak`) ou marcando que não existia
+   (`.balanca.ausente`).
+5. Reinicia o box e **verifica**: versão instalada, API `:3000`, frontend na
+   porta 80, WebSocket com a serial e a taxa, e o hotspot.
+
+### O que o `desfazer` faz
+
+Para o app, remove a chain `balanca_http` do NAT (o redirect da porta 80),
+devolve o app-op `WRITE_SETTINGS` ao padrão, apaga a política de root (onde
+existe), desinstala — **o que apaga as sessões gravadas**; exporte antes pela
+tela Sessões —, restaura o `usb_device_manager.xml` original e reinicia.
+
+### Duas ressalvas que os testes revelaram
+
+**1. O app precisa ser aberto uma vez depois de instalar.** Um pacote
+recém-instalado fica no estado *stopped*, e nesse estado o Android não entrega
+o `BOOT_COMPLETED`. O script abre e confere a flag; como essa gravação é
+assíncrona, ele também deixa o box assentar antes de reiniciar e, se ainda
+assim o app não subir, abre pela rede — nada disso é toque na TV.
+
+**2. O MXQ é apertado de memória.** Ele tem 4 GB e, no pico do boot, fica com
+~40 MB livres com os limiares do lowmemorykiller indo até 45 MB. O app chega a
+ser iniciado no boot (a task fica criada) mas o processo nem sempre sobrevive.
+Por isso a verificação pós-reboot importa: se aparecer `RESULTADO: FALHOU`,
+rode `estado` e, se preciso, abra o app pela rede.
+
+### Pré-requisitos do box
+
+Root e ADB pela rede. Se o box tiver uma versão do app assinada com outra
+chave, a instalação recusa (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`): rode
+`desfazer` primeiro.
 
 Se a balança não estava plugada na instalação, plugue depois: o app conecta
-sozinho (na 1ª vez o Android pode mostrar um diálogo na TV — marque "usar por
-padrão" e OK). Testado num TX9 novo: instalação, desfazer (estado original
-conferido: sem app, sem política de root, sem regras de NAT, sem hotspot) e
-reinstalação, sem nenhum toque na TV.
-
-### Pré-requisito do box
-
-TX9 com root (Superuser Koush, como vem no firmware `p281-userdebug`) e ADB
-pela rede. Se o box tiver uma versão do app assinada com outra chave, a
-instalação recusa (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`): rode `desfazerNoTx9`
-primeiro (apaga as sessões gravadas — exporte antes pela tela Sessões).
+sozinho.
 
 ## Operação
 

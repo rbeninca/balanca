@@ -158,6 +158,10 @@ abstract class ExecutarScriptTx9 : DefaultTask() {
     @get:Input
     abstract val dispositivo: Property<String>
 
+    /** Tarefa repassada ao scripts/box.sh: instalar | desfazer | estado | ciclo. */
+    @get:Input
+    abstract val tarefa: Property<String>
+
     /** Raiz do projeto: os scripts chamam ./gradlew e caminhos relativos. */
     @get:Internal
     abstract val diretorioRaiz: DirectoryProperty
@@ -166,7 +170,7 @@ abstract class ExecutarScriptTx9 : DefaultTask() {
     fun executar() {
         operacoesExec.exec {
             workingDir(diretorioRaiz.get().asFile)
-            commandLine("bash", script.get().asFile.absolutePath, dispositivo.get())
+            commandLine("bash", script.get().asFile.absolutePath, tarefa.get(), dispositivo.get())
         }
     }
 }
@@ -174,18 +178,29 @@ abstract class ExecutarScriptTx9 : DefaultTask() {
 val dispositivoTx9 = providers.gradleProperty("tx9.device").orElse("192.168.1.111:5555")
 
 tasks.register<ExecutarScriptTx9>("instalarNoTx9") {
-    group = "tx9"
-    description = "Instala o APK no TX9, pré-aprova root/USB, libera WRITE_SETTINGS, reinicia e verifica (reversível com desfazerNoTx9)."
+    group = "box"
+    description = "Instala o APK num box (TX9 ou MXQ), pré-aprova root/USB, libera WRITE_SETTINGS, reinicia e verifica."
     dependsOn("assembleDebug")
-    script.set(rootProject.layout.projectDirectory.file("scripts/preparar-tx9.sh"))
+    script.set(rootProject.layout.projectDirectory.file("scripts/box.sh"))
     diretorioRaiz.set(rootProject.layout.projectDirectory)
     dispositivo.set(dispositivoTx9)
+    tarefa.set("instalar")
 }
 
 tasks.register<ExecutarScriptTx9>("desfazerNoTx9") {
-    group = "tx9"
-    description = "Desfaz a instalação no TX9: remove o app, a política de root, WRITE_SETTINGS, a permissão USB e as regras de rede."
-    script.set(rootProject.layout.projectDirectory.file("scripts/desfazer-tx9.sh"))
+    group = "box"
+    description = "Desfaz a instalação num box: remove o app, a política de root, WRITE_SETTINGS, a permissão USB e as regras de rede."
+    script.set(rootProject.layout.projectDirectory.file("scripts/box.sh"))
     diretorioRaiz.set(rootProject.layout.projectDirectory)
     dispositivo.set(dispositivoTx9)
+    tarefa.set("desfazer")
+}
+
+tasks.register<ExecutarScriptTx9>("estadoNoBox") {
+    group = "box"
+    description = "Confere o estado de um box sem mexer em nada (app, API, frontend, serial, hotspot)."
+    script.set(rootProject.layout.projectDirectory.file("scripts/box.sh"))
+    diretorioRaiz.set(rootProject.layout.projectDirectory)
+    dispositivo.set(dispositivoTx9)
+    tarefa.set("estado")
 }
