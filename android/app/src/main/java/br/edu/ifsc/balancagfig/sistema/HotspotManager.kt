@@ -40,6 +40,13 @@ object HotspotManager {
     private const val PREFIXO_REDE = "24"
     private const val REDE_HOTSPOT = "192.168.43.0/$PREFIXO_REDE"
 
+    /** Espera a tela do Settings desenhar antes de pedir o dump do uiautomator. */
+    private const val ATRASO_TELA_MS = 4000L
+
+    /** Entre tentativas de dump: a UI precisa ficar ociosa para o uiautomator responder. */
+    private const val ATRASO_DUMP_MS = 2500L
+    private const val TENTATIVAS_DUMP = 4
+
     /** Resultado de uma operação, já com mensagem pronta para a UI. */
     data class Resultado(
         val sucesso: Boolean,
@@ -71,6 +78,7 @@ object HotspotManager {
                 precisaPermissaoEscrita = true
             )
         }
+        garantirWriteSecureSettings(app)
 
         val wifiManager = app.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
@@ -84,6 +92,11 @@ object HotspotManager {
             wifiManager.isWifiEnabled = false
         }
 
+        // O AP sobe com o que estiver gravado na configuração do framework —
+        // setWifiApEnabled não aceita config por chamada. Sem isto o rk322x
+        // usaria o "AndroidAP" padrão em vez do SSID da balança.
+        definirConfiguracaoAp(wifiManager, ssid, senha)
+
         try {
             val metodo = wifiManager.javaClass.getMethod(
                 "setWifiApEnabled",
@@ -93,7 +106,9 @@ object HotspotManager {
             metodo.invoke(wifiManager, montarConfiguracaoAp(ssid, senha), true)
         } catch (e: Throwable) {
             val causa = e.cause ?: e
-            Log.e(TAG, "setWifiApEnabled falhou", causa)
+            Log.w(TAG, "setWifiApEnabled falhou; tentando pela tela do Settings", causa)
+            val pelaTela = ligarPelaTelaDoSettings(app, wifiManager)
+            if (pelaTela.sucesso) return@withContext pelaTela
             return@withContext Resultado(
                 false,
                 "Falha ao ligar o hotspot: ${causa.message ?: causa.javaClass.simpleName}"
@@ -154,6 +169,140 @@ object HotspotManager {
         }
         return false
     }
+
+    /**
+     * Grava SSID/senha na configuração do AP (API oculta
+     * `setWifiApConfiguration`). Best-effort: no TX9 o `setWifiApEnabled` aceita
+     * a config por chamada e isto é redundante; no rk322x é o único jeito de o
+     * AP não subir com o "AndroidAP" padrão do framework.
+     */
+    private fun definirConfiguracaoAp(wifiManager: WifiManager, ssid: String, senha: String): Boolean = try {
+        wifiManager.javaClass
+            .getMethod("setWifiApConfiguration", WifiConfiguration::class.java)
+            .invoke(wifiManager, montarConfiguracaoAp(ssid, senha))
+        true
+    } catch (e: Throwable) {
+        Log.w(TAG, "setWifiApConfiguration indisponível: ${e.message}")
+        false
+    }
+
+    /**
+     * Liga o AP pela tela do Settings — caminho para o rk322x/MXQ.
+     *
+     * Neste firmware o `setWifiApEnabled` é recusado a qualquer app de
+     * terceiros: o `WifiServiceImpl` grava `Settings.Global.WIFI_AP_ENABLED`
+     * com o contexto do system_server (pacote "android", uid 1000) enquanto o
+     * uid da chamada ainda é o do app, e o AppOps derruba com "Package android
+     * does not belong to <uid>". É checagem de identidade, não de permissão:
+     * nenhuma concessão feita ao app contorna. O Settings passa porque roda
+     * como uid 1000 (sharedUserId android.uid.system).
+     *
+     * Então abrimos a tela de tethering e acionamos o switch. A posição vem do
+     * `uiautomator dump` — bounds reais e o atributo `checked` —, nunca de
+     * coordenada fixa: a linha é achada pelo título e o switch pela
+     * sobreposição vertical com ele.
+     *
+     * Aqui NÃO chamamos [ativarTethering]: o Tethering do framework já sobe o
+     * dnsmasq e o NAT junto com o rádio (ao contrário do TX9, onde o
+     * setWifiApEnabled levanta só o rádio), e configurar por cima duplicaria
+     * as regras.
+     */
+    private suspend fun ligarPelaTelaDoSettings(context: Context, wifiManager: WifiManager): Resultado {
+        val arquivo = "/data/local/tmp/balanca_ui.xml"
+        val tela = "com.android.settings/.Settings${'$'}TetherSettingsActivity"
+
+        Root.executar("am start -n '$tela'")
+        delay(ATRASO_TELA_MS)
+
+        // O dump exige a UI ociosa: se a tela ainda está assentando ele só
+        // responde "could not get idle state" e não escreve o arquivo. Vale
+        // insistir em vez de confiar num atraso fixo.
+        var xml: String? = null
+        for (tentativa in 1..TENTATIVAS_DUMP) {
+            Root.executar("rm -f $arquivo")
+            Root.executar("uiautomator dump $arquivo")
+            xml = Root.executarLendo("cat $arquivo")?.takeIf { it.contains("<hierarchy") }
+            if (xml != null) break
+            Log.i(TAG, "dump da tela ainda não saiu (tentativa $tentativa)")
+            delay(ATRASO_DUMP_MS)
+        }
+        Root.executar("rm -f $arquivo")
+        val dump = xml
+
+        if (dump == null) {
+            voltarParaOApp(context)
+            return Resultado(false, "não consegui ler a tela de tethering do sistema.")
+        }
+
+        // O toque tem que acontecer com a tela do Settings ainda na frente: as
+        // coordenadas vêm do dump dela. Só depois de acionar é que devolvemos
+        // o app ao primeiro plano.
+        val botao = localizarBotaoDoHotspot(dump)
+        if (botao == null) {
+            voltarParaOApp(context)
+            return Resultado(false, "não achei o botão do hotspot na tela do sistema.")
+        }
+
+        if (botao.ligado) {
+            val respondeu = aguardarApLigado(wifiManager)
+            voltarParaOApp(context)
+            return if (respondeu) {
+                Resultado(true, "Hotspot já estava ligado.")
+            } else {
+                Resultado(false, "o hotspot consta ligado, mas o rádio não respondeu.")
+            }
+        }
+
+        Root.executar("input tap ${botao.x} ${botao.y}")
+        val subiu = aguardarApLigado(wifiManager)
+        voltarParaOApp(context)
+        if (!subiu) {
+            return Resultado(false, "toquei no botão do hotspot, mas o rádio não subiu.")
+        }
+        return Resultado(true, "Hotspot ligado pela tela do sistema (DHCP do framework).")
+    }
+
+    /** Traz o app de volta à frente — a tela do Settings ficou sobre o quiosque. */
+    private fun voltarParaOApp(context: Context) {
+        Root.executar("am start -n '${context.packageName}/.MainActivity'")
+    }
+
+    /** Botão do hotspot no dump do uiautomator: centro e estado atual. */
+    private data class BotaoHotspot(val x: Int, val y: Int, val ligado: Boolean)
+
+    private data class Retangulo(val x1: Int, val y1: Int, val x2: Int, val y2: Int)
+
+    private fun localizarBotaoDoHotspot(xml: String): BotaoHotspot? {
+        val nos = nosDoDump(xml)
+        val titulo = nos.firstOrNull {
+            it["resource-id"] == "android:id/title" && it["text"]?.startsWith("Portable Wi") == true
+        } ?: return null
+        val linha = retangulo(titulo["bounds"]) ?: return null
+        val switch = nos.firstOrNull {
+            it["resource-id"] == "android:id/switch_widget" &&
+                retangulo(it["bounds"])?.let { r -> r.y1 <= linha.y2 && r.y2 >= linha.y1 } == true
+        } ?: return null
+        val r = retangulo(switch["bounds"]) ?: return null
+        return BotaoHotspot((r.x1 + r.x2) / 2, (r.y1 + r.y2) / 2, switch["checked"] == "true")
+    }
+
+    private fun retangulo(valor: String?): Retangulo? {
+        val m = RE_BOUNDS.find(valor ?: "") ?: return null
+        return Retangulo(
+            m.groupValues[1].toInt(), m.groupValues[2].toInt(),
+            m.groupValues[3].toInt(), m.groupValues[4].toInt()
+        )
+    }
+
+    /** Atributos de cada `<node>` do dump do uiautomator. */
+    private fun nosDoDump(xml: String): List<Map<String, String>> =
+        RE_NO.findAll(xml).map { no ->
+            RE_ATRIBUTO.findAll(no.groupValues[1]).associate { it.groupValues[1] to it.groupValues[2] }
+        }.toList()
+
+    private val RE_NO = Regex("""<node\s([^>]*?)/?>""")
+    private val RE_ATRIBUTO = Regex("""([A-Za-z0-9_:-]+)="([^"]*)"""")
+    private val RE_BOUNDS = Regex("""\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]""")
 
     /**
      * Reproduz, via netd (`ndc`), o que o Tethering do framework faria:
@@ -237,6 +386,21 @@ object HotspotManager {
      * disponível (comum em firmware de TV box), tenta liberar via root, que o
      * TX9 possui em /system/xbin/su.
      */
+    /**
+     * Auto-concede WRITE_SECURE_SETTINGS via `pm grant` (root) a cada início.
+     * Em alguns firmwares (ex.: Rockchip rk322x/MXQ) `setWifiApEnabled` via
+     * reflexão exige essa permissão além do app-op WRITE_SETTINGS que basta no
+     * TX9 (Amlogic) — e, por ser uma permissão "signature", uma concessão
+     * feita uma vez pelo instalador não sobrevive ao reboot (some da lista de
+     * "install permissions"). Pedir de novo a cada boot resolve nos dois
+     * firmwares: no TX9, ou já está concedida (no-op) ou nunca é checada.
+     */
+    private fun garantirWriteSecureSettings(context: Context) {
+        val permissao = "android.permission.WRITE_SECURE_SETTINGS"
+        if (context.checkSelfPermission(permissao) == android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        Root.executar("pm grant ${context.packageName} $permissao")
+    }
+
     private fun garantirPermissaoEscrita(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
         if (Settings.System.canWrite(context)) return true

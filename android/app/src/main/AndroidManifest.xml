@@ -29,6 +29,14 @@
     -->
     <uses-permission android:name="android.permission.ACCESS_SUPERUSER" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.TETHER_PRIVILEGED" tools:ignore="ProtectedPermissions" />
+    <!--
+      Alguns firmwares (ex.: Rockchip rk322x/MXQ) exigem WRITE_SECURE_SETTINGS
+      dentro do próprio setWifiApEnabled via reflexão, além do app-op
+      WRITE_SETTINGS que basta no TX9 (Amlogic). É uma permissão "signature":
+      fica sem efeito até ser concedida via `pm grant` pelo instalador
+      (scripts/preparar-tx9.sh), que roda com ADB root.
+    -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
     <application
         android:allowBackup="false"
