@@ -22,10 +22,16 @@ bash scripts/box.sh <ip>              # ciclo: desfazer + instalar
 bash scripts/box.sh limpar   <ip>     # apps fora do projeto + lixo acumulado
 bash scripts/box.sh launcher <ip>     # Painel GFIG como tela inicial
 bash scripts/box.sh launcher-desfazer <ip>   # devolve a tela inicial anterior
+bash scripts/box.sh inventario [faixa]       # varre a rede e lista os boxes
 ```
 
 `desfazer` e `limpar` apagam coisas e por isso **perguntam antes**; sem terminal
 eles se recusam a agir, exigindo `--sim` explícito.
+
+> **`instalar` não põe o launcher.** São tarefas separadas, e nem o `ciclo`
+> (desfazer + instalar) as junta: quem quer o Painel GFIG como tela inicial
+> precisa rodar `launcher` **depois**. Um box só com `instalar` fica com o app
+> da balança rodando e a tela inicial original — foi o que aconteceu num MXQ.
 
 As tarefas do Gradle são atalhos para o mesmo script:
 `./gradlew instalarNoTx9 -Ptx9.device=<ip>:5555`, `desfazerNoTx9`, `estadoNoBox`.
@@ -34,6 +40,8 @@ As tarefas do Gradle são atalhos para o mesmo script:
 
 | Comando | Porquê |
 |---|---|
+| `./gradlew :app:assembleDebug` | **compila sempre** — não só quando o APK falta. Um APK velho é empurrado calado (ver abaixo) |
+| compara o `versionCode` do `build.gradle.kts` com o do box | barrar **rebaixamento** silencioso: pergunta antes, e exige `--sim` sem terminal |
 | `adb connect <dev>` + `wait-for-device` | conectar ao box pela rede |
 | `adb install -r app-debug.apk` | instalar/atualizar o app |
 | `am start -n <pkg>/.MainActivity` | **tirar o pacote do estado *stopped*** — recém-instalado, o Android não entrega `BOOT_COMPLETED`, e o app não subiria no boot |
@@ -45,6 +53,20 @@ As tarefas do Gradle são atalhos para o mesmo script:
 
 Antes de sobrescrever o `usb_device_manager.xml` o script guarda o original
 (`.balanca.bak`) ou marca que não existia (`.balanca.ausente`).
+
+> **Por que compilar sempre, e por que barrar rebaixamento.** O script antigo só
+> compilava se o APK não existisse — existindo, mesmo de horas antes, era ele
+> que ia para o box. Foi assim que um box na 2.7.3 voltou para a 2.7.2. E o
+> rebaixamento passou calado porque **os dois lados são depuráveis** —
+> `DEBUGGABLE` no box, `application-debuggable` no APK —, caso em que o Android
+> aceita instalar uma versão mais antiga; num APK de release ele recusaria com
+> `INSTALL_FAILED_VERSION_DOWNGRADE`.
+>
+> De quebra descobriu-se que o caminho da compilação estava errado desde sempre:
+> o `../../..` parava em `app/build`, onde não existe `gradlew`. Aquela
+> compilação automática **nunca chegou a rodar** — por isso o APK velho nunca foi
+> corrigido por ela. São cinco níveis até a raiz do Gradle, agora resolvidos a
+> partir do próprio `$APK`.
 
 ### O que o `desfazer` faz
 
@@ -96,6 +118,40 @@ sistema não paga o risco.
 > para o nosso launcher. O que funciona é **desabilitar** o nosso pacote, e o
 > Android resolve a tela inicial para o próximo candidato — verificado nos dois
 > boxes (TX9 volta ao `com.txari.launcher`, MXQ ao `com.droidlogic.mboxlauncher`).
+
+## 1e. Inventário — `box.sh inventario [faixa]`
+
+```bash
+bash scripts/box.sh inventario 192.168.1.0/24
+```
+
+Consulta o `/saude` de cada host da faixa e monta a tabela dos boxes — serial,
+IP, modelo, versão e endereço do eth0:
+
+```
+SERIAL                     IP               MODELO    VERSÃO  ETH0
+GFIG-TX9-58EB81E3618C      192.168.1.105    TX9       2.7.4    192.168.1.105
+GFIG-MXQ-A82003AC10E7      192.168.1.110    MXQ       2.7.4    192.168.1.110
+```
+
+**É tudo HTTP, sem ADB**: não precisa de depuração ligada em cada box, e a
+varredura é da faixa inteira, e não de uma lista de IPs conhecidos. Um box
+recém-formatado, que ainda não tem o app, simplesmente não aparece.
+
+| Detalhe | Porquê |
+|---|---|
+| `curl -m 2 http://<ip>:3000/saude`, os 254 hosts em paralelo | o `/saude` é o que todo box publica sem precisar de ADB |
+| filtra por `"status":"ok"` | separa box de vizinho que também responde na 3000 |
+| modelo por `cut -d- -f2` do serial | o serial já carrega o modelo — `GFIG-<MODELO>-<MAC>` |
+| `versao` sai do `BuildConfig.VERSION_NAME` | foi por isso que o build ligou `buildConfig = true` — o AGP 8 não gera por padrão |
+
+Quem responde **sem `serial` e sem `versao` não é o app**: é o gateway Node do
+Cenário A (`pacotes/api`), que publica só `status` e `modo`. Ele não se atualiza
+pela cadeia de releases e nunca vai aparecer com serial — para migrá-lo,
+`box.sh instalar`, ou atualizar a imagem docker dele.
+
+O parque levantado, com a ficha de cada box, está em
+[`inventario.md`](inventario.md).
 
 ## 2. Runtime — o app faz sozinho (via `ServicoBalanca` + root)
 

@@ -212,7 +212,7 @@ pio run --target upload --upload-port /dev/ttyUSB0
 
 ## Calibração
 
-Após gravar o firmware, acesse **Configurações** na interface web para ajustar os parâmetros da célula de carga. O assistente de calibração guiado está disponível na tela de Medição (botão **Calibração**):
+Após gravar o firmware, acesse **Configurações** na interface web para ajustar os parâmetros da célula de carga. O assistente de calibração guiado fica na **barra de navegação de cima**, no item **Calibração** — não na tela de Medição:
 
 1. **Tara** — sem carga, zereia a leitura
 2. **Massa conhecida** — informe o peso em gramas para calcular o fator de conversão
