@@ -32,6 +32,12 @@ export class TelaCreditos {
         </div>
         <div class="modal-body">
 
+          <!-- Foto do projeto: equipe e a frase que dá nome ao sistema. -->
+          <img src="${import.meta.env.BASE_URL}imgs/wallpaper.jpg"
+               alt="Equipe do projeto e a banca de teste — Balança, dados que impulsionam"
+               style="width:100%;border-radius:8px;margin-bottom:1.5rem;display:block"
+               onerror="this.style.display='none'">
+
           <p style="font-size:1.6rem;font-weight:700;color:#111;margin-bottom:4px">balançaGFIG</p>
           <p style="font-size:1rem;color:#555;margin-bottom:2px">Sistema de Teste de Motores Foguete</p>
           <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1.5rem">
