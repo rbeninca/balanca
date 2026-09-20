@@ -23,8 +23,14 @@
   "unhandled rejection" no mock do laço de leitura (pré-existente; os testes
   passam). Limpar quando sobrar tempo.
 
+- **Verificar com um celular no hotspot** (com e sem cabo) que o WiFi fica
+  como rede padrão e o WebSocket conecta — a correção do redirect :80 foi
+  validada pela LAN e por testes, mas não com um celular real.
+
 ## Resolvidas nesta rodada
 
+- "Portal cativo" no hotspot e WebSocket que não conectava pelo celular —
+  redirect :80 restrito aos IPs do box + probes respondidos sem upstream.
 - Reorganização dos filtros em 3 etapas — 12 fases mergeadas em `main` (v2.4.0).
 - Firmware V18 (marcas de tempo sem quantização, display sem gaps) — gravado.
 - Tag `v2.3.0` e `versionName 2.3.0` alinhados; log em `log-modificacoes.md`.

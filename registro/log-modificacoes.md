@@ -5,6 +5,13 @@ motivo.
 
 ## v2.4.0 (tag local, 2026-09-19)
 
+- **Redirect da porta 80 restrito aos IPs do box** (chain `balanca_http`).
+  A regra geral sequestrava o probe de conectividade dos celulares → "portal
+  cativo" → Android trocava a rede padrão para os dados móveis → o WebSocket
+  não conectava pelo hotspot. Sem upstream (cabo desligado) o redirect geral
+  volta e o `ServidorHttp` responde aos probes com o sucesso esperado;
+  reconciliado a cada 30 s.
+
 Branch `feat/processamento-3-etapas` (12 fases, uma por commit, cada uma com
 testes TS + JUnit e validação no TX9; plano e decisões em
 `PLANEJAMENTO-PROCESSAMENTO.MD`):

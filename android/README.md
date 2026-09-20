@@ -104,6 +104,23 @@ sobe no boot, liga o hotspot `balancaGFIG`, conecta à balança e serve tudo.
   WebView com o frontend entra quando a WebView do box (Chromium 52) for
   atualizada.
 
+## Hotspot e celulares (porta 80, probes de conectividade)
+
+O frontend responde em `http://<ip>` porque uma regra de NAT (chain
+`balanca_http`, via root) redireciona a porta 80 para a 8080 — **só para os IPs
+do box**. Um redirect geral sequestrava o probe de conectividade dos celulares
+(`generate_204`): o Android concluía "WiFi sem internet", mostrava um portal
+cativo e passava a rede padrão para os dados móveis — a página abria, mas o
+WebSocket não conectava.
+
+- **Com cabo (upstream)**: o probe passa pelo NAT até a internet, o WiFi é
+  validado e tudo funciona; sites HTTP não são sequestrados.
+- **Sem cabo (campo)**: o serviço detecta a falta de upstream (`ip route get
+  8.8.8.8`) e adiciona o redirect geral; o `ServidorHttp` responde aos probes
+  com o sucesso que cada sistema espera (204, "Success", "Microsoft Connect
+  Test"…), o celular mantém o WiFi como padrão sem perguntar nada.
+- A regra é reconciliada a cada 30 s (cabo ligado/desligado, IP novo).
+
 ## Gravação compartilhada
 
 No gateway a gravação é feita **no próprio box**, alimentada direto pelo

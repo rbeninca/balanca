@@ -40,6 +40,7 @@ import br.edu.ifsc.balancagfig.servidor.ServidorApi
 import br.edu.ifsc.balancagfig.servidor.ServidorHttp
 import br.edu.ifsc.balancagfig.servidor.ServidorSaude
 import br.edu.ifsc.balancagfig.servidor.ServidorWs
+import br.edu.ifsc.balancagfig.sistema.EnderecosRede
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
 import br.edu.ifsc.balancagfig.sistema.RedirecionamentoPorta
 import fi.iki.elonen.NanoHTTPD
@@ -139,7 +140,7 @@ class ServicoBalanca : Service() {
         atualizador?.stop()
         try { unregisterReceiver(receptorMidia) } catch (_: Exception) { }
         bd?.close()
-        http?.listeningPort?.let { RedirecionamentoPorta.remover(it) }
+        RedirecionamentoPorta.remover()
         http?.stop()
         EstadoHost.definirPortaHttp(null)
         escopo.cancel()
@@ -160,7 +161,8 @@ class ServicoBalanca : Service() {
             http = servidor
             EstadoHost.definirPortaHttp(servidor.listeningPort)
             EstadoHost.registrar("Frontend em http://0.0.0.0:${servidor.listeningPort}")
-            aplicarRedirecionamento80(servidor.listeningPort)
+            aplicarRedirecionamento80(servidor.listeningPort, forcar = true)
+            iniciarReconciliacaoRede()
         } catch (e: IOException) {
             Log.e(TAG, "servidor HTTP não subiu", e)
             EstadoHost.registrar("Servidor HTTP falhou: ${e.message}")
@@ -442,13 +444,36 @@ class ServicoBalanca : Service() {
         EstadoHost.registrar("Hotspot: ${r.mensagem}")
         // O tethering do Android reconstrói as chains de NAT ao subir o AP;
         // reaplica o redirect :80 para o frontend seguir acessível sem porta.
-        http?.listeningPort?.let { aplicarRedirecionamento80(it) }
+        http?.listeningPort?.let { aplicarRedirecionamento80(it, forcar = true) }
     }
 
-    /** Redireciona, via root, a porta 80 para a porta real do frontend. */
-    private fun aplicarRedirecionamento80(portaFrontend: Int) = escopo.launch {
-        if (RedirecionamentoPorta.garantir(portaFrontend)) {
-            EstadoHost.registrar("Frontend também em http://<ip> (porta 80 → $portaFrontend)")
+    private var estadoRedirect: Pair<List<String>, Boolean>? = null
+
+    /**
+     * Redireciona, via root, a porta 80 para a porta real do frontend — só para
+     * os IPs do box; sem upstream (cabo desligado) também o tráfego geral, para
+     * os probes de conectividade caírem no servidor (ver RedirecionamentoPorta).
+     * Reaplicado quando os IPs ou o upstream mudam (laço de reconciliação).
+     */
+    private fun aplicarRedirecionamento80(portaFrontend: Int, forcar: Boolean = false) = escopo.launch {
+        val ips = (EnderecosRede.listarIPv4() + HotspotManager.IP_HOTSPOT).distinct()
+        val semUpstream = !RedirecionamentoPorta.detectarUpstream()
+        val desejado = ips to semUpstream
+        if (!forcar && desejado == estadoRedirect) return@launch
+        if (RedirecionamentoPorta.aplicar(ips, redirecionarTudo = semUpstream, portaInterna = portaFrontend)) {
+            estadoRedirect = desejado
+            EstadoHost.registrar(
+                "Frontend em http://<ip> (porta 80 → $portaFrontend) para ${ips.joinToString(", ")}" +
+                    if (semUpstream) " — sem internet no cabo: probes de conectividade respondidos pelo box" else "",
+            )
+        }
+    }
+
+    /** Cabo ligado/desligado ou IP novo: refaz o redirect da porta 80. */
+    private fun iniciarReconciliacaoRede() = escopo.launch {
+        while (true) {
+            delay(30_000)
+            http?.listeningPort?.let { aplicarRedirecionamento80(it) }
         }
     }
 

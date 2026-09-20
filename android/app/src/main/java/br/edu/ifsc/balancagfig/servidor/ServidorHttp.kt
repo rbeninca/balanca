@@ -29,6 +29,15 @@ class ServidorHttp(
             return newFixedLengthResponse(Response.Status.FORBIDDEN, MIME_PLAINTEXT, "")
         }
 
+        // Probe de conectividade de celulares/PCs (chega aqui quando o redirect :80 é geral,
+        // isto é, sem upstream): responde o sucesso esperado para o WiFi ser mantido como
+        // rede padrão — senão o Android manda o WebSocket pelos dados móveis.
+        respostaProbe(session.uri)?.let { (status, corpo) ->
+            return newFixedLengthResponse(status, if (corpo.startsWith("<")) "text/html" else MIME_PLAINTEXT, corpo).apply {
+                addHeader("Cache-Control", "no-cache")
+            }
+        }
+
         abrir(caminho)?.let { return resposta(it, caminho) }
 
         // SPA: rota sem extensão → index.html
@@ -83,6 +92,21 @@ class ServidorHttp(
     fun frontendDisponivel(): Boolean = abrir("index.html")?.also { it.close() } != null
 
     companion object {
+        /**
+         * Respostas que cada sistema espera do seu probe de conectividade; null
+         * quando o caminho não é um probe. Android: 204 vazio; Apple: "Success";
+         * Windows: "Microsoft Connect Test"/"Microsoft NCSI"; Firefox: "success".
+         */
+        fun respostaProbe(uri: String): Pair<Response.Status, String>? = when (uri.trimStart('/').lowercase()) {
+            "generate_204", "gen_204" -> Response.Status.NO_CONTENT to ""
+            "hotspot-detect.html", "library/test/success.html" ->
+                Response.Status.OK to "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>"
+            "connecttest.txt" -> Response.Status.OK to "Microsoft Connect Test"
+            "ncsi.txt" -> Response.Status.OK to "Microsoft NCSI"
+            "success.txt", "canonical.html" -> Response.Status.OK to "success"
+            else -> null
+        }
+
         private const val TAG = "ServidorHttp"
         /** 80 exigiria root; o frontend não depende da porta em que é servido. */
         const val PORTA_PADRAO = 8080
