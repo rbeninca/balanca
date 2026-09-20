@@ -95,11 +95,15 @@ export function montarEndereco(endereco: string, enderecos?: Record<string, stri
  */
 let enderecosDoBox: Record<string, string> = {};
 
+/** Identificador do box (ex.: "GFIG-TX9-58EB81E3618C"), publicado no SAUDE. */
+let serialDoBox = '';
+
 /** Endereço de conexão do chip em tela, para repintar sem perder o contexto. */
 let enderecoConexaoAtual = '';
 
-export function definirEnderecosDoBox(enderecos: Record<string, string>): void {
+export function definirEnderecosDoBox(enderecos: Record<string, string>, dispositivo = ''): void {
   enderecosDoBox = enderecos;
+  if (dispositivo) serialDoBox = dispositivo;
 
   const chip = document.querySelector<HTMLElement>('.nav-status-chip');
   const el   = document.querySelector<HTMLElement>('.nav-endereco');
@@ -138,8 +142,17 @@ function painelEnderecosHtml(): string {
     linhas.unshift(`<div class="nav-enderecos-linha"><span class="nav-enderecos-nome">${rotulo}</span><span class="nav-enderecos-ip">${enderecoConexaoAtual}</span></div>`);
   }
 
-  if (linhas.length === 0) return '<div class="nav-enderecos-vazio">sem endereço de rede</div>';
-  return '<div class="nav-enderecos-titulo">Endereços do box</div>' + linhas.join('');
+  // O serial identifica o aparelho: é o que se anota no inventário e o que vai
+  // servir de chave quando houver acesso remoto.
+  const cabecalho = serialDoBox
+    ? `<div class="nav-enderecos-titulo">Endereços do box</div>` +
+      `<div class="nav-enderecos-linha nav-enderecos-serial"><span class="nav-enderecos-nome">serial</span><span class="nav-enderecos-ip">${serialDoBox}</span></div>`
+    : '<div class="nav-enderecos-titulo">Endereços do box</div>';
+
+  if (linhas.length === 0) {
+    return cabecalho + (serialDoBox ? '' : '<div class="nav-enderecos-vazio">sem endereço de rede</div>');
+  }
+  return cabecalho + linhas.join('');
 }
 
 function menuHtml(itens: ItemMenu[]): string {

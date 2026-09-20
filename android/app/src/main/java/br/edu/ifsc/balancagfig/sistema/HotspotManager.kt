@@ -222,22 +222,11 @@ object HotspotManager {
      * nome base — melhor um nome genérico do que nome nenhum.
      */
     fun ssidDoBox(): String {
-        val sufixo = macEthernet()
+        val sufixo = EnderecosRede.macEthernet()
             ?.filter { it.isLetterOrDigit() }
             ?.takeLast(4)
             ?.uppercase()
         return if (sufixo.isNullOrBlank()) SSID_BASE else "$SSID_BASE-$sufixo"
-    }
-
-    /**
-     * MAC da interface ethernet. Tenta o sysfs direto e só recorre ao root se o
-     * SELinux barrar — o arquivo é legível, mas nem todo contexto de app pode.
-     */
-    private fun macEthernet(): String? {
-        val caminho = "/sys/class/net/eth0/address"
-        val direto = runCatching { File(caminho).readText().trim() }.getOrNull()
-        if (!direto.isNullOrBlank()) return direto
-        return Root.executarLendo("cat $caminho")?.trim()?.takeIf { it.isNotBlank() }
     }
 
     /**

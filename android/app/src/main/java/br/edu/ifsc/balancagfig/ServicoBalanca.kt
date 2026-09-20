@@ -43,6 +43,7 @@ import br.edu.ifsc.balancagfig.servidor.ServidorWs
 import br.edu.ifsc.balancagfig.sistema.EnderecosRede
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
 import br.edu.ifsc.balancagfig.sistema.RedirecionamentoPorta
+import br.edu.ifsc.balancagfig.sistema.SerialDoBox
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -228,6 +229,7 @@ class ServicoBalanca : Service() {
             iniciarContadorGravacao()
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
+                serial = serialDoBox,
                 atualizacao = atualizadorApp?.let { a -> ServidorApi.Atualizacao(a) { escopo.launch(Dispatchers.IO) { a.executarPendente() } } })
                 .also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
             registrarReceptorMidia()
@@ -350,6 +352,15 @@ class ServicoBalanca : Service() {
         }
     }
 
+    /**
+     * Identificador deste box, calculado uma vez.
+     *
+     * `SerialDoBox.ler` consulta o serial fixado à mão por root, e o SAUDE sai a
+     * cada 2 s — chamar ali dentro seria um `su` a cada 2 segundos. O valor não
+     * muda durante a vida do serviço, então `by lazy` resolve.
+     */
+    private val serialDoBox: String by lazy { SerialDoBox.ler(this) }
+
     private fun mensagemSaude(): String {
         val serial = when (EstadoHost.serial.value) {
             is EstadoSerial.Conectado, EstadoSerial.Gravando -> Mensagens.SerialSaude.CONECTADA
@@ -360,6 +371,7 @@ class ServicoBalanca : Service() {
             serial, EstadoHost.estatisticas.value.taxaHz,
             (System.currentTimeMillis() - inicioMs) / 1000, ws?.numClientes ?: 0,
             EnderecosRede.porInterface(),
+            serialDoBox,
         )
     }
 

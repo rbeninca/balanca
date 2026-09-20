@@ -31,6 +31,8 @@ export interface SaudeGateway {
    * Ausente em gateway antigo (antes da 2.7.0) — o chip cai no endereço de conexão.
    */
   enderecos?: Record<string, string>;
+  /** Identificador do box (ex.: "GFIG-TX9-58EB81E3618C"). Ausente em gateway antigo. */
+  dispositivo?: string;
 }
 
 /** Estado da gravação compartilhada no gateway (GRAVACAO_ESTADO — só o app Android envia). */
@@ -231,7 +233,7 @@ export class FonteWebSocket {
         const mudouSerial = conectado !== this._status.conectado;
         this.mudarConexao({ temBatimento: true, serial, conectado });
         if (mudouSerial) this._emitir('status', { conectado } as any);
-        this._emitir('saude', { serial, taxaHz: s.taxaHz ?? 0, uptimeS: s.uptimeS ?? 0, clientes: s.clientes ?? 0, intervaloMs: this.intervaloBatimentoMs, enderecos: s.enderecos ?? {} });
+        this._emitir('saude', { serial, taxaHz: s.taxaHz ?? 0, uptimeS: s.uptimeS ?? 0, clientes: s.clientes ?? 0, intervaloMs: this.intervaloBatimentoMs, enderecos: s.enderecos ?? {}, dispositivo: s.dispositivo ?? '' });
         break;
       }
       case 'CONFIG':

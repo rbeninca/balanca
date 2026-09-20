@@ -142,6 +142,12 @@ fase_estado() {
   echo
   local v; v=$(sh_ "dumpsys package $PACOTE" | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1)
   echo "    app instalado ........ ${v:-NÃO}"
+  # Identificador do box, publicado pelo app no /saude (ver SerialDoBox.kt).
+  # É a linha que interessa num inventário: para varrer vários boxes de uma vez,
+  # rode isto num laço pelos IPs e filtre por esta linha.
+  local serial; serial=$(curl -s -m 5 "http://$IP:3000/saude" 2>/dev/null \
+    | sed -n 's/.*"serial":"\([^"]*\)".*/\1/p')
+  echo "    serial ............... ${serial:-indisponível (app anterior à 2.7.x?)}"
   echo "    WRITE_SETTINGS ....... $(shu "appops get $PACOTE WRITE_SETTINGS" | head -1 | sed 's/^ *//')"
   echo "    API :3000 ............ $(curl -s -m 5 "http://$IP:3000/saude" || echo 'sem resposta')"
   echo "    frontend :80 ......... HTTP $(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://$IP/" 2>/dev/null || echo '?')"

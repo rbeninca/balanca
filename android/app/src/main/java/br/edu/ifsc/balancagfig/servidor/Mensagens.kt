@@ -134,9 +134,12 @@ object Mensagens {
         uptimeS: Long,
         clientes: Int,
         enderecos: Map<String, String> = emptyMap(),
+        /** Identificador do box (ver sistema/SerialDoBox.kt). */
+        dispositivo: String = "",
     ): String =
         envelope("SAUDE", JSONObject().put("serial", serial.valor).put("taxaHz", taxaHz).put("uptimeS", uptimeS)
             .put("clientes", clientes).put("intervaloMs", INTERVALO_SAUDE_MS)
+            .put("dispositivo", dispositivo)
             // endereço por interface (eth0, wlan0…): é com esses que o box
             // aparece na rede. O frontend mostra no chip de status — o endereço
             // de conexão não serve ali, porque visto do próprio box é 127.0.0.1.

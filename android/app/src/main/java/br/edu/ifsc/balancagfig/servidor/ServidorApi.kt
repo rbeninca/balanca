@@ -37,6 +37,11 @@ class ServidorApi(
     private val backup: br.edu.ifsc.balancagfig.armazenamento.BackupPendrive? = null,
     /** Atualização automática do app, para as rotas /atualizacao (null quando indisponível). */
     private val atualizacao: Atualizacao? = null,
+    /**
+     * Identificador deste box (ver [br.edu.ifsc.balancagfig.sistema.SerialDoBox]),
+     * publicado no /saude para inventário. Fixo durante a vida do serviço.
+     */
+    private val serial: String = "",
     porta: Int = PORTA_PADRAO,
 ) : NanoHTTPD(porta) {
 
@@ -67,8 +72,18 @@ class ServidorApi(
         // Preflight CORS do browser (POST/PATCH/DELETE com cabeçalhos customizados)
         if (m == Method.OPTIONS) return newFixedLengthResponse(Response.Status.NO_CONTENT, MIME_PLAINTEXT, "")
 
+        // Identifica o box na rede: quem é (serial) e onde está (endereços).
+        // É por aqui que um inventário em lote descobre os boxes sem tocar em
+        // nenhuma TV — ver `box.sh estado`.
         if (uri == "/saude" && m == Method.GET) {
-            return json(Response.Status.OK, JSONObject().put("status", "ok").put("modo", bd.modoJournal()))
+            return json(
+                Response.Status.OK,
+                JSONObject()
+                    .put("status", "ok")
+                    .put("modo", bd.modoJournal())
+                    .put("serial", serial)
+                    .put("enderecos", JSONObject(br.edu.ifsc.balancagfig.sistema.EnderecosRede.porInterface() as Map<*, *>)),
+            )
         }
 
         if (uri.startsWith("/pendrive")) return rotearPendrive(uri, m, s)

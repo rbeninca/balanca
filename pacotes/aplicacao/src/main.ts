@@ -171,8 +171,8 @@ function conectarPonteJogos(fonte: any): void {
   });
   // Endereços do box, para o chip da barra. O chip é desenhado antes do
   // primeiro SAUDE, então quem repinta é o próprio navBar.
-  fonte.on('saude', (s: { enderecos?: Record<string, string> }) => {
-    definirEnderecosDoBox(s?.enderecos ?? {});
+  fonte.on('saude', (s: { enderecos?: Record<string, string>; dispositivo?: string }) => {
+    definirEnderecosDoBox(s?.enderecos ?? {}, s?.dispositivo ?? '');
   });
   // Ligação com o gateway (só a FonteWebSocket emite): o chip da barra mostra reconexão/sem célula
   estadoConexao.definir(null);

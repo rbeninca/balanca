@@ -1,5 +1,6 @@
 package br.edu.ifsc.balancagfig.sistema
 
+import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
@@ -40,6 +41,21 @@ object EnderecosRede {
             .toMap()
     } catch (_: Exception) {
         emptyMap()
+    }
+
+    /**
+     * MAC da interface ethernet, ou null se não der para ler.
+     *
+     * É o identificador estável destes boxes: eles não gravam `ro.serialno`
+     * (vem vazio), e o `android_id` é derivado da assinatura do app e muda em
+     * reset de fábrica. Tenta o sysfs direto e só recorre ao root se o SELinux
+     * barrar — o arquivo é legível, mas nem todo contexto de app pode.
+     */
+    fun macEthernet(): String? {
+        val caminho = "/sys/class/net/eth0/address"
+        val direto = runCatching { File(caminho).readText().trim() }.getOrNull()
+        if (!direto.isNullOrBlank()) return direto
+        return Root.executarLendo("cat $caminho")?.trim()?.takeIf { it.isNotBlank() }
     }
 
     /**
