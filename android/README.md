@@ -81,11 +81,19 @@ npm run compilar -w pacotes/aplicacao        # gera pacotes/aplicacao/dist-web
 
 # tudo se faz por um script só, passando o IP do box:
 cd android
-bash scripts/box.sh 192.168.1.110              # ciclo: desfaz e reinstala
-bash scripts/box.sh instalar 192.168.1.110
-bash scripts/box.sh desfazer 192.168.1.110     # (pede confirmação; --sim pula)
-bash scripts/box.sh estado   192.168.1.110     # só confere, não mexe em nada
+
+bash scripts/box.sh estado   192.168.1.110   # só confere, não mexe em nada
+bash scripts/box.sh instalar 192.168.1.110   # instala e pré-aprova root/USB
+bash scripts/box.sh desfazer 192.168.1.110   # tira tudo e devolve o box ao original
+bash scripts/box.sh 192.168.1.110            # ciclo: desfazer + instalar
+bash scripts/box.sh limpar   192.168.1.110   # tira apps que não são do projeto e o lixo
+bash scripts/box.sh launcher 192.168.1.110   # instala o Painel GFIG como tela inicial
+bash scripts/box.sh launcher-desfazer 192.168.1.110   # devolve a tela inicial anterior
 ```
+
+As tarefas que **apagam** algo (`desfazer`, `limpar`) perguntam antes. Fora de um
+terminal elas se recusam a agir — nesse caso é preciso passar `--sim` de
+propósito, para que apagar app ou sessão não aconteça por acidente.
 
 O `estado` é o diagnóstico de campo: confere app, app-op, API, frontend,
 WebSocket com a serial e a taxa, hotspot e permissão USB — e lista **interfaces
@@ -123,6 +131,45 @@ Para o app, remove a chain `balanca_http` do NAT (o redirect da porta 80),
 devolve o app-op `WRITE_SETTINGS` ao padrão, apaga a política de root (onde
 existe), desinstala — **o que apaga as sessões gravadas**; exporte antes pela
 tela Sessões —, restaura o `usb_device_manager.xml` original e reinicia.
+
+### O que o `limpar` faz
+
+Tira do box o que não é do projeto, em duas frentes:
+
+1. **Apps de terceiros** (instalados em `/data`), listando antes o que sai. Ficam
+   de fora, sempre: o app da balança, o launcher do projeto e os gerenciadores de
+   root — sem eles o app perde root e o hotspot morre. Num box de fábrica isso
+   costuma tirar YouTube, Netflix, Kodi, Facebook, Skype, loja de apps e afins.
+2. **Lixo acumulado**: staging de instalações interrompidas pelo adb
+   (`/data/app/vmdl*.tmp`, que costuma ser a maior parte), imagens e sobras de
+   apps já removidos, restos de ferramentas de diagnóstico, tombstones, ANR,
+   dropbox e o buffer do logcat.
+
+**Nunca toca em app de `/system`** — remover app de sistema é o que deixa box em
+bootloop, e nenhum ganho de limpeza justifica o risco. Ao fim informa quanto
+liberou em `/data`.
+
+### O launcher do projeto (Painel GFIG)
+
+Um app à parte, em `launcherbox/`, que substitui a tela inicial de fábrica: a
+logo do projeto, os apps que abrem tela (com os ícones), as interfaces de rede
+com MAC e IP, o espaço em disco e o nome e a senha do hotspot. Tem README
+próprio.
+
+```bash
+bash scripts/box.sh launcher 192.168.1.110            # instala e define como tela inicial
+bash scripts/box.sh launcher-desfazer 192.168.1.110   # devolve a anterior
+```
+
+Trocar a tela inicial é reversível: o `launcher` grava a anterior antes de trocar
+e o `launcher-desfazer` a devolve — verificado nos dois boxes.
+
+**O `launcher-desfazer` não usa `set-home-activity`.** No API 25 esse comando
+responde `Success` mas **não troca de volta**: a preferência continua apontando
+para o nosso launcher. O que funciona é **desabilitar** o nosso pacote — aí o
+Android resolve a tela inicial para o próximo candidato, que é justamente o que
+estava antes. O launcher continua instalado, apenas desabilitado; `launcher`
+reabilita e ele volta a ser a tela inicial.
 
 ### Duas ressalvas que os testes revelaram
 

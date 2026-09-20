@@ -15,11 +15,17 @@ Em todos os comandos, `<dev>` é o alvo adb (ex.: `192.168.1.110:5555`) e
 
 ```bash
 cd android
-bash scripts/box.sh <ip>              # ciclo: desfaz e reinstala
+bash scripts/box.sh estado   <ip>     # só confere, não mexe em nada
 bash scripts/box.sh instalar <ip>
-bash scripts/box.sh desfazer <ip>     # pede confirmação; --sim pula
-bash scripts/box.sh estado <ip>       # só confere
+bash scripts/box.sh desfazer <ip>     # tira tudo e devolve o original
+bash scripts/box.sh <ip>              # ciclo: desfazer + instalar
+bash scripts/box.sh limpar   <ip>     # apps fora do projeto + lixo acumulado
+bash scripts/box.sh launcher <ip>     # Painel GFIG como tela inicial
+bash scripts/box.sh launcher-desfazer <ip>   # devolve a tela inicial anterior
 ```
+
+`desfazer` e `limpar` apagam coisas e por isso **perguntam antes**; sem terminal
+eles se recusam a agir, exigindo `--sim` explícito.
 
 As tarefas do Gradle são atalhos para o mesmo script:
 `./gradlew instalarNoTx9 -Ptx9.device=<ip>:5555`, `desfazerNoTx9`, `estadoNoBox`.
@@ -51,6 +57,45 @@ Antes de sobrescrever o `usb_device_manager.xml` o script guarda o original
 | restaura `usb_device_manager.xml` do `.bak` (ou remove, se não existia) | permissão USB como era |
 | `ndc tether stop` (TX9) | hotspot desligado — no TX9 o tethering não persiste |
 | `adb reboot` | no MXQ o AP também não persiste: sai no reboot |
+
+## 1c. Limpar — `box.sh limpar <ip>`
+
+| Comando | Porquê |
+|---|---|
+| `pm list packages -3` | lista o que **não** é do projeto; a remoção fica só nesse conjunto |
+| `adb uninstall <pkg>` (uma vez por app) | tira o bloat: YouTube, Netflix, Kodi, loja de apps… |
+| preserva `br.edu.ifsc.balancagfig`, `com.ifsc.laucherbox` e os gerenciadores de root | sem eles o app perde root e o hotspot morre |
+| `rm -rf /data/app/vmdl*.tmp` | staging de instalações interrompidas — costuma ser a maior parte do ganho |
+| `rm -f /sdcard/linux.img`, sobras de apps removidos | imagens e pastas que ficaram de apps já desinstalados |
+| `rm -rf /data/tombstones/* /data/anr/* /data/system/dropbox/*` | coredumps, traces de ANR e relatórios de falha |
+| `logcat -c` | limpa o buffer de log |
+| `df /data` antes e depois | informa quanto liberou |
+
+**Nunca toca em `/system`.** É o que evita bootloop — e o ganho de tirar app de
+sistema não paga o risco.
+
+## 1d. Launcher próprio — `box.sh launcher | launcher-desfazer <ip>`
+
+| Comando | Porquê |
+|---|---|
+| `adb install -r launcherbox/…/app-debug.apk` | instala o Painel GFIG (`com.ifsc.laucherbox`) |
+| `am start -n com.ifsc.laucherbox/.MainActivity` | tira o pacote do estado *stopped* |
+| `INSERT` da linha com `logging=0` no banco do Koush | pré-aprova o root do launcher — o UID é novo, e sem isso ele pediria root na TV |
+| `cmd package resolve-activity … HOME` **antes** | registra a tela inicial anterior |
+| `cmd package set-home-activity com.ifsc.laucherbox/.MainActivity` | troca a tela inicial |
+| `cat /data/local/tmp/launcherbox.home-anterior` | é o que o `launcher-desfazer` lê para voltar |
+| `pm disable-user com.ifsc.laucherbox` | **é assim que o desfazer volta atrás** — ver abaixo |
+| `pm enable com.ifsc.laucherbox` | o `launcher` reabilita e o sistema volta a resolvê-lo |
+
+> No API 25 o comando para trocar a tela inicial é **`cmd package
+> set-home-activity`** — o `pm`, que seria o natural, não tem essa opção nessa
+> versão do Android.
+
+> **Para desfazer, `set-home-activity` não serve.** Ele responde `Success` mas não
+> troca de volta: a preferência em `package-restrictions.xml` continua apontando
+> para o nosso launcher. O que funciona é **desabilitar** o nosso pacote, e o
+> Android resolve a tela inicial para o próximo candidato — verificado nos dois
+> boxes (TX9 volta ao `com.txari.launcher`, MXQ ao `com.droidlogic.mboxlauncher`).
 
 ## 2. Runtime — o app faz sozinho (via `ServicoBalanca` + root)
 

@@ -38,14 +38,14 @@ USB_XML="/data/system/users/0/usb_device_manager.xml"
 TAREFA=""; IP=""; SIM=0
 for arg in "$@"; do
   case "$arg" in
-    instalar|desfazer|estado|ciclo|launcher|launcher-desfazer) TAREFA="$arg" ;;
+    instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar) TAREFA="$arg" ;;
     --sim|-y) SIM=1 ;;
     *[0-9].[0-9]*) IP="$arg" ;;
     -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "não entendi o argumento '$arg'" >&2; exit 2 ;;
   esac
 done
-[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo|launcher|launcher-desfazer] <IP> [--sim]" >&2; exit 2; }
+[ -n "$IP" ] || { echo "uso: bash scripts/box.sh [instalar|desfazer|estado|ciclo|launcher|launcher-desfazer|limpar] <IP> [--sim]" >&2; exit 2; }
 [ -n "$TAREFA" ] || TAREFA="ciclo"
 DEVICE="$IP:5555"
 
@@ -199,8 +199,14 @@ fase_desfazer() {
   conectar; detectar
   echo "==> DESFAZENDO a instalação em $IP"
   echo "    (as sessões gravadas no box serão apagadas junto com o app)"
-  if [ "$SIM" != 1 ] && [ -t 0 ]; then
-    read -r -p "    confirma? [s/N] " r; [ "${r,,}" = "s" ] || { echo "    abortado."; exit 1; }
+  # Desinstalar apaga as sessões gravadas: nunca sem confirmação explícita.
+  if [ "$SIM" != 1 ]; then
+    if [ -t 0 ]; then
+      read -r -p "    confirma? [s/N] " r; [ "${r,,}" = "s" ] || { echo "    abortado."; exit 1; }
+    else
+      falhar "desfazer apaga as sessões gravadas no box e precisa de confirmação.
+  Rode num terminal (pergunta antes de agir) ou passe --sim se for intencional."
+    fi
   fi
 
   local uid_app=""
@@ -523,6 +529,11 @@ fase_launcher() {
   fi
 
   echo "==> Definindo como tela inicial"
+  # Se veio de um 'launcher-desfazer' anterior, o pacote está desabilitado:
+  # reabilitar já basta, o sistema volta a resolvê-lo. O set-home-activity
+  # abaixo é o caminho normal quando é a primeira vez.
+  sh_ "pm enable $LAUNCHER_PACOTE" >/dev/null 2>&1 || true
+  sleep 2
   shu "cmd package set-home-activity $LAUNCHER_COMPONENTE" >/dev/null || true
   local agora; agora=$(home_atual)
   if [ "$agora" = "$LAUNCHER_COMPONENTE" ]; then
@@ -556,20 +567,132 @@ fase_launcher_desfazer() {
   com 'adb -s $DEVICE uninstall $LAUNCHER_PACOTE'."
   fi
 
-  echo "    devolvendo para: $destino"
-  shu "cmd package set-home-activity $destino" >/dev/null || true
+  # No API 25 o `cmd package set-home-activity` responde "Success" mas NÃO troca
+  # de volta: a preferência continua apontando para o nosso. O que funciona é
+  # DESABILITAR o nosso — aí o Android resolve a tela inicial para o próximo
+  # candidato, que é justamente o que estava antes. Verificado nos dois boxes.
+  echo "    desabilitando $LAUNCHER_PACOTE para o sistema voltar ao anterior"
+  sh_ "pm disable-user $LAUNCHER_PACOTE" >/dev/null
+  sleep 3
 
   local agora; agora=$(home_atual)
-  if [ "$agora" = "$destino" ]; then
-    echo "    tela inicial agora: $agora"
-    sh_ "rm -f $HOME_GUARDADO" >/dev/null
+  if [ "$agora" = "$LAUNCHER_COMPONENTE" ]; then
+    echo "    o sistema não trocou sozinho; tentando o set-home-activity"
+    shu "cmd package set-home-activity $destino" >/dev/null || true
+    sleep 2
+    agora=$(home_atual)
+  fi
+
+  if [ "$agora" = "$LAUNCHER_COMPONENTE" ]; then
+    falhar "não consegui devolver a tela inicial (continua '$agora').
+  O launcher segue desabilitado — reabilite com:
+    adb -s $DEVICE shell pm enable $LAUNCHER_PACOTE
+  e escolha a tela inicial no seletor da TV."
+  fi
+
+  echo "    tela inicial agora: $agora"
+  sh_ "rm -f $HOME_GUARDADO" >/dev/null
+
+  echo
+  echo "    O launcher continua INSTALADO, mas desabilitado: assim o sistema não"
+  echo "    o oferece como tela inicial. Para trazê-lo de volta:"
+  echo "      bash scripts/box.sh launcher $IP"
+  echo "    Para removê-lo de vez:"
+  echo "      adb -s $DEVICE uninstall $LAUNCHER_PACOTE"
+}
+
+# ── limpeza: tirar o que não é do projeto ──────────────────────────────────
+
+# Apps que NUNCA são removidos: o projeto e os gerenciadores de root (sem eles
+# o app perde root e o hotspot morre).
+LIMPAR_MANTER=(
+  "br.edu.ifsc.balancagfig"
+  "com.ifsc.laucherbox"
+  "eu.chainfire.supersu"
+  "eu.chainfire.supersu.pro"
+  "com.thirdparty.superuser"
+)
+
+# Remove apps que não são do projeto e o lixo acumulado.
+#
+# Só mexe em app de TERCEIROS (instalado em /data): remover app de /system é o
+# que deixa box em bootloop, e nenhum ganho de limpeza justifica esse risco.
+fase_limpar() {
+  conectar; detectar
+  echo "==> Limpando $IP (${MODELO:-?} · ${PLATAFORMA:-?})"
+
+  # ── 1) apps de terceiros que não são do projeto ──
+  local remover=() p manter k
+  while IFS= read -r p; do
+    [ -n "$p" ] || continue
+    manter=0
+    for k in "${LIMPAR_MANTER[@]}"; do
+      [ "$p" = "$k" ] && manter=1
+    done
+    [ "$manter" = 0 ] && remover+=("$p")
+  done < <(sh_ "pm list packages -3" | sed 's/^package://' | sort)
+
+  local espaco_antes espaco_depois
+  espaco_antes=$(sh_ "df /data | tail -1" | awk '{print $3}')
+
+  if [ ${#remover[@]} -eq 0 ]; then
+    echo "    nenhum app de terceiros fora do projeto"
   else
-    falhar "o sistema não aceitou '$destino' (continua '$agora')."
+    echo "    apps de terceiros fora do projeto (${#remover[@]}):"
+    printf '      %s\n' "${remover[@]}"
+    echo "    (só apps de terceiros — /system fica intacto)"
+    if [ "$SIM" != 1 ]; then
+      if [ -t 0 ]; then
+        read -r -p "    remover? [s/N] " r
+        [ "${r,,}" = "s" ] || { echo "    abortado."; exit 1; }
+      else
+        # sem terminal não dá para perguntar, e remover app sem confirmação é
+        # coisa que não se faz por acidente: exige --sim explícito
+        echo "    nada foi removido: confirme na mão, ou rode com --sim" >&2
+        exit 1
+      fi
+    fi
+    for p in "${remover[@]}"; do
+      printf '    %-45s %s\n' "$p" "$(adb -s "$DEVICE" uninstall "$p" 2>&1 | tr -d '\r' | tail -1)"
+    done
+  fi
+
+  # ── 2) lixo acumulado ──
+  echo "==> Removendo lixo"
+  cat > /tmp/box-limpar.sh <<'SCRIPT'
+antes=$(df /data | tail -1 | awk '{print $3}')
+
+# staging de instalações interrompidas pelo adb — costuma ser o maior
+rm -rf /data/app/vmdl*.tmp 2>/dev/null
+
+# imagens e sobras de apps que já foram removidos
+rm -f  /sdcard/linux.img /sdcard/ui.xml 2>/dev/null
+rm -rf /sdcard/uotaback /sdcard/uota /sdcard/tve /sdcard/mfc /sdcard/eHomeMediaCenter 2>/dev/null
+
+# restos de ferramentas de diagnóstico
+rm -rf /data/local/tmp/dtb_extract /data/local/tmp/dalvik-cache /data/local/tmp/hap /data/local/tmp/.studio 2>/dev/null
+rm -f  /data/local/tmp/*.xml 2>/dev/null
+
+# logs e coredumps do sistema
+rm -rf /data/tombstones/* /data/anr/* /data/system/dropbox/* 2>/dev/null
+rm -f  /data/system/lastkmsg* 2>/dev/null
+logcat -c 2>/dev/null
+
+depois=$(df /data | tail -1 | awk '{print $3}')
+echo "DADOS $antes $depois"
+SCRIPT
+  local saida; saida=$(script_raiz /tmp/box-limpar.sh)
+  local antes depois
+  read -r _ antes depois <<<"$(grep DADOS <<<"$saida")"
+  if [ -n "${antes:-}" ] && [ -n "${depois:-}" ]; then
+    echo "    /data: $((antes/1024)) MB usados -> $((depois/1024)) MB usados (liberou $(( (antes-depois)/1024 )) MB)"
   fi
 
   echo
-  echo "    O launcher continua instalado — abra pela lista de apps."
-  echo "    Para removê-lo de vez: adb -s $DEVICE uninstall $LAUNCHER_PACOTE"
+  echo "==> Sobrou em /data como app de terceiros:"
+  sh_ "pm list packages -3" | sed 's/^package://' | sed 's/^/      /'
+  echo
+  echo "    Nada de /system foi tocado — é o que tijolaria o box."
 }
 
 case "$TAREFA" in
@@ -579,4 +702,5 @@ case "$TAREFA" in
   ciclo)             fase_ciclo ;;
   launcher)          fase_launcher ;;
   launcher-desfazer) fase_launcher_desfazer ;;
+  limpar)            fase_limpar ;;
 esac

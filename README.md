@@ -147,7 +147,26 @@ docker compose -f docker/docker-compose.yml \
                -f docker/docker-compose.mariadb.yml up -d
 ```
 
-### 3. Cenário C — Desenvolvimento local
+### 3. Cenário A no TVBox, com o app Android
+
+O caminho que está em uso nos boxes: em vez de contêineres, um app Android que
+faz os mesmos papéis (HTTP, WebSocket, API, frontend na porta 80) e ainda lê a
+balança pela USB. Um script só cuida de tudo, passando o IP do box:
+
+```bash
+cd android
+bash scripts/box.sh estado   192.168.1.110   # só confere
+bash scripts/box.sh instalar 192.168.1.110   # instala e pré-aprova root/USB
+bash scripts/box.sh desfazer 192.168.1.110   # devolve o box ao original
+bash scripts/box.sh limpar   192.168.1.110   # tira apps fora do projeto e lixo
+bash scripts/box.sh launcher 192.168.1.110   # Painel GFIG como tela inicial
+```
+
+Detalhes em [`android/README.md`](android/README.md), no launcher em
+[`launcherbox/README.md`](launcherbox/README.md), e a referência de cada comando
+em [`registro/comandos-tvbox.md`](registro/comandos-tvbox.md).
+
+### 4. Cenário C — Desenvolvimento local
 
 ```bash
 cd pacotes/aplicacao
