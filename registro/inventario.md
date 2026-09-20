@@ -26,8 +26,8 @@ bash scripts/box.sh estado 192.168.1.105
 | Serial | IP | Modelo | Placa | App | Root |
 |---|---|---|---|---|---|
 | `GFIG-TX9-58EB81E3618C` | 192.168.1.105 | TX9 | Amlogic `gxl` | 2.7.3 | Koush (Superuser) |
-| `GFIG-TVBOX-A82003AC10E7` | 192.168.1.110 | TV BOX | Rockchip `rk322x` | 2.7.3 | Chainfire (SuperSU) |
-| `GFIG-TVBOX-A82003AC10D4` | 192.168.1.112 | TV BOX | Rockchip `rk322x` | 2.7.3 | `su` em `/system/xbin/su`, sem app gerenciador |
+| `GFIG-MXQ-A82003AC10E7` | 192.168.1.110 | MXQ | Rockchip `rk322x` | 2.7.3 | Chainfire (SuperSU) |
+| `GFIG-MXQ-A82003AC10D4` | 192.168.1.112 | MXQ | Rockchip `rk322x` | 2.7.3 | `su` em `/system/xbin/su`, sem app gerenciador |
 
 Os três rodam **API 25 (Android 7.1.2)** e o app `br.edu.ifsc.balancagfig`.
 
@@ -45,7 +45,7 @@ Os três rodam **API 25 (Android 7.1.2)** e o app `br.edu.ifsc.balancagfig`.
 | Balança | **conectada, 87 Hz** |
 | Launcher | `com.ifsc.laucherbox` + `com.txari.launcher` |
 
-### `GFIG-TVBOX-A82003AC10E7` — TV BOX · 192.168.1.110
+### `GFIG-MXQ-A82003AC10E7` — MXQ · 192.168.1.110
 
 | | |
 |---|---|
@@ -57,7 +57,7 @@ Os três rodam **API 25 (Android 7.1.2)** e o app `br.edu.ifsc.balancagfig`.
 | Balança | **sem_dispositivo, 0 Hz** — porta aberta, mas o ESP não está enviando |
 | Launcher | `com.ifsc.laucherbox` |
 
-### `GFIG-TVBOX-A82003AC10D4` — TV BOX · 192.168.1.112
+### `GFIG-MXQ-A82003AC10D4` — MXQ · 192.168.1.112
 
 | | |
 |---|---|
@@ -104,13 +104,41 @@ nome da rede — dá para ler a etiqueta sem consultar nada:
 | Box | MAC do eth0 | Serial | SSID |
 |---|---|---|---|
 | TX9 | `58:eb:81:e3:`**`61:8c`** | `GFIG-TX9-`**`58EB81E3618C`** | `balancaGFIG-`**`618C`** |
-| TV BOX | `a8:20:03:ac:`**`10:e7`** | `GFIG-TVBOX-`**`A82003AC10E7`** | `balancaGFIG-`**`10E7`** |
-| TV BOX | `a8:20:03:ac:`**`10:d4`** | `GFIG-TVBOX-`**`A82003AC10D4`** | `balancaGFIG-`**`10D4`** |
+| MXQ | `a8:20:03:ac:`**`10:e7`** | `GFIG-MXQ-`**`A82003AC10E7`** | `balancaGFIG-`**`10E7`** |
+| MXQ | `a8:20:03:ac:`**`10:d4`** | `GFIG-MXQ-`**`A82003AC10D4`** | `balancaGFIG-`**`10D4`** |
 
-O modelo sai do que o aparelho diz de si (`Build.MODEL`), normalizado. O MXQ se
-identifica como `TV BOX` — não como "MXQ" — e vira `TVBOX`. Quando o nome do
-firmware não servir, fixe um à mão em `/data/misc/gfig/serial` (exige root, tem
-precedência e sobrevive a desinstalar o app).
+### Por que os dois MXQ têm serial fixado
+
+O modelo, por padrão, sai do que o aparelho diz de si (`Build.MODEL`)
+normalizado. Só que o MXQ **não se identifica como "MXQ"**: o firmware dele
+responde `TV BOX`, e o serial derivado saía `GFIG-TVBOX-…` — um nome que não
+diz qual é o aparelho.
+
+Por isso os dois MXQ têm o serial **fixado à mão** em `/data/misc/gfig/serial`,
+que tem precedência sobre o derivado:
+
+```
+GFIG-MXQ-A82003AC10E7   (192.168.1.110)
+GFIG-MXQ-A82003AC10D4   (192.168.1.112)
+```
+
+O arquivo exige root para escrever e **sobrevive a desinstalar o app**, de
+propósito: inventário não pode se perder num reset. O sufixo do MAC continua
+no serial, então a etiqueta segue casando com o nome da rede.
+
+Para trocar o serial de um box:
+
+```bash
+adb -s 192.168.1.110:5555 shell "su -c 'mkdir -p /data/misc/gfig'"
+adb -s 192.168.1.110:5555 shell "su -c 'echo GFIG-MXQ-A82003AC10E7 > /data/misc/gfig/serial'"
+adb -s 192.168.1.110:5555 shell "am force-stop br.edu.ifsc.balancagfig"
+adb -s 192.168.1.110:5555 shell "am start -n br.edu.ifsc.balancagfig/.MainActivity"
+```
+
+O app lê o serial **uma vez por vida do serviço** (`by lazy`), justamente para
+não consultar o root a cada 2 s junto do SAUDE — por isso o reinício acima é
+obrigatório depois de escrever o arquivo. Não existe comando no `box.sh` para
+isto ainda.
 
 Os três boxes levaram a 2.7.3 sozinhos, pela cadeia de releases do GitHub, em
 20/09/2026. O `192.168.1.110` entrou na cadeia com `versao_inicial: 2.7.1` e
