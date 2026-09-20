@@ -67,7 +67,19 @@ object AutorizacaoUsb {
               break
             done
 
-            # 2) o kernel não desenumerou no toggle: derruba a controladora do barramento
+            # 2) o kernel não desenumerou no toggle: derruba a controladora do barramento.
+            #    Só se o barramento não tiver outros dispositivos — derrubar a
+            #    controladora com mais gente pendurada levaria junto mouse, teclado
+            #    ou até um WiFi USB (e a rede por onde corre a instalação).
+            OUTROS=0
+            for n in /sys/bus/usb/devices/${'$'}BUS-*; do
+              case "${'$'}{n##*/}" in *:*) continue ;; esac
+              [ -f "${'$'}n/idVendor" ] || continue
+              [ "${'$'}(cat ${'$'}n/idVendor 2>/dev/null)" = "${'$'}VID" ] && continue
+              OUTROS=1
+            done
+            [ "${'$'}OUTROS" = 0 ] || exit 1
+
             BASE=${'$'}(readlink /sys/bus/usb/devices/usb${'$'}BUS 2>/dev/null)
             CTRL=${'$'}{BASE%/usb${'$'}BUS}; CTRL=${'$'}{CTRL##*/}
             DRV=${'$'}(readlink /sys/bus/platform/devices/${'$'}CTRL/driver 2>/dev/null)
