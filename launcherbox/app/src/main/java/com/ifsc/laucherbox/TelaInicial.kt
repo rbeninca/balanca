@@ -177,14 +177,67 @@ private fun coletar(contexto: Context, rootConhecido: Boolean?, reconferir: Bool
 
 // ── pedaços da tela ─────────────────────────────────────────────────────────
 
+/**
+ * Os apps que aparecem sempre, sem precisar expandir: o da balança e as
+ * configurações do Android. O resto do box é ruído para quem opera a balança —
+ * fica atrás do "mais" para não competir por atenção nem por espaço.
+ */
+private fun ehFixo(pacote: String): Boolean =
+    pacote == "br.edu.ifsc.balancagfig" ||
+        pacote == "com.android.settings" ||
+        pacote == "com.android.tv.settings" ||
+        pacote.endsWith(".settings")
+
 @Composable
 private fun ListaDeApps(apps: List<AppAbrivel>, aoAbrir: (AppAbrivel) -> Unit) {
     if (apps.isEmpty()) {
         Text("nenhum app instalado", color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
+
+    // O estado de expansão sobrevive às atualizações de 3 em 3 s: fica no
+    // remember, não no retrato que vem da coleta.
+    var mostrarTodos by remember { mutableStateOf(false) }
+
+    val fixos = apps.filter { ehFixo(it.pacote) }
+    val resto = apps.filterNot { ehFixo(it.pacote) }
+    val visiveis = if (mostrarTodos) fixos + resto else fixos
+
     LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        items(apps, key = { it.pacote }) { app -> LinhaDeApp(app, aoAbrir) }
+        items(visiveis, key = { it.pacote }) { app -> LinhaDeApp(app, aoAbrir) }
+        if (resto.isNotEmpty()) {
+            item {
+                LinhaDeMais(expandido = mostrarTodos, quantos = resto.size) {
+                    mostrarTodos = !mostrarTodos
+                }
+            }
+        }
+    }
+}
+
+/** A linha que abre e fecha o resto da lista. */
+@Composable
+private fun LinhaDeMais(expandido: Boolean, quantos: Int, aoTocar: () -> Unit) {
+    var focado by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (focado) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+            )
+            .focusable()
+            .onFocusChanged { focado = it.isFocused }
+            .clickable { aoTocar() }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            if (expandido) "menos" else "mais ($quantos)",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

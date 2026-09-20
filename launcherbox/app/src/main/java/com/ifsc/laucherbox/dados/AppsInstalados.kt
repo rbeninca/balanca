@@ -25,6 +25,13 @@ data class AppAbrivel(
 object AppsInstalados {
     private const val TAG = "AppsInstalados"
 
+    /**
+     * Ícones já decodificados, por pacote. A lista é remontada a cada 3 s, e
+     * decodificar 12 ícones toda vez pesaria no rk322x. Trocar o ícone de um app
+     * reinstalado só aparece quando o launcher reiniciar — troca aceitável.
+     */
+    private val cacheIcones = java.util.concurrent.ConcurrentHashMap<String, ImageBitmap?>()
+
     fun listar(context: Context): List<AppAbrivel> {
         val pm = context.packageManager
         val intencao = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -38,10 +45,12 @@ object AppsInstalados {
                     rotulo = info.loadLabel(pm).toString().ifBlank { info.activityInfo.packageName },
                     pacote = info.activityInfo.packageName,
                     atividade = info.activityInfo.name,
-                    // 96 px cobre com folga os 40 dp em que o ícone é desenhado
+                    // 96 px cobre com folga os 32 dp em que o ícone é desenhado
                     // mesmo numa TV 1080p; um ícone que falhe não derruba a linha
-                    icone = runCatching { info.loadIcon(pm).toBitmap(96, 96).asImageBitmap() }
-                        .getOrNull(),
+                    icone = cacheIcones.getOrPut(info.activityInfo.packageName) {
+                        runCatching { info.loadIcon(pm).toBitmap(96, 96).asImageBitmap() }
+                            .getOrNull()
+                    },
                 )
             }
             // a consulta devolve mais de uma entrada por pacote (atividade e
