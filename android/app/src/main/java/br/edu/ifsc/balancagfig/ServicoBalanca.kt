@@ -359,6 +359,7 @@ class ServicoBalanca : Service() {
         return Mensagens.saude(
             serial, EstadoHost.estatisticas.value.taxaHz,
             (System.currentTimeMillis() - inicioMs) / 1000, ws?.numClientes ?: 0,
+            EnderecosRede.porInterface(),
         )
     }
 

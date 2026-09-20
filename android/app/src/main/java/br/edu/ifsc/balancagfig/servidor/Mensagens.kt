@@ -128,9 +128,19 @@ object Mensagens {
      * distingue "conexão morta" (nada chega) de "gateway vivo sem célula"
      * (SAUDE chega, LEITURA não), para o frontend não reconectar à toa.
      */
-    fun saude(serial: SerialSaude, taxaHz: Int, uptimeS: Long, clientes: Int): String =
+    fun saude(
+        serial: SerialSaude,
+        taxaHz: Int,
+        uptimeS: Long,
+        clientes: Int,
+        enderecos: Map<String, String> = emptyMap(),
+    ): String =
         envelope("SAUDE", JSONObject().put("serial", serial.valor).put("taxaHz", taxaHz).put("uptimeS", uptimeS)
-            .put("clientes", clientes).put("intervaloMs", INTERVALO_SAUDE_MS))
+            .put("clientes", clientes).put("intervaloMs", INTERVALO_SAUDE_MS)
+            // endereço por interface (eth0, wlan0…): é com esses que o box
+            // aparece na rede. O frontend mostra no chip de status — o endereço
+            // de conexão não serve ali, porque visto do próprio box é 127.0.0.1.
+            .put("enderecos", JSONObject(enderecos as Map<*, *>)))
 
     const val INTERVALO_SAUDE_MS = 2000L
 

@@ -26,6 +26,11 @@ export interface SaudeGateway {
   uptimeS: number;
   clientes: number;
   intervaloMs: number;
+  /**
+   * IPv4 por interface do box, ex.: `{ eth0: '192.168.1.110', wlan0: '192.168.43.1' }`.
+   * Ausente em gateway antigo (antes da 2.7.0) — o chip cai no endereço de conexão.
+   */
+  enderecos?: Record<string, string>;
 }
 
 /** Estado da gravação compartilhada no gateway (GRAVACAO_ESTADO — só o app Android envia). */
@@ -226,7 +231,7 @@ export class FonteWebSocket {
         const mudouSerial = conectado !== this._status.conectado;
         this.mudarConexao({ temBatimento: true, serial, conectado });
         if (mudouSerial) this._emitir('status', { conectado } as any);
-        this._emitir('saude', { serial, taxaHz: s.taxaHz ?? 0, uptimeS: s.uptimeS ?? 0, clientes: s.clientes ?? 0, intervaloMs: this.intervaloBatimentoMs });
+        this._emitir('saude', { serial, taxaHz: s.taxaHz ?? 0, uptimeS: s.uptimeS ?? 0, clientes: s.clientes ?? 0, intervaloMs: this.intervaloBatimentoMs, enderecos: s.enderecos ?? {} });
         break;
       }
       case 'CONFIG':

@@ -9,6 +9,8 @@ import { estadoGateway, estadoConexao, linhasClientes, descreverChip, type Estad
 export interface StatusConexao {
   endereco: string;   // ex: "192.168.1.100" ou "WebSerial"
   conectado: boolean;
+  /** IPv4 por interface do box (ver SaudeGateway.enderecos). Ausente em gateway antigo. */
+  enderecos?: Record<string, string>;
 }
 
 export interface NavProps {
@@ -68,9 +70,46 @@ function itemNav(id: string, label: string, isAtivo: boolean, cb: (() => void) |
   return `<a href="#" id="${id}">${label}</a>`;
 }
 
+/**
+ * Endereços do box, um por interface: `eth0 192.168.1.110 · wlan0 192.168.43.1`.
+ *
+ * É o que interessa no chip — com que endereços o box aparece na rede. O
+ * endereço de conexão entra junto quando diz outra coisa: visto do próprio box
+ * ele é `127.0.0.1`, e aí mostra de onde a tela está olhando. Vindo de um
+ * celular pela LAN ele repete o `eth0`, e aí seria só ruído.
+ *
+ * Gateway anterior à 2.7.0 não publica endereços: aí fica só o de conexão.
+ */
+export function montarEndereco(endereco: string, enderecos?: Record<string, string>): string {
+  const entradas = Object.entries(enderecos ?? {}).filter(([, ip]) => ip);
+  if (entradas.length === 0) return endereco;
+  const doBox = entradas.map(([nome, ip]) => `${nome} ${ip}`);
+  const repete = entradas.some(([, ip]) => ip === endereco);
+  return repete ? doBox.join(' · ') : [endereco, ...doBox].join(' · ');
+}
+
+/**
+ * Endereços que o gateway publicou no SAUDE. Fica no módulo porque o chip é
+ * desenhado uma vez e o batimento chega depois — quando chega, [definirEnderecosDoBox]
+ * repinta o que já está na tela.
+ */
+let enderecosDoBox: Record<string, string> = {};
+
+/** Endereço de conexão do chip em tela, para repintar sem perder o contexto. */
+let enderecoConexaoAtual = '';
+
+export function definirEnderecosDoBox(enderecos: Record<string, string>): void {
+  enderecosDoBox = enderecos;
+  const chip = document.querySelector<HTMLElement>('.nav-status-chip');
+  const el   = document.querySelector<HTMLElement>('.nav-endereco');
+  if (!chip || !el || !enderecoConexaoAtual) return;
+  el.textContent = montarEndereco(enderecoConexaoAtual, enderecosDoBox);
+}
+
 function statusHtml(s: StatusConexao): string {
   const classe = s.conectado ? 'conectado' : 'desconectado';
-  const texto  = s.conectado ? s.endereco  : `${s.endereco} — desconectado`;
+  const dono   = montarEndereco(s.endereco, s.enderecos);
+  const texto  = s.conectado ? dono : `${dono} — desconectado`;
   return `<span class="nav-status-chip ${classe}"><span class="nav-endereco">${texto}</span><span id="nav-hz" class="nav-hz"></span><button id="nav-clientes" class="nav-clientes hidden" type="button" title="Clientes conectados ao gateway"></button></span>`;
 }
 
@@ -185,10 +224,12 @@ export function bindNav(container: HTMLElement, props: NavProps): void {
   // Chip: verde (dados) · amarelo (gateway vivo sem célula) · vermelho (reconectando)
   const chip = container.querySelector<HTMLElement>('.nav-status-chip');
   const endereco = container.querySelector<HTMLElement>('.nav-endereco');
+  // Guardado para o repintar de definirEnderecosDoBox, quando o SAUDE chegar
+  enderecoConexaoAtual = props.status?.endereco ?? '';
   cancelarObservacaoLigacao?.();
   cancelarObservacaoLigacao = estadoConexao.observar((e) => {
     if (!chip || !endereco || !props.status) return;
-    const a = descreverChip(e, props.status.endereco);
+    const a = descreverChip(e, montarEndereco(enderecoConexaoAtual, enderecosDoBox));
     chip.classList.remove('conectado', 'atencao', 'reconectando', 'desconectado');
     chip.classList.add(a.classe);
     endereco.textContent = a.texto;

@@ -3,7 +3,7 @@ import { ArmazenamentoApi } from './armazenamento/ArmazenamentoApi.js';
 import { GerenciadorSessao } from './nucleo/GerenciadorSessao.js';
 import { ControladorGravacao } from './nucleo/ControladorGravacao.js';
 import { estadoGateway, estadoConexao } from './nucleo/EstadoGateway.js';
-import { definirFonteCalibracao } from './interface/navBar.js';
+import { definirFonteCalibracao, definirEnderecosDoBox } from './interface/navBar.js';
 import { TelaConexao } from './interface/TelaConexao.js';
 import { TelaMedicao } from './interface/TelaMedicao.js';
 import { TelaJogos } from './interface/TelaJogos.js';
@@ -129,7 +129,10 @@ async function tentarAutoConectar(): Promise<boolean> {
 }
 
 function statusConexao(): StatusConexao | undefined {
-  return enderecoAtual ? { endereco: enderecoAtual, conectado: true } : undefined;
+  // Os endereços do box não vêm daqui: chegam pelo SAUDE, depois do primeiro
+  // desenho, e quem repinta o chip é definirEnderecosDoBox (ver navBar).
+  if (!enderecoAtual) return undefined;
+  return { endereco: enderecoAtual, conectado: true };
 }
 
 function navegar(tela: Tela) {
@@ -165,6 +168,11 @@ function conectarPonteJogos(fonte: any): void {
     if (typeof conectado === 'boolean') {
       atualizarStatusPonteJogos(conectado);
     }
+  });
+  // Endereços do box, para o chip da barra. O chip é desenhado antes do
+  // primeiro SAUDE, então quem repinta é o próprio navBar.
+  fonte.on('saude', (s: { enderecos?: Record<string, string> }) => {
+    definirEnderecosDoBox(s?.enderecos ?? {});
   });
   // Ligação com o gateway (só a FonteWebSocket emite): o chip da barra mostra reconexão/sem célula
   estadoConexao.definir(null);
