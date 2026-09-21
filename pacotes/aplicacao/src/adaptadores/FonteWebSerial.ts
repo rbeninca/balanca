@@ -58,7 +58,12 @@ export class FonteWebSerial {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        this._processarBytes(value as Uint8Array);
+        // `value` pode vir undefined sem `done` — era o que estourava: o cast
+        // para Uint8Array afirmava o tipo sem conferir, e `bytes.length` em
+        // _processarBytes estourava como rejeição não tratada, derrubando o
+        // laço inteiro em silêncio. Chunk vazio não tem o que processar.
+        if (!value?.length) continue;
+        this._processarBytes(value);
       }
     } finally {
       reader.releaseLock();
