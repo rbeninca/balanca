@@ -60,7 +60,7 @@ describe('ExportadorCSV', () => {
   // UT-4.1.4
   it('colunas obrigatórias presentes no cabeçalho', () => {
     const cabecalho = cabecalhoColunas(exportarCSV(leiturasBasico));
-    expect(cabecalho).toContain('tempoRelativo_ms');
+    expect(cabecalho).toContain('tempoRelativo_s');
     expect(cabecalho).toContain('forcaNewton_N');
     expect(cabecalho).toContain('forcaGf');
     expect(cabecalho).toContain('forcaKgf');
@@ -117,7 +117,7 @@ describe('ExportadorCSV', () => {
       { marcaTemporal: 7_200_250, forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 },
     ];
     const tempos = linhasDados(exportarCSV(ls)).map(l => l.split(';')[0]);
-    expect(tempos).toEqual(['0', '10', '250']);
+    expect(tempos).toEqual(['0.000', '0.010', '0.250']);
   });
 
   it('não gera tempo negativo quando as leituras vêm fora de ordem', () => {
@@ -133,6 +133,6 @@ describe('ExportadorCSV', () => {
   it('sessão vazia não quebra', () => {
     const csv = exportarCSV([]);
     expect(linhasDados(csv)).toHaveLength(0);
-    expect(cabecalhoColunas(csv)).toContain('tempoRelativo_ms');
+    expect(cabecalhoColunas(csv)).toContain('tempoRelativo_s');
   });
 });
