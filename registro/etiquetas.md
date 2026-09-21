@@ -4,8 +4,20 @@
 dos boxes para imprimir. Não faz parte do build do app: é só abrir no navegador.
 
 ```bash
-xdg-open android/etiquetas/gerador_etiqueta.html
+xdg-open registro/gerador_etiqueta.html
 ```
+
+**Os dados dos boxes vêm do inventário**, de [`inventario.md`](inventario.md)
+— não existe lista de boxes dentro desta página. Para etiquetar um box novo,
+acrescente uma linha na tabela do parque; a etiqueta sai na próxima impressão.
+Antes havia uma cópia da lista aqui dentro, e ela saiu: dois lugares com o mesmo
+serial acabam divergindo, e o que ia para o papel era justamente a cópia que
+ninguém lembrava de atualizar.
+
+Servida por HTTP (GitHub Pages, `python3 -m http.server`), a página busca o
+inventário sozinha. Aberta como arquivo local, o navegador bloqueia a leitura por
+segurança e ela pede que você escolha o `inventario.md` — mesmo resultado, um
+clique a mais.
 
 ## O que sai na etiqueta
 
@@ -48,25 +60,35 @@ escritos por extenso nos passos 4 e 5; a senha, que não aparecia em lugar nenhu
 ficou. **Para acrescentar algo à etiqueta, tire de outro lugar** — e confira na
 renderização, não só no navegador.
 
-Para medir sem imprimir, dá para renderizar a página num Firefox headless e
-olhar o resultado:
+Para conferir sem gastar papel, sirva a pasta e abra no navegador:
 
 ```bash
-firefox --headless --window-size=1000,780 \
-        --screenshot /tmp/etiqueta.png \
-        "file://$PWD/android/etiquetas/gerador_etiqueta.html"
+python3 -m http.server --directory registro
+# abra http://localhost:8000/gerador_etiqueta.html
 ```
+
+A captura por linha de comando (`firefox --headless --screenshot`) **não serve
+mais aqui**: o inventário chega por `fetch`, que é assíncrono, e a foto sai antes
+de as etiquetas serem montadas. Para fotografar seria preciso embutir o
+inventário na página antes — foi assim que os encaixes foram conferidos enquanto
+a etiqueta era ajustada.
 
 ## Onde mexer
 
-Tudo que muda está no topo do script, em constantes:
+Os dados dos boxes **não estão aqui**: vêm do inventário. O que sobra nesta
+página são as constantes que valem para todos os boxes:
 
 | Constante | Para quê |
 |---|---|
-| `boxes` | array com os dados de cada box — **adicione um objeto para cada box novo** |
+| `CAMINHO_INVENTARIO` | onde a página busca a tabela do parque (`inventario.md`) |
+| `COLUNAS_DA_ETIQUETA` | quais colunas do inventário viram campo na etiqueta |
 | `senhaWifi` | senha do hotspot que vai dentro do QR (`12345678`) |
 | `enderecoPainel` | `http://192.168.43.1` — o endereço do box na própria rede dele |
-| `enderecoManual` | link do manual impresso no rodapé |
+| `enderecoManual` | link do manual, no rodapé e no QR |
+
+A coluna é procurada **pelo nome**, não pela posição: acrescentar uma coluna no
+meio da tabela do inventário não troca o serial de lugar com o MAC. Renomear uma
+das colunas usadas, sim, quebra — e aí a página diz qual faltou.
 
 ## Cores
 
@@ -91,22 +113,30 @@ digitando no celular. É o único texto com tamanho próprio: se o endereço mud
 por um mais longo, confira na pré-visualização que ele não foi cortado, porque a
 linha do rodapé não quebra.
 
-O `serial` tem de ser **exatamente** o que o box publica no `/saude`, senão a
-etiqueta deixa de casar com o inventário. Para conferir o que os boxes estão
-dizendo agora:
+O `serial` na tabela do inventário tem de ser **exatamente** o que o box publica
+no `/saude`, senão a etiqueta deixa de casar com o inventário. Para conferir o
+que os boxes estão dizendo agora:
 
 ```bash
 cd android
 bash scripts/box.sh inventario 192.168.1.0/24
 ```
 
-A referência do parque está em [`../../registro/inventario.md`](../../registro/inventario.md).
+A referência do parque é o [`inventario.md`](inventario.md) — o mesmo
+arquivo de onde esta página lê os dados.
 
 ## Imprimir
 
-Botão **Imprimir etiquetas** na página (chama `window.print()`). Confira na
-pré-visualização que a escala está em 100% — "ajustar à página" encolhe a
-etiqueta e o QR pode ficar pequeno demais para o leitor.
+Botão **Imprimir etiquetas** na página (chama `window.print()`). Dois cuidados na
+janela de impressão:
+
+- **Escala em 100%.** "Ajustar à página" encolhe a etiqueta, e o QR pode ficar
+  pequeno demais para o leitor.
+- **Cores ligadas.** A barra azul da identificação e a caixa laranja do "ANTES DO
+  ENSAIO" são **fundo**, e o navegador tira fundo ao imprimir por padrão — a
+  etiqueta sairia sem as cores. A página pede que ele as mantenha
+  (`print-color-adjust: exact`), mas no Chrome e no Edge quem manda é a caixa
+  **"Gráficos de plano de fundo"**: sem ela marcada, o pedido é ignorado.
 
 ## O QR depende de internet
 

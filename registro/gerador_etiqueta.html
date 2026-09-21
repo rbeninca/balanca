@@ -438,11 +438,52 @@
         }
 
         /*
+         * Recado da barra de controles: quantos boxes entraram, ou por que não
+         * deu para ler o inventário.
+         */
+        #recado {
+            margin-left: 12px;
+
+            font-size: 14px;
+
+            opacity: 0.85;
+        }
+
+        #recado.erro {
+            color: #ffb4a2;
+
+            opacity: 1;
+        }
+
+        #carregar label {
+            margin-right: 6px;
+        }
+
+        .oculto {
+            display: none;
+        }
+
+        /*
          * Na impressão:
          * - esconder botão
          * - retirar fundo cinza
          */
         @media print {
+
+            /*
+             * As cores fazem parte da etiqueta — a barra azul da identificação
+             * e a caixa laranja do "ANTES DO ENSAIO" são fundo, e o navegador
+             * tira fundo ao imprimir por padrão. Isto pede que ele as mantenha.
+             *
+             * No Chrome e no Edge, a caixa "Gráficos de plano de fundo" da
+             * janela de impressão precisa estar marcada, senão ele ignora o
+             * pedido e a etiqueta sai sem as cores.
+             */
+            * {
+                -webkit-print-color-adjust: exact;
+
+                print-color-adjust: exact;
+            }
 
             body {
                 background: white;
@@ -489,9 +530,34 @@
 <body>
 
 <div id="controles">
-    <button onclick="window.print()">
+
+    <button
+        id="botao-imprimir"
+        onclick="window.print()">
         Imprimir etiquetas
     </button>
+
+    <!--
+      Só aparece quando o navegador bloqueia a leitura do inventário — aberto
+      como arquivo local, ele bloqueia.
+    -->
+    <span
+        id="carregar"
+        class="oculto">
+
+        <label for="arquivo-inventario">
+            Escolha o inventario.md:
+        </label>
+
+        <input
+            id="arquivo-inventario"
+            type="file"
+            accept=".md,text/markdown,text/plain">
+
+    </span>
+
+    <span id="recado"></span>
+
 </div>
 
 <div id="etiquetas"></div>
@@ -501,86 +567,146 @@
 
 /*
  * ============================================================
- * CONFIGURAÇÃO
+ * DE ONDE VÊM OS DADOS DOS BOXES
  * ============================================================
  *
- * Para adicionar outro box,
- * basta adicionar outro objeto neste array.
+ * De `../inventario.md`, a tabela do parque — a única lista de boxes que existe
+ * neste repositório. Antes havia uma cópia aqui dentro, e ela saiu: dois lugares
+ * com o mesmo serial acabam divergindo, e o que ia para a etiqueta impressa era
+ * justamente a cópia que ninguém lembrava de atualizar.
+ *
+ * Servido por HTTP, o fetch abaixo resolve sozinho. Aberto como arquivo
+ * (`file://`), o navegador bloqueia a leitura por segurança, e aí a página pede
+ * que você escolha o arquivo à mão — mesmo resultado, um clique a mais.
  */
 
-const boxes = [
+/*
+ * O inventário é vizinho desta página de propósito: subindo um servidor nesta
+ * pasta (`python3 -m http.server --directory registro`), o fetch o encontra sem
+ * caminho nenhum pelo meio.
+ */
+const CAMINHO_INVENTARIO =
+    "inventario.md";
 
+
+/*
+ * As colunas que a etiqueta usa, pelo nome que elas têm no inventário. O resto
+ * da tabela — IP, placa, versão, root — é do inventário e não vai para o papel.
+ */
+const COLUNAS_DA_ETIQUETA =
     {
-        modelo:
-            "TX9",
+        modelo: "modelo",
+        serial: "serial",
+        mac: "mac eth0",
+        ssid: "ssid"
+    };
 
-        serial:
-            "GFIG-TX9-58EB81E3618A",
 
-        mac:
-            "58:EB:81:E3:61:8A",
+/*
+ * Lê a tabela do parque e devolve um objeto por box.
+ *
+ * A tabela é achada pelo cabeçalho, e as colunas pelo nome — assim a ordem
+ * delas pode mudar no inventário, ou entrar uma coluna nova no meio, sem que a
+ * etiqueta saia com o serial no lugar do MAC.
+ */
+function lerInventario(texto) {
 
-        ssid:
-            "balancaGFIG-618A"
-    },
+    const linhas =
+        texto.split("\n");
 
-    {
-        modelo:
-            "TX9",
+    const iCabecalho =
+        linhas.findIndex(
+            (l) => /^\|\s*serial\s*\|/i.test(l.trim())
+        );
 
-        serial:
-            "GFIG-TX9-58EB81E3618C",
+    if (iCabecalho < 0) {
 
-        mac:
-            "58:EB:81:E3:61:8C",
+        throw new Error(
+            "não achei a tabela do parque no inventário — " +
+            "ela começa com uma linha de cabeçalho «| Serial |»"
+        );
 
-        ssid:
-            "balancaGFIG-618C"
-    },
-
-    {
-        modelo:
-            "MXQ",
-
-        serial:
-            "GFIG-MXQ-A82003AC10E7",
-
-        mac:
-            "A8:20:03:AC:10:E7",
-
-        ssid:
-            "balancaGFIG-10E7"
-    },
-
-    {
-        modelo:
-            "MXQ",
-
-        serial:
-            "GFIG-MXQ-A82003AC10D4",
-
-        mac:
-            "A8:20:03:AC:10:D4",
-
-        ssid:
-            "balancaGFIG-10D4"
-    },
-
-    {
-        modelo:
-            "TX9",
-
-        serial:
-            "GFIG-TX9-58EB81E36158",
-
-        mac:
-            "58:EB:81:E3:61:58",
-
-        ssid:
-            "balancaGFIG-6158"
     }
 
-];
+    const colunas =
+        celulas(linhas[iCabecalho]).map(
+            (c) => c.toLowerCase()
+        );
+
+    const indiceDe =
+        {};
+
+    for (const campo of Object.keys(COLUNAS_DA_ETIQUETA)) {
+
+        const i =
+            colunas.indexOf(COLUNAS_DA_ETIQUETA[campo]);
+
+        if (i < 0) {
+
+            throw new Error(
+                "a tabela do parque não tem a coluna " +
+                `"${COLUNAS_DA_ETIQUETA[campo]}"`
+            );
+
+        }
+
+        indiceDe[campo] = i;
+
+    }
+
+    const boxes = [];
+
+    /*
+     * Duas linhas abaixo do cabeçalho: uma é ele mesmo, a outra é a régua
+     * `|---|---|`. A tabela acaba na primeira linha que não começa com `|`.
+     */
+    for (let i = iCabecalho + 2; i < linhas.length; i++) {
+
+        const linha = linhas[i].trim();
+
+        if (!linha.startsWith("|")) break;
+
+        const celulasDaLinha = celulas(linha);
+
+        const box = {};
+
+        for (const campo of Object.keys(indiceDe)) {
+
+            box[campo] =
+                (celulasDaLinha[indiceDe[campo]] ?? "")
+                    .replace(/`/g, "");
+
+        }
+
+        if (box.serial) boxes.push(box);
+
+    }
+
+    if (boxes.length === 0) {
+
+        throw new Error(
+            "a tabela do parque está vazia — nenhum box para etiquetar"
+        );
+
+    }
+
+    return boxes;
+
+}
+
+
+/* Divide uma linha de tabela markdown em células, sem os `|` das pontas. */
+function celulas(linha) {
+
+    return linha
+        .trim()
+        .replace(/^\||\|$/g, "")
+        .split("|")
+        .map(
+            (c) => c.trim()
+        );
+
+}
 
 
 /*
@@ -959,13 +1085,7 @@ function textoQRCodeWifi(
 const ETIQUETAS_POR_FOLHA = 4;
 
 
-function gerarEtiquetas() {
-
-    const destino =
-        document.getElementById(
-            "etiquetas"
-        );
-
+function montarFolhas(boxes, destino) {
 
     let folhaAtual = null;
 
@@ -1068,11 +1188,167 @@ function gerarEtiquetas() {
 
 
 /*
+ * ============================================================
+ * CARREGAR O INVENTÁRIO
+ * ============================================================
+ */
+
+function recado(texto, erro) {
+
+    const elemento =
+        document.getElementById(
+            "recado"
+        );
+
+    elemento.textContent =
+        texto;
+
+    elemento.className =
+        erro
+            ? "erro"
+            : "";
+
+}
+
+
+/*
+ * Desenha as etiquetas a partir do texto do inventário, e cuida da barra de
+ * controles: o botão de imprimir só faz sentido depois que há o que imprimir.
+ */
+function desenhar(textoInventario) {
+
+    const destino =
+        document.getElementById(
+            "etiquetas"
+        );
+
+    let boxes;
+
+    try {
+
+        boxes =
+            lerInventario(
+                textoInventario
+            );
+
+    } catch (erro) {
+
+        document.getElementById(
+            "botao-imprimir"
+        ).hidden = true;
+
+        destino.innerHTML = "";
+
+        recado(
+            `Não deu para ler o inventário: ${erro.message}`,
+            true
+        );
+
+        return;
+
+    }
+
+    destino.innerHTML = "";
+
+    montarFolhas(
+        boxes,
+        destino
+    );
+
+    document.getElementById(
+        "botao-imprimir"
+    ).hidden = false;
+
+    document.getElementById(
+        "carregar"
+    ).classList.add(
+        "oculto"
+    );
+
+    recado(
+        `${boxes.length} box(es) — ` +
+        `${Math.ceil(boxes.length / ETIQUETAS_POR_FOLHA)} folha(s) A4`
+    );
+
+}
+
+
+async function iniciar() {
+
+    document.getElementById(
+        "botao-imprimir"
+    ).hidden = true;
+
+    let texto = null;
+
+    /*
+     * Servido por HTTP, isto funciona. Em `file://` o navegador recusa a
+     * leitura por segurança, e o fetch estoura — é o caminho esperado quando
+     * alguém abre a página com dois cliques, e não um erro.
+     */
+    try {
+
+        const resposta =
+            await fetch(
+                CAMINHO_INVENTARIO
+            );
+
+        if (resposta.ok) {
+            texto = await resposta.text();
+        }
+
+    } catch (_) {
+        texto = null;
+    }
+
+    if (texto !== null) {
+
+        desenhar(texto);
+
+        return;
+
+    }
+
+    document.getElementById(
+        "carregar"
+    ).classList.remove(
+        "oculto"
+    );
+
+    recado(
+        "Aberto como arquivo local: escolha o inventario.md " +
+        "para montar as etiquetas."
+    );
+
+    document
+        .getElementById(
+            "arquivo-inventario"
+        )
+        .addEventListener(
+            "change",
+            async (evento) => {
+
+                const arquivo =
+                    evento.target.files?.[0];
+
+                if (!arquivo) return;
+
+                desenhar(
+                    await arquivo.text()
+                );
+
+            }
+        );
+
+}
+
+
+/*
  * Executa quando a página carregar.
  */
 window.addEventListener(
     "load",
-    gerarEtiquetas
+    iniciar
 );
 
 </script>
