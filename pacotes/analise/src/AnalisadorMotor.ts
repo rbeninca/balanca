@@ -92,7 +92,10 @@ export function analisarMotor(
     t10_s: t10,
     t90_s: t90,
     tempoSubida_s: tempoSubida,
-    impulsoEspecifico_s: impulsoEspecifico,
+    // Com `exactOptionalPropertyTypes`, `impulsoEspecifico_s?: number` aceita a
+    // propriedade ausente ou um número — mas não um `undefined` explícito.
+    // Sem massa de propelente o campo sai do objeto em vez de virar undefined.
+    ...(impulsoEspecifico !== undefined && { impulsoEspecifico_s: impulsoEspecifico }),
     letraMotor,
     nomeComum,
     perfilQueima,
