@@ -17,8 +17,8 @@ android {
         // TX9 anuncia Android 10 mas roda API 25 (7.1.2)
         minSdk = 24
         targetSdk = 36
-        versionCode = 14
-        versionName = "2.7.6"
+        versionCode = 15
+        versionName = "2.7.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
