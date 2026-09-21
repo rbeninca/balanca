@@ -13,6 +13,17 @@
 - **Boxes com a chave antiga.** Só o `.105` foi reinstalado com a chave fixa;
   os demais precisam de `./gradlew :app:instalarNoTx9` uma vez (uid muda).
 
+- **`.105` e `.112` ainda vão fazer a cadeia longa uma vez.** A 2.8.2 saltou
+  direto para a última versão, mas quem calcula o plano é o app instalado no
+  box — um aparelho na 2.7.3 vai montar os oito degraus e baixar ~750 MB. Como
+  resolver, em ordem de preferência:
+  1. instalar a 2.8.2 neles direto (`adb install -r` do APK de release, ou
+     baixar do GitHub) — um minuto cada, não mexe em nada público;
+  2. marcar as releases de 2.7.4 a 2.8.1 como **pré-lançamento** no GitHub: o
+     app filtra `prerelease` da lista (`Release.analisarLista`), então os boxes
+     antigos passariam a ver só a 2.8.2 e pularam sozinhos. Reversível e não
+     apaga nada, mas rotula como pré-lançamento o que foi lançamento.
+
 - **Push das tags novas**: `v2.4.0` (além das listadas acima).
 
 - **Ruído nos testes do WebSerial.** `FonteWebSerial.teste.ts` emite uma
