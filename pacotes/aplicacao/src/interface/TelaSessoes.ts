@@ -5,6 +5,8 @@ import { ArmazenamentoApi } from '../armazenamento/ArmazenamentoApi.js';
 import { analisarMotor } from '@balancagfig/analise';
 import { gerarPDF } from '@balancagfig/relatorio';
 import { exportarCSV } from '@balancagfig/relatorio';
+import type { OpcoesCSV } from '@balancagfig/relatorio';
+import { perguntarFormatoCSV, OPCOES_CSV } from './dialogoFormatoCSV.js';
 import { jsPDF } from 'jspdf';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
@@ -201,6 +203,15 @@ export class TelaSessoes {
     const selecionadas = sessoes.filter(s => this.selecionadas.has(s.id));
     if (selecionadas.length === 0) return;
 
+    // Pergunta uma vez e vale para o lote inteiro — perguntar por arquivo seria
+    // insuportável num lote de dez sessões.
+    let opcoesCSV: OpcoesCSV = OPCOES_CSV.excel;
+    if (formato === 'csv') {
+      const escolha = await perguntarFormatoCSV();
+      if (!escolha) return;
+      opcoesCSV = OPCOES_CSV[escolha];
+    }
+
     const erros: string[] = [];
     const rotulo = formato.toUpperCase();
     let concluir = indicador.iniciar(`Exportando ${rotulo} 1/${selecionadas.length}…`);
@@ -224,9 +235,9 @@ export class TelaSessoes {
           let csv: string;
           try {
             const analise = analisarMotor(ls, {});
-            csv = exportarCSV(ls, analise, { nomeSessao: s.nome, data });
+            csv = exportarCSV(ls, analise, { nomeSessao: s.nome, data }, opcoesCSV);
           } catch {
-            csv = exportarCSV(ls, undefined, { nomeSessao: s.nome, data });
+            csv = exportarCSV(ls, undefined, { nomeSessao: s.nome, data }, opcoesCSV);
           }
           this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${s.nome}.csv`);
         } else {
@@ -367,14 +378,19 @@ export class TelaSessoes {
 
     // CSV
     li.querySelector('.btn-csv')!.addEventListener('click', async () => {
+      // Pergunta antes de carregar: não faz sentido esperar a leitura para
+      // depois o usuário desistir.
+      const escolha = await perguntarFormatoCSV();
+      if (!escolha) return;
+      const opcoes = OPCOES_CSV[escolha];
       const ls = await indicador.envolver('Gerando CSV…', () => this.armazenamento.obterLeituras(s.id));
       const data = new Date(s.criadoEm).toLocaleDateString('pt-BR');
       let csv: string;
       try {
         const analise = analisarMotor(ls, {});
-        csv = exportarCSV(ls, analise, { nomeSessao: s.nome, data });
+        csv = exportarCSV(ls, analise, { nomeSessao: s.nome, data }, opcoes);
       } catch {
-        csv = exportarCSV(ls, undefined, { nomeSessao: s.nome, data });
+        csv = exportarCSV(ls, undefined, { nomeSessao: s.nome, data }, opcoes);
       }
       this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${s.nome}.csv`);
     });

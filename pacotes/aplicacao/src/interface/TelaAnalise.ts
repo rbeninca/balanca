@@ -3,6 +3,7 @@ import type { IArmazenamento, MetadadosLocal } from '../armazenamento/Armazename
 import { analisarMotor, aplicarDetrend, type MetodoDetrend } from '@balancagfig/analise';
 import { gerarPDF, exportarCSV, exportarENG, exportarCurvaEmpuxo } from '@balancagfig/relatorio';
 import type { MetadadosENG, MetadadosPDF, MetadadosCurvaEmpuxo } from '@balancagfig/relatorio';
+import { perguntarFormatoCSV, OPCOES_CSV } from './dialogoFormatoCSV.js';
 import ApexCharts from 'apexcharts';
 import { indicador } from './indicadorCarregando.js';
 import { descreverPipeline } from './filtrosPainel.js';
@@ -521,7 +522,13 @@ export class TelaAnalise {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
-  private exportarCSV() {
+  private async exportarCSV() {
+    // O formato decide os separadores, e errá-lo faz a planilha ler os números
+    // mil vezes maior. Perguntar é mais barato do que adivinhar.
+    const formato = await perguntarFormatoCSV();
+    if (!formato) return;
+    const opcoes = OPCOES_CSV[formato];
+
     const meta = this.lerMetadadosFormulario();
     const data = new Date().toLocaleDateString('pt-BR');
     const optsAnalise = meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {};
@@ -533,10 +540,10 @@ export class TelaAnalise {
     const metaCSV = { nomeSessao: this.nomeSessao, data, ...(ispNum !== undefined ? { isp: ispNum } : {}) };
     try {
       const analise = analisarMotor(this.dados.leituras, optsAnalise);
-      const csv = exportarCSV(this.dados.leituras, analise, metaCSV);
+      const csv = exportarCSV(this.dados.leituras, analise, metaCSV, opcoes);
       this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${this.nomeSessao}.csv`);
     } catch {
-      const csv = exportarCSV(this.dados.leituras, undefined, metaCSV);
+      const csv = exportarCSV(this.dados.leituras, undefined, metaCSV, opcoes);
       this.baixarArquivo(new Blob([csv], { type: 'text/csv' }), `${this.nomeSessao}.csv`);
     }
   }
@@ -619,7 +626,7 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-auto-detectar')!.addEventListener('click',  () => { this.detectarQueima(true); this.renderizarGrafico(); this.atualizarStats(); });
     this.overlay.querySelector('#btn-recortar')!.addEventListener('click',       () => this.recortarQueima());
     this.overlay.querySelector('#btn-export-json')!.addEventListener('click',    () => this.exportarJSON());
-    this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
+    this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => { void this.exportarCSV(); });
     this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
     this.overlay.querySelector('#btn-export-curva')!.addEventListener('click',   () => this.exportarCurvaEmpuxo());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
