@@ -32,10 +32,12 @@ describe('ExportadorJSON', () => {
     expect(() => JSON.parse(json)).not.toThrow();
   });
 
-  // UT-4.2.2
-  it('campo versaoFormato = "2.0"', () => {
+  // UT-4.2.2 — subiu de 2.0 para 3.0 junto com o significado de `t`, que passou
+  // a ser relativo ao início da gravação. Quem lê o arquivo precisa poder
+  // distinguir as duas convenções.
+  it('campo versaoFormato = "3.0"', () => {
     const obj = JSON.parse(exportarJSON(leituras, analiseFernanda));
-    expect(obj.versaoFormato).toBe('2.0');
+    expect(obj.versaoFormato).toBe('3.0');
   });
 
   // UT-4.2.3
@@ -77,5 +79,15 @@ describe('ExportadorJSON', () => {
   it('JSON indentado com 2 espaços', () => {
     const json = exportarJSON(leituras, analiseFernanda);
     expect(json).toContain('  "versaoFormato"');
+  });
+
+  // `t` é relativo ao INÍCIO DA GRAVAÇÃO, não ao boot do ESP.
+  it('t começa em zero mesmo com uptime alto do ESP', () => {
+    const ls: LeituraProcessada[] = [
+      { marcaTemporal: 7_200_000, forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 },
+      { marcaTemporal: 7_200_100, forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 },
+    ];
+    const obj = JSON.parse(exportarJSON(ls, analiseFernanda));
+    expect(obj.leituras.map((l: { t: number }) => l.t)).toEqual([0, 100]);
   });
 });

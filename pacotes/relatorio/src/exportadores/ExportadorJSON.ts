@@ -1,5 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento';
 import type { ResultadoAnalise } from '@balancagfig/analise';
+import { inicioDaGravacao } from './tempo.js';
 
 export interface MetadadosJSON {
   nomeSessao?: string;
@@ -8,7 +9,7 @@ export interface MetadadosJSON {
 }
 
 interface LeituraCompacta {
-  t: number;   // marcaTemporal ms
+  t: number;   // ms desde o início da gravação
   f: number;   // forcaNewton N
   tc: number;  // temperatura °C
   q: boolean;  // emQueima
@@ -20,8 +21,12 @@ export function exportarJSON(
   analise: ResultadoAnalise,
   meta?: MetadadosJSON,
 ): string {
+  // `t` sai relativo ao início da gravação — ver inicioDaGravacao. A versão do
+  // formato subiu junto: o campo mudou de significado, e um consumidor que
+  // espere o comportamento antigo precisa poder distinguir os arquivos.
+  const t0 = inicioDaGravacao(leituras);
   const leiturasCompactas: LeituraCompacta[] = leituras.map(l => ({
-    t: l.marcaTemporal,
+    t: l.marcaTemporal - t0,
     f: l.forcaNewton,
     tc: l.temperatura,
     q: l.emQueima,
@@ -29,7 +34,7 @@ export function exportarJSON(
   }));
 
   const obj = {
-    versaoFormato: '2.0',
+    versaoFormato: '3.0',
     sessao: {
       id: meta?.idSessao ?? null,
       nome: meta?.nomeSessao ?? null,

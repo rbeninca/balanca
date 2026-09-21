@@ -1,5 +1,6 @@
 import type { LeituraProcessada } from '@balancagfig/processamento';
 import type { ResultadoAnalise } from '@balancagfig/analise';
+import { inicioDaGravacao } from './tempo.js';
 
 export interface MetadadosCSV {
   nomeSessao?: string;
@@ -27,19 +28,24 @@ export function exportarCSV(
   linhas.push(`# Nome${sep}${meta?.nomeSessao ?? '---'}`);
   linhas.push(`# Motor${sep}${meta?.nomeMotor ?? analise?.nomeComum ?? '---'}`);
   linhas.push(`# Data${sep}${meta?.data ?? '---'}`);
+  // O arquivo se explica: sem isto, quem abre a planilha não tem como saber
+  // que a primeira coluna deixou de ser o millis() do ESP.
+  linhas.push(`# Tempo${sep}relativo ao início da gravação (ms)`);
 
   const isp = meta?.isp ?? analise?.impulsoEspecifico_s;
   if (isp != null) {
     linhas.push(`# Isp (s)${sep}${isp.toFixed(2)}`);
   }
 
-  linhas.push(`marcaTemporal_ms${sep}forcaNewton_N${sep}forcaGf${sep}forcaKgf${sep}temperatura_C${sep}emQueima${sep}impulsoAcumulado_Ns`);
+  linhas.push(`tempoRelativo_ms${sep}forcaNewton_N${sep}forcaGf${sep}forcaKgf${sep}temperatura_C${sep}emQueima${sep}impulsoAcumulado_Ns`);
+
+  const t0 = inicioDaGravacao(leituras);
 
   for (const l of leituras) {
     const gf   = (l.forcaNewton * N_PARA_GF).toFixed(2);
     const kgf  = (l.forcaNewton * N_PARA_KGF).toFixed(5);
     const eq   = l.emQueima ? '1' : '0';
-    linhas.push(`${l.marcaTemporal}${sep}${l.forcaNewton}${sep}${gf}${sep}${kgf}${sep}${l.temperatura}${sep}${eq}${sep}${l.impulsoAcumuladoNs}`);
+    linhas.push(`${l.marcaTemporal - t0}${sep}${l.forcaNewton}${sep}${gf}${sep}${kgf}${sep}${l.temperatura}${sep}${eq}${sep}${l.impulsoAcumuladoNs}`);
   }
 
   return linhas.join('\n');
