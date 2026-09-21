@@ -1,9 +1,10 @@
 # Inventário dos TVBox
 
 Levantado em **20/09/2026**, com os boxes já na 2.7.3 (a versão que introduziu o
-serial); o `192.168.1.118` entrou em **21/09/2026**. É o retrato do parque nessas
-datas — o IP muda por DHCP, o serial não, e a versão do app anda sozinha pelo
-atualizador, então a coluna "App" envelhece: vale para o dia do levantamento.
+serial). O `192.168.1.118` e o `192.168.1.103` entraram depois, ao longo de
+**21/09/2026**. É o retrato do parque nessas datas — o IP muda por
+DHCP, o serial não, e a versão do app anda sozinha pelo atualizador, então a
+coluna "App" envelhece: vale para o dia do levantamento.
 
 ## Como levantar de novo
 
@@ -27,6 +28,7 @@ bash scripts/box.sh estado 192.168.1.105
 
 | Serial | IP | Modelo | Placa | App | Root |
 |---|---|---|---|---|---|
+| `GFIG-TX9-58EB81E3618A` | 192.168.1.103 | TX9 | Amlogic `gxl` | 2.8.1 | Koush (Superuser) |
 | `GFIG-TX9-58EB81E3618C` | 192.168.1.105 | TX9 | Amlogic `gxl` | 2.7.3 | Koush (Superuser) |
 | `GFIG-MXQ-A82003AC10E7` | 192.168.1.110 | MXQ | Rockchip `rk322x` | 2.7.3 | Chainfire (SuperSU) |
 | `GFIG-MXQ-A82003AC10D4` | 192.168.1.112 | MXQ | Rockchip `rk322x` | 2.7.3 | `su` em `/system/xbin/su`, sem app gerenciador |
@@ -77,6 +79,29 @@ O `192.168.1.118` é TX9 do mesmo lote do `.105` — o MAC começa igual,
 O `box.sh` reporta `root: nenhum` neste box, mas é falso negativo: o `su` existe,
 responde `uid=0(root)` e foi por ele que a atualização para 2.7.3 instalou. O que
 falta ali é só o **app** gerenciador (Koush/SuperSU), não o root.
+
+### `GFIG-TX9-58EB81E3618A` — TX9 · 192.168.1.103
+
+| | |
+|---|---|
+| Plataforma | Amlogic `gxl`, API 25 |
+| Root | Koush (`com.thirdparty.superuser`) |
+| eth0 | `58:eb:81:e3:61:8a` — 192.168.1.103/24 |
+| wlan0 | `84:ea:97:6b:22:e0` — 192.168.43.1/24 |
+| Hotspot | `balancaGFIG-618A` |
+| Balança | **conectada, 87 Hz** |
+| Navegador | `com.android.chrome` 101.0.4951.61 |
+| Launcher | **o original do firmware** (`com.txari.launcher`) |
+| Disco | `/data` 4,2 G, 1,5 G usados |
+
+Duas particularidades:
+
+- **É o único com navegador instalado** — e é o único em que a aba Balança
+  funciona desde a 2.8.0, que passou a abrir o painel no navegador do box.
+- **Não tem o launcher do projeto.** Os outros rodam `com.ifsc.laucherbox`; aqui
+  ficou o `com.txari.launcher` do firmware, então o box liga no ambiente
+  original. Instalar o nosso é `bash scripts/box.sh launcher 192.168.1.103` —
+  que é um passo **separado** do `instalar`, que não o traz junto.
 
 ### `GFIG-TX9-58EB81E36158` — TX9 · 192.168.1.118
 
@@ -165,6 +190,7 @@ nome da rede — dá para ler a etiqueta sem consultar nada:
 
 | Box | MAC do eth0 | Serial | SSID |
 |---|---|---|---|
+| TX9 | `58:eb:81:e3:`**`61:8a`** | `GFIG-TX9-`**`58EB81E3618A`** | `balancaGFIG-`**`618A`** |
 | TX9 | `58:eb:81:e3:`**`61:8c`** | `GFIG-TX9-`**`58EB81E3618C`** | `balancaGFIG-`**`618C`** |
 | TX9 | `58:eb:81:e3:`**`61:58`** | `GFIG-TX9-`**`58EB81E36158`** | `balancaGFIG-`**`6158`** |
 | MXQ | `a8:20:03:ac:`**`10:e7`** | `GFIG-MXQ-`**`A82003AC10E7`** | `balancaGFIG-`**`10E7`** |
