@@ -95,6 +95,26 @@ describe('ExportadorCSV', () => {
     expect(headerLines.some(l => l.includes('---'))).toBe(true);
   });
 
+  // Nada mede temperatura hoje: o pipeline preenche o campo com 0 como espaço
+  // reservado, e sessões antigas têm NULL. Nos dois casos a célula sai vazia —
+  // escrever 0 afirmaria uma medição que ninguém fez.
+  it('temperatura não medida sai vazia, nunca a palavra undefined', () => {
+    const semTemp = [{ marcaTemporal: 0, forcaNewton: 1, emQueima: false, impulsoAcumuladoNs: 0 }] as unknown as LeituraProcessada[];
+    const linha = linhasDados(exportarCSV(semTemp))[0]!;
+    expect(linha).not.toContain('undefined');
+    expect(linha.split(';')[4]).toBe('');
+  });
+
+  it('o 0 do pipeline (espaço reservado) também sai vazio', () => {
+    const linha = linhasDados(exportarCSV([{ marcaTemporal: 0, forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 }]))[0]!;
+    expect(linha.split(';')[4]).toBe('');
+  });
+
+  it('temperatura de verdade continua sendo escrita', () => {
+    const linha = linhasDados(exportarCSV([{ marcaTemporal: 0, forcaNewton: 1, temperatura: 23.5, emQueima: false, impulsoAcumuladoNs: 0 }]))[0]!;
+    expect(linha.split(';')[4]).toBe('23.5');
+  });
+
   it('o arquivo explica o que é a coluna de tempo', () => {
     const linhaTempo = exportarCSV(leiturasBasico).split('\n').find(l => l.startsWith('# Tempo'));
     expect(linhaTempo).toBeDefined();

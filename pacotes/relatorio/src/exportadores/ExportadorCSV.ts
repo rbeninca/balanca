@@ -48,7 +48,20 @@ export function exportarCSV(
     // Segundos, com 3 casas: o `marcaTemporal` é um uint32 de milissegundos, então
     // 3 casas representam a amostra exatamente, sem perder nem inventar resolução.
     const t    = ((l.marcaTemporal - t0) / 1000).toFixed(3);
-    linhas.push(`${t}${sep}${l.forcaNewton}${sep}${gf}${sep}${kgf}${sep}${l.temperatura}${sep}${eq}${sep}${l.impulsoAcumuladoNs}`);
+    // Temperatura ausente sai como célula VAZIA, nunca como 0 nem como a
+    // string "undefined" (que era o que a interpolação produzia antes).
+    //
+    // Nada mede temperatura hoje: o firmware não tem sensor e o pipeline
+    // preenche o campo com um 0 de espaço reservado. Escrever esse 0 na
+    // planilha afirmaria uma medição que ninguém fez — e é o mesmo vazio que a
+    // rota da API já usa no CSV dela.
+    //
+    // ATENÇÃO, sentinela ambíguo: `0` significa "sem dado" aqui. No dia em que
+    // entrar um sensor capaz de marcar 0 °C de verdade (banho de gelo), esta
+    // linha precisa mudar junto com o `temperatura: 0` do PipelineProcessamento,
+    // que é a raiz da ambiguidade.
+    const temp = l.temperatura ? l.temperatura : '';
+    linhas.push(`${t}${sep}${l.forcaNewton}${sep}${gf}${sep}${kgf}${sep}${temp}${sep}${eq}${sep}${l.impulsoAcumuladoNs}`);
   }
 
   return linhas.join('\n');
