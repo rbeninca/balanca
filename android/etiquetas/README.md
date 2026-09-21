@@ -66,8 +66,17 @@ A biblioteca (`qrcodejs`) vem de `cdnjs.cloudflare.com`. Sem rede, os QR codes
 Para uso offline, baixe o `qrcode.min.js` e troque a linha do `<script>` por um
 caminho local (o comentário no próprio arquivo diz onde).
 
-## Pendência conhecida
+## O manual da etiqueta
 
-O `enderecoManual` aponta para `https://github.com/rbeninca/balanca/manual`, que
-**ainda não existe** — o link vai impresso para valer quando o manual for
-publicado. Até lá, o QR e o rodapé dão em página vazia.
+O `enderecoManual` aponta para `https://rbeninca.github.io/balanca/manual/`, que
+é o roteiro de uso publicado pelo GitHub Pages. A página sai de
+`pacotes/aplicacao/public/manual/index.html` — o Vite copia `public/` para a
+raiz do `dist-web`, então ela chega em `/manual/` no site.
+
+**Ao mexer no roteiro, mexa nesse arquivo**: é ele que vai para o ar, e é para
+ele que o QR e o rodapé da etiqueta mandam quem estiver na bancada.
+
+O endereço já foi outro — `github.com/rbeninca/balanca/manual` — e dava 404 por
+dois motivos: aquele formato de URL não serve página, e o Pages do projeto é
+outro host. Se for trocar de novo, confira abrindo no navegador antes de
+imprimir a folha.

@@ -14,7 +14,9 @@ Você precisa de três coisas na bancada:
 - um **celular** com navegador (Chrome, Edge ou Safari).
 
 > **A rede do box não tem internet.** É uma rede local só para falar com a
-> TVBox. Isso é normal e esperado — por isso o passo 3 abaixo.
+> TVBox. Isso é normal e esperado — por isso o passo 3 abaixo. Caso você
+> conecte o cabo de rede, ela poderá compartilhar essa rede pelo wi-fi, por
+> comodidade.
 
 ---
 
