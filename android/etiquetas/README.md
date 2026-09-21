@@ -47,19 +47,26 @@ Tudo que muda está no topo do script, em constantes:
 
 ## Cores
 
-Duas tintas só: **cinza no texto, preto nos destaques**. A hierarquia é o
-contraste, não a cor — o que é preto é o que se lê primeiro.
+A identidade é **azul e laranja**, com as **fontes escuras**. A etiqueta é lida
+de perto e com pressa, na bancada — por isso o cinza fica só na estrutura
+(réguas e molduras) e nunca na fonte.
 
 | Elemento | Cor |
 |---|---|
-| Texto corrido, subtítulos, rodapé | cinza `#555` |
-| Título, círculos numerados, bloco de identificação | preto `#000` |
-| Barra do "ANTES DO ENSAIO" | preta, texto branco |
+| Texto corrido, subtítulos, rodapé | `#111` |
+| Título, modelo, círculos numerados, palavras de destaque | azul `#0d4162` |
+| Bloco de identificação (serial e MAC) | fundo azul `#0d4162`, texto branco |
+| Caixa do "ANTES DO ENSAIO" | borda `#e77d00`, fundo `#fff4e8`, título `#8f3f00` |
 
-O `#000` do bloco de identificação é fundo, com o texto em branco por cima — é o
-único lugar em que a etiqueta gasta tinta sólida, e é onde estão o serial e o
-MAC, que é o que se procura primeiro. As cores antigas eram azul `#0d4162` e
-laranja `#e77d00`.
+O laranja do título do bloco era `#c45700` e escureceu para `#8f3f00`: é a mesma
+família, mas é a primeira coisa que se lê ali, e o tom claro sobre o fundo creme
+pedia esforço.
+
+O **rodapé é maior que o resto do miúdo** da etiqueta (2,4 mm contra 1,8 mm) —
+ele carrega o link do manual, e quem precisa dele está de pé, com a TV ligada,
+digitando no celular. É o único texto com tamanho próprio: se o endereço mudar
+por um mais longo, confira na pré-visualização que ele não foi cortado, porque a
+linha do rodapé não quebra.
 
 O `serial` tem de ser **exatamente** o que o box publica no `/saude`, senão a
 etiqueta deixa de casar com o inventário. Para conferir o que os boxes estão
