@@ -102,7 +102,9 @@ Duas coisas deste box que os outros não têm:
   responde `"versao":"2.8.0"`, porque o APK instalado foi compilado com um
   `BuildConfig.VERSION_NAME` velho — manifesto novo, constante de compilação
   antiga. O `/atualizacao` do mesmo box acerta, porque lê do `PackageManager`.
-  A partir da 2.8.3 o `/saude` também lê do `PackageManager`.
+  O `/saude` passou a ler de lá também (`ServicoBalanca.versaoInstalada`), mas
+  isso só vale **a partir da próxima versão** — a correção está no código e
+  ainda não foi publicada.
 
 > Enquanto isso, **não confie no campo `versao` do `/saude` deste box**: ele
 > alimenta o `box.sh inventario`, então a varredura vai listá-lo como 2.8.0.
