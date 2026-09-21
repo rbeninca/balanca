@@ -230,6 +230,7 @@ class ServicoBalanca : Service() {
             val chave = File(filesDir, ARQUIVO_CHAVE_API).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             api = ServidorApi(banco, chave, aoSalvarSessao = { bkp.aoSalvarSessao(it) }, backup = bkp,
                 serial = serialDoBox,
+                versao = versaoInstalada() ?: "",
                 atualizacao = atualizadorApp?.let { a -> ServidorApi.Atualizacao(a) { escopo.launch(Dispatchers.IO) { a.executarPendente() } } })
                 .also { it.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
             registrarReceptorMidia()
@@ -245,8 +246,25 @@ class ServicoBalanca : Service() {
      * Atualização automática do app pelas releases do GitHub: retoma uma cadeia
      * interrompida pela reinstalação e verifica versões novas ao subir e a cada 6 h.
      */
+    /**
+     * Versão realmente instalada, lida do `PackageManager`.
+     *
+     * Não usar `BuildConfig.VERSION_NAME` para isto: é constante gravada na
+     * compilação, e um build incremental que não regenere o BuildConfig deixa o
+     * APK com manifesto novo e constante velha. Um box ficou assim — anunciava
+     * 2.8.0 no /saude estando na 2.8.2 — e o inventário, que lê o /saude, não
+     * tem como desconfiar.
+     */
+    private fun versaoInstalada(): String? =
+        try {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) {
+            Log.w(TAG, "não foi possível ler a versão instalada", e)
+            null
+        }
+
     private fun iniciarAtualizacaoApp() {
-        val versao = Versao.analisar(packageManager.getPackageInfo(packageName, 0).versionName)
+        val versao = versaoInstalada()?.let { Versao.analisar(it) }
         if (versao == null) { EstadoHost.registrar("Atualização: versionName inválido, atualizador desligado"); return }
         val urlReleases = File(filesDir, ARQUIVO_URL_RELEASES).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
             ?: Atualizador.URL_RELEASES_PADRAO

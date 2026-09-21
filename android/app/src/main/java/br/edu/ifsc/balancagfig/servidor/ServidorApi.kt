@@ -43,6 +43,16 @@ class ServidorApi(
      * publicado no /saude para inventário. Fixo durante a vida do serviço.
      */
     private val serial: String = "",
+    /**
+     * Versão instalada, publicada no /saude para inventário. Vem do
+     * `PackageManager`, **não** de `BuildConfig.VERSION_NAME`.
+     *
+     * A constante de compilação mente quando um build incremental não regenera
+     * o BuildConfig: o APK fica com manifesto novo e constante velha. Aconteceu
+     * num box, que passou a se anunciar como 2.8.0 estando na 2.8.2 — e quem lê
+     * o /saude é justamente o inventário, que não tem como desconfiar.
+     */
+    private val versao: String = "",
     porta: Int = PORTA_PADRAO,
 ) : NanoHTTPD(porta) {
 
@@ -83,7 +93,7 @@ class ServidorApi(
                     .put("status", "ok")
                     .put("modo", bd.modoJournal())
                     .put("serial", serial)
-                    .put("versao", br.edu.ifsc.balancagfig.BuildConfig.VERSION_NAME)
+                    .put("versao", versao)
                     .put("enderecos", JSONObject(br.edu.ifsc.balancagfig.sistema.EnderecosRede.porInterface() as Map<*, *>)),
             )
         }
