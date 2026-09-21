@@ -145,10 +145,12 @@ recém-formatado, que ainda não tem o app, simplesmente não aparece.
 | modelo por `cut -d- -f2` do serial | o serial já carrega o modelo — `GFIG-<MODELO>-<MAC>` |
 | `versao` sai do `BuildConfig.VERSION_NAME` | foi por isso que o build ligou `buildConfig = true` — o AGP 8 não gera por padrão |
 
-Quem responde **sem `serial` e sem `versao` não é o app**: é o gateway Node do
-Cenário A (`pacotes/api`), que publica só `status` e `modo`. Ele não se atualiza
-pela cadeia de releases e nunca vai aparecer com serial — para migrá-lo,
-`box.sh instalar`, ou atualizar a imagem docker dele.
+Quem responde **sem `serial` e sem `versao` não é o app**: é a pilha docker do
+Cenário A (`pacotes/api`), que publica só `status` e `modo`. **Não há o que
+migrar** — normalmente é a estação de quem desenvolve, com o
+`docker/docker-compose.yml` do próprio projeto no ar, e não um box. Ela não se
+atualiza pela cadeia de releases nem vai aparecer com serial porque não é
+candidata.
 
 O parque levantado, com a ficha de cada box, está em
 [`inventario.md`](inventario.md).

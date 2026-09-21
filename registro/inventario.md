@@ -81,14 +81,21 @@ serem confundidos numa próxima:
 |---|---|
 | 192.168.1.101 | Amazon Fire TV Stick (`AFTSSS sheldonp`, Android 9) — ADB aberto, sem porta 3000 |
 | 192.168.1.102 | Amazon Fire TV Stick (`AFTSSS sheldonp`, Android 9) — idem |
-| 192.168.1.113 | **API Node/Fastify do Cenário A** (docker), não o app Android |
+| 192.168.1.113 | **a estação de quem desenvolve**, com a pilha docker do Cenário A no ar |
 
-O `192.168.1.113` é o caso que engana. Ele responde no `/saude`, mas com
-`{"status":"ok","modo":"wal"}` — sem `serial` e sem `versao`, porque quem responde
-é o `pacotes/api` (`src/principal.ts`), não o app. Tem as portas 3000 e 8765
-abertas, não responde na 80 e **não tem ADB**. Consequência prática: **não se
-atualiza sozinho** pela cadeia de releases e nunca vai aparecer com serial no
-inventário. Para migrá-lo, `box.sh instalar`; ou atualizar a imagem docker dele.
+O `192.168.1.113` é o que mais engana, e não por causa do aparelho: **não é um
+box — é a máquina do desenvolvedor**, rodando o `docker/docker-compose.yml` do
+próprio projeto (serviço `api` publicado na :3000, `gateway` na :8765). Ele
+responde no `/saude`, mas com `{"status":"ok","modo":"wal"}`, sem `serial` e sem
+`versao`, porque quem responde é o `pacotes/api` (`src/principal.ts`) e não o
+app. Não tem ADB e não responde na 80.
+
+Consequência prática: **não há o que migrar.** Ele não se atualiza pela cadeia de
+releases nem vai aparecer com serial porque não é candidato — é a estação de
+trabalho. Se aparecer numa varredura, ignore.
+
+> Isto já foi documentado errado aqui: a primeira versão desta seção dizia para
+> migrá-lo com `box.sh instalar`, o que não faz sentido nenhum para um notebook.
 
 ## Como o serial é formado
 
