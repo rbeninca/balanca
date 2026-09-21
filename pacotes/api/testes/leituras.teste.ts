@@ -117,9 +117,28 @@ describe('IT-6.2 Rotas de Leituras', () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv');
     const linhas = res.body.split('\n');
-    expect(linhas[0]).toBe('marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns');
-    expect(linhas[1]).toContain('100');
+    expect(linhas[0]).toBe('tempo_relativo_s,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns');
     expect(linhas[1]).toContain('10.5');
+  });
+
+  // O `marca_temporal` é o millis() desde o boot do ESP — quem abre o arquivo
+  // depois não tem como saber quando foi aquele boot. O tempo sai relativo ao
+  // início da gravação, como no CSV da tela e no backup em pendrive.
+  it('exportar.csv conta o tempo a partir do início da gravação', async () => {
+    await app.inject({
+      method: 'POST',
+      url: `/sessoes/${idSessao}/leituras`,
+      headers: { 'x-chave-api': CHAVE, 'content-type': 'application/json' },
+      body: JSON.stringify([
+        { marca_temporal: 7_200_000, forca_crua: 1.0, em_queima: false, impulso_acumulado_ns: 0 },
+        { marca_temporal: 7_200_012, forca_crua: 2.0, em_queima: false, impulso_acumulado_ns: 0.018 },
+        { marca_temporal: 7_200_023, forca_crua: 3.0, em_queima: false, impulso_acumulado_ns: 0.045 },
+      ]),
+    });
+
+    const res = await app.inject({ method: 'GET', url: `/sessoes/${idSessao}/exportar.csv` });
+    const tempos = res.body.split('\n').slice(1).map((l) => l.split(',')[0]);
+    expect(tempos).toEqual(['0.0000000', '0.0120000', '0.0230000']);
   });
 
   // IT-6.2.8

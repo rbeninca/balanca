@@ -67,9 +67,21 @@ export async function rotasLeituras(app: FastifyInstance, { db, verificarChave }
       [req.params.id],
     );
 
-    const linhas = ['marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns'];
+    // Tempo relativo ao início da gravação, como no CSV da tela — o
+    // `marca_temporal` cru é o millis() desde o boot do ESP, e quem abre o
+    // arquivo depois não tem como saber quando foi aquele boot. Sete casas e
+    // ponto decimal, iguais aos outros arquivos do app; o separador de campo é
+    // a vírgula, e repetir o separador é o que faz a planilha pt-BR ler 0.012
+    // como doze.
+    //
+    // Mesmas colunas do backup em pendrive (Exportacao.kt, no app Android): são
+    // o mesmo arquivo, e por isso andam juntos.
+    const t0 = leituras.reduce((min, l) => Math.min(min, l.marca_temporal), Number.POSITIVE_INFINITY);
+
+    const linhas = ['tempo_relativo_s,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns'];
     for (const l of leituras) {
-      linhas.push(`${l.marca_temporal},${l.forca_crua},${l.temperatura ?? ''},${l.em_queima},${l.impulso_acumulado_ns}`);
+      const t = ((l.marca_temporal - (Number.isFinite(t0) ? t0 : l.marca_temporal)) / 1000).toFixed(7);
+      linhas.push(`${t},${l.forca_crua},${l.temperatura ?? ''},${l.em_queima},${l.impulso_acumulado_ns}`);
     }
 
     return rep

@@ -22,6 +22,18 @@ motivo.
   - Ida e volta conferida contra uma sessão real do box (4513 pontos): erro de
     tempo 0 ms, de força 5e-8 N — só o arredondamento da notação de 7 dígitos.
 - **CSV com 7 casas decimais no tempo**, a mesma largura do CURVA EMPUXO.
+- **O tempo dos outros dois CSV passou a ser relativo ao início**, como o da
+  tela. Eram três cópias escritas à mão do mesmo arquivo, e duas delas ficaram
+  para trás, ainda no `millis()` cru do ESP:
+  - o **backup em pendrive** (`armazenamento/Exportacao.kt`): a coluna virou
+    `tempo_relativo_s` — chamar de `marca_temporal` um tempo relativo seria
+    mentira —, com 7 casas e ponto decimal (o separador de campo é a vírgula);
+  - a rota **`GET /sessoes/:id/exportar.csv`**, nas **duas** implementações
+    (app Android e API Node), que mantêm o mesmo contrato de propósito. No
+    Android a rota agora **delega em `Exportacao.csv`** em vez de reescrever o
+    laço: era a terceira cópia, e o jeito de ela não divergir de novo é não
+    existir. Conferido no box: a rota devolve `0.0000000` a `52.8790000`, os
+    52879 ms de duração da sessão.
 
 ## v2.8.0 (2026-09-21)
 

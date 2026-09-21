@@ -3,6 +3,7 @@ package br.edu.ifsc.balancagfig.servidor
 import android.util.Log
 import br.edu.ifsc.balancagfig.armazenamento.BancoDados
 import br.edu.ifsc.balancagfig.armazenamento.EscritaSessoes
+import br.edu.ifsc.balancagfig.armazenamento.Exportacao
 import br.edu.ifsc.balancagfig.armazenamento.ResumoSessao
 import br.edu.ifsc.balancagfig.atualizacao.Atualizador
 import br.edu.ifsc.balancagfig.armazenamento.ModoRestauracao
@@ -276,19 +277,15 @@ class ServidorApi(
         return json(Response.Status.CREATED, JSONObject().put("inseridas", lote.length()))
     }
 
+    /**
+     * O CSV da rota é o **mesmo** que o backup grava no pendrive — colunas,
+     * ordem e formato. Delegar em [Exportacao.csv] em vez de reescrever aqui é o
+     * que impede os dois de divergirem: foram escritos iguais e, enquanto eram
+     * duas cópias, o tempo acabou saindo de um jeito em cada um.
+     */
     private fun exportarCsv(id: String): Response {
         val leituras = bd.consultar("SELECT * FROM leituras WHERE id_sessao = ? ORDER BY marca_temporal", id)
-        val sb = StringBuilder("marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns")
-        for (i in 0 until leituras.length()) {
-            val l = leituras.getJSONObject(i)
-            sb.append('\n')
-                .append(l.getLong("marca_temporal")).append(',')
-                .append(l.getDouble("forca_crua")).append(',')
-                .append(if (l.isNull("temperatura")) "" else l.getDouble("temperatura").toString()).append(',')
-                .append(l.getLong("em_queima")).append(',')
-                .append(l.getDouble("impulso_acumulado_ns"))
-        }
-        return newFixedLengthResponse(Response.Status.OK, "text/csv; charset=utf-8", sb.toString()).apply {
+        return newFixedLengthResponse(Response.Status.OK, "text/csv; charset=utf-8", Exportacao.csv(leituras)).apply {
             addHeader("Content-Disposition", "attachment; filename=\"sessao-$id.csv\"")
         }
     }

@@ -128,8 +128,56 @@ class ExportacaoTest {
     fun `csv tem cabecalho e uma linha por leitura`() {
         val ls = leituras(n = 20)
         val linhas = Exportacao.csv(ls).split("\n")
-        assertEquals("marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns", linhas[0])
+        assertEquals("tempo_relativo_s,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns", linhas[0])
         assertEquals(1 + 20, linhas.size)
+    }
+
+    @Test
+    fun `csv de gravacao vazia sai so com o cabecalho`() {
+        val linhas = Exportacao.csv(JSONArray()).split("\n")
+        assertEquals(1, linhas.size)
+        assertTrue(linhas[0].startsWith("tempo_relativo_s"))
+    }
+
+    // O marca_temporal é o millis() desde o boot do ESP. Um backup aberto meses
+    // depois não tem como saber quando foi aquele boot — o arquivo precisa
+    // trazer o tempo relativo ao início, como o CSV da tela e o .eng.
+    @Test
+    fun `csv conta o tempo a partir do inicio da gravacao`() {
+        val ls = JSONArray().apply {
+            for (i in 0 until 3) put(
+                JSONObject().put("marca_temporal", 7_200_000L + i * 10L)
+                    .put("forca_crua", 1.0).put("temperatura", JSONObject.NULL)
+                    .put("em_queima", 0).put("impulso_acumulado_ns", 0),
+            )
+        }
+        val tempos = Exportacao.csv(ls).split("\n").drop(1).map { it.split(",")[0] }
+        assertEquals(listOf("0.0000000", "0.0100000", "0.0200000"), tempos)
+    }
+
+    // A origem é o MENOR tempo, não o primeiro: leitura fora de ordem é
+    // possível, e o tempo não pode começar negativo.
+    @Test
+    fun `csv nao gera tempo negativo com leituras fora de ordem`() {
+        val ls = JSONArray().apply {
+            for (t in listOf(500L, 100L, 300L)) put(
+                JSONObject().put("marca_temporal", t).put("forca_crua", 1.0)
+                    .put("temperatura", JSONObject.NULL).put("em_queima", 0).put("impulso_acumulado_ns", 0),
+            )
+        }
+        val tempos = Exportacao.csv(ls).split("\n").drop(1).map { it.split(",")[0].toDouble() }
+        assertTrue("nenhum tempo pode ser negativo: $tempos", tempos.all { it >= 0.0 })
+        assertTrue(tempos.contains(0.0))
+    }
+
+    // Campo separado por vírgula pede decimal com ponto: repetir o separador é
+    // o que faz a planilha em português ler 0.012 como doze.
+    @Test
+    fun `csv usa ponto decimal e 7 casas mesmo com locale pt-BR`() {
+        Locale.setDefault(Locale.forLanguageTag("pt-BR"))
+        val primeira = Exportacao.csv(leituras(n = 3)).split("\n")[1]!!
+        assertTrue("coluna de tempo: ${primeira.substringBefore(",")}",
+            primeira.substringBefore(",").matches(Regex("\\d+\\.\\d{7}")))
     }
 
     // ─── JSON ──────────────────────────────────────────────────────────────────

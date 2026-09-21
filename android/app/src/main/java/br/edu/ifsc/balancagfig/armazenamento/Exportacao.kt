@@ -70,12 +70,31 @@ object Exportacao {
 
     // ─── CSV ─────────────────────────────────────────────────────────────────
 
+    /**
+     * CSV do backup, no mesmo tempo dos outros arquivos que o app gera: segundos
+     * relativos ao início da gravação.
+     *
+     * Antes saía o `marca_temporal` cru — o `millis()` desde o boot do ESP. Um
+     * backup aberto meses depois não tem como saber quando foi aquele boot, e a
+     * coluna obrigava quem lesse a fazer a conta de cabeça. O nome da coluna
+     * mudou junto: chamar de `marca_temporal` um tempo relativo seria mentira.
+     *
+     * Sete casas, como no CSV da tela e no CURVA EMPUXO. A resolução real é de
+     * 1 ms — as 4 últimas casas são sempre zero, alinhando o campo com os
+     * outros arquivos.
+     *
+     * Ponto decimal, e não vírgula: o separador de campo é a vírgula. Repetir o
+     * mesmo separador é o que faz a planilha em português ler `0.012` como doze.
+     */
     fun csv(leiturasJson: JSONArray): String {
-        val sb = StringBuilder("marca_temporal,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns")
-        for (i in 0 until leiturasJson.length()) {
-            val l = leiturasJson.getJSONObject(i)
+        val leituras = (0 until leiturasJson.length()).map { leiturasJson.getJSONObject(it) }
+        val t0 = leituras.minOfOrNull { it.optLong("marca_temporal") } ?: 0L
+
+        val sb = StringBuilder("tempo_relativo_s,forca_crua_newton,temperatura,em_queima,impulso_acumulado_ns")
+        for (l in leituras) {
+            val t = (l.optLong("marca_temporal") - t0) / 1000.0
             sb.append('\n')
-                .append(l.optLong("marca_temporal")).append(',')
+                .append("%.7f".format(java.util.Locale.US, t)).append(',')
                 .append(l.optDouble("forca_crua", 0.0)).append(',')
                 .append(if (l.isNull("temperatura")) "" else l.optDouble("temperatura").toString()).append(',')
                 .append(l.optLong("em_queima")).append(',')

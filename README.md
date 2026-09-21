@@ -233,6 +233,14 @@ todas**, e é onde é fácil errar:
 | **JSON** | milissegundos | **absoluto** — desde o boot do ESP | decimal |
 | **PDF** | — | — | relatório |
 
+Fora da tela de Análise saem mais dois CSV, com o **mesmo esquema e o mesmo
+tempo** do CSV acima (`tempo_relativo_s`, 7 casas): o **backup em pendrive** e a
+rota **`GET /sessoes/:id/exportar.csv`**. No app Android os dois saem da mesma
+função — a rota delega no exportador do backup —, e a API do Cenário A segue a
+mesma regra. Antes eram três cópias escritas à mão do mesmo arquivo, e foi assim
+que o tempo acabou saindo de um jeito em cada uma: a da tela em segundos
+relativos, as outras duas no `millis()` cru do ESP.
+
 Três coisas que confundem:
 
 - **O `.eng` ancora na queima**, não na gravação. É o que o RASP exige: a
