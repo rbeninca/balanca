@@ -24,7 +24,12 @@ Cada uma leva:
 | Rede | `ssid` |
 | **QR do Wi-Fi** | `WIFI:T:WPA;S:<ssid>;P:<senha>;;` — escanear conecta o celular direto |
 | **QR do painel** | `http://192.168.43.1` — escanear abre a interface |
-| Versão | `versao` — só informativo |
+
+A **versão do app saiu da etiqueta**. Ela já foi impressa ("App 2.7.4"), mas é um
+adesivo colado no aparelho e o atualizador muda a versão sozinho: a etiqueta
+envelhecia sem ninguém tocar nela. O que fica impresso é o que não muda —
+modelo, serial, MAC e SSID. Para saber a versão de um box, o `/saude` ou
+`bash scripts/box.sh inventario`.
 
 O QR do Wi-Fi usa o formato que Android e iPhone reconhecem nativamente: quem
 aponta a câmera entra na rede sem digitar `12345678`.
@@ -39,7 +44,22 @@ Tudo que muda está no topo do script, em constantes:
 | `senhaWifi` | senha do hotspot que vai dentro do QR (`12345678`) |
 | `enderecoPainel` | `http://192.168.43.1` — o endereço do box na própria rede dele |
 | `enderecoManual` | link do manual impresso no rodapé |
-| `versao` | versão que aparece na etiqueta |
+
+## Cores
+
+Duas tintas só: **cinza no texto, preto nos destaques**. A hierarquia é o
+contraste, não a cor — o que é preto é o que se lê primeiro.
+
+| Elemento | Cor |
+|---|---|
+| Texto corrido, subtítulos, rodapé | cinza `#555` |
+| Título, círculos numerados, bloco de identificação | preto `#000` |
+| Barra do "ANTES DO ENSAIO" | preta, texto branco |
+
+O `#000` do bloco de identificação é fundo, com o texto em branco por cima — é o
+único lugar em que a etiqueta gasta tinta sólida, e é onde estão o serial e o
+MAC, que é o que se procura primeiro. As cores antigas eram azul `#0d4162` e
+laranja `#e77d00`.
 
 O `serial` tem de ser **exatamente** o que o box publica no `/saude`, senão a
 etiqueta deixa de casar com o inventário. Para conferir o que os boxes estão

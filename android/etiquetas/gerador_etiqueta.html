@@ -110,7 +110,12 @@
             height: 100mm;
 
             background: white;
-            color: #111;
+            /*
+             * Cinza no corpo, preto nos destaques. A etiqueta sai em duas
+             * cores de tinta só — sem azul nem laranja —, e a hierarquia fica
+             * por conta do contraste: o que é preto é o que se lê primeiro.
+             */
+            color: #555;
 
             padding: 3mm 4mm;
 
@@ -132,7 +137,7 @@
             justify-content: space-between;
             align-items: center;
 
-            border-bottom: 0.6mm solid #0d4162;
+            border-bottom: 0.6mm solid #000;
 
             padding-bottom: 1mm;
             margin-bottom: 1.2mm;
@@ -141,7 +146,7 @@
         .titulo {
             font-size: 4mm;
             font-weight: bold;
-            color: #0d4162;
+            color: #000;
             line-height: 1;
         }
 
@@ -151,17 +156,26 @@
             margin-top: 0.5mm;
         }
 
-        .versao {
-            font-size: 2mm;
+        /*
+         * Modelo do box, à direita do título.
+         *
+         * Já foi também a versão do app ("App 2.7.4"), que saiu: é um adesivo
+         * colado no aparelho e a versão muda sozinha pelo atualizador, então a
+         * etiqueta envelhecia sem ninguém tocar nela. O que fica impresso é o
+         * que não muda — modelo, serial, MAC, SSID.
+         */
+        .modelo {
+            font-size: 3mm;
+            font-weight: bold;
+            color: #000;
             text-align: right;
-            line-height: 1.3;
         }
 
         /*
          * Identificação do box
          */
         .identificacao {
-            background: #0d4162;
+            background: #000;
             color: white;
 
             border-radius: 1.5mm;
@@ -238,7 +252,7 @@
             align-items: center;
             justify-content: center;
 
-            background: #0d4162;
+            background: #000;
             color: white;
 
             border-radius: 50%;
@@ -250,7 +264,7 @@
 
         .destaque {
             font-weight: bold;
-            color: #0d4162;
+            color: #000;
         }
 
         /*
@@ -309,21 +323,33 @@
         .antes-ensaio {
             margin-top: 1mm;
 
-            border: 0.5mm solid #e77d00;
+            border: 0.5mm solid #000;
 
-            background: #fff4e8;
+            background: white;
 
             border-radius: 1.5mm;
 
-            padding: 1.2mm 1.8mm;
+            /* sem padding no topo: a barra do título encosta na borda */
+            padding: 0 1.8mm 1.2mm;
         }
 
+        /*
+         * Barra preta cheia. O título sangra até a borda do bloco por causa das
+         * margens negativas — o padding do pai é devolvido aqui, e o raio é o
+         * de dentro (1,5mm da borda menos 0,5mm dela).
+         */
         .antes-titulo {
-            color: #c45700;
+            background: #000;
+            color: white;
 
             font-weight: bold;
 
             font-size: 2.4mm;
+
+            margin: 0 -1.8mm 0.8mm;
+            padding: 1.2mm 1.8mm;
+
+            border-radius: 1mm 1mm 0 0;
         }
 
         .antes-texto {
@@ -464,6 +490,20 @@ const boxes = [
             "TX9",
 
         serial:
+            "GFIG-TX9-58EB81E3618A",
+
+        mac:
+            "58:EB:81:E3:61:8A",
+
+        ssid:
+            "balancaGFIG-618A"
+    },
+
+    {
+        modelo:
+            "TX9",
+
+        serial:
             "GFIG-TX9-58EB81E3618C",
 
         mac:
@@ -499,6 +539,20 @@ const boxes = [
 
         ssid:
             "balancaGFIG-10D4"
+    },
+
+    {
+        modelo:
+            "TX9",
+
+        serial:
+            "GFIG-TX9-58EB81E36158",
+
+        mac:
+            "58:EB:81:E3:61:58",
+
+        ssid:
+            "balancaGFIG-6158"
     }
 
 ];
@@ -528,15 +582,6 @@ const enderecoPainel =
  */
 const enderecoManual =
     "https://rbeninca.github.io/balanca/manual/";
-
-
-/*
- * Versão atualmente instalada.
- *
- * Opcional.
- */
-const versao =
-    "2.7.4";
 
 
 /*
@@ -572,14 +617,8 @@ function criarEtiqueta(box, indice) {
 
             </div>
 
-            <div class="versao">
-
+            <div class="modelo">
                 ${box.modelo}
-
-                <br>
-
-                App ${versao}
-
             </div>
 
         </div>
