@@ -24,7 +24,7 @@ O **BalançaGFIG** é um sistema open-source de bancada para testes estáticos d
 - Gráficos dinâmicos com detecção automática de início/fim de queima
 - Análise pós-teste: força pico, RMS, impulso total, Isp, perfil, coeficiente de variação
 - Classificação automática NAR (A–O) com nome padronizado (ex.: "B1.7")
-- Exportação em PDF, CSV, JSON e `.eng` (OpenRocket)
+- Exportação em PDF, CSV, JSON, `.eng` (OpenRocket) e CURVA EMPUXO 2.2
 - Comparação visual de múltiplas sessões
 - Gravação de firmware no ESP diretamente pelo browser
 
@@ -105,7 +105,7 @@ ESP8266 + HX711
 | `protocolo` | Codec binário + CRC16 para o protocolo ESP↔Host |
 | `processamento` | Pipeline tempo real: zona morta, média móvel, detector de queima, integrador de impulso |
 | `analise` | Métricas pós-teste: pico, RMS, perfil, classificação NAR, anomalias, Isp |
-| `relatorio` | Geração de PDF, CSV, JSON e `.eng` (OpenRocket) |
+| `relatorio` | Geração de PDF, CSV, JSON, `.eng` (OpenRocket) e CURVA EMPUXO 2.2 |
 | `gateway` | Bridge serial → WebSocket (Node.js + serialport) |
 | `api` | API REST com Fastify + SQLite/MariaDB |
 | `aplicacao` | Frontend Vite + ApexCharts |
@@ -217,6 +217,37 @@ Após gravar o firmware, acesse **Configurações** na interface web para ajusta
 1. **Tara** — sem carga, zereia a leitura
 2. **Massa conhecida** — informe o peso em gramas para calcular o fator de conversão
 3. Os valores são salvos na EEPROM do ESP e persistem após reinicialização
+
+---
+
+## Formatos de exportação
+
+Na tela de **Análise**, cinco saídas. A unidade do tempo **não é a mesma em
+todas**, e é onde é fácil errar:
+
+| Formato | Tempo | Origem do zero | Empuxo |
+|---|---|---|---|
+| **CSV** | segundos (3 casas) | início da **gravação** | decimal |
+| **CURVA EMPUXO 2.2** | segundos (7 casas) | início da **gravação** | `2.101074E-01` |
+| **`.eng`** (RASP) | segundos (4 casas) | início da **queima** | decimal, ≥ 0 |
+| **JSON** | milissegundos | **absoluto** — desde o boot do ESP | decimal |
+| **PDF** | — | — | relatório |
+
+Três coisas que confundem:
+
+- **O `.eng` ancora na queima**, não na gravação. É o que o RASP exige: a
+  primeira amostra tem de ser `t > 0`, e a curva começa no acendimento.
+- **O `.eng` e o CURVA EMPUXO são incompatíveis entre si**, apesar de
+  parecidos: comentário `;` contra `#`, primeira amostra `> 0` contra `= 0`,
+  empuxo decimal contra notação científica. Gerar um no lugar do outro produz
+  arquivo inválido.
+- **Os valores guardados são absolutos** — o `millis()` do ESP, desde o boot
+  do microcontrolador. O re-baseio acontece na exportação e na tela; o banco
+  guarda o valor cru de propósito, porque é ele que faz a ordenação e a
+  duração da sessão funcionarem.
+
+O JSON é exceção deliberada: ele é o **formato de re-importação**, lido de
+volta pela tela de importar sessão, e por isso mantém o tempo absoluto.
 
 ---
 
