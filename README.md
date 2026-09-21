@@ -227,7 +227,7 @@ todas**, e é onde é fácil errar:
 
 | Formato | Tempo | Origem do zero | Empuxo |
 |---|---|---|---|
-| **CSV** | segundos (3 casas) | início da **gravação** | decimal |
+| **CSV** | segundos (7 casas) | início da **gravação** | decimal |
 | **CURVA EMPUXO 2.2** | segundos (7 casas) | início da **gravação** | `2.101074E-01` |
 | **`.eng`** (RASP) | segundos (4 casas) | início da **queima** | decimal, ≥ 0 |
 | **JSON** | milissegundos | **absoluto** — desde o boot do ESP | decimal |
@@ -246,8 +246,31 @@ Três coisas que confundem:
   guarda o valor cru de propósito, porque é ele que faz a ordenação e a
   duração da sessão funcionarem.
 
-O JSON é exceção deliberada: ele é o **formato de re-importação**, lido de
-volta pela tela de importar sessão, e por isso mantém o tempo absoluto.
+O JSON é exceção deliberada: ele é **formato de re-importação** e mantém o
+tempo absoluto, porque volta sem re-baseio — quem reimporta recebe os mesmos
+milissegundos que gravou.
+
+## Formatos de importação
+
+A tela de **Sessões** importa dois formatos, e escolhe pelo **conteúdo** do
+arquivo, não pela extensão:
+
+| Formato | O que traz | Tempo |
+|---|---|---|
+| **JSON** do BalançaGFIG | leituras, metadados do motor e janela de queima | absoluto, como saiu |
+| **CURVA EMPUXO 2.2** | só o par tempo/força | relativo ao 1º ponto |
+
+O CURVA EMPUXO é o caminho de volta do arquivo que vai ao programa do Prof.
+Marchi. O cabeçalho é **opcional**: arquivos salvos de novo por uma planilha
+perdem o `Caso` e o `Título`, e nem por isso deixam de ser curvas válidas — o
+que o formato tem de essencial é o par tempo e força. Do cabeçalho se aproveita
+o que existir: `Caso` vira o nome da sessão (sem ele, vale o nome do arquivo) e
+`Título` vira a descrição.
+
+O **impulso acumulado é recalculado** por trapézio, porque o formato não o
+carrega, e o empuxo volta com os 7 dígitos significativos que a notação
+científica do arquivo guarda. Ponto com tempo fora de ordem é descartado — e o
+app avisa quantos foram.
 
 ### O CSV pergunta os separadores
 

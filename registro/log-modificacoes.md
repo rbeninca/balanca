@@ -3,6 +3,26 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## Não publicado (2026-09-21)
+
+- **Importar sessões no formato CURVA EMPUXO 2.2** (Prof. Marchi) — o caminho de
+  volta do arquivo que vai ao programa dele e volta. `ImportadorCurvaEmpuxo` no
+  pacote `relatorio`, ao lado do exportador, com o inverso das mesmas regras.
+  - **O cabeçalho é opcional**: o que o formato tem de essencial é o par tempo e
+    força. Arquivo salvo de novo por uma planilha perde `Caso` e `Título` e
+    continua válido. Do cabeçalho se aproveita o que existir — `Caso` vira o
+    nome da sessão (sem ele, o nome do arquivo) e `Título` vira a descrição.
+  - O botão da tela de sessões virou **⬆ Importar** e aceita os dois formatos,
+    decidindo pelo **conteúdo**: JSON começa com `{`, o resto é curva. BOM do
+    Windows não atrapalha.
+  - Impulso recalculado por trapézio (o formato não o carrega); tempo relativo
+    ao primeiro ponto; ponto com tempo fora de ordem é descartado com aviso.
+  - Números entram como a planilha escreve: `1.234,5` e `1,234.5` são o mesmo
+    número — com os dois separadores, o último é o decimal.
+  - Ida e volta conferida contra uma sessão real do box (4513 pontos): erro de
+    tempo 0 ms, de força 5e-8 N — só o arredondamento da notação de 7 dígitos.
+- **CSV com 7 casas decimais no tempo**, a mesma largura do CURVA EMPUXO.
+
 ## v2.8.0 (2026-09-21)
 
 - **O GeckoView saiu do APK: 122 MB → ~20 MB.** Ele era 108 MB dos 122 —

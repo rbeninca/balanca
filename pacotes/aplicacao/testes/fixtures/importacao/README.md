@@ -21,6 +21,12 @@ Os arquivos `v1-legado-*` são capturas reais (todos os campos de motor nulos e
 sem janela de queima marcada) — justamente o caso que quebrava a geração de PDF
 e expunha o erro de importação "Failed to fetch".
 
+O outro formato aceito pela tela é o **CURVA EMPUXO 2.2** (Prof. Marchi), que é
+texto e não JSON. Ele **não** tem fixture aqui: seus arquivos são pequenos o
+bastante para caberem no próprio teste, e o formato é exercitado a fundo em
+`pacotes/relatorio/testes/ImportadorCurvaEmpuxo.teste.ts`, ao lado do
+exportador — inclusive com ida e volta.
+
 ## Como adicionar
 
 Copie o arquivo real para `sessoes/` com um nome descritivo, registre-o na

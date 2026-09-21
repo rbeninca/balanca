@@ -4,6 +4,7 @@
 
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import type { MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import { importarCurvaEmpuxo } from '@balancagfig/relatorio';
 
 /** Formato v2 nativo (exportado pelo próprio BalançaGFIG). */
 export interface SessaoExportadaV2 {
@@ -33,6 +34,8 @@ export interface SessaoImportada {
   nome: string;
   leituras: LeituraProcessada[];
   meta: MetadadosLocal;
+  /** O que o arquivo trouxe de imperfeito e foi descartado na leitura. */
+  avisos?: string[];
 }
 
 /** Converte o formato legado v1 para o modelo interno (impulso por trapézio). */
@@ -91,4 +94,36 @@ export function normalizarImportacao(parsed: unknown): SessaoImportada {
   }
 
   throw new Error('Formato de arquivo não reconhecido. Esperado JSON exportado pelo BalançaGFIG.');
+}
+
+/**
+ * Importa o texto de um arquivo escolhido pelo usuário, decidindo o formato
+ * pelo **conteúdo** — não pela extensão, que cada um salva como quer.
+ *
+ * Dois formatos entram por aqui:
+ * - **JSON** do BalançaGFIG (v2 nativo ou v1 legado), que começa com `{`;
+ * - **CURVA EMPUXO** do Prof. Marchi, que é texto com pares tempo/força e
+ *   cabeçalho opcional (ver `ImportadorCurvaEmpuxo`).
+ *
+ * [nomeArquivo] só é usado para batizar a sessão quando o arquivo não traz um
+ * `Caso` no cabeçalho — o formato CURVA EMPUXO não exige cabeçalho nenhum.
+ */
+export function normalizarImportacaoTexto(texto: string, nomeArquivo?: string): SessaoImportada {
+  // O BOM que o Windows põe na frente quebraria o `startsWith('{')`.
+  const semBom = texto.replace(/^﻿/, '');
+  if (semBom.trimStart().startsWith('{')) {
+    return normalizarImportacao(JSON.parse(semBom));
+  }
+
+  const curva = importarCurvaEmpuxo(semBom);
+  const doArquivo = nomeArquivo?.replace(/\.[^.]*$/, '').trim();
+
+  return {
+    nome: curva.nome ?? (doArquivo || 'Sessão importada'),
+    leituras: curva.leituras,
+    // O `Título` do cabeçalho é texto livre ("D0.3, 21/09/2026"): fica como
+    // descrição, sem tentar adivinhar que parte é motor e que parte é data.
+    meta: curva.titulo ? { descricao: curva.titulo } : {},
+    ...(curva.avisos.length > 0 && { avisos: curva.avisos }),
+  };
 }

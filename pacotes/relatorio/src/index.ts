@@ -10,5 +10,8 @@ export type { MetadadosENG } from './exportadores/ExportadorENG.js';
 export { exportarCurvaEmpuxo } from './exportadores/ExportadorCurvaEmpuxo.js';
 export type { MetadadosCurvaEmpuxo } from './exportadores/ExportadorCurvaEmpuxo.js';
 
+export { importarCurvaEmpuxo } from './importadores/ImportadorCurvaEmpuxo.js';
+export type { SessaoCurvaEmpuxo } from './importadores/ImportadorCurvaEmpuxo.js';
+
 export { gerarPDF } from './GeradorPDF.js';
 export type { MetadadosPDF } from './GeradorPDF.js';

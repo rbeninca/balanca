@@ -11,7 +11,7 @@ import { jsPDF } from 'jspdf';
 import { TelaAnalise } from './TelaAnalise.js';
 import { TelaComparacao } from './TelaComparacao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
-import { normalizarImportacao, type SessaoExportadaV2 } from './importacaoSessao.js';
+import { normalizarImportacaoTexto, type SessaoExportadaV2, type SessaoImportada } from './importacaoSessao.js';
 import { indicador } from './indicadorCarregando.js';
 
 export class TelaSessoes {
@@ -38,8 +38,9 @@ export class TelaSessoes {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
           <h2 style="margin:0">Sessões Gravadas</h2>
           <div style="display:flex;gap:0.5rem">
-            <button id="btn-importar-json" class="btn-secondary btn-sm">⬆ Importar JSON</button>
-            <input id="input-json-file" type="file" accept=".json" style="display:none">
+            <button id="btn-importar-json" class="btn-secondary btn-sm"
+                    title="Aceita o JSON do BalançaGFIG e a curva do CURVA EMPUXO 2.2 (Prof. Marchi)">⬆ Importar</button>
+            <input id="input-json-file" type="file" accept=".json,.txt,.dat,.csv,text/plain,application/json" style="display:none">
           </div>
         </div>
         <div id="lista-conteudo"><div class="vazio">Carregando...</div></div>
@@ -80,7 +81,8 @@ export class TelaSessoes {
       void this.baixarSelecionadas('json');
     });
 
-    // Importar JSON
+    // Importar — JSON do BalançaGFIG ou a curva do CURVA EMPUXO (Prof. Marchi).
+    // O formato é decidido pelo conteúdo do arquivo, não pela extensão.
     const btnImportar = container.querySelector<HTMLButtonElement>('#btn-importar-json')!;
     const inputFile   = container.querySelector<HTMLInputElement>('#input-json-file')!;
     btnImportar.addEventListener('click', () => inputFile.click());
@@ -89,12 +91,11 @@ export class TelaSessoes {
       if (!file) return;
       inputFile.value = '';
       try {
-        const text = await file.text();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const parsed = JSON.parse(text) as any;
-        await indicador.envolver('Importando sessão…', () => this.importarJSON(parsed, lista));
+        const texto = await file.text();
+        const importada = normalizarImportacaoTexto(texto, file.name);
+        await indicador.envolver('Importando sessão…', () => this.importarSessao(importada, lista));
       } catch (e) {
-        alert(`Erro ao importar JSON:\n${String(e)}`);
+        alert(`Não foi possível importar "${file.name}":\n\n${String(e)}`);
       }
     });
 
@@ -421,9 +422,9 @@ export class TelaSessoes {
     return li;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async importarJSON(parsed: unknown, lista: HTMLElement): Promise<void> {
-    const { nome, leituras, meta } = normalizarImportacao(parsed);
+  /** Cria a sessão a partir de um arquivo já normalizado (JSON ou CURVA EMPUXO). */
+  private async importarSessao(importada: SessaoImportada, lista: HTMLElement): Promise<void> {
+    const { nome, leituras, meta, avisos } = importada;
 
     const sessao = await this.armazenamento.criarSessao(nome);
     if (leituras.length > 0) await this.armazenamento.adicionarLeituras(sessao.id, leituras);
@@ -440,6 +441,12 @@ export class TelaSessoes {
       lista.appendChild(ul);
     }
     ul.appendChild(li);
+
+    // A sessão entrou, mas não inteira: quem importou precisa saber o que
+    // ficou de fora antes de usar os números.
+    if (avisos && avisos.length > 0) {
+      alert(`Sessão "${nome}" importada com ressalvas:\n\n${avisos.join('\n')}`);
+    }
   }
 
   private baixarArquivo(blob: Blob, nome: string) {

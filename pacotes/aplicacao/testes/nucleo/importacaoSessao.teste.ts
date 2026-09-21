@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { normalizarImportacao } from '../../src/interface/importacaoSessao.js';
+import { normalizarImportacao, normalizarImportacaoTexto } from '../../src/interface/importacaoSessao.js';
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 
 const dir = dirname(fileURLToPath(import.meta.url));
@@ -69,5 +69,75 @@ describe('normalizarImportacao — formatos inválidos', () => {
   it('rejeita v2 sem leituras', () => {
     expect(() => normalizarImportacao({ versao: 2, nome: 'x' }))
       .toThrow(/inválido/i);
+  });
+});
+
+/**
+ * A tela de sessões tem um botão de importar só: o formato é decidido pelo
+ * conteúdo do arquivo. Aqui se testa essa decisão, não os formatos em si — o
+ * CURVA EMPUXO é testado no pacote `relatorio`, junto do exportador.
+ */
+describe('normalizarImportacaoTexto — qual formato é o arquivo', () => {
+  const CURVA = [
+    '#  Saída do balancaGFIG no formato CURVA EMPUXO 2.2',
+    '#  Caso   = D0.3',
+    '#  Título = D0.3, 21/09/2026',
+    '#  t [s]       F [N]',
+    '   0.0000000   2.365083E-01',
+    '   0.0120000   2.417445E-01',
+    '   0.0230000   2.470495E-01',
+  ].join('\n');
+
+  it('texto com pares tempo/força entra como curva do Marchi', () => {
+    const r = normalizarImportacaoTexto(CURVA);
+    expect(r.nome).toBe('D0.3');
+    expect(r.meta.descricao).toBe('D0.3, 21/09/2026');
+    expect(r.leituras.map(l => l.marcaTemporal)).toEqual([0, 12, 23]);
+    conferirLeiturasValidas(r.leituras);
+  });
+
+  it('JSON continua entrando pelo caminho de sempre', () => {
+    const json = readFileSync(resolve(dir, '../fixtures/importacao/sessoes', 'v2-nativa.json'), 'utf-8');
+    const r = normalizarImportacaoTexto(json);
+    expect(r.nome).toBe('Motor Teste V2');
+    expect(r.leituras).toHaveLength(12);
+  });
+
+  it('espaço em branco antes do { não engana a detecção', () => {
+    const json = readFileSync(resolve(dir, '../fixtures/importacao/sessoes', 'v2-nativa.json'), 'utf-8');
+    expect(normalizarImportacaoTexto(`\n  ${json}`).nome).toBe('Motor Teste V2');
+  });
+
+  // Arquivo vindo do Windows.
+  it('BOM não atrapalha', () => {
+    const json = readFileSync(resolve(dir, '../fixtures/importacao/sessoes', 'v2-nativa.json'), 'utf-8');
+    expect(normalizarImportacaoTexto(`﻿${json}`).nome).toBe('Motor Teste V2');
+    expect(normalizarImportacaoTexto(`﻿${CURVA}`).nome).toBe('D0.3');
+  });
+
+  // O cabeçalho do CURVA EMPUXO é opcional: sem `Caso`, quem batiza é o nome
+  // do arquivo — melhor que uma sessão chamada "---".
+  it('sem Caso no cabeçalho, o nome vem do arquivo', () => {
+    const semCabecalho = '0.000 1.5\n0.012 2.5\n0.024 3.5';
+    expect(normalizarImportacaoTexto(semCabecalho, 'D0.3-teste.txt').nome).toBe('D0.3-teste');
+    expect(normalizarImportacaoTexto(semCabecalho).nome).toBe('Sessão importada');
+  });
+
+  it('o nome do arquivo não atropela o Caso do cabeçalho', () => {
+    expect(normalizarImportacaoTexto(CURVA, 'qualquer-coisa.txt').nome).toBe('D0.3');
+  });
+
+  it('curva sem cabeçalho não ganha descrição inventada', () => {
+    expect(normalizarImportacaoTexto('0 1\n0.01 2', 'x.txt').meta).toEqual({});
+  });
+
+  it('linhas descartadas viram aviso para a tela mostrar', () => {
+    const r = normalizarImportacaoTexto('0.000 1\nlixo\n0.012 2', 'x.txt');
+    expect(r.avisos?.join(' ')).toContain('1 linha(s)');
+  });
+
+  it('arquivo sem curva nenhuma é recusado com mensagem que explica o que se esperava', () => {
+    expect(() => normalizarImportacaoTexto('relatório de outra coisa', 'x.txt'))
+      .toThrow(/CURVA EMPUXO/);
   });
 });
