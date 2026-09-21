@@ -3,7 +3,7 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
-## Não publicado (2026-09-21)
+## v2.8.1 (2026-09-21)
 
 - **Importar sessões no formato CURVA EMPUXO 2.2** (Prof. Marchi) — o caminho de
   volta do arquivo que vai ao programa dele e volta. `ImportadorCurvaEmpuxo` no
