@@ -11,6 +11,17 @@ export interface MetadadosCSV {
 
 export interface OpcoesCSV {
   separador?: string;
+  /**
+   * Separador decimal: `.` (padrão) ou `,`.
+   *
+   * Existe porque a planilha em português lê `.` como separador de **milhar**:
+   * `0.012` vira doze, e o número aparece mil vezes maior na tela. Não é erro
+   * de quem abre — é o arquivo misturando convenções.
+   *
+   * A regra que evita isso é parear: campo com `;` pede decimal com `,`; campo
+   * com `,` pede decimal com `.`. Nunca os dois iguais.
+   */
+  decimal?: ',' | '.';
 }
 
 const N_PARA_GF  = 101.972;
@@ -23,6 +34,10 @@ export function exportarCSV(
   opcoes?: OpcoesCSV,
 ): string {
   const sep = opcoes?.separador ?? ';';
+  const dec = opcoes?.decimal ?? '.';
+  /** Troca o ponto decimal pelo separador pedido, sem tocar no resto. */
+  const num = (v: number | string): string =>
+    dec === '.' ? String(v) : String(v).replace('.', ',');
   const linhas: string[] = [];
 
   linhas.push(`# Nome${sep}${meta?.nomeSessao ?? '---'}`);
@@ -34,7 +49,7 @@ export function exportarCSV(
 
   const isp = meta?.isp ?? analise?.impulsoEspecifico_s;
   if (isp != null) {
-    linhas.push(`# Isp (s)${sep}${isp.toFixed(2)}`);
+    linhas.push(`# Isp (s)${sep}${num(isp.toFixed(2))}`);
   }
 
   linhas.push(`tempoRelativo_s${sep}forcaNewton_N${sep}forcaGf${sep}forcaKgf${sep}temperatura_C${sep}emQueima${sep}impulsoAcumulado_Ns`);
@@ -61,7 +76,10 @@ export function exportarCSV(
     // linha precisa mudar junto com o `temperatura: 0` do PipelineProcessamento,
     // que é a raiz da ambiguidade.
     const temp = l.temperatura ? l.temperatura : '';
-    linhas.push(`${t}${sep}${l.forcaNewton}${sep}${gf}${sep}${kgf}${sep}${temp}${sep}${eq}${sep}${l.impulsoAcumuladoNs}`);
+    linhas.push(
+      `${num(t)}${sep}${num(l.forcaNewton)}${sep}${num(gf)}${sep}${num(kgf)}${sep}` +
+      `${num(temp)}${sep}${eq}${sep}${num(l.impulsoAcumuladoNs)}`,
+    );
   }
 
   return linhas.join('\n');

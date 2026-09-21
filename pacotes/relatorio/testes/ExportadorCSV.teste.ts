@@ -121,6 +121,28 @@ describe('ExportadorCSV', () => {
     expect(linhaTempo).toContain('início da gravação');
   });
 
+  // A planilha em português lê `.` como separador de milhar: `0.012` vira
+  // doze. Com campo `;`, o decimal precisa ser `,`.
+  it('decimal com vírgula para planilha pt-BR', () => {
+    const csv = exportarCSV(leiturasBasico, undefined, undefined, { separador: ';', decimal: ',' });
+    const campos = linhasDados(csv)[0]!.split(';');
+    expect(campos[0]).toBe('0,000');
+    expect(campos[4]).toBe('25');
+  });
+
+  it('o par campo `,` com decimal `.` é o CSV internacional', () => {
+    const csv = exportarCSV(leiturasBasico, undefined, undefined, { separador: ',', decimal: '.' });
+    expect(linhasDados(csv)[0]!.split(',')[0]).toBe('0.000');
+  });
+
+  it('negativo também troca o separador decimal', () => {
+    const csv = exportarCSV(
+      [{ marcaTemporal: 0, forcaNewton: -0.0035, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 }],
+      undefined, undefined, { separador: ';', decimal: ',' },
+    );
+    expect(linhasDados(csv)[0]!.split(';')[1]).toBe('-0,0035');
+  });
+
   // UT-4.1.9
   it('Isp no cabeçalho quando disponível', () => {
     const csv = exportarCSV(leiturasBasico, { impulsoEspecifico_s: 9.97 } as any, undefined);
