@@ -276,7 +276,7 @@ export class TelaAnalise {
           <button id="btn-export-csv" class="btn-secondary">CSV</button>
           <button id="btn-export-eng" class="btn-secondary">ENG</button>
           <button id="btn-export-curva" class="btn-secondary"
-                  title="Formato do programa CURVA EMPUXO 2.2 (Prof. Marchi, UFPR)">Curva</button>
+                  title="Texto puro no formato do programa CURVA EMPUXO 2.2 (Prof. Marchi, UFPR)">Texto</button>
           <button id="btn-export-pdf" class="btn-secondary">PDF</button>
           <button id="btn-salvar-sessao" class="btn-success">Salvar Sessão</button>
         </div>
