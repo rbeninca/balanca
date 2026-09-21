@@ -1,8 +1,8 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
 import type { IArmazenamento, MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import { analisarMotor, aplicarDetrend, type MetodoDetrend } from '@balancagfig/analise';
-import { gerarPDF, exportarCSV, exportarENG } from '@balancagfig/relatorio';
-import type { MetadadosENG, MetadadosPDF } from '@balancagfig/relatorio';
+import { gerarPDF, exportarCSV, exportarENG, exportarCurvaEmpuxo } from '@balancagfig/relatorio';
+import type { MetadadosENG, MetadadosPDF, MetadadosCurvaEmpuxo } from '@balancagfig/relatorio';
 import ApexCharts from 'apexcharts';
 import { indicador } from './indicadorCarregando.js';
 import { descreverPipeline } from './filtrosPainel.js';
@@ -275,6 +275,8 @@ export class TelaAnalise {
           <button id="btn-export-json" class="btn-secondary">JSON</button>
           <button id="btn-export-csv" class="btn-secondary">CSV</button>
           <button id="btn-export-eng" class="btn-secondary">ENG</button>
+          <button id="btn-export-curva" class="btn-secondary"
+                  title="Formato do programa CURVA EMPUXO 2.2 (Prof. Marchi, UFPR)">Curva</button>
           <button id="btn-export-pdf" class="btn-secondary">PDF</button>
           <button id="btn-salvar-sessao" class="btn-success">Salvar Sessão</button>
         </div>
@@ -556,6 +558,35 @@ export class TelaAnalise {
     }
   }
 
+  /**
+   * Formato do programa CURVA EMPUXO 2.2 (Prof. Marchi, UFPR).
+   *
+   * Não depende da análise e não recorta a queima: sai a gravação inteira, que
+   * é o que aquele formato espera. Por isso não pede confirmação nem reclama
+   * de sessão sem queima — só o Título perde o nome do motor.
+   */
+  private exportarCurvaEmpuxo() {
+    let nomeMotor: string | undefined;
+    try {
+      const meta = this.lerMetadadosFormulario();
+      nomeMotor = analisarMotor(
+        this.dados.leituras,
+        meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {},
+      ).nomeComum;
+    } catch {
+      // Sem queima detectada não há classificação NAR; o Título fica só com a data.
+    }
+
+    const metaCE: MetadadosCurvaEmpuxo = {
+      nomeSessao: this.nomeSessao,
+      data: new Date().toLocaleDateString('pt-BR'),
+    };
+    if (nomeMotor !== undefined) metaCE.nomeMotor = nomeMotor;
+
+    const txt = exportarCurvaEmpuxo(this.dados.leituras, metaCE);
+    this.baixarArquivo(new Blob([txt], { type: 'text/plain' }), `${this.nomeSessao}.txt`);
+  }
+
   private exportarPDF() {
     try {
       const meta    = this.lerMetadadosFormulario();
@@ -590,6 +621,7 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-export-json')!.addEventListener('click',    () => this.exportarJSON());
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => this.exportarCSV());
     this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
+    this.overlay.querySelector('#btn-export-curva')!.addEventListener('click',   () => this.exportarCurvaEmpuxo());
     this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
     this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click',  () => { void this.salvarSessao(); });
 

@@ -7,5 +7,8 @@ export type { MetadadosJSON } from './exportadores/ExportadorJSON.js';
 export { exportarENG } from './exportadores/ExportadorENG.js';
 export type { MetadadosENG } from './exportadores/ExportadorENG.js';
 
+export { exportarCurvaEmpuxo } from './exportadores/ExportadorCurvaEmpuxo.js';
+export type { MetadadosCurvaEmpuxo } from './exportadores/ExportadorCurvaEmpuxo.js';
+
 export { gerarPDF } from './GeradorPDF.js';
 export type { MetadadosPDF } from './GeradorPDF.js';
