@@ -130,34 +130,49 @@
         }
 
         /*
-         * Cabeçalho
+         * Identificação: nome da aplicação e dados do aparelho num bloco só
+         *
+         * Antes eram dois — o cabeçalho com título, subtítulo e modelo, e logo
+         * abaixo a barra azul com serial e MAC —, com uma régua e margens entre
+         * eles. Juntar devolveu cerca de 6mm à etiqueta, que é justamente onde
+         * as instruções e os QR codes estavam apertados.
          */
-        .cabecalho {
+        .identificacao {
+            background: #0d4162;
+            color: white;
+
+            border-radius: 1.5mm;
+
+            padding: 1.4mm 2.5mm;
+
+            margin-bottom: 1.8mm;
+        }
+
+        .identificacao-topo {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
 
-            border-bottom: 0.6mm solid #0d4162;
-
-            padding-bottom: 1mm;
-            margin-bottom: 1.2mm;
+            gap: 2mm;
         }
 
         .titulo {
             font-size: 4mm;
             font-weight: bold;
-            color: #0d4162;
-            line-height: 1;
+            line-height: 1.1;
         }
 
         .subtitulo {
-            font-size: 2mm;
+            font-size: 1.6mm;
             letter-spacing: 0.2mm;
-            margin-top: 0.5mm;
+
+            margin-left: 1.8mm;
+
+            opacity: 0.75;
         }
 
         /*
-         * Modelo do box, à direita do título.
+         * Modelo do box, à direita do nome.
          *
          * Já foi também a versão do app ("App 2.7.4"), que saiu: é um adesivo
          * colado no aparelho e a versão muda sozinha pelo atualizador, então a
@@ -167,35 +182,19 @@
         .modelo {
             font-size: 3mm;
             font-weight: bold;
-            color: #0d4162;
-            text-align: right;
+            line-height: 1.1;
+
+            white-space: nowrap;
         }
 
-        /*
-         * Identificação do box
-         */
-        .identificacao {
-            background: #0d4162;
-            color: white;
-
-            border-radius: 1.5mm;
-
-            padding: 1.2mm 2.5mm;
-
-            margin-bottom: 1.5mm;
-
+        .identificacao-dados {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
 
             gap: 2mm;
-        }
 
-        .identificacao-rotulo {
-            font-size: 1.8mm;
-            opacity: 0.85;
-
-            white-space: nowrap;
+            margin-top: 0.9mm;
         }
 
         .serial {
@@ -207,7 +206,7 @@
 
         .mac {
             font-size: 2mm;
-            opacity: 0.85;
+            opacity: 0.8;
 
             white-space: nowrap;
             text-align: right;
@@ -282,14 +281,14 @@
 
             text-align: center;
 
-            margin-bottom: 1.5mm;
+            margin-bottom: 1.2mm;
         }
 
         .qr-titulo {
             font-size: 2.2mm;
             font-weight: bold;
 
-            margin-bottom: 0.6mm;
+            margin-bottom: 0.5mm;
         }
 
         .qr {
@@ -307,6 +306,34 @@
             width: 18mm !important;
             height: 18mm !important;
         }
+
+        /*
+         * QR do manual: um pouco menor que os dois de cima, e não muito.
+         *
+         * Nasceu com 10mm, espremido numa etiqueta que não tinha mais altura.
+         * Com o nome da aplicação e a identificação fundidos num bloco só,
+         * sobrou espaço e ele cresceu. Continua menor que os outros dois porque
+         * é o menos urgente dos três — quem está de pé na bancada, com o
+         * celular na mão, quer o Wi-Fi.
+         *
+         * Sai com correção média (ver criarQRCode): menos módulos, cada um
+         * maior. A 16mm o módulo fica em ~0,55mm, mais folgado que o dos dois
+         * grandes, que usam correção alta.
+         */
+        .qr.manual canvas,
+        .qr.manual img {
+            width: 16mm !important;
+            height: 16mm !important;
+        }
+
+        /*
+         * As legendas dos QR grandes saíram para o do manual crescer.
+         *
+         * A rede e o endereço do painel já estão escritos por extenso nos
+         * passos 4 e 5, logo ao lado — repetir embaixo do QR era gastar duas
+         * linhas para dizer o que a instrução já diz. A senha ficou: é o único
+         * lugar da etiqueta onde ela aparece.
+         */
 
         .qr-texto {
             font-size: 1.9mm;
@@ -601,45 +628,38 @@ function criarEtiqueta(box, indice) {
 
     container.innerHTML = `
 
-        <div class="cabecalho">
-
-            <div>
-
-                <div class="titulo">
-                    BALANÇA GFIG
-                </div>
-
-                <div class="subtitulo">
-                    BANCA DE TESTE ESTÁTICO
-                </div>
-
-            </div>
-
-            <div class="modelo">
-                ${box.modelo}
-            </div>
-
-        </div>
-
-
         <div class="identificacao">
 
-            <div>
+            <div class="identificacao-topo">
 
-                <div class="identificacao-rotulo">
-                    IDENTIFICAÇÃO DO EQUIPAMENTO
+                <div>
+
+                    <span class="titulo">
+                        BALANÇA GFIG
+                    </span>
+
+                    <span class="subtitulo">
+                        BANCA DE TESTE ESTÁTICO
+                    </span>
+
                 </div>
 
-                <div class="serial">
-                    ${box.serial}
+                <div class="modelo">
+                    ${box.modelo}
                 </div>
 
             </div>
 
-            <div class="mac">
-                MAC ethernet
-                <br>
-                ${box.mac}
+            <div class="identificacao-dados">
+
+                <span class="serial">
+                    ${box.serial}
+                </span>
+
+                <span class="mac">
+                    MAC ethernet ${box.mac}
+                </span>
+
             </div>
 
         </div>
@@ -805,14 +825,7 @@ function criarEtiqueta(box, indice) {
                     </div>
 
                     <div class="qr-texto">
-
-                        ${box.ssid}
-
-                        <br>
-
-                        Senha:
-                        ${senhaWifi}
-
+                        Senha: ${senhaWifi}
                     </div>
 
                 </div>
@@ -829,10 +842,18 @@ function criarEtiqueta(box, indice) {
                         id="qr-painel-${indice}">
                     </div>
 
-                    <div class="qr-texto">
+                </div>
 
-                        192.168.43.1
 
+                <div class="qr-bloco">
+
+                    <div class="qr-titulo">
+                        MANUAL DE USO
+                    </div>
+
+                    <div
+                        class="qr manual"
+                        id="qr-manual-${indice}">
                     </div>
 
                 </div>
@@ -868,9 +889,17 @@ function criarEtiqueta(box, indice) {
  * ============================================================
  */
 
+/*
+ * O nível de correção de erro decide quantos módulos o QR carrega. H (alto)
+ * aguenta até ~30% de dano e é o certo para os QR grandes; num QR pequeno,
+ * porém, ele troca legibilidade por redundância que ninguém vai usar — são
+ * módulos demais espremidos em poucos milímetros. O [correcao] permite baixar
+ * para M (~15%) no QR do manual, que é o menor da etiqueta.
+ */
 function criarQRCode(
     elemento,
-    texto
+    texto,
+    correcao
 ) {
 
     new QRCode(
@@ -886,7 +915,9 @@ function criarQRCode(
                 256,
 
             correctLevel:
-                QRCode.CorrectLevel.H
+                correcao === undefined
+                    ? QRCode.CorrectLevel.H
+                    : correcao
         }
     );
 
@@ -1007,6 +1038,26 @@ function gerarEtiquetas() {
                 ),
 
                 enderecoPainel
+
+            );
+
+
+            /*
+             * QR Code do manual de uso.
+             *
+             * Mesmo endereço que o rodapé imprime por extenso — o QR é para
+             * quem está com o celular na mão, o texto é para quem prefere
+             * digitar ou anotar.
+             */
+            criarQRCode(
+
+                document.getElementById(
+                    `qr-manual-${indice}`
+                ),
+
+                enderecoManual,
+
+                QRCode.CorrectLevel.M
 
             );
 

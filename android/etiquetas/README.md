@@ -24,6 +24,7 @@ Cada uma leva:
 | Rede | `ssid` |
 | **QR do Wi-Fi** | `WIFI:T:WPA;S:<ssid>;P:<senha>;;` — escanear conecta o celular direto |
 | **QR do painel** | `http://192.168.43.1` — escanear abre a interface |
+| **QR do manual** | `enderecoManual` — o mesmo do rodapé, para quem está com o celular na mão |
 
 A **versão do app saiu da etiqueta**. Ela já foi impressa ("App 2.7.4"), mas é um
 adesivo colado no aparelho e o atualizador muda a versão sozinho: a etiqueta
@@ -33,6 +34,28 @@ modelo, serial, MAC e SSID. Para saber a versão de um box, o `/saude` ou
 
 O QR do Wi-Fi usa o formato que Android e iPhone reconhecem nativamente: quem
 aponta a câmera entra na rede sem digitar `12345678`.
+
+## A etiqueta está cheia
+
+Os 100×100 mm estão ocupados. Quem for acrescentar alguma coisa vai descobrir
+que a **coluna dos QR codes é a mais alta das duas**, e que passar dela empurra
+o conteúdo por cima do rodapé — calado, porque a etiqueta tem `overflow: hidden`
+e não avisa.
+
+Foi o que aconteceu ao crescer o QR do manual: ele só chegou aos 16 mm porque as
+legendas dos outros dois saíram. A rede e o endereço do painel continuam
+escritos por extenso nos passos 4 e 5; a senha, que não aparecia em lugar nenhum,
+ficou. **Para acrescentar algo à etiqueta, tire de outro lugar** — e confira na
+renderização, não só no navegador.
+
+Para medir sem imprimir, dá para renderizar a página num Firefox headless e
+olhar o resultado:
+
+```bash
+firefox --headless --window-size=1000,780 \
+        --screenshot /tmp/etiqueta.png \
+        "file://$PWD/android/etiquetas/gerador_etiqueta.html"
+```
 
 ## Onde mexer
 
