@@ -67,6 +67,7 @@ export class ArmazenamentoApi implements IArmazenamento {
       const body = fatia.map(l => ({
         marca_temporal:       l.marcaTemporal,
         forca_crua:           l.forcaNewtonCrua ?? l.forcaNewton,
+        temperatura:          l.temperatura,
         em_queima:            l.emQueima,
         impulso_acumulado_ns: l.impulsoAcumuladoNs,
       }));
@@ -83,15 +84,19 @@ export class ArmazenamentoApi implements IArmazenamento {
     const res = await fetch(`${this.base}/sessoes/${idSessao}/leituras`);
     if (!res.ok) throw new Error(`Erro ao obter leituras: ${res.status}`);
     const lista = await res.json() as Array<{
-      marca_temporal: number; forca_crua: number;
+      marca_temporal: number; forca_crua: number; temperatura: number | null;
       em_queima: number; impulso_acumulado_ns: number;
     }>;
+    // Sem o `as LeituraProcessada` que havia aqui: ele afirmava o tipo sem
+    // conferir, e foi o que deixou `temperatura` sumir em silêncio. Com o mapa
+    // completo, o compilador passa a cobrar todo campo que faltar.
     return lista.map(l => ({
       marcaTemporal:       l.marca_temporal,
       forcaNewton:         l.forca_crua,
+      temperatura:         l.temperatura ?? 0,
       emQueima:            l.em_queima !== 0,
       impulsoAcumuladoNs:  l.impulso_acumulado_ns,
-    } as LeituraProcessada));
+    }));
   }
 
   async exportarCSV(idSessao: string): Promise<string> {
