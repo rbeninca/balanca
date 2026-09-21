@@ -249,6 +249,24 @@ Três coisas que confundem:
 O JSON é exceção deliberada: ele é o **formato de re-importação**, lido de
 volta pela tela de importar sessão, e por isso mantém o tempo absoluto.
 
+### O CSV pergunta os separadores
+
+Ao clicar em exportar CSV, o app pergunta o formato — porque a mesma tabela
+precisa ser lida por dois mundos que falam línguas diferentes:
+
+| Escolha | Campo | Decimal | Para quem |
+|---|---|---|---|
+| **Planilha** | `;` | `,` | Excel e LibreOffice em português |
+| **Dados** | `,` | `.` | Python, R, qualquer parser |
+
+A regra é **nunca repetir o separador**. Parecer óbvio não é: um arquivo com
+campo `;` e decimal `.` abre na planilha em português sem erro nenhum — e
+mostra `0.012` como **doze**, porque ali o ponto é separador de milhar. O
+número fica mil vezes maior, e nada avisa.
+
+Levar isso a sério custou uma sessão de depuração: parecia que o tempo saía em
+milissegundos quando sempre esteve em segundos.
+
 ---
 
 ## Desenvolvimento
