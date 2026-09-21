@@ -8,6 +8,10 @@ dist/
 coverage/
 test-results.xml
 
+# Editores — configuração de quem trabalha, não do projeto
+.vscode/
+.idea/
+
 # Artefatos de build do PlatformIO
 firmware/.pio/
 
