@@ -143,6 +143,15 @@ fase_estado() {
   echo
   local v; v=$(sh_ "dumpsys package $PACOTE" | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1)
   echo "    app instalado ........ ${v:-NÃO}"
+  # O painel da balança abre no navegador do box (sistema/NavegadorDoBox.kt):
+  # sem um navegador que atenda ao Custom Tab, a aba Balança só mostra o aviso
+  # de que não há navegador instalado.
+  local nav="" p
+  for p in com.android.chrome com.chrome.beta com.android.browser org.mozilla.firefox; do
+    nav=$(sh_ "dumpsys package $p" 2>/dev/null | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1)
+    [ -n "$nav" ] && { nav="$p $nav"; break; }
+  done
+  echo "    navegador ............ ${nav:-AUSENTE — a aba Balança não abre}"
   # Identificador do box, publicado pelo app no /saude (ver SerialDoBox.kt).
   # É a linha que interessa num inventário: para varrer vários boxes de uma vez,
   # rode isto num laço pelos IPs e filtre por esta linha.
