@@ -1,7 +1,9 @@
 # Inventário dos TVBox
 
 Levantado em **20/09/2026**, com os boxes já na 2.7.3 (a versão que introduziu o
-serial). É o retrato do parque naquela data — o IP muda por DHCP, o serial não.
+serial); o `192.168.1.118` entrou em **21/09/2026**. É o retrato do parque nessas
+datas — o IP muda por DHCP, o serial não, e a versão do app anda sozinha pelo
+atualizador, então a coluna "App" envelhece: vale para o dia do levantamento.
 
 ## Como levantar de novo
 
@@ -28,8 +30,12 @@ bash scripts/box.sh estado 192.168.1.105
 | `GFIG-TX9-58EB81E3618C` | 192.168.1.105 | TX9 | Amlogic `gxl` | 2.7.3 | Koush (Superuser) |
 | `GFIG-MXQ-A82003AC10E7` | 192.168.1.110 | MXQ | Rockchip `rk322x` | 2.7.3 | Chainfire (SuperSU) |
 | `GFIG-MXQ-A82003AC10D4` | 192.168.1.112 | MXQ | Rockchip `rk322x` | 2.7.3 | `su` em `/system/xbin/su`, sem app gerenciador |
+| `GFIG-TX9-58EB81E36158` | 192.168.1.118 | TX9 | Amlogic `gxl` | 2.8.2 | Koush (Superuser) |
 
-Os três rodam **API 25 (Android 7.1.2)** e o app `br.edu.ifsc.balancagfig`.
+Todos rodam **API 25 (Android 7.1.2)** e o app `br.edu.ifsc.balancagfig`.
+
+O `192.168.1.118` é TX9 do mesmo lote do `.105` — o MAC começa igual,
+`58:eb:81:e3:` — e o que os separa é o sufixo: `61:58` contra `61:8c`.
 
 ## Ficha de cada box
 
@@ -72,6 +78,53 @@ O `box.sh` reporta `root: nenhum` neste box, mas é falso negativo: o `su` exist
 responde `uid=0(root)` e foi por ele que a atualização para 2.7.3 instalou. O que
 falta ali é só o **app** gerenciador (Koush/SuperSU), não o root.
 
+### `GFIG-TX9-58EB81E36158` — TX9 · 192.168.1.118
+
+| | |
+|---|---|
+| Plataforma | Amlogic `gxl`, API 25 |
+| Root | Koush (`com.thirdparty.superuser`) |
+| eth0 | `58:eb:81:e3:61:58` — 192.168.1.118/24 |
+| wlan0 | `84:ea:97:6b:17:54` — 192.168.43.1/24 |
+| Hotspot | `balancaGFIG-6158` |
+| Balança | **conectada, 85 Hz** |
+| Launcher | `com.ifsc.laucherbox` |
+| Navegador | **nenhum** — só o `com.android.webview` do sistema |
+| Disco | `/data` 4,2 G, 790 M usados |
+
+Duas coisas deste box que os outros não têm:
+
+- **Não tem navegador nenhum**, e desde a 2.8.0 a aba **Balança** abre o painel
+  no navegador do box (ver [Formatos de importação] e o `NavegadorDoBox.kt`).
+  Sem navegador, o botão avisa que não há nenhum instalado. O WebView do sistema
+  não serve: é o Chromium 52, de 2016.
+- **O `/saude` dele anuncia a versão errada.** Ele está na 2.8.2 (`dumpsys`) mas
+  responde `"versao":"2.8.0"`, porque o APK instalado foi compilado com um
+  `BuildConfig.VERSION_NAME` velho — manifesto novo, constante de compilação
+  antiga. O `/atualizacao` do mesmo box acerta, porque lê do `PackageManager`.
+  A partir da 2.8.3 o `/saude` também lê do `PackageManager`.
+
+> Enquanto isso, **não confie no campo `versao` do `/saude` deste box**: ele
+> alimenta o `box.sh inventario`, então a varredura vai listá-lo como 2.8.0.
+> Para a versão real, `dumpsys package br.edu.ifsc.balancagfig` ou o
+> `/atualizacao`.
+
+### Navegador: o que a 2.8.0 passou a exigir
+
+Até a 2.7.9 o app desenhava o frontend dentro dele (GeckoView, 108 MB do APK).
+Da 2.8.0 em diante a aba **Balança** abre o painel no navegador instalado, e o
+APK caiu para ~16 MB. O preço é este:
+
+| Box | Navegador |
+|---|---|
+| `192.168.1.103` | `com.android.chrome` 101.0.4951.61 |
+| `192.168.1.118` | **nenhum** |
+| `.105`, `.110`, `.112` | a conferir (estavam desligados) |
+
+Para conferir: `bash scripts/box.sh estado <ip>` responde numa linha. Onde faltar,
+instalar o Chrome por `adb install` resolve — é a única peça que a 2.8.x passou a
+pedir do aparelho.
+
 ## O que **não** é do projeto
 
 A varredura da faixa encontra vizinhos que não são boxes. Registrados para não
@@ -111,6 +164,7 @@ nome da rede — dá para ler a etiqueta sem consultar nada:
 | Box | MAC do eth0 | Serial | SSID |
 |---|---|---|---|
 | TX9 | `58:eb:81:e3:`**`61:8c`** | `GFIG-TX9-`**`58EB81E3618C`** | `balancaGFIG-`**`618C`** |
+| TX9 | `58:eb:81:e3:`**`61:58`** | `GFIG-TX9-`**`58EB81E36158`** | `balancaGFIG-`**`6158`** |
 | MXQ | `a8:20:03:ac:`**`10:e7`** | `GFIG-MXQ-`**`A82003AC10E7`** | `balancaGFIG-`**`10E7`** |
 | MXQ | `a8:20:03:ac:`**`10:d4`** | `GFIG-MXQ-`**`A82003AC10D4`** | `balancaGFIG-`**`10D4`** |
 
