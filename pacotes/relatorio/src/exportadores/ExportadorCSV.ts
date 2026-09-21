@@ -60,9 +60,13 @@ export function exportarCSV(
     const gf   = (l.forcaNewton * N_PARA_GF).toFixed(2);
     const kgf  = (l.forcaNewton * N_PARA_KGF).toFixed(5);
     const eq   = l.emQueima ? '1' : '0';
-    // Segundos, com 3 casas: o `marcaTemporal` é um uint32 de milissegundos, então
-    // 3 casas representam a amostra exatamente, sem perder nem inventar resolução.
-    const t    = ((l.marcaTemporal - t0) / 1000).toFixed(3);
+    // Segundos com 7 casas — a mesma largura de campo do formato CURVA EMPUXO
+    // (Prof. Marchi), para os dois arquivos poderem ser lidos coluna a coluna.
+    //
+    // A resolução real é de 1 ms: o `marcaTemporal` é um uint32 de `millis()`
+    // do ESP. As 4 últimas casas são, portanto, sempre zero — elas alinham o
+    // campo, não revelam precisão que o firmware não mede.
+    const t    = ((l.marcaTemporal - t0) / 1000).toFixed(7);
     // Temperatura ausente sai como célula VAZIA, nunca como 0 nem como a
     // string "undefined" (que era o que a interpolação produzia antes).
     //

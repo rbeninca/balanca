@@ -126,14 +126,25 @@ describe('ExportadorCSV', () => {
   it('decimal com vírgula para planilha pt-BR', () => {
     const csv = exportarCSV(leiturasBasico, undefined, undefined, { separador: ';', decimal: ',' });
     const campos = linhasDados(csv)[0]!.split(';');
-    expect(campos[0]).toBe('0,000');
+    expect(campos[0]).toBe('0,0000000');
     expect(campos[4]).toBe('25');
   });
 
   it('o par campo `,` com decimal `.` é o CSV internacional', () => {
     const csv = exportarCSV(leiturasBasico, undefined, undefined, { separador: ',', decimal: '.' });
-    expect(linhasDados(csv)[0]!.split(',')[0]).toBe('0.000');
+    expect(linhasDados(csv)[0]!.split(',')[0]).toBe('0.0000000');
   });
+
+  // Sete casas, a mesma largura do formato CURVA EMPUXO. O `marcaTemporal` é
+  // um inteiro de milissegundos, então as casas além da terceira são sempre
+  // zero — o que estes testes fixam é a largura do campo, não a precisão.
+  it('o tempo sai com 7 casas decimais', () => {
+    const campos = linhasDados(exportarCSV(leiturasBasico))[0]!.split(';');
+    expect(campos[0]).toBe('0.0000000');
+    expect(campos[4]).toBe('25');
+    expect(linhasDados(exportarCSV(leiturasBasico))[1]!.split(';')[0]).toBe('0.1000000');
+  });
+
 
   it('negativo também troca o separador decimal', () => {
     const csv = exportarCSV(
@@ -159,7 +170,7 @@ describe('ExportadorCSV', () => {
       { marcaTemporal: 7_200_250, forcaNewton: 1, temperatura: 0, emQueima: false, impulsoAcumuladoNs: 0 },
     ];
     const tempos = linhasDados(exportarCSV(ls)).map(l => l.split(';')[0]);
-    expect(tempos).toEqual(['0.000', '0.010', '0.250']);
+    expect(tempos).toEqual(['0.0000000', '0.0100000', '0.2500000']);
   });
 
   it('não gera tempo negativo quando as leituras vêm fora de ordem', () => {
