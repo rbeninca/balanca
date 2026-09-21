@@ -2,9 +2,13 @@ import { resumir, falhaEsperada, historico, TEXTO_REINSTALANDO, type EstadoAtual
 
 /**
  * Atualização do app do TVBox pelo repositório (GitHub Releases). O usuário só
- * decide se atualiza; o box percorre sozinho todas as versões até a mais nova,
- * reiniciando o app a cada uma. A tela acompanha por GET /atualizacao e tolera
- * a queda da API durante cada reinstalação.
+ * decide se atualiza; o box instala a versão mais nova, reiniciando o app uma
+ * vez. A tela acompanha por GET /atualizacao e tolera a queda da API durante a
+ * reinstalação.
+ *
+ * O plano já foi uma cadeia — uma versão por vez, para cada uma rodar as
+ * próprias migrações. Como as migrações do banco são idempotentes, a cadeia só
+ * multiplicava o download: ver `PlanoAtualizacao`, no app.
  */
 export class TelaAtualizacao {
   private overlay: HTMLElement;

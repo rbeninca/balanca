@@ -3,6 +3,34 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.2 (2026-09-21)
+
+- **A atualização vai direto para a versão mais nova, sem passar pelas
+  intermediárias.** O plano era uma cadeia — uma versão por vez, para que cada
+  uma rodasse as próprias migrações antes da seguinte — e a precaução não
+  protegia nada: as migrações do banco são idempotentes e cumulativas
+  (`BancoDados.migrar` confere `PRAGMA table_info` antes de cada `ALTER`, e o
+  esquema inteiro é reaplicado a cada abertura), então qualquer versão aplica
+  todas. Só multiplicava o download.
+  - O sintoma que trouxe isso: um MXQ na 2.7.4 parecia **travar** ao atualizar
+    pela web. Não travava — tinha **sete** degraus até a 2.8.1, e seis desses
+    APKs são da era do GeckoView, ~122 MB cada. Eram ~750 MB de download a
+    1,9 MB/s e uns 40 minutos de TV parada entre download, instalação e
+    dex2oat, um degrau por vez.
+  - Conferido no box, não só em teste: saltar da 2.7.5 direto para a 2.8.1
+    deixou as 1709 leituras da sessão **byte a byte iguais** (mesmo sha256).
+  - O `.parte` do download interrompido e o APK do degrau anterior agora são
+    apagados **antes** de cada passo. O `apk.delete()` do fim nunca chegava a
+    rodar: quem instala com sucesso mata o processo. Sem isso, cada degrau
+    deixava o APK inteiro para trás.
+- **`Root` ganhou teto de tempo.** Um `su` que não responde — pedido de
+  permissão esperando um toque que ninguém dá, numa TV sem tela sensível —
+  deixava a chamada presa para sempre, sem erro e sem saída a não ser
+  reiniciar. A leitura da saída foi para outra thread, porque `readText()`
+  bloqueia mesmo depois do `waitFor` estourar. O teto do `pm install` é de 15
+  minutos; se estourar, não é fatal — o Android instala assim mesmo e o
+  atualizador confere a versão ao voltar.
+
 ## v2.8.1 (2026-09-21)
 
 - **Importar sessões no formato CURVA EMPUXO 2.2** (Prof. Marchi) — o caminho de

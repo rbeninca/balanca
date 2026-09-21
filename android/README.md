@@ -249,12 +249,21 @@ precisam de git nem de PC:
    (versão, SHA-256, tamanho) e cria a release com APK + firmware.
 2. No box, o serviço consulta as releases ao subir e a cada 6 h
    (`atualizacao/Atualizador.kt`). A tela **Atualização** do frontend (barra
-   de navegação) mostra a versão instalada e a cadeia de versões a percorrer.
-3. O usuário só decide "Atualizar agora". A partir daí é automático: para cada
-   versão mais nova, em ordem, o app baixa o APK, confere o SHA-256 do
-   manifest, instala via root (`pm install -r`), reinicia
-   (`MY_PACKAGE_REPLACED`) e retoma o plano até a última. Instalar uma a uma
-   garante que cada versão rode as próprias migrações.
+   de navegação) mostra a versão instalada e a versão a instalar.
+3. O usuário só decide "Atualizar agora". A partir daí é automático: o app
+   baixa o APK da **versão mais nova**, confere o SHA-256 do manifest, instala
+   via root (`pm install -r`), e o Android reinicia o app
+   (`MY_PACKAGE_REPLACED`).
+
+   O plano já foi uma **cadeia** — uma versão por vez, para que cada uma
+   rodasse as próprias migrações antes da seguinte. A precaução não protegia
+   nada: as migrações do banco são idempotentes e cumulativas
+   (`BancoDados.migrar` confere `PRAGMA table_info` antes de cada `ALTER`, e o
+   esquema inteiro é reaplicado a cada abertura), então qualquer versão aplica
+   todas. Só multiplicava o download: com os APKs de 122 MB da era do
+   GeckoView, um box na 2.7.4 tinha sete degraus até a 2.8.1 — cerca de 750 MB
+   e uns 40 minutos reiniciando, que é exatamente o que parece um travamento.
+   Saltando direto para a última, são 16 MB.
 
 Rotas: `GET /atualizacao`, `POST /atualizacao/{verificar,iniciar,cancelar}`.
 Para testar com releases locais, grave a URL de um `releases.json` (formato da

@@ -33,10 +33,10 @@ class ReleaseTest {
     }
 
     @Test
-    fun planoSaoAsMaisNovasEmOrdemCrescente() {
+    fun planoEhAMaisNovaEntreAsDisponiveis() {
         val releases = Release.analisarLista("[${release("v2.5.0")},${release("v2.3.0")},${release("v2.4.0")},${release("v2.5.0")},${release("v1.0.0")}]")
         val plano = PlanoAtualizacao.calcular(Versao(2, 3, 0), releases)
-        assertEquals(listOf("2.4.0", "2.5.0"), plano.map { it.versao.toString() })
+        assertEquals(listOf("2.5.0"), plano.map { it.versao.toString() })
         assertEquals(emptyList<Release>(), PlanoAtualizacao.calcular(Versao(2, 5, 0), releases))
     }
 

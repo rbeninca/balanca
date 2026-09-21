@@ -189,6 +189,12 @@ class Atualizador(
     }
 
     private fun executarPasso(release: Release) {
+        // Antes de baixar, limpa o que sobrou do passo anterior. O `apk.delete()`
+        // do fim deste método nunca chega a rodar quando dá certo: quem instala
+        // com sucesso mata este processo. Sem esta linha, cada degrau deixava
+        // ~122 MB para trás, e uma cadeia longa enchia o /data.
+        limparDownloads()
+
         val apk = File(pastaDownload, "balancagfig-${release.versao}.apk")
         try {
             pastaDownload.mkdirs()
@@ -228,7 +234,9 @@ class Atualizador(
     }
 
     private fun limparDownloads() {
-        pastaDownload.listFiles()?.filter { it.name.endsWith(".apk") }?.forEach { it.delete() }
+        pastaDownload.listFiles()
+            ?.filter { it.name.endsWith(".apk") || it.name.endsWith(".parte") }
+            ?.forEach { it.delete() }
     }
 
     @Synchronized

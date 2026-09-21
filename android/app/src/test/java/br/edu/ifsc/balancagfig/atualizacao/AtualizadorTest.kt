@@ -55,15 +55,24 @@ class AtualizadorTest {
         Atualizador(Versao.analisar(instalada)!!, rede, inst, armazem, File(pasta.root, "dl"), "https://api/releases", agora = { 1000L })
 
     @Test
-    fun verificarMontaOPlanoComAsVersoesMaisNovas() {
+    fun verificarMontaOPlanoComAMaisNova() {
         val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0", "2.3.0", "2.4.0") }
         val a = criar("2.3.0", rede)
         val e = a.verificar()
         assertEquals(Fase.OCIOSA, e.fase)
-        assertEquals(listOf("2.4.0", "2.5.0"), e.plano.map { it.versao.toString() })
+        // Um passo só, e é o mais novo: as migrações do banco são idempotentes,
+        // então passar pela 2.4.0 antes só custaria baixar outro APK inteiro.
+        assertEquals(listOf("2.5.0"), e.plano.map { it.versao.toString() })
         assertEquals(1000L, e.verificadoEm)
         assertNull(e.erro)
         assertEquals("2.3.0", a.estadoJson().getString("instalada"))
+    }
+
+    @Test
+    fun planoDeBoxMuitoAtrasadoTambemEhDeUmPassoSo() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.7.4", "2.7.5", "2.7.6", "2.7.7", "2.7.8", "2.7.9", "2.8.0", "2.8.1") }
+        val e = criar("2.7.4", rede).verificar()
+        assertEquals(listOf("2.8.1"), e.plano.map { it.versao.toString() })
     }
 
     @Test
@@ -76,7 +85,7 @@ class AtualizadorTest {
     }
 
     @Test
-    fun cadeiaCompletaPassandoPorCadaVersao() {
+    fun atualizaDaMaisAntigaDiretoParaAMaisNova() {
         val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.4.0", "2.5.0") }
         publicar(rede, "2.4.0"); publicar(rede, "2.5.0")
         val armazem = ArmazemFalso()
@@ -89,23 +98,35 @@ class AtualizadorTest {
         assertEquals("2.3.0", a1.estado.versaoInicial)
         a1.executarPendente()
         assertEquals(Fase.INSTALANDO, a1.estado.fase)          // gravado antes do pm install
-        assertEquals(listOf("balancagfig-2.4.0.apk"), inst.instalados)
+        // Salta a 2.4.0: baixa e instala a 2.5.0 direto.
+        assertEquals(listOf("balancagfig-2.5.0.apk"), inst.instalados)
 
-        // o Android matou o processo e reinstalou; app volta como 2.4.0
-        val a2 = criar("2.4.0", rede, inst, armazem)
+        // o Android matou o processo e reinstalou; app volta como 2.5.0
+        val a2 = criar("2.5.0", rede, inst, armazem)
         assertEquals(Fase.INSTALANDO, a2.estado.fase)          // estado veio do armazém
-        assertTrue(a2.retomar())                               // ainda há 2.5.0
-        assertEquals(Fase.BAIXANDO, a2.estado.fase)
-        assertEquals(1, a2.estado.indice)
-        a2.executarPendente()
-        assertEquals(listOf("balancagfig-2.4.0.apk", "balancagfig-2.5.0.apk"), inst.instalados)
-
-        // volta como 2.5.0: fim do plano
-        val a3 = criar("2.5.0", rede, inst, armazem)
-        assertFalse(a3.retomar())
-        assertEquals(Fase.CONCLUIDA, a3.estado.fase)
-        assertEquals("2.3.0", a3.estado.versaoInicial)
+        assertFalse(a2.retomar())                              // fim do plano: era um passo só
+        assertEquals(Fase.CONCLUIDA, a2.estado.fase)
+        assertEquals("2.3.0", a2.estado.versaoInicial)
         assertEquals(0, File(pasta.root, "dl").listFiles()?.size ?: 0)   // APKs apagados
+    }
+
+    // O `apk.delete()` do fim do passo nunca chega a rodar quando a instalação
+    // dá certo: quem instala com sucesso mata este processo. Sem limpar antes de
+    // baixar, cada degrau deixava o APK inteiro para trás — 122 MB cada, na era
+    // do GeckoView.
+    @Test
+    fun apkDeUmaRodadaAnteriorNaoSeAcumulaNaPasta() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.4.0") }
+        publicar(rede, "2.4.0")
+        val pastaDl = File(pasta.root, "dl").apply { mkdirs() }
+        File(pastaDl, "balancagfig-2.3.0.apk").writeBytes(ByteArray(1024))       // sobra da rodada anterior
+        File(pastaDl, "balancagfig-2.4.0.apk.parte").writeBytes(ByteArray(10))   // download interrompido
+
+        val a = criar("2.3.0", rede)
+        a.verificar(); a.iniciar(); a.executarPendente()
+
+        assertEquals(Fase.INSTALANDO, a.estado.fase)
+        assertEquals(listOf("balancagfig-2.4.0.apk"), pastaDl.listFiles()!!.map { it.name })
     }
 
     @Test

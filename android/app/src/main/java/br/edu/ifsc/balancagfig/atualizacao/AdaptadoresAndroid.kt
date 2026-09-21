@@ -79,7 +79,10 @@ class InstaladorRoot : Instalador {
         if (!Root.disponivel()) return "root indisponível (su não respondeu)"
         val alvo = "/data/local/tmp/balancagfig-atualizacao.apk"
         val saida = Root.executarLendo(
-            "cp '${apk.absolutePath}' $alvo && chmod 644 $alvo && pm install -r $alvo 2>&1; rc=\$?; rm -f $alvo; exit \$rc"
+            "cp '${apk.absolutePath}' $alvo && chmod 644 $alvo && pm install -r $alvo 2>&1; rc=\$?; rm -f $alvo; exit \$rc",
+            // Copiar 122 MB e otimizar o APK leva minutos num box destes — o
+            // teto aqui existe só para não travar para sempre.
+            timeoutMs = Root.TIMEOUT_INSTALACAO_MS,
         )
         Log.i(TAG, "pm install: ${saida?.trim()}")
         return when {
