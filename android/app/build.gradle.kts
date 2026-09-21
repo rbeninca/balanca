@@ -17,12 +17,13 @@ android {
         // TX9 anuncia Android 10 mas roda API 25 (7.1.2)
         minSdk = 24
         targetSdk = 36
-        versionCode = 17
-        versionName = "2.7.9"
+        versionCode = 18
+        versionName = "2.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // GeckoView é grande; o TX9 é armeabi-v7a, então só empacotamos essa ABI
+        // Os boxes (TX9 e MXQ) são ARM de 32 bits: uma ABI só, para não
+        // empacotar biblioteca nativa que nenhum deles carrega.
         ndk { abiFilters += "armeabi-v7a" }
     }
 
@@ -92,8 +93,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    // Motor Firefox embutido (a WebView do box é Chromium 52, não roda o frontend)
-    implementation("org.mozilla.geckoview:geckoview:115.0.20230726201356")
+    // O painel da balança abre no navegador do box (Custom Tab), não embutido:
+    // ver sistema/NavegadorDoBox.kt.
+    implementation(libs.androidx.browser)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.usb.serial)
     implementation(libs.nanohttpd)

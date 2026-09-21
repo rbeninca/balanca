@@ -5,11 +5,6 @@ import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.view.WindowManager
 import android.app.Activity
-import android.view.KeyEvent
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import android.content.Context
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,7 +35,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,12 +50,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.GeckoSession
-import org.mozilla.geckoview.GeckoView
 import br.edu.ifsc.balancagfig.sistema.EnderecosRede
 import br.edu.ifsc.balancagfig.sistema.HotspotManager
+import br.edu.ifsc.balancagfig.sistema.NavegadorDoBox
 import br.edu.ifsc.balancagfig.sistema.PainelFrontalTx9
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -74,10 +65,16 @@ import kotlinx.coroutines.launch
 private const val URL_APP_LOCAL = "http://127.0.0.1:8080"
 
 class MainActivity : ComponentActivity() {
-    // Aba atual e escolha manual ficam na Activity para o "voltar"
-    // (dispatchKeyEvent) sair da tela cheia antes do GeckoView consumir a tecla.
     private var aba by mutableStateOf(Aba.STATUS)
     private var usuarioInteragiu by mutableStateOf(false)
+
+    /**
+     * Cada incremento é um pedido de abrir o painel no navegador do box. É um
+     * contador, e não o estado da aba, porque tocar de novo em "Balança" com a
+     * aba já selecionada precisa abrir o navegador outra vez — e um `aba` que
+     * não muda não dispararia efeito nenhum.
+     */
+    private var pedidosDeAbertura by mutableStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,25 +85,17 @@ class MainActivity : ComponentActivity() {
                 AppComAbas(
                     aba = aba,
                     usuarioInteragiu = usuarioInteragiu,
-                    onSelecionarAba = { aba = it; usuarioInteragiu = true },
-                    onAutoAbrirBalanca = { aba = Aba.BALANCA },
+                    pedidosDeAbertura = pedidosDeAbertura,
+                    onSelecionarAba = {
+                        aba = it
+                        // A Balança não é uma tela do app: é o navegador.
+                        if (it == Aba.BALANCA) pedidosDeAbertura++
+                        usuarioInteragiu = true
+                    },
+                    onAutoAbrirBalanca = { pedidosDeAbertura++ },
                 )
             }
         }
-    }
-
-    /**
-     * Trata o "voltar" antes do GeckoView (que consome a tecla): na tela cheia
-     * da Balança, volta para a Status; fora dela, comportamento padrão.
-     */
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP &&
-            NavegacaoInicial.ehTelaCheia(aba)
-        ) {
-            NavegacaoInicial.aoVoltar(aba)?.let { aba = it; usuarioInteragiu = true }
-            return true
-        }
-        return super.dispatchKeyEvent(event)
     }
 
     /** Chegada de USB_DEVICE_ATTACHED com a Activity já aberta (launchMode singleTask). */
@@ -119,20 +108,22 @@ class MainActivity : ComponentActivity() {
 }
 
 
-/** Activity com duas abas: o painel de status e a interface web servida pelo box. */
+/** Activity com duas abas: o painel de status e o painel da balança. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppComAbas(
     aba: Aba,
     usuarioInteragiu: Boolean,
+    pedidosDeAbertura: Int,
     onSelecionarAba: (Aba) -> Unit,
     onAutoAbrirBalanca: () -> Unit,
 ) {
     var jaAutoTrocou by remember { mutableStateOf(false) }
     val serial by EstadoHost.serial.collectAsState()
+    val atividade = LocalContext.current as? Activity
 
-    // Começa na aba Status; se a célula de carga estiver conectada, abre a
-    // Balança automaticamente após alguns segundos (uma única vez, e só se o
+    // Começa na aba Status; se a célula de carga estiver conectada, abre o
+    // painel automaticamente após alguns segundos (uma única vez, e só se o
     // usuário não tiver escolhido uma aba manualmente).
     LaunchedEffect(serial is EstadoSerial.Conectado) {
         if (NavegacaoInicial.deveAbrirBalanca(serial, jaAutoTrocou, usuarioInteragiu)) {
@@ -143,27 +134,23 @@ fun AppComAbas(
             }
         }
     }
-    val telaCheia = NavegacaoInicial.ehTelaCheia(aba)
 
-    // Na aba Balança (tela cheia), esconde as barras do sistema; nas demais,
-    // mostra. O "voltar" é tratado na Activity (dispatchKeyEvent), antes de o
-    // GeckoView consumir a tecla.
-    val janela = (LocalContext.current as? Activity)?.window
-    LaunchedEffect(telaCheia) {
-        janela?.let { w ->
-            val c = WindowCompat.getInsetsController(w, w.decorView)
-            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            if (telaCheia) c.hide(WindowInsetsCompat.Type.systemBars())
-            else c.show(WindowInsetsCompat.Type.systemBars())
+    LaunchedEffect(pedidosDeAbertura) {
+        if (pedidosDeAbertura == 0 || atividade == null) return@LaunchedEffect
+        // Sem foco não se arranca a tela de quem está noutro app: o painel
+        // automático vale quando o box está mostrando a balança, não sempre.
+        if (!atividade.hasWindowFocus()) return@LaunchedEffect
+        if (!NavegadorDoBox.abrir(atividade, URL_APP_LOCAL)) {
+            Toast.makeText(atividade, "Nenhum navegador instalado neste box.", Toast.LENGTH_LONG).show()
         }
     }
 
     Scaffold(
-        topBar = { if (!telaCheia) BarraSuperior(aba, onSelecionarAba) },
+        topBar = { BarraSuperior(aba, onSelecionarAba) },
     ) { interno ->
         when (aba) {
             Aba.STATUS -> ConteudoStatus(interno)
-            Aba.BALANCA -> TelaWeb(if (telaCheia) PaddingValues(0.dp) else interno)
+            Aba.BALANCA -> TelaBalanca(interno) { onSelecionarAba(Aba.BALANCA) }
         }
     }
 }
@@ -200,36 +187,56 @@ private fun BarraSuperior(aba: Aba, onSelecionar: (Aba) -> Unit) {
     }
 }
 
-/** GeckoRuntime é único por processo; criado sob demanda e reaproveitado. */
-private object Gecko {
-    @Volatile private var runtime: GeckoRuntime? = null
-    fun runtime(ctx: Context): GeckoRuntime =
-        runtime ?: synchronized(this) {
-            runtime ?: GeckoRuntime.create(ctx.applicationContext).also { runtime = it }
-        }
-}
-
 /**
- * Aba que exibe o frontend servido pelo próprio box (127.0.0.1:8080) num
- * GeckoView (motor Firefox embutido) — a WebView do sistema (Chromium 52) é
- * antiga demais para o bundle es2022/CSS Grid do frontend.
+ * Aba Balança.
+ *
+ * O painel (frontend que o próprio box serve em 127.0.0.1:8080) abre no
+ * navegador instalado, não dentro do app: embutir o GeckoView custava 108 dos
+ * 122 MB do APK, e o box já traz o Chrome — que roda o frontend sem ajuste
+ * nenhum. Esta tela só explica isso, oferece o botão de abrir e mostra os
+ * endereços que os celulares da bancada usam.
  */
 @Composable
-private fun TelaWeb(interno: PaddingValues) {
-    val ctx = LocalContext.current
-    val sessao = remember {
-        GeckoSession().apply {
-            open(Gecko.runtime(ctx))
-            loadUri(URL_APP_LOCAL)
+private fun TelaBalanca(interno: PaddingValues, onAbrir: () -> Unit) {
+    var enderecosIP by remember { mutableStateOf(EnderecosRede.listarIPv4()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            enderecosIP = EnderecosRede.listarIPv4()
+            delay(3000)
         }
     }
-    DisposableEffect(Unit) {
-        onDispose { sessao.close() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(interno)
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Cartao("Painel da balança") {
+            Text(
+                "O painel abre no navegador do box, numa aba própria — fora do app.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(12.dp))
+            FilledTonalButton(onClick = onAbrir, modifier = Modifier.height(56.dp)) {
+                Text("ABRIR O PAINEL")
+            }
+            Spacer(Modifier.height(8.dp))
+            Mono(URL_APP_LOCAL)
+        }
+
+        Cartao("No celular ou tablet") {
+            Text(
+                "Conecte o aparelho na rede ${HotspotManager.ssidDoBox()} e abra:",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(8.dp))
+            EnderecosRede.enderecosDeAcesso(HotspotManager.IP_HOTSPOT, enderecosIP)
+                .forEach { ip -> Mono("http://$ip") }
+        }
     }
-    AndroidView(
-        modifier = Modifier.fillMaxSize().padding(interno),
-        factory = { c -> GeckoView(c).apply { setSession(sessao) } },
-    )
 }
 
 /**

@@ -38,6 +38,23 @@
     -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
+    <!--
+      Visibilidade de pacotes (obrigatória a partir do targetSdk 30): sem isto o
+      Android esconde o navegador do app, e tanto o Custom Tab quanto o
+      ACTION_VIEW de reserva falham como se não houvesse navegador instalado.
+      Ver sistema/NavegadorDoBox.kt.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

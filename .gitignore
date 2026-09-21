@@ -15,6 +15,12 @@ test-results.xml
 # Artefatos de build do PlatformIO
 firmware/.pio/
 
+# Sessões do compilador Kotlin (criadas pelo plugin do Gradle a cada build)
+android/.kotlin/
+
+# Estado que o box.sh guarda por box — log de trabalho, não do projeto
+android/chaves/box/
+
 # Copiados pelo CI a partir de firmware/firmware.bin — não rastrear
 pacotes/aplicacao/public/firmware.bin
 pacotes/aplicacao/public/firmware-versao.json

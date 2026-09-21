@@ -22,7 +22,7 @@ ESP8266 + HX711
 │                                              │
 │  HotspotManager · PainelFrontalTx9           │
 └──────────────────────────────────────────────┘
-   ▲ Activity: painel de status (WebView entra quando a WebView do box for atualizada)
+   ▲ Activity: painel de status · o painel da balança abre no navegador do box
 ```
 
 ## Por que um app em vez do Docker
@@ -199,9 +199,12 @@ sozinho.
 - Frontend: `http://<ip-do-box>:8080` (ou `http://192.168.43.1:8080` pelo hotspot).
 - Gravar/atualizar firmware: tela **Firmware** do frontend → "Gravar via Gateway"
   (grava o `firmware.bin` embutido no APK, pela porta da balança, sem PC).
-- O painel na TV mostra força ao vivo, taxa, IPs, hotspot e um registro; a
-  WebView com o frontend entra quando a WebView do box (Chromium 52) for
-  atualizada.
+- O painel na TV mostra força ao vivo, taxa, IPs, hotspot e um registro.
+- A aba **Balança** não desenha o frontend dentro do app: abre-o no navegador
+  do box (Chrome, via Custom Tab — ver `sistema/NavegadorDoBox.kt`). O app
+  embutia o GeckoView para isso, que sozinho custava 108 dos 122 MB do APK; o
+  WebView do sistema não serve de substituto (é o Chromium 52, de 2016, sem
+  módulos ES nem `ResizeObserver`). O APK ficou com ~20 MB.
 
 ## Hotspot e celulares (porta 80, probes de conectividade)
 

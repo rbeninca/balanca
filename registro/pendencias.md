@@ -13,10 +13,6 @@
 - **Boxes com a chave antiga.** Só o `.105` foi reinstalado com a chave fixa;
   os demais precisam de `./gradlew :app:instalarNoTx9` uma vez (uid muda).
 
-- **GeckoView da TV reconectando.** O `127.0.0.1` entra e sai da lista de
-  clientes do WebSocket a cada poucos segundos. Investigar com o log do
-  gateway agora que há batimento.
-
 - **Push das tags novas**: `v2.4.0` (além das listadas acima).
 
 - **Ruído nos testes do WebSerial.** `FonteWebSerial.teste.ts` emite uma
@@ -29,6 +25,10 @@
 
 ## Resolvidas nesta rodada
 
+- **APK de 122 MB para 20 MB**: o GeckoView saiu. A aba Balança abre o painel
+  no Chrome do box (Custom Tab), que já o renderiza sem ajuste. De quebra
+  resolveu o GeckoView reconectando o `127.0.0.1` no WebSocket, e o "voltar" na
+  TV deixou de ser consumido pela engine embutida.
 - Instalação em box novo testada (TX9 `.103`): `instalarNoTx9` em 2 min 12 s
   sem toque na TV; `desfazerNoTx9` devolve o estado original (conferido).
   Boxes com a chave antiga: `desfazerNoTx9` antes.
@@ -49,6 +49,6 @@
 
 ## Notas de operação
 
-- Instalação do APK (~132 MB por causa do GeckoView) demora no Wi-Fi; use
-  timeout longo no `adb install`.
+- Instalação do APK (~20 MB) leva menos de um minuto pela rede. Até a 2.7.9
+  eram ~132 MB: o GeckoView embutido era 108 MB disso.
 - O IP do box muda conforme a rede (LAN por DHCP vs. hotspot `192.168.43.1`).

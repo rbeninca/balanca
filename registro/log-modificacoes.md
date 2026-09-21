@@ -3,6 +3,33 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.0 (2026-09-21)
+
+- **O GeckoView saiu do APK: 122 MB → ~20 MB.** Ele era 108 MB dos 122 —
+  `libxul.so` sozinho, 93,9 MB, guardado sem compressão. Foi embutido porque o
+  WebView do box é o Chromium 52 (2016), que não roda módulos ES nem
+  `ResizeObserver`; mas o box já traz o **Chrome 101** em `/data`, que renderiza
+  o frontend sem um ajuste sequer.
+  - **A aba Balança abre o painel no navegador** (`sistema/NavegadorDoBox.kt`),
+    via Custom Tab — uma aba só, sem barra de endereço, em tela cheia. Se o
+    Custom Tab não atender, cai no `ACTION_VIEW` comum; sem navegador nenhum, o
+    app avisa. `NavegadorDoBox` prefere o Custom Tab justamente pelo visual de
+    quiosque na TV.
+  - A aba virou uma tela do app: explica que o painel abre fora, traz o botão
+    **ABRIR O PAINEL** e os endereços dos celulares da bancada
+    (`EnderecosRede.enderecosDeAcesso` — o do hotspot não se repete, porque o
+    `wlan0` do AP também aparece em `listarIPv4()`).
+  - `<queries>` no manifesto: sem ele o Android (targetSdk 36) esconde o
+    navegador do app e tanto o Custom Tab quanto o `ACTION_VIEW` falham como se
+    não houvesse navegador instalado.
+  - `ehTelaCheia`/`aoVoltar` saíram com o `dispatchKeyEvent`: existiam para o
+    "voltar" da TV não ser engolido pela engine embutida. Sem engine, some
+    também o `127.0.0.1` entrando e saindo do WebSocket.
+  - O auto-abrir (célula conecta → 5 s) virou um contador de pedidos, e só
+    dispara com a janela do app em foco — em segundo plano, não arranca a tela
+    de quem está noutro app. Contador, e não estado da aba, porque tocar de
+    novo em "Balança" já selecionada precisa abrir o navegador outra vez.
+
 ## v2.4.0 (tag local, 2026-09-19)
 
 - **Redirect da porta 80 restrito aos IPs do box** (chain `balanca_http`).

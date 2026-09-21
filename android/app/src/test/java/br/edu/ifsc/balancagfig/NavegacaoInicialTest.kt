@@ -1,8 +1,6 @@
 package br.edu.ifsc.balancagfig
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,15 +30,4 @@ class NavegacaoInicialTest {
         assertFalse(NavegacaoInicial.deveAbrirBalanca(conectado, jaAutoTrocou = false, usuarioInteragiu = true))
     }
 
-    @Test
-    fun `apenas a Balanca roda em tela cheia`() {
-        assertTrue(NavegacaoInicial.ehTelaCheia(Aba.BALANCA))
-        assertFalse(NavegacaoInicial.ehTelaCheia(Aba.STATUS))
-    }
-
-    @Test
-    fun `voltar sai da tela cheia para a Status`() {
-        assertEquals(Aba.STATUS, NavegacaoInicial.aoVoltar(Aba.BALANCA))
-        assertNull(NavegacaoInicial.aoVoltar(Aba.STATUS))
-    }
 }

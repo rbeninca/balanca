@@ -59,6 +59,16 @@ object EnderecosRede {
     }
 
     /**
+     * Endereços a anunciar para os celulares da bancada, sem repetição: o do
+     * hotspot primeiro, depois os das interfaces.
+     *
+     * O endereço do hotspot também sai em [listarIPv4] quando o AP está no ar
+     * (é o `wlan0`), e anunciá-lo duas vezes na tela parecia defeito.
+     */
+    fun enderecosDeAcesso(hotspot: String, ips: List<String>): List<String> =
+        (listOf(hotspot) + ips).distinct()
+
+    /**
      * Texto de até 4 caracteres para o display frontal do TX9: "I" + último
      * octeto do IP com 3 dígitos (ex.: "I111"), ou "SEMC" sem conexão.
      */

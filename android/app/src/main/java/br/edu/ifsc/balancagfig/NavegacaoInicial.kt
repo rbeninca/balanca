@@ -1,6 +1,10 @@
 package br.edu.ifsc.balancagfig
 
-/** Abas do app. A Balança roda em tela cheia (quiosque na TV do box). */
+/**
+ * Abas do app. A Balança é o painel do box, que abre no navegador instalado
+ * (ver [br.edu.ifsc.balancagfig.sistema.NavegadorDoBox]) — por isso a aba não
+ * ocupa a tela: ela só traz o botão de abrir e os endereços da bancada.
+ */
 enum class Aba(val titulo: String) { STATUS("Status"), BALANCA("Balança") }
 
 /**
@@ -20,10 +24,4 @@ object NavegacaoInicial {
      */
     fun deveAbrirBalanca(serial: EstadoSerial, jaAutoTrocou: Boolean, usuarioInteragiu: Boolean): Boolean =
         serial is EstadoSerial.Conectado && !jaAutoTrocou && !usuarioInteragiu
-
-    /** A [aba] ocupa a tela toda (esconde a barra de abas e as barras do sistema)? */
-    fun ehTelaCheia(aba: Aba): Boolean = aba == Aba.BALANCA
-
-    /** Destino do botão "voltar"; null = comportamento padrão do sistema. */
-    fun aoVoltar(aba: Aba): Aba? = if (aba == Aba.BALANCA) Aba.STATUS else null
 }
