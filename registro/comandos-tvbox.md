@@ -229,14 +229,20 @@ permissão (o `SAUDE` diria `sem_dispositivo` nesses casos). Na prática o **ESP
 travou**, e o que o destrava é reabrir a porta: o app pulsa DTR/RTS ao conectar,
 e isso reseta o NodeMCU.
 
+**A partir de v2.8.2** há um watchdog que faz isto automaticamente: se a ESP não
+enviar dados por 15 segundos, o app assume que travou e reconecta. O log mostra
+`"inatividade detectada por 15000ms"` quando isso acontece.
+
+Antes era preciso fazer:
+
 ```bash
 adb -s <dev> shell "am force-stop br.edu.ifsc.balancagfig"
 adb -s <dev> shell "am start -n br.edu.ifsc.balancagfig/.MainActivity"
 ```
 
-Observado depois de várias reenumerações de USB seguidas (unbind/bind da
-controladora): a porta reabre mas o ESP fica mudo. Vale saber em campo — se o
-painel mostrar 0 Hz com a balança plugada, é isto.
+Agora o app cuida disso sozinho. Se ainda assim o painel mostrar 0 Hz e os logs
+disserem que reconectou, é ESP defeituosa ou USB danificado — não só travamento
+passageiro.
 
 > Diagnóstico da porta 80 (add → `curl` → remove) foi feito de forma reversível,
 > deixando o `nat` como estava; a regra definitiva é aplicada pelo próprio app.

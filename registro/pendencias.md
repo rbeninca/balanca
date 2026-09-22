@@ -36,6 +36,10 @@
 
 ## Resolvidas nesta rodada
 
+- **ESP parando de enviar dados após ~15 min** — watchdog de inatividade. O app
+  reconecta automaticamente se a ESP não enviar nada por 15 segundos; o log registra
+  `"inatividade detectada"` quando dispara. Antes era preciso reiniciar o app
+  manualmente.
 - **APK de 122 MB para 20 MB**: o GeckoView saiu. A aba Balança abre o painel
   no Chrome do box (Custom Tab), que já o renderiza sem ajuste. De quebra
   resolveu o GeckoView reconectando o `127.0.0.1` no WebSocket, e o "voltar" na
