@@ -5,15 +5,21 @@ import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoWSD
 import org.json.JSONObject
 import java.io.IOException
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CopyOnWriteArraySet
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 /**
  * WebSocket do gateway (porta 8765) — papel de pacotes/gateway/src/ServidorWebSocket.ts.
  * Difunde leituras/config/status a todos os clientes e entrega ao serviço as
- * mensagens que eles enviam (PIPELINE_CONFIG e comandos para o ESP).
+ * mensagens que eles enviam (PIPELINE_CONFIG e comandos para a ESP).
+ *
+ * Cada cliente tem **fila e thread de envio próprias**, e isso não é detalhe de
+ * desempenho: é o que impede um cliente morto de calar os outros. Quando um
+ * aparelho sai da rede sem fechar o TCP (celular fora do alcance, por exemplo),
+ * o `write` para ele bloqueia — sem timeout de escrita no socket. Com uma
+ * thread só para todos, a difusão inteira parava ali: o painel recebia o estado
+ * inicial do `onOpen`, exibia "conectado" com a taxa certa, e nunca mais uma
+ * leitura. Cada cliente na sua fila, o preso trava sozinho.
  */
 class ServidorWs(
     porta: Int = PORTA_PADRAO,
@@ -32,16 +38,11 @@ class ServidorWs(
         clientes.sortedBy { it.conectadoEm }.map { Mensagens.ClienteWs(it.endereco, it.conectadoEm) }
 
     /**
-     * Envio fora da thread serial: um cliente lento não pode atrasar a leitura
-     * da balança. Fila limitada; se encher, descarta as leituras mais antigas.
+     * Ping de vida a cada 10 s, e quem recolhe os clientes presos: um cliente
+     * que não conclui envio há [LIMITE_SEM_ENVIAR_MS] não está lendo, e a
+     * conexão dele é fechada — o que destrava a thread de envio e libera o
+     * socket, em vez de deixá-lo pendurado para sempre.
      */
-    private val difusor = ThreadPoolExecutor(
-        1, 1, 0L, TimeUnit.MILLISECONDS,
-        LinkedBlockingQueue(FILA_MAX),
-        { r -> Thread(r, "ServidorWs-difusor") },
-        ThreadPoolExecutor.DiscardOldestPolicy(),
-    )
-
     private val pingador = Thread({
         while (!Thread.currentThread().isInterrupted) {
             try {
@@ -50,7 +51,12 @@ class ServidorWs(
                 return@Thread
             }
             for (c in clientes) {
-                try { c.ping(ByteArray(0)) } catch (_: IOException) { remover(c) }
+                if (c.preso()) {
+                    Log.w(TAG, "cliente ${c.endereco} parou de consumir; fechando")
+                    remover(c)
+                    continue
+                }
+                c.ofertar(Envio.Ping)
             }
         }
     }, "ServidorWs-ping").apply { isDaemon = true }
@@ -64,19 +70,18 @@ class ServidorWs(
 
     fun encerrar() {
         pingador.interrupt()
-        difusor.shutdownNow()
-        for (c in clientes) try { c.close(WebSocketFrame.CloseCode.GoingAway, "encerrando", false) } catch (_: IOException) { }
+        for (c in clientes) c.destravar()
         clientes.clear()
         stop()
     }
 
+    /**
+     * Enfileira em cada cliente e volta. Quem escreve no socket é a thread de
+     * envio do próprio cliente — esta função roda na thread da serial, a 86 Hz,
+     * e por isso não pode bloquear.
+     */
     fun difundir(json: String) {
-        if (clientes.isEmpty()) return
-        difusor.execute {
-            for (c in clientes) {
-                try { c.send(json) } catch (e: IOException) { remover(c) }
-            }
-        }
+        for (c in clientes) c.ofertar(Envio.Texto(json))
     }
 
     val numClientes: Int get() = clientes.size
@@ -85,19 +90,82 @@ class ServidorWs(
 
     private fun remover(c: Cliente) {
         if (clientes.remove(c)) {
+            // Se a thread de envio estiver presa num socket morto, é aqui que ela solta
+            c.destravar()
             Log.i(TAG, "cliente ${c.endereco} saiu (${clientes.size} restantes)")
             aoMudarClientes(listarClientes())
         }
+    }
+
+    /** Um envio na fila de um cliente, na ordem em que foi produzido. */
+    private sealed interface Envio {
+        data class Texto(val json: String) : Envio
+        data object Ping : Envio
     }
 
     private inner class Cliente(handshake: NanoHTTPD.IHTTPSession) : WebSocket(handshake) {
         val endereco: String = handshake.remoteIpAddress ?: "?"
         val conectadoEm: Long = System.currentTimeMillis()
 
+        /** A sessão do handshake: é por ela que se fecha o socket em [destravar]. */
+        private val sessao = handshake
+
+        private val fila = ArrayBlockingQueue<Envio>(FILA_MAX)
+
+        /** Instante do último envio concluído; congelado, denuncia a thread presa (ver [preso]). */
+        @Volatile private var ultimoEnvioMs = System.currentTimeMillis()
+
+        /**
+         * Envio deste cliente. Se ele parar de ler, o `write` para no meio de um
+         * `send` aqui dentro — e é só aqui: os outros clientes seguem recebendo.
+         *
+         * Só começa no [onOpen]: um handshake que falha não chega a entrar em
+         * `clientes` e deixaria a thread esperando na fila para sempre.
+         */
+        private val envio = Thread({
+            while (!Thread.currentThread().isInterrupted) {
+                val e = try { fila.take() } catch (_: InterruptedException) { return@Thread }
+                try {
+                    when (e) {
+                        is Envio.Texto -> send(e.json)
+                        Envio.Ping -> ping(ByteArray(0))
+                    }
+                    ultimoEnvioMs = System.currentTimeMillis()
+                } catch (ex: IOException) {
+                    remover(this)
+                    return@Thread
+                }
+            }
+        }, "ServidorWs-envio").apply { isDaemon = true }
+
+        /** Fila cheia descarta a mais antiga: leitura atrasada não interessa a ninguém. */
+        fun ofertar(e: Envio) {
+            if (fila.offer(e)) return
+            fila.poll()
+            fila.offer(e)
+        }
+
+        /** Parado há [LIMITE_SEM_ENVIAR_MS]: a thread está presa num socket que não anda. */
+        fun preso(): Boolean = System.currentTimeMillis() - ultimoEnvioMs > LIMITE_SEM_ENVIAR_MS
+
+        /**
+         * Destrava a thread de envio fechando o socket por baixo do NanoWSD.
+         *
+         * O `close()` da biblioteca não serve para isto: ele passa pelo mesmo
+         * `sendFrame` — `synchronized` — que está preso, e travaria quem tenta
+         * destravar. Fechar o stream do handshake fecha o socket, e aí o `write`
+         * pendente morre com IOException.
+         */
+        fun destravar() {
+            try { sessao.inputStream.close() } catch (_: Exception) { }
+            envio.interrupt()
+        }
+
         override fun onOpen() {
             clientes += this
             Log.i(TAG, "cliente $endereco conectado (${clientes.size})")
-            try { for (m in estadoInicial()) send(m) } catch (e: IOException) { remover(this); return }
+            envio.start()
+            for (m in estadoInicial()) ofertar(Envio.Texto(m))
             aoMudarClientes(listarClientes())
         }
 
@@ -116,8 +184,16 @@ class ServidorWs(
     companion object {
         private const val TAG = "ServidorWs"
         const val PORTA_PADRAO = 8765
+
+        /** ~2,3 s de leituras a 86 Hz; o suficiente para absorver um cliente momentaneamente lento. */
         private const val FILA_MAX = 200
         private const val INTERVALO_PING_MS = 10_000L
+
+        /**
+         * Sem nenhum envio concluído neste tempo, o cliente é dado como morto.
+         * O SAUDE sai a cada 2 s, então um cliente vivo sempre renova isto.
+         */
+        private const val LIMITE_SEM_ENVIAR_MS = 25_000L
     }
 }
 

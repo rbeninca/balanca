@@ -3,6 +3,40 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.3 (2026-09-22)
+
+- **Um cliente pendurado no WebSocket calava a difusão para todos.** O
+  `ServidorWs` difundia numa thread só, para todos os clientes; quando um
+  aparelho saía da rede sem fechar o TCP, o `write` para ele enchia o buffer e
+  bloqueava — não há timeout de escrita no socket. Dali em diante ninguém mais
+  recebia nada: nem LEITURA, nem o SAUDE de batimento.
+  - O sintoma que trouxe isso: o painel dizia **"Balança conectada", 86 Hz**,
+    e não chegava leitura nenhuma. O estado inicial (SAUDE, SERIAL_OK,
+    PIPELINE, CONFIG, GRAVACAO) sai no `onOpen`, fora do difusor — é o que
+    fazia o painel parecer saudável com a difusão parada.
+  - No `.105`: a thread `ServidorWs-difu` em `sk_stream_wait_memory`, e um
+    cliente `FAILED` no ARP havia 765 s ainda na lista. Os clientes vivos
+    entravam e saíam a cada ~8 s — o watchdog do frontend (3 batimentos)
+    derrubando uma conexão que já não recebia nada.
+  - O ping não recolhia o morto: no NanoWSD 2.3.1 o `sendFrame` é
+    `synchronized` e o `ping()` passa por ele — quem pingava travava no mesmo
+    cliente. E o `onPong` era vazio, sem controle de resposta.
+  - **Agora cada cliente tem fila e thread de envio próprias**: o preso trava
+    só a si mesmo. Quem não conclui envio há 25 s é dado como morto e fechado
+    pelo pingador — e o fechamento não passa pelo `close()` da biblioteca, que
+    é o mesmo `sendFrame` preso, e sim pelo stream do handshake, que fecha o
+    socket e destrava o `write`.
+  - Conferido no `.105`, com um cliente que para de ler de propósito (o mesmo
+    que o `.170` fez ao sair do alcance): o engasgado foi para
+    `sk_stream_wait_memory` e outro cliente recebeu 22.908 leituras em 270 s
+    (85 Hz, nenhuma queda); o travado foi recolhido em ~30 s.
+  - O travamento não é imediato: entre sair da rede e o `write` travar, os
+    buffers TCP do box e do cliente levam minutos para encher — foi por isso
+    que o `.170` ficou pendurado tanto tempo sem que ninguém notasse.
+  - A gravação compartilhada nunca foi afetada: `gravador.receber` acontece
+    antes do `difundir`, então sessão em andamento continuou sendo gravada
+    com o painel congelado.
+
 ## v2.8.2 (2026-09-21)
 
 - **A atualização vai direto para a versão mais nova, sem passar pelas
