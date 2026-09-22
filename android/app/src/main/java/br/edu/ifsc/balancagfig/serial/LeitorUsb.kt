@@ -7,6 +7,9 @@ import android.os.Process
 import android.util.Log
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.timer
 
 /**
  * Leitura do endpoint bulk IN com várias [UsbRequest] em voo, como o driver
@@ -29,17 +32,30 @@ class LeitorUsb(
 ) {
     @Volatile private var ativo = false
     private var thread: Thread? = null
+    @Volatile private var ultimoRecebimento = System.currentTimeMillis()
+    private var monitor: java.util.Timer? = null
 
     fun iniciar() {
         ativo = true
+        ultimoRecebimento = System.currentTimeMillis()
         thread = Thread(::executar, "LeitorUsb").apply {
             isDaemon = true
             start()
+        }
+        monitor = timer("LeitorUsb-watchdog", daemon = true, initialDelay = TIMEOUT_INATIVIDADE_MS, period = TIMEOUT_INATIVIDADE_MS / 2) {
+            if (ativo && System.currentTimeMillis() - ultimoRecebimento > TIMEOUT_INATIVIDADE_MS) {
+                Log.w(TAG, "inatividade detectada por $TIMEOUT_INATIVIDADE_MS ms, encerrando")
+                val e = IOException("Sem dados por ${TIMEOUT_INATIVIDADE_MS}ms (ESP desconectada ou travada)")
+                aoFalhar(e)
+                parar()
+            }
         }
     }
 
     fun parar() {
         ativo = false
+        monitor?.cancel()
+        monitor = null
         thread?.interrupt()
         thread = null
     }
@@ -57,7 +73,6 @@ class LeitorUsb(
             for (r in requisicoes) enfileirar(r)
 
             while (ativo) {
-                // Bloqueia até alguma requisição completar; null = conexão fechada/dispositivo removido
                 val r = conexao.requestWait() ?: throw IOException("requestWait devolveu null (dispositivo removido?)")
                 val buffer = r.clientData as ByteBuffer
                 val lidos = buffer.position()
@@ -66,6 +81,7 @@ class LeitorUsb(
                     buffer.rewind()
                     buffer.get(dados)
                     aoReceber(dados)
+                    ultimoRecebimento = System.currentTimeMillis()
                 }
                 enfileirar(r)
             }
@@ -91,5 +107,6 @@ class LeitorUsb(
 
     private companion object {
         const val TAG = "LeitorUsb"
+        const val TIMEOUT_INATIVIDADE_MS = 15_000L
     }
 }
