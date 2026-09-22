@@ -13,6 +13,10 @@
 - **Boxes com a chave antiga.** Só o `.105` foi reinstalado com a chave fixa;
   os demais precisam de `./gradlew :app:instalarNoTx9` uma vez (uid muda).
 
+- **MXQ: `su` não respondendo após atualizar para 2.8.3.** Havia loop de
+  reenumeração USB que chamava `Root.disponivel()` bloqueante repetidamente
+  (cada uma 60s), congelando o app. Corrigido com cache de 30s (v2.8.4+).
+
 - **`.105` e `.112` ainda vão fazer a cadeia longa uma vez.** A 2.8.2 saltou
   direto para a última versão, mas quem calcula o plano é o app instalado no
   box — um aparelho na 2.7.3 vai montar os oito degraus e baixar ~750 MB. Como
