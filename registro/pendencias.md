@@ -2,45 +2,42 @@
 
 ## Abertas
 
-- **Boxes presos na 2.8.2: root quebrado, atualização travada.** A 2.8.2 chamou
+- **O `.118` ainda pode estar preso na 2.8.2.** A 2.8.2 chamou
   `Process.waitFor(long, TimeUnit)` (API 26) e os boxes são API 25 (Android
   7.1.2): o `NoSuchMethodError` foi engolido pelo `catch (Throwable)` do `Root`,
   que passou a responder "não" a *todo* comando. Como quem instala a atualização
   é o próprio app, via `su`, um box na 2.8.2 **não sai de lá sozinho** — nem
   para instalar a versão que conserta. O caso inteiro está em
   `log-modificacoes.md` (v2.8.5).
-  - A correção é a **2.8.5**. Cada box preso precisa de **uma instalação por
-    ADB**: `cd android && bash scripts/box.sh instalar <ip>`. O `adb install -r`
-    do script não usa root no box — é justamente o que funciona em quem está
-    preso.
-  - Presos, conferido em 22/09/2026: **`.16`** = `GFIG-TX9-58EB81E3618A`
-    (versionCode 20, 2.8.2) e **`.118`** = `GFIG-TX9-58EB81E36158` (2.8.2 pela
-    tabela; estava fora do ar na conferência).
-  - Na mesma passada, os passos do script que dependem de `su` — pré-aprovar o
-    root, `WRITE_SETTINGS`, permissão USB — falham calados, porque o root do box
-    ainda está quebrado quando eles rodam. Rodar `instalar` uma segunda vez
-    depois da 2.8.5, com o root de volta, aplica o resto.
+  - O **`.16`** estava nesse estado e foi **resgatado em 22/09/2026**
+    (`cd android && bash scripts/box.sh instalar 192.168.1.16`): está na 2.8.5,
+    com hotspot, serial a 4 Hz e frontend conferidos pelo script.
+  - Falta o **`.118`** = `GFIG-TX9-58EB81E36158`: 2.8.2 pela tabela, não
+    respondeu em 22/09/2026 (nem ping). Quando aparecer na rede, mesmo comando —
+    o `adb install -r` do script não usa root *no box*, que é justamente o que
+    funciona em quem está preso. Os passos de `su` dele vão por `adb shell su`, e
+    não pelo `Root` do app: no `.16` eles aplicaram numa passada só (root
+    pré-aprovado, `WRITE_SETTINGS`, permissão USB), ao contrário do que esta
+    pendência supunha.
 
-- **`.105` e `.112` não podem andar sozinhos pela cadeia — ela passa pela 2.8.2.**
-  Os dois estão na 2.7.3, e quem monta o plano de atualização é o app
-  *instalado* neles, que ainda é o planejador antigo (um degrau por vez). A
-  cadeia até a 2.8.5 inclui a 2.8.2 — um box que andar sozinho chega nela e
-  **para ali**, como o `.16`. Saída, em ordem de preferência:
+- **`.105` e `.112` seguem na 2.7.3** (desligados desde antes da conferência de
+  22/09). Duas saídas, em ordem de preferência:
   1. instalar a 2.8.5 à mão nos dois (`bash scripts/box.sh instalar <ip>`,
      ~17 MB, um minuto cada) em vez de esperar a cadeia;
-  2. se algum estiver fora do alcance do ADB, marcar as releases **2.8.2 e
-     2.8.4** como pré-lançamento no GitHub: o app filtra `prerelease`
-     (`Release.analisarLista`) e a cadeia pula direto para a 2.8.5. Reversível e
-     não apaga nada, mas rotula como pré-lançamento o que foi lançamento — e as
-     versões 2.7.4 a 2.8.1 continuam na cadeia, ~120 MB cada (eram da era do
-     GeckoView). A 2.8.3 não entra na lista porque não existe: nem tag nem
-     release (conferido em 22/09/2026).
-     Vale mais do que parece: a release da 2.8.4 está **quebrada** (tem os
-     `waitFor` da API 26) e **sem `manifest.json`** — um cliente até a 2.8.4 que
-     a pegasse como degrau a instalaria **sem conferência nenhuma** e pararia
-     ali. A 2.8.2 idem. Um cliente da 2.8.5 em diante já pula as duas sozinho (o
-     portão de estabilidade recusa release sem `estavel`), mas não é o caso
-     destes dois boxes, que estão na 2.7.3.
+  2. deixar que andem sozinhos — já é seguro desde 22/09/2026 (ver o item
+     abaixo), mas são **12 degraus**, e seis desses APKs são da era do GeckoView,
+     ~120 MB cada.
+
+- **A cadeia de quem está antes da 2.8.2 não passa mais por ela.** As releases
+  **2.8.2 e 2.8.4** ficaram como **pré-lançamento** no GitHub em 22/09/2026 (a
+  2.8.3 não existe: nem tag nem release — conferido). O app filtra `prerelease`
+  desde o primeiro atualizador (`Release.analisarLista`, conferido na tag
+  `v2.7.3`), então a cadeia de um box na 2.7.3 pula as duas e segue para a 2.8.5.
+  Reversível (`gh release edit vX.Y.Z --prerelease=false`) e o rótulo é honesto:
+  as duas são quebradas, e a 2.8.4 está no ar **sem `manifest.json`** — um
+  cliente até a 2.8.4 que a pegasse instalaria **sem conferência nenhuma**.
+  Clientes da 2.8.5 em diante não dependem da flag: o portão de estabilidade
+  recusa release sem `estavel`.
 
 - **Boxes com a chave antiga.** Só o `.105` foi reinstalado com a chave fixa;
   os demais precisam de `./gradlew :app:instalarNoTx9` uma vez (uid muda).
@@ -55,11 +52,20 @@
 
 ## Resolvidas nesta rodada
 
+- **A 2.8.5 no ar, pelo caminho normal.** Tag `v2.8.5` → CI (testes, lint e APK
+  assinado) → release publicada pelo `github-actions[bot]`, sem nada criado à
+  mão. Conferido depois, baixando os assets: `estavel: true` e versionCode 23 no
+  manifest, sha256 e tamanho batendo com o APK, e o APK com a mesma chave dos
+  boxes (`bc7d4ae8…`) e sem o `waitFor(long, TimeUnit)` no dex. O `.16`, que
+  estava preso, foi resgatado por ADB no mesmo dia e está nela.
 - **Root "indisponível" nos boxes, e o cache de 30 s que escondia isso.** A
   causa não era o `su` nem a reenumeração USB: era o `Root` quebrado desde a
   2.8.2 (`waitFor` da API 26). O cache de `Root.disponivel()` saiu junto — ele
-  guardava a resposta falsa por 30 s. Conferido no runtime do box, com um dex
-  rodado por `app_process`. Ver `log-modificacoes.md` (v2.8.5).
+  guardava a resposta falsa por 30 s. Conferido no runtime do `.16`, com um dex
+  rodado por `app_process` que chama o `Root` **do APK instalado**: `disponivel()`
+  e `executar("id")` devolvem `true` (`uid=0(root)`), `executarLendo` devolve saída
+  de verdade e `executar("false")` devolve `false`. Ver `log-modificacoes.md`
+  (v2.8.5).
 - **Push.** `main` e todas as tags até a `v2.8.4` estão no `origin` — conferido
   em 22/09/2026 (`git ls-remote`), com `main` local igualzinho ao remoto.
 - **Secrets do CI.** O `release.yml` tem credencial e chave de assinatura: o run

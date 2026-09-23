@@ -17,7 +17,7 @@ aqui: não existe lista de boxes repetida em outro lugar.
 
 | Serial | Modelo | MAC eth0 | SSID | IP | Placa | App | Navegador | Root |
 |---|---|---|---|---|---|---|---|---|
-| `GFIG-TX9-58EB81E3618A` | TX9 | `58:EB:81:E3:61:8A` | `balancaGFIG-618A` | 192.168.1.16 | Amlogic `gxl` | 2.8.2 | Chrome 101 | Koush (Superuser) |
+| `GFIG-TX9-58EB81E3618A` | TX9 | `58:EB:81:E3:61:8A` | `balancaGFIG-618A` | 192.168.1.16 | Amlogic `gxl` | 2.8.5 | Chrome 101 | Koush (Superuser) |
 | `GFIG-TX9-58EB81E3618C` | TX9 | `58:EB:81:E3:61:8C` | `balancaGFIG-618C` | 192.168.1.105 | Amlogic `gxl` | 2.7.3 | a conferir | Koush (Superuser) |
 | `GFIG-MXQ-A82003AC10E7` | MXQ | `A8:20:03:AC:10:E7` | `balancaGFIG-10E7` | 192.168.1.17 | Rockchip `rk322x` | 2.8.4 | a conferir | Chainfire (SuperSU) |
 | `GFIG-MXQ-A82003AC10D4` | MXQ | `A8:20:03:AC:10:D4` | `balancaGFIG-10D4` | 192.168.1.112 | Rockchip `rk322x` | 2.7.3 | a conferir | `su` sem gerenciador |
@@ -53,13 +53,18 @@ bash scripts/box.sh estado 192.168.1.105
 - **Conferência de 22/09/2026** (só o que respondia na LAN; o resto estava
   desligado e ficou com a linha da última conferência):
   - **`.16`** é o antigo `.103`: o DHCP trocou o endereço, o serial é o mesmo
-    (`…618A`). Está **preso na 2.8.2** — versionCode 20, com o `Root` quebrado
+    (`…618A`). Estava **preso na 2.8.2** — versionCode 20, com o `Root` quebrado
     pela chamada de API 26 (`Process.waitFor`, ver `log-modificacoes.md` v2.8.5),
-    e por isso não consegue instalar a própria atualização. Sai de lá com uma
-    instalação por ADB (`bash scripts/box.sh instalar 192.168.1.16`).
+    e por isso não conseguia instalar a própria atualização. **Resgatado por ADB
+    em 22/09/2026** (`bash scripts/box.sh instalar 192.168.1.16`): está na 2.8.5,
+    com o hotspot, a serial (4 Hz) e o frontend conferidos pelo próprio script.
   - **`.17`** é o antigo `.110`: mesmo caso, serial `…10E7`. Está na **2.8.4 de
     build manual** (versionCode 22), com a correção
-    dentro. Como o `Root` dele funciona, ele se atualiza sozinho para a 2.8.5.
+    dentro. Como o `Root` dele funciona, ele consegue instalar a 2.8.5 — mas
+    **não sozinho**: o app só *consulta* o repositório (30 s depois de subir e
+    depois a cada 6 h); instalar depende de alguém apertar "Atualizar" no painel
+    do box. Ou seja, o `.17` fica na 2.8.4 até alguém apertar o botão (ou até uma
+    instalação por ADB, como a do `.16`).
   - **A chave é a mesma em todo mundo** — conferido puxando o APK instalado de
     `.16` e `.17` e comparando com o compilado agora: os três assinam com o
     certificado `bc7d4ae8…`. É o que garante que a instalação por ADB é um
@@ -67,9 +72,13 @@ bash scripts/box.sh estado 192.168.1.105
   - **`.118`** também estava na 2.8.2 pela última conferência e é o outro
     candidato a box preso — mas **não respondeu** nesta data (`/saude` mudo), e
     sem ADB não há como confirmar. Tratar como preso até prova em contrário.
-  - **`.105`** e **`.112`** estavam desligados: seguem na 2.7.3. **Não deixar os
-    dois andarem sozinhos pela cadeia** — ela passa pela 2.8.2, e eles param
-    ali. Ver `pendencias.md`.
+  - **`.105`** e **`.112`** estavam desligados: seguem na 2.7.3. A cadeia deles
+    passa pela 2.8.2, onde eles parariam — mas a 2.8.2 e a 2.8.4 ficaram como
+    **pré-lançamento** em 22/09/2026, e o filtro de `prerelease` já existia na
+    2.7.3 (conferido na tag): quem andar sozinho pula as duas e vai para a
+    2.8.5. Ainda assim, uma instalação por ADB é melhor do que a cadeia — são 12
+    downloads (~1 GB, a maioria da era do GeckoView) contra um de 17 MB. Ver
+    `pendencias.md`.
 - **`.103`** — o **único com navegador instalado**, e por isso o único em que a
   aba Balança funciona desde a 2.8.0. **Não tem o launcher do projeto**: ficou
   com o `com.txari.launcher` do firmware. Instalar o nosso é um passo separado
