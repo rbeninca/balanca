@@ -2,6 +2,28 @@
 
 ## Abertas
 
+- **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
+  à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
+  instala é alguém com um notebook. Antes de sair, com internet, levar o APK:
+
+  ```bash
+  gh release download v2.8.5 -R rbeninca/balanca -p balancagfig-2.8.5.apk
+  ```
+
+  Lá, com `adb connect <ip>:5555` feito, um `adb -s <ip>:5555 install -r
+  balancagfig-2.8.5.apk` por box. **O APK da release serve em qualquer um
+  deles**, inclusive nos que foram instalados pelo `box.sh`: `debug` e `release`
+  são assinados com a mesma chave (`bc7d4ae8…`), então é um `install -r` comum —
+  sem `desfazer` e sem apagar as sessões gravadas. Quem levar o repositório no
+  notebook pode trocar por `bash scripts/box.sh instalar <ip>`, que compila,
+  instala, faz os passos de `su` (pré-aprovar o root, `WRITE_SETTINGS`,
+  permissão USB) e confere hotspot, serial e frontend.
+
+  O que essa ida resolve: o **`.17`** sai da 2.8.4, o **`.105`** e o **`.112`**
+  saem da 2.7.3 (17 MB, um minuto cada, em vez dos 12 downloads da cadeia), e o
+  **`.118`** sai da 2.8.2 — esse é o que **só** sai assim: com o root quebrado,
+  o app não instala nem se alguém apertar o botão.
+
 - **O `.118` ainda pode estar preso na 2.8.2.** A 2.8.2 chamou
   `Process.waitFor(long, TimeUnit)` (API 26) e os boxes são API 25 (Android
   7.1.2): o `NoSuchMethodError` foi engolido pelo `catch (Throwable)` do `Root`,

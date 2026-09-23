@@ -8,8 +8,10 @@ passar por aqui, então a coluna `App` vale para o dia do levantamento.
 **Os boxes saíram da rede local em 22/09/2026** e não voltam: daqui não há ADB
 nem `box.sh` (que é HTTP na porta 3000, na mesma rede). Tudo o que depende dos
 dois — instalar, inventariar, ler `/saude` — passou a exigir alguém no local,
-com um notebook na rede de lá. O único caminho à distância é o próprio app, e
-ele **só instala quando alguém aperta "Atualizar" no painel** do box.
+com um notebook na rede de lá. **No local a instalação é `adb install -r`
+direto**, com o APK da release; o botão "Atualizar" do painel só serviria se
+aquele box alcançasse o GitHub, e o app só instala quando alguém o aperta. O
+procedimento da ida está em `pendencias.md`.
 
 ## O parque
 
