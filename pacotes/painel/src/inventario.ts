@@ -133,20 +133,28 @@ async function salvar() {
   if (!linhas.length) return;
   botaoSalvar.disabled = true;
   recado.textContent = 'salvando…';
-  let salvos = 0;
+  const salvas = [];
   const falhas = [];
   for (const linha of linhas) {
     const serial = linha.dataset.serial;
     try {
       await pedir('/box', Object.assign({ serial }, valores(linha)));
-      salvos++;
+      salvas.push(linha);
     } catch (e) {
       falhas.push(serial + ' (' + e.message + ')');
     }
   }
-  recado.textContent = falhas.length
-    ? salvos + ' salvo(s), ' + falhas.length + ' não: ' + falhas.join('; ')
-    : (salvos === 1 ? '1 aparelho salvo' : salvos + ' aparelhos salvos');
+
+  if (falhas.length) {
+    // Não redesenha: o que não salvou continua na tela, como foi digitado, e
+    // pode ser tentado de novo. O que salvou deixa de estar marcado.
+    for (const linha of salvas) originais.set(linha.dataset.serial, valores(linha));
+    marcar();
+    recado.textContent = salvas.length + ' salvo(s), ' + falhas.length + ' não: ' + falhas.join('; ');
+    return;
+  }
+
+  recado.textContent = salvas.length === 1 ? '1 aparelho salvo' : salvas.length + ' aparelhos salvos';
   await carregar();
 }
 
@@ -162,6 +170,7 @@ async function remover(serial) {
   }
 }
 
+botaoSalvar.addEventListener('click', salvar);
 tabela.addEventListener('input', marcar);
 tabela.addEventListener('click', ev => {
   const botao = ev.target.closest('[data-remover]');

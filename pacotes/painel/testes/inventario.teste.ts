@@ -67,6 +67,18 @@ describe('GET /inventario', () => {
     expect(html).toContain('carregar();');
   });
 
+  it('os controles estão ligados no script', async () => {
+    const html = await pagina();
+
+    // Um handler escrito e não ligado não quebra nada visível: a página carrega,
+    // a linha marca e o clique não faz nada. Foi assim que o botão de salvar
+    // ficou mudo até alguém clicar nele — e é a única prova que dá para fazer
+    // disto sem um navegador de verdade no teste.
+    expect(html).toContain("botaoSalvar.addEventListener('click', salvar)");
+    expect(html).toContain("tabela.addEventListener('input', marcar)");
+    expect(html).toContain("document.getElementById('novo').addEventListener('submit'");
+  });
+
   it('a chave que fecha o script não escapa do script', async () => {
     const b = bancada('</script><script>alert(1)</script>');
     const html = await b.ler(await b.pedir('/inventario?chave=</script><script>alert(1)</script>', { chave: null }));
