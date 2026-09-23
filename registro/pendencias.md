@@ -89,7 +89,11 @@
   guardava a resposta falsa por 30 s. Conferido no runtime do `.16`, com um dex
   rodado por `app_process` que chama o `Root` **do APK instalado**: `disponivel()`
   e `executar("id")` devolvem `true` (`uid=0(root)`), `executarLendo` devolve saída
-  de verdade e `executar("false")` devolve `false`. Ver `log-modificacoes.md`
+  de verdade e `executar("false")` devolve `false`. O APK publicado foi conferido
+  por dentro também: `aapt2` dá versionCode 23 / versionName 2.8.5, o sha256 bate
+  com o do manifest, e o `dexdump` dos dois dex mostra a única chamada a
+  `Process.waitFor` como **`waitFor:()I`** (a sem argumentos, API 1) — a variante
+  `(J, TimeUnit)` da 2.8.2 não aparece em dex nenhum. Ver `log-modificacoes.md`
   (v2.8.5).
 - **Push.** `main` e todas as tags até a `v2.8.4` estão no `origin` — conferido
   em 22/09/2026 (`git ls-remote`), com `main` local igualzinho ao remoto.
