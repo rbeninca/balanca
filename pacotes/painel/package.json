@@ -8,8 +8,8 @@
     "testar:cobertura": "vitest run --coverage",
     "testar:ci": "vitest run --reporter=junit --outputFile=test-results.xml",
     "compilar": "tsc --noEmit",
-    "dev": "npx --yes wrangler@3 dev",
-    "publicar": "npx --yes wrangler@3 deploy"
+    "dev": "npx --yes wrangler@4 dev",
+    "publicar": "npx --yes wrangler@4 deploy"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

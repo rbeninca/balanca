@@ -4,11 +4,11 @@ name = "balancagfig-painel"
 main = "src/rotas.ts"
 compatibility_date = "2025-01-01"
 
-# Preenchido por `npx wrangler d1 create balancagfig-painel`.
+# Criado por `npx wrangler d1 create balancagfig-painel` em 22/09/2026.
 [[d1_databases]]
 binding = "DB"
 database_name = "balancagfig-painel"
-database_id = "SUBSTITUIR-PELO-ID-DO-D1"
+database_id = "4c39054b-aee0-4313-b5e8-0992ea326ec5"
 
 # A chave (`X-Chave` nos POSTs, `?chave=` na página) é secret, não variável:
-#   npx wrangler secret put CHAVE
+#   npx --yes wrangler@4 secret put CHAVE

@@ -29,7 +29,7 @@ com isso. Tudo o que é escrita, e tudo o que mostra os boxes, exige chave.
 
 ## A chave
 
-Mesma chave nos dois lados: `npx wrangler secret put CHAVE` no Worker, e
+Mesma chave nos dois lados: `npx --yes wrangler@4 secret put CHAVE` no Worker, e
 `painelChave` em `android/chaves/chaves.properties` (ou o secret `PAINEL_CHAVE`
 no CI) para o app.
 
@@ -41,12 +41,18 @@ além do secret atualizado).
 
 ## Publicar (uma vez para criar, depois só `deploy`)
 
+**Já está no ar:** <https://balancagfig-painel.rbeninca.workers.dev> — conta
+`rbeninca`, região ENAM, banco `balancagfig-painel`
+(`4c39054b-aee0-4313-b5e8-0992ea326ec5`), publicado em 22/09/2026 junto com a
+2.8.501. A mesma URL está nos secrets `PAINEL_URL`/`PAINEL_CHAVE` do CI. O que
+segue é o passo a passo para publicar de novo ou recriar do zero:
+
 ```bash
 cd pacotes/painel
-npx wrangler login
-npx wrangler d1 create balancagfig-painel     # copie o database_id para o wrangler.toml
-npx wrangler secret put CHAVE                 # a mesma dos boxes
-npx wrangler deploy
+npx --yes wrangler@4 login
+npx --yes wrangler@4 d1 create balancagfig-painel   # copie o database_id para o wrangler.toml
+npx --yes wrangler@4 secret put CHAVE               # a mesma dos boxes
+npx --yes wrangler@4 deploy
 ```
 
 O esquema do banco **não** precisa ser aplicado à mão: o próprio Worker o aplica
@@ -55,7 +61,7 @@ na primeira requisição de cada isolate (tudo é `CREATE TABLE IF NOT EXISTS`, 
 `https://balancagfig-painel.<conta>.workers.dev/painel?chave=…` e a página já
 funciona.
 
-No dia a dia: `npx wrangler deploy`. Para testar sem publicar, `npm run dev`
+No dia a dia: `npm run publicar` (`wrangler deploy`). Para testar sem publicar, `npm run dev`
 (usa um D1 local, dentro de `.wrangler/`).
 
 ## Como o app conversa com ele

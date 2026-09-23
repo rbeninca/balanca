@@ -12,7 +12,7 @@ seguido de `scripts/box.sh instalar`).
   - `KEYSTORE_SENHA`   → storePassword do chaves.properties
   - `CHAVE_ALIAS`      → balancagfig
   - `CHAVE_SENHA`      → keyPassword do chaves.properties
-  - `PAINEL_URL`       → https://balancagfig-painel.SUA-CONTA.workers.dev
+  - `PAINEL_URL`       → https://balancagfig-painel.rbeninca.workers.dev
   - `PAINEL_CHAVE`     → a mesma chave do `wrangler secret put CHAVE` (pacotes/painel)
 
 ## Painel (opcional)
@@ -25,6 +25,6 @@ o app se comporta como antes. A chave vai embutida no APK: desencoraja, não é
 segredo forte.
 
 ```properties
-painelUrl=https://balancagfig-painel.SUA-CONTA.workers.dev
+painelUrl=https://balancagfig-painel.rbeninca.workers.dev
 painelChave=...
 ```
