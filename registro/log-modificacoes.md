@@ -3,6 +3,17 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.502 (2026-09-23)
+
+Build de teste do caminho de atualização: sobe só a versão, para o box ter o que
+baixar e instalar por cima. Nenhuma linha de código muda — o que se quer conferir
+é o percurso inteiro, da release publicada pelo CI (`estavel: true`, manifest e
+sha256) até o `pm install -r` no box, passando pela leitura do alvo no painel.
+Serve para validar esse caminho antes de a próxima versão de verdade sair.
+
+- `versionCode` 25, `versionName` 2.8.502.
+- Sem alteração de código.
+
 ## v2.8.501 (2026-09-22)
 
 Primeira versão com três dígitos no último campo. O esquema foi adotado depois
