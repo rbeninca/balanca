@@ -7,6 +7,7 @@ name: Release do app Android
 #
 # Secrets necessários (ver android/chaves/LEIA-ME.md):
 #   KEYSTORE_BASE64, KEYSTORE_SENHA, CHAVE_ALIAS, CHAVE_SENHA
+#   PAINEL_URL, PAINEL_CHAVE — opcionais; sem eles o APK sai sem check-in
 
 on:
   push:
@@ -72,6 +73,11 @@ jobs:
           BALANCA_KEYSTORE_SENHA: ${{ secrets.KEYSTORE_SENHA }}
           BALANCA_CHAVE_ALIAS: ${{ secrets.CHAVE_ALIAS }}
           BALANCA_CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
+          # Painel dos boxes: a URL e a chave entram no BuildConfig do APK. Sem
+          # os secrets o APK sai com os campos vazios e o check-in fica
+          # desligado — o app funciona, só não aparece no painel.
+          PAINEL_URL: ${{ secrets.PAINEL_URL }}
+          PAINEL_CHAVE: ${{ secrets.PAINEL_CHAVE }}
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease --no-daemon
 
       - name: Montar artefatos e manifest.json

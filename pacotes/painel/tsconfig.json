@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    // O pacote não é compilado: quem empacota o Worker é o wrangler. Aqui só
+    // se confere tipo — e os testes entram na conferência.
+    "noEmit": true,
+    "rootDir": "./"
+  },
+  "include": ["src/**/*", "testes/**/*"]
+}

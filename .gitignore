@@ -12,6 +12,10 @@ test-results.xml
 .vscode/
 .idea/
 
+# Estado local do wrangler (banco D1 de desenvolvimento, cache) e segredos
+pacotes/painel/.wrangler/
+.dev.vars
+
 # Artefatos de build do PlatformIO
 firmware/.pio/
 

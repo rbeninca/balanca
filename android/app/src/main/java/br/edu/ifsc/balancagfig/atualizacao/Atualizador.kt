@@ -11,6 +11,12 @@ interface Rede {
     fun obterTexto(url: String): String
     /** Baixa [url] em [destino], chamando [progresso] com (bytes, total ou -1). */
     fun baixar(url: String, destino: File, progresso: (Long, Long) -> Unit)
+    /**
+     * POST de [corpoJson] em [url], com [chave] no cabeçalho `X-Chave`.
+     * Devolve o corpo da resposta (2xx) ou lança — quem chama decide se a falha
+     * importa.
+     */
+    fun publicar(url: String, corpoJson: String, chave: String): String?
 }
 
 /** Instala um APK por cima do app. Se der certo o processo é morto pelo Android. */
@@ -23,6 +29,17 @@ interface Instalador {
 interface Armazem {
     fun ler(): String?
     fun gravar(json: String)
+}
+
+/**
+ * A versão-teto desta instalação, vinda do painel — até onde o box pode ir.
+ *
+ * `null` é "sem teto", e é também a resposta para todo problema (painel
+ * desligado, fora do ar, valor estranho): quem não sabe de alvo nenhum segue o
+ * caminho de sempre.
+ */
+interface FonteAlvo {
+    fun alvo(): Versao?
 }
 
 enum class Fase { OCIOSA, VERIFICANDO, BAIXANDO, CONFERINDO, INSTALANDO, CONCLUIDA, ERRO }
@@ -97,6 +114,8 @@ class Atualizador(
     private val armazem: Armazem,
     private val pastaDownload: File,
     private val urlReleases: String,
+    /** De onde vem a versão-teto desta instalação; `null` = sem teto (o de sempre). */
+    private val fonteAlvo: FonteAlvo? = null,
     private val registrar: (String) -> Unit = {},
     private val agora: () -> Long = System::currentTimeMillis,
 ) {
@@ -116,6 +135,12 @@ class Atualizador(
      * manifest ou fora do ar —, o plano fica vazio **sem `erro`**: não há o que
      * instalar não é falha a repetir, e o frontend não deve oferecer "tentar de
      * novo" para isso.
+     *
+     * O [fonteAlvo] — o painel — pode limitar até onde ir: as candidatas mais
+     * novas que o alvo são descartadas antes da escolha. É o que faz um box pular
+     * direto para a versão liberada em vez de andar degrau por degrau. Sem alvo
+     * (painel desligado, fora do ar ou sem valor), nada muda: vale a mais nova
+     * estável, como sempre.
      */
     @Synchronized
     fun verificar(): EstadoAtualizacao {
@@ -123,9 +148,17 @@ class Atualizador(
         return try {
             val releases = Release.analisarLista(rede.obterTexto(urlReleases))
             val candidatas = PlanoAtualizacao.candidatas(versaoInstalada, releases)
-            val escolhida = escolherEstavel(candidatas)
+            val alvo = try {
+                fonteAlvo?.alvo()
+            } catch (e: Exception) {
+                registrar("Atualização: alvo indisponível (${e.message}) — seguindo sem ele")
+                null
+            }
+            val noAlvo = if (alvo == null) candidatas else candidatas.filter { it.versao <= alvo }
+            val escolhida = escolherEstavel(noAlvo)
             val plano = escolhida?.let { listOf(it) } ?: emptyList()
-            val resumo = "Atualização: ${releases.size} release(s) no repositório, ${candidatas.size} mais nova(s) que $versaoInstalada"
+            val resumo = "Atualização: ${releases.size} release(s) no repositório, ${candidatas.size} mais nova(s) que $versaoInstalada" +
+                (alvo?.let { ", alvo $it" } ?: "")
             if (escolhida != null) {
                 registrar("$resumo — instalando ${escolhida.versao}")
             } else {

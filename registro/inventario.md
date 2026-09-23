@@ -13,6 +13,15 @@ direto**, com o APK da release; o botão "Atualizar" do painel só serviria se
 aquele box alcançasse o GitHub, e o app só instala quando alguém o aperta. O
 procedimento da ida está em `pendencias.md`.
 
+**A coluna `App` desta tabela vale para o dia do levantamento e não se atualiza
+sozinha.** Da **2.8.501** em diante quem responde isso é o painel remoto
+(`pacotes/painel`): cada box manda uma batida a cada 10 min com a versão em que
+está e quando a instalou, e a página mostra a frota inteira. Enquanto um box
+estiver abaixo da 2.8.501 ele não aparece lá — para esses, esta coluna segue
+sendo o que se sabe, e a atualização continua sendo a ida ao local. A tabela
+continua sendo a fonte da verdade sobre os aparelhos (serial, modelo, MAC,
+SSID): o painel diz o que está rodando, não quem são.
+
 ## O parque
 
 **Esta tabela é a fonte da verdade sobre os boxes.** O gerador de etiquetas

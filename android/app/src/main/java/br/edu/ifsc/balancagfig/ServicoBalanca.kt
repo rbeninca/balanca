@@ -34,6 +34,10 @@ import br.edu.ifsc.balancagfig.atualizacao.InstaladorRoot
 import br.edu.ifsc.balancagfig.atualizacao.RedeHttp
 import br.edu.ifsc.balancagfig.atualizacao.Versao
 import br.edu.ifsc.balancagfig.firmware.GravadorEsp8266
+import br.edu.ifsc.balancagfig.painel.Batida
+import br.edu.ifsc.balancagfig.painel.CheckIn
+import br.edu.ifsc.balancagfig.painel.FonteAlvoHttp
+import br.edu.ifsc.balancagfig.sistema.Root
 import br.edu.ifsc.balancagfig.servidor.ServidorAtualizador
 import br.edu.ifsc.balancagfig.servidor.Mensagens
 import br.edu.ifsc.balancagfig.servidor.ServidorApi
@@ -77,6 +81,8 @@ class ServicoBalanca : Service() {
     private var backup: BackupPendrive? = null
     private var atualizadorApp: Atualizador? = null
     private var gravador: GravadorSessao? = null
+    /** Uma instância só de rede para o serviço: o atualizador e o check-in usam a mesma. */
+    private val redeApp: RedeHttp by lazy { RedeHttp("BalancaGFIG/${versaoInstalada() ?: "?"} (TVBox)") }
     /** Última configuração recebida da ESP: reenviada a quem (re)conecta, sem nova consulta à ESP. */
     @Volatile private var ultimaConfig: PacoteConfiguracao? = null
     private val inicioMs = System.currentTimeMillis()
@@ -110,6 +116,7 @@ class ServicoBalanca : Service() {
         iniciarHttp()
         iniciarWebSocket()
         iniciarAtualizacaoApp()
+        iniciarCheckIn()
         iniciarApi()
         iniciarAtualizador()
         iniciarSerial()
@@ -263,18 +270,25 @@ class ServicoBalanca : Service() {
             null
         }
 
+    /** Conteúdo de um arquivo de configuração em filesDir; null se ausente ou vazio. */
+    private fun arquivoTexto(nome: String): String? =
+        File(filesDir, nome).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
+
     private fun iniciarAtualizacaoApp() {
         val versao = versaoInstalada()?.let { Versao.analisar(it) }
         if (versao == null) { EstadoHost.registrar("Atualização: versionName inválido, atualizador desligado"); return }
-        val urlReleases = File(filesDir, ARQUIVO_URL_RELEASES).takeIf { it.isFile }?.readText()?.trim()?.ifEmpty { null }
-            ?: Atualizador.URL_RELEASES_PADRAO
+        val urlReleases = arquivoTexto(ARQUIVO_URL_RELEASES) ?: Atualizador.URL_RELEASES_PADRAO
+        // O painel limita até onde este box pode ir; sem painel configurado (ou
+        // fora do ar, ou sem alvo), vale a mais nova estável, como sempre foi.
+        val urlBasePainel = arquivoTexto(ARQUIVO_URL_PAINEL) ?: BuildConfig.PAINEL_URL.trim().ifEmpty { null }
         val a = Atualizador(
             versaoInstalada = versao,
-            rede = RedeHttp("BalancaGFIG/$versao (TVBox)"),
+            rede = redeApp,
             instalador = InstaladorRoot(),
             armazem = ArmazemPreferencias(this),
             pastaDownload = File(filesDir, "atualizacao"),
             urlReleases = urlReleases,
+            fonteAlvo = urlBasePainel?.let { FonteAlvoHttp(redeApp, "$it/alvo") },
             registrar = EstadoHost::registrar,
         ).also { atualizadorApp = it }
         escopo.launch(Dispatchers.IO) {
@@ -286,6 +300,71 @@ class ServicoBalanca : Service() {
                 delay(6 * 60 * 60 * 1000L)
             }
         }
+    }
+
+    /**
+     * Batida de ponto no painel: a cada 10 min o box conta quem é e o que está
+     * rodando. É o que responde "qual versão, quando atualizou" sem ninguém
+     * precisar ir até o local.
+     *
+     * Sem URL de painel não há o que fazer — e é o caso normal de um build
+     * local, que sai sem `chaves.properties`. Sem chave, o alvo (GET público)
+     * continua valendo: só a batida fica desligada.
+     */
+    private fun iniciarCheckIn() {
+        val urlBase = arquivoTexto(ARQUIVO_URL_PAINEL) ?: BuildConfig.PAINEL_URL.trim().ifEmpty { null }
+        if (urlBase == null) {
+            EstadoHost.registrar("Painel: sem URL configurada — check-in desligado")
+            return
+        }
+        val chave = arquivoTexto(ARQUIVO_CHAVE_PAINEL) ?: BuildConfig.PAINEL_CHAVE.trim()
+        if (chave.isBlank()) {
+            // O alvo não depende disto: quem o consulta é o atualizador, por GET público.
+            EstadoHost.registrar("Painel: sem chave configurada — check-in desligado")
+            return
+        }
+        val checkIn = CheckIn(redeApp, urlBase, chave, EstadoHost::registrar)
+        escopo.launch(Dispatchers.IO) {
+            // Espera o boot assentar (rede, su, hora) antes de contar que está vivo.
+            delay(30_000)
+            while (true) {
+                // O sucesso, de propósito, não vira linha no registro: seriam
+                // seis por hora empurrando para fora o que interessa. Quem
+                // confirma que a batida chegou é o próprio painel.
+                checkIn.batida(montarBatida())
+                delay(10 * 60 * 1000L)
+            }
+        }
+    }
+
+    /**
+     * Retrato do box para a batida. Nada aqui pode lançar — a batida é acessório.
+     *
+     * `versionCode` está deprecado desde a API 28 em favor de `longVersionCode`,
+     * que não existe na API 25 dos boxes; o velho serve para todos.
+     */
+    @Suppress("DEPRECATION")
+    private fun montarBatida(): Batida {
+        val pacote = try {
+            packageManager.getPackageInfo(packageName, 0)
+        } catch (e: Exception) {
+            Log.w(TAG, "não foi possível ler o pacote na batida", e)
+            null
+        }
+        // `lastUpdateTime` é gravado pelo Android na instalação: é a resposta
+        // para "quando atualizou", e não depende de nenhum relógio nosso.
+        val instaladoEm = pacote?.lastUpdateTime?.takeIf { it > 0L }
+        return Batida(
+            serial = serialDoBox,
+            versao = pacote?.versionName ?: versaoInstalada() ?: "?",
+            versionCode = pacote?.versionCode ?: 0,
+            instaladoEm = instaladoEm,
+            modelo = SerialDoBox.modeloNormalizado(),
+            // Teto curto: um `su` pendurado não pode segurar a corrotina.
+            placa = Root.executarLendo("getprop ro.board.platform", timeoutMs = 2_000)?.trim()?.ifBlank { null },
+            ip = EnderecosRede.porInterface(),
+            root = Root.disponivel(timeoutMs = 2_000),
+        )
     }
 
     /** Atualizador de firmware em :8767 — grava o firmware.bin embutido no APK pela porta da balança. */
@@ -564,6 +643,10 @@ class ServicoBalanca : Service() {
         const val ARQUIVO_CHAVE_API = ".chave-api"
         /** Opcional: arquivo com outra URL de releases (testes com servidor local). */
         const val ARQUIVO_URL_RELEASES = "atualizacao-url.txt"
+        /** Opcional: URL do painel (Worker), sobrepõe o `PAINEL_URL` do build. */
+        const val ARQUIVO_URL_PAINEL = "painel-url.txt"
+        /** Opcional: chave do painel, sobrepõe o `PAINEL_CHAVE` do build. */
+        const val ARQUIVO_CHAVE_PAINEL = ".chave-painel"
 
         /** Instância viva (um só processo), para a Activity pedir reconexão. */
         @Volatile

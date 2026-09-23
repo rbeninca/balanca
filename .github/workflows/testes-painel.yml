@@ -1,0 +1,43 @@
+name: Testes do painel (Worker)
+
+# O painel dos boxes (pacotes/painel) é o único pacote JS com testes que não
+# rodavam em lugar nenhum: o release.yml compila o frontend e o APK, e para por
+# aí. Como é ele que diz a cada box até onde atualizar, uma regressão aqui só
+# apareceria em produção — depois de um deploy que o wrangler faz na hora.
+
+on:
+  push:
+    paths:
+      - 'pacotes/painel/**'
+      - '.github/workflows/testes-painel.yml'
+  pull_request:
+    paths:
+      - 'pacotes/painel/**'
+      - '.github/workflows/testes-painel.yml'
+  workflow_dispatch:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pacotes/painel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # `npm install`, e não `npm ci`, como os outros workflows: o pacote é
+      # novo e pode ainda não estar no package-lock da raiz.
+      - name: Dependências
+        working-directory: .
+        run: npm install --prefer-offline
+
+      - name: Conferir tipos
+        run: npm run compilar
+
+      - name: Testes com cobertura
+        run: npm run testar:cobertura

@@ -17,8 +17,8 @@ android {
         // TX9 anuncia Android 10 mas roda API 25 (7.1.2)
         minSdk = 24
         targetSdk = 36
-        versionCode = 23
-        versionName = "2.8.5"
+        versionCode = 24
+        versionName = "2.8.501"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -50,6 +50,23 @@ android {
         null
     }
 
+    // ------------------------------------------------------------------
+    // Painel remoto (Cloudflare Worker + D1): para onde o box manda a batida
+    // de versão e de onde lê o alvo de atualização. Sem os valores, o recurso
+    // fica desligado e o app se comporta como antes — é o caso de um build
+    // local sem chaves.properties. Local: painelUrl/painelChave em
+    // android/chaves/chaves.properties. CI: secrets PAINEL_URL/PAINEL_CHAVE.
+    // A chave vai embutida no APK: desencoraja, não é segredo forte.
+    // ------------------------------------------------------------------
+    fun literalDeConfig(nome: String, propriedade: String): String =
+        (System.getenv(nome) ?: chaves.getProperty(propriedade) ?: "")
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+    defaultConfig {
+        buildConfigField("String", "PAINEL_URL", "\"${literalDeConfig("PAINEL_URL", "painelUrl")}\"")
+        buildConfigField("String", "PAINEL_CHAVE", "\"${literalDeConfig("PAINEL_CHAVE", "painelChave")}\"")
+    }
+
     buildTypes {
         debug {
             assinaturaBalanca?.let { signingConfig = it }
@@ -72,8 +89,10 @@ android {
     }
     buildFeatures {
         compose = true
-        // BuildConfig.VERSION_NAME é publicado no /saude, para o inventário
-        // saber a versão de cada box sem precisar de ADB.
+        // Campos gerados: PAINEL_URL/PAINEL_CHAVE (check-in e alvo do painel).
+        // A versão publicada no /saude não vem daqui — é lida do
+        // PackageManager, para um BuildConfig velho não mentir (ver
+        // ServicoBalanca.versaoInstalada).
         buildConfig = true
     }
     lintOptions {

@@ -12,3 +12,19 @@ seguido de `scripts/box.sh instalar`).
   - `KEYSTORE_SENHA`   → storePassword do chaves.properties
   - `CHAVE_ALIAS`      → balancagfig
   - `CHAVE_SENHA`      → keyPassword do chaves.properties
+  - `PAINEL_URL`       → https://balancagfig-painel.SUA-CONTA.workers.dev
+  - `PAINEL_CHAVE`     → a mesma chave do `wrangler secret put CHAVE` (pacotes/painel)
+
+## Painel (opcional)
+
+`painelUrl` e `painelChave` no `chaves.properties` ligam o check-in no painel
+remoto (`pacotes/painel/LEIA-ME.md`): o box passa a contar de 10 em 10 minutos
+qual versão está rodando, e a ler do painel até onde pode atualizar. Sem essas
+duas linhas — ou num build sem `chaves.properties` — o recurso fica desligado e
+o app se comporta como antes. A chave vai embutida no APK: desencoraja, não é
+segredo forte.
+
+```properties
+painelUrl=https://balancagfig-painel.SUA-CONTA.workers.dev
+painelChave=...
+```

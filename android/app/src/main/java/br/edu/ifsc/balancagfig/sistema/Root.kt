@@ -91,6 +91,12 @@ object Root {
         null
     }
 
-    /** true se `su` responde (root concedido a este app). */
-    fun disponivel(): Boolean = executar("id")
+    /**
+     * true se `su` responde (root concedido a este app).
+     *
+     * [timeoutMs] existe para quem só quer saber o estado de passagem e não pode
+     * esperar um minuto: a batida do painel chama com 2 s, para um box com o
+     * `su` pendurado não segurar a corrotina.
+     */
+    fun disponivel(timeoutMs: Long = TIMEOUT_PADRAO_MS): Boolean = executar("id", timeoutMs)
 }

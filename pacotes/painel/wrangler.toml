@@ -1,0 +1,14 @@
+# Painel dos boxes: recebe as batidas do app e diz até onde cada um pode
+# atualizar. Ver LEIA-ME.md para a sequência de publicação.
+name = "balancagfig-painel"
+main = "src/rotas.ts"
+compatibility_date = "2025-01-01"
+
+# Preenchido por `npx wrangler d1 create balancagfig-painel`.
+[[d1_databases]]
+binding = "DB"
+database_name = "balancagfig-painel"
+database_id = "SUBSTITUIR-PELO-ID-DO-D1"
+
+# A chave (`X-Chave` nos POSTs, `?chave=` na página) é secret, não variável:
+#   npx wrangler secret put CHAVE

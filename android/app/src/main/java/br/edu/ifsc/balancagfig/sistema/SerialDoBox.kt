@@ -50,7 +50,7 @@ object SerialDoBox {
     }
 
     /** `Build.MODEL` sem espaços nem símbolos: "TV BOX" vira "TVBOX". */
-    private fun modeloNormalizado(): String =
+    fun modeloNormalizado(): String =
         Build.MODEL.orEmpty()
             .filter { it.isLetterOrDigit() }
             .uppercase()

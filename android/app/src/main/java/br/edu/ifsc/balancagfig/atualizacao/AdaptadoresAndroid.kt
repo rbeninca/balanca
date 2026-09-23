@@ -12,6 +12,14 @@ class RedeHttp(private val agenteUsuario: String) : Rede {
 
     override fun obterTexto(url: String): String = abrir(url).use { it.inputStream.bufferedReader().readText() }
 
+    override fun publicar(url: String, corpoJson: String, chave: String): String? =
+        abrir(
+            url,
+            metodo = "POST",
+            corpo = corpoJson,
+            cabecalhos = mapOf("Content-Type" to "application/json; charset=utf-8", "X-Chave" to chave),
+        ).use { it.inputStream.bufferedReader().readText() }
+
     override fun baixar(url: String, destino: File, progresso: (Long, Long) -> Unit) {
         abrir(url).use { con ->
             val total = con.contentLengthLong
@@ -33,16 +41,30 @@ class RedeHttp(private val agenteUsuario: String) : Rede {
         }
     }
 
-    /** Abre a conexão seguindo até 5 redirecionamentos (HttpURLConnection não segue entre hosts). */
-    private fun abrir(url: String): Conexao {
+    /**
+     * Abre a conexão seguindo até 5 redirecionamentos (HttpURLConnection não
+     * segue entre hosts). [corpo] não nulo vira um POST.
+     */
+    private fun abrir(
+        url: String,
+        metodo: String = "GET",
+        corpo: String? = null,
+        cabecalhos: Map<String, String> = emptyMap(),
+    ): Conexao {
         var atual = url
         repeat(5) {
             val con = (URL(atual).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 15_000
                 readTimeout = 60_000
                 instanceFollowRedirects = false
+                requestMethod = metodo
                 setRequestProperty("User-Agent", agenteUsuario)
                 setRequestProperty("Accept", "application/vnd.github+json, application/octet-stream, */*")
+                cabecalhos.forEach { (nome, valor) -> setRequestProperty(nome, valor) }
+                if (corpo != null) {
+                    doOutput = true
+                    outputStream.use { it.write(corpo.toByteArray(Charsets.UTF_8)) }
+                }
             }
             val codigo = con.responseCode
             if (codigo in 300..399) {

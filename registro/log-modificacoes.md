@@ -3,6 +3,62 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.501 (2026-09-22)
+
+Primeira versão com três dígitos no último campo. O esquema foi adotado depois
+da 2.8.5 justamente por causa dos boxes fora da rede local: agora que a
+atualização depende de alguém ir até o local, uma versão publicada errada custa
+muito mais caro do que custava — então os dígitos extras marcam releases menores
+e mais frequentes, e só o que tem `estavel: true` no manifest chega aos boxes.
+
+- **Os boxes passaram a se apresentar sozinhos: um painel remoto (Cloudflare
+  Worker + D1) que diz qual versão cada um está e quando atualizou.** Eles saíram
+  da rede local em 22/09/2026 e não há mais como perguntar nada a eles daqui —
+  nem ADB, nem `box.sh`. O app manda uma **batida a cada 10 min** (e ~30 s depois
+  de subir) com serial, versão, `versionCode`, **quando o APK foi instalado
+  segundo o próprio Android** (`PackageInfo.lastUpdateTime`), modelo, placa,
+  IPs e se tem root; a página junta tudo numa tabela.
+  - É o `lastUpdateTime` que responde "quando atualizou": ele é gravado pelo
+    sistema no momento da instalação, e não depende de nenhum relógio nosso nem
+    de o app ter estado vivo naquele instante. Onde ele falta — box que
+    instalou antes de o painel existir —, a página mostra a primeira batida
+    daquela versão, marcada com `~`.
+- **O painel também passou a dizer até onde cada box pode atualizar.** Uma linha
+  de configuração (`alvo`) que o app lê antes de escolher a release; as
+  candidatas acima do alvo são descartadas e o box **pula direto** para a versão
+  liberada, sem andar degrau por degrau. As releases continuam no GitHub — o
+  banco só diz qual delas vale.
+  - O alvo **restringe, nunca amplia**: o portão de manifest estável e de
+    sha256 continua sendo conferido no cliente, e um alvo apontando para release
+    instável faz o box cair para a estável anterior *dentro* do alvo.
+  - Sem painel configurado, sem rede ou sem alvo, tudo volta ao comportamento de
+    sempre (a mais nova estável). Não existe estado de erro novo.
+- **A chave é única e simples** (decisão de projeto): `X-Chave` nos POSTs,
+  `?chave=` na página e no `/boxes`. O `GET /alvo` é público de propósito — é o
+  app que o lê, e quem souber o alvo não ganha nada com isso. Ela vai embutida
+  no APK: **desencoraja, não é segredo forte**, e está escrito assim no
+  `pacotes/painel/LEIA-ME.md`.
+  - Um Worker publicado sem o secret não vira painel aberto: sem `CHAVE` no
+    ambiente, tudo o que é protegido responde 401.
+- **A 2.8.501 é o primeiro APK com a URL e a chave do painel embutidas**, vindas
+  dos secrets `PAINEL_URL`/`PAINEL_CHAVE` no CI (e de `painelUrl`/`painelChave`
+  em `chaves.properties` no build local). Sem eles o APK sai com os campos
+  vazios e o check-in fica desligado: o app se comporta como antes desta versão
+  existir — é o caso do build de quem clona o repositório.
+  - Consequência a ter em mente na ida ao local: **os boxes só aparecem no
+    painel depois de receberem este APK**, e o APK certo é o do CI (o compilado
+    à mão, sem `chaves.properties`, sai sem painel).
+- **O painel é o primeiro pacote JS do repositório com testes que rodam no CI**
+  (`testes-painel.yml`, novo). Os testes chamam o Worker de verdade — um
+  `Request`, uma `Response` — sobre um SQLite de verdade atrás da mesma
+  interface que o D1 expõe, então o SQL conferido é o SQL que roda em produção.
+  O que não dá para cobrir assim (limites do D1, réplicas, o binding) só se
+  verifica publicando — está dito no LEIA-ME.
+- **Nada disto pode atrapalhar o que já funcionava.** Falha de batida (sem rede,
+  401, timeout) vira uma linha no registro local e mais nada; `su` pendurado não
+  segura a corrotina (teto de 2 s no `getprop` e no `disponivel`); e a
+  verificação de atualização segue o mesmo laço de 6 em 6 horas de antes.
+
 ## v2.8.5 (2026-09-22)
 
 - **A 2.8.2 tirou o root de todos os boxes e travou a atualização.** Ela deu

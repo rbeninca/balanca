@@ -21,6 +21,16 @@ class AtualizadorTest {
         /** Toda URL lida, na ordem — é como os testes contam os GETs de manifest. */
         val lidos = ArrayList<String>()
         var falharDownload = false
+
+        /** POSTs recebidos, como `(url, corpo, chave)`. */
+        val publicados = ArrayList<Triple<String, String, String>>()
+        var falharPublicacao = false
+        override fun publicar(url: String, corpoJson: String, chave: String): String? {
+            if (falharPublicacao) throw IllegalStateException("painel fora do ar")
+            publicados += Triple(url, corpoJson, chave)
+            return """{"ok":true}"""
+        }
+
         override fun obterTexto(url: String): String {
             lidos += url
             return textos[url] ?: throw IllegalStateException("404 $url")

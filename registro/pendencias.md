@@ -7,11 +7,17 @@
   instala é alguém com um notebook. Antes de sair, com internet, levar o APK:
 
   ```bash
-  gh release download v2.8.5 -R rbeninca/balanca -p balancagfig-2.8.5.apk
+  gh release download v2.8.501 -R rbeninca/balanca -p balancagfig-2.8.501.apk
   ```
 
+  **Levar o da 2.8.501, e não o da 2.8.5**, por dois motivos: é o APK que tem a
+  URL e a chave do painel embutidas (sem elas o box não aparece no painel nem lê
+  o alvo) e é o que traz os dígitos extras do versionName. O APK que o CI
+  publica é o que serve — um compilado à mão, sem `chaves.properties`, sai sem
+  painel.
+
   Lá, com `adb connect <ip>:5555` feito, um `adb -s <ip>:5555 install -r
-  balancagfig-2.8.5.apk` por box. **O APK da release serve em qualquer um
+  balancagfig-2.8.501.apk` por box. **O APK da release serve em qualquer um
   deles**, inclusive nos que foram instalados pelo `box.sh`: `debug` e `release`
   são assinados com a mesma chave (`bc7d4ae8…`), então é um `install -r` comum —
   sem `desfazer` e sem apagar as sessões gravadas. Quem levar o repositório no
@@ -23,6 +29,15 @@
   saem da 2.7.3 (17 MB, um minuto cada, em vez dos 12 downloads da cadeia), e o
   **`.118`** sai da 2.8.2 — esse é o que **só** sai assim: com o root quebrado,
   o app não instala nem se alguém apertar o botão.
+
+  **Depois da 2.8.501 esta pendência deixa de ser o único jeito de saber como
+  estão.** Nessa versão o app passou a bater no painel a cada 10 min (ver
+  `log-modificacoes.md`), e é o painel que passa a responder "qual versão cada
+  box está, e quando atualizou" — daqui, sem ninguém ir até lá. Enquanto os
+  boxes estiverem abaixo da 2.8.501, porém, **o painel fica vazio**: nada bate
+  nele. A ida instala a 2.8.501 e, além dos resgates acima, liga esse canal.
+  Publicar o painel (uma vez, na conta Cloudflare) é pré-requisito, e o passo a
+  passo está em `pacotes/painel/LEIA-ME.md`.
 
 - **O `.118` ainda pode estar preso na 2.8.2.** A 2.8.2 chamou
   `Process.waitFor(long, TimeUnit)` (API 26) e os boxes são API 25 (Android
@@ -46,7 +61,7 @@
 
 - **`.105` e `.112` seguem na 2.7.3** (desligados desde antes da conferência de
   22/09, e fora da rede local desde então). Duas saídas, em ordem de preferência:
-  1. instalar a 2.8.5 à mão nos dois numa ida ao local
+  1. instalar a 2.8.501 à mão nos dois numa ida ao local
      (`bash scripts/box.sh instalar <ip>`, ~17 MB, um minuto cada) em vez de
      deixar a cadeia andar;
   2. deixar que andem sozinhos — já é seguro desde 22/09/2026 (ver o item
