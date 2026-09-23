@@ -13,7 +13,9 @@
     (`cd android && bash scripts/box.sh instalar 192.168.1.16`): está na 2.8.5,
     com hotspot, serial a 4 Hz e frontend conferidos pelo script.
   - Falta o **`.118`** = `GFIG-TX9-58EB81E36158`: 2.8.2 pela tabela, não
-    respondeu em 22/09/2026 (nem ping). Quando aparecer na rede, mesmo comando —
+    respondeu em 22/09/2026 (nem ping). **Não dá mais para resgatar daqui** — os
+    boxes saíram da rede local em 22/09/2026 (ver `inventario.md`): precisa de
+    alguém no local, com um notebook na rede de lá. Lá, o mesmo comando —
     o `adb install -r` do script não usa root *no box*, que é justamente o que
     funciona em quem está preso. Os passos de `su` dele vão por `adb shell su`, e
     não pelo `Root` do app: no `.16` eles aplicaram numa passada só (root
@@ -21,9 +23,10 @@
     pendência supunha.
 
 - **`.105` e `.112` seguem na 2.7.3** (desligados desde antes da conferência de
-  22/09). Duas saídas, em ordem de preferência:
-  1. instalar a 2.8.5 à mão nos dois (`bash scripts/box.sh instalar <ip>`,
-     ~17 MB, um minuto cada) em vez de esperar a cadeia;
+  22/09, e fora da rede local desde então). Duas saídas, em ordem de preferência:
+  1. instalar a 2.8.5 à mão nos dois numa ida ao local
+     (`bash scripts/box.sh instalar <ip>`, ~17 MB, um minuto cada) em vez de
+     deixar a cadeia andar;
   2. deixar que andem sozinhos — já é seguro desde 22/09/2026 (ver o item
      abaixo), mas são **12 degraus**, e seis desses APKs são da era do GeckoView,
      ~120 MB cada.

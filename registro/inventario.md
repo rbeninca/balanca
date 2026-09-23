@@ -2,8 +2,14 @@
 
 Levantado em **20/09/2026**, com os boxes já na 2.7.3 (a versão que introduziu o
 serial); o `192.168.1.118` e o `192.168.1.103` entraram depois, ao longo de
-**21/09/2026**. O IP muda por DHCP e o serial não; a versão do app anda sozinha
-pelo atualizador, então a coluna `App` vale para o dia do levantamento.
+**21/09/2026**. O IP muda por DHCP e o serial não; a versão do app muda sem
+passar por aqui, então a coluna `App` vale para o dia do levantamento.
+
+**Os boxes saíram da rede local em 22/09/2026** e não voltam: daqui não há ADB
+nem `box.sh` (que é HTTP na porta 3000, na mesma rede). Tudo o que depende dos
+dois — instalar, inventariar, ler `/saude` — passou a exigir alguém no local,
+com um notebook na rede de lá. O único caminho à distância é o próprio app, e
+ele **só instala quando alguém aperta "Atualizar" no painel** do box.
 
 ## O parque
 
@@ -63,8 +69,9 @@ bash scripts/box.sh estado 192.168.1.105
     dentro. Como o `Root` dele funciona, ele consegue instalar a 2.8.5 — mas
     **não sozinho**: o app só *consulta* o repositório (30 s depois de subir e
     depois a cada 6 h); instalar depende de alguém apertar "Atualizar" no painel
-    do box. Ou seja, o `.17` fica na 2.8.4 até alguém apertar o botão (ou até uma
-    instalação por ADB, como a do `.16`).
+    do box. Ou seja, o `.17` fica na 2.8.4 até alguém apertar o botão — pelo
+    painel do próprio box, ou pela rede dele, com a senha — ou até uma
+    instalação por ADB numa ida ao local, como a que resgatou o `.16`.
   - **A chave é a mesma em todo mundo** — conferido puxando o APK instalado de
     `.16` e `.17` e comparando com o compilado agora: os três assinam com o
     certificado `bc7d4ae8…`. É o que garante que a instalação por ADB é um
