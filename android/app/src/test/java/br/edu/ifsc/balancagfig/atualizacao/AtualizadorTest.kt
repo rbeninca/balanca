@@ -17,8 +17,14 @@ class AtualizadorTest {
     private class RedeFalsa : Rede {
         val textos = HashMap<String, String>()
         val arquivos = HashMap<String, ByteArray>()
+
+        /** Toda URL lida, na ordem — é como os testes contam os GETs de manifest. */
+        val lidos = ArrayList<String>()
         var falharDownload = false
-        override fun obterTexto(url: String) = textos[url] ?: throw IllegalStateException("404 $url")
+        override fun obterTexto(url: String): String {
+            lidos += url
+            return textos[url] ?: throw IllegalStateException("404 $url")
+        }
         override fun baixar(url: String, destino: File, progresso: (Long, Long) -> Unit) {
             if (falharDownload) throw IllegalStateException("rede caiu")
             val dados = arquivos[url] ?: throw IllegalStateException("404 $url")
@@ -38,25 +44,48 @@ class AtualizadorTest {
         override fun gravar(json: String) { this.json = json }
     }
 
-    private fun releasesJson(vararg versoes: String) = versoes.joinToString(",", "[", "]") { v ->
-        """{"tag_name":"v$v","draft":false,"prerelease":false,"body":"notas $v","assets":[
-             {"name":"balancagfig-$v.apk","browser_download_url":"https://x/$v/app.apk"},
-             {"name":"manifest.json","browser_download_url":"https://x/$v/manifest.json"}]}"""
+    /** Uma release da API do GitHub, com os assets que [manifesto] mandar. */
+    private fun releaseJson(v: String, manifesto: Boolean = true): String {
+        val apk = """{"name":"balancagfig-$v.apk","browser_download_url":"https://x/$v/app.apk"}"""
+        val man = """{"name":"manifest.json","browser_download_url":"https://x/$v/manifest.json"}"""
+        return """{"tag_name":"v$v","draft":false,"prerelease":false,"body":"notas $v","assets":[${if (manifesto) "$apk,$man" else apk}]}"""
     }
 
-    private fun publicar(rede: RedeFalsa, versao: String, conteudo: ByteArray = "apk $versao".toByteArray(), shaErrado: Boolean = false) {
+    private fun releasesJson(vararg versoes: String) = versoes.joinToString(",", "[", "]") { releaseJson(it) }
+
+    /** Release publicada à mão, sem o asset manifest.json — o caso da v2.8.4. */
+    private fun releasesJsonSemManifesto(vararg versoes: String) =
+        versoes.joinToString(",", "[", "]") { releaseJson(it, manifesto = false) }
+
+    private fun publicar(
+        rede: RedeFalsa,
+        versao: String,
+        conteudo: ByteArray = "apk $versao".toByteArray(),
+        shaErrado: Boolean = false,
+        estavel: Boolean = true,
+    ) {
         rede.arquivos["https://x/$versao/app.apk"] = conteudo
         val tmp = File(pasta.root, "tmp-$versao"); tmp.writeBytes(conteudo)
         val sha = if (shaErrado) "00" else Atualizador.sha256(tmp)
-        rede.textos["https://x/$versao/manifest.json"] = """{"versao":"$versao","versionCode":9,"sha256":"$sha","tamanho":${conteudo.size}}"""
+        rede.textos["https://x/$versao/manifest.json"] =
+            """{"versao":"$versao","versionCode":9,"sha256":"$sha","tamanho":${conteudo.size},"estavel":$estavel}"""
     }
 
-    private fun criar(instalada: String, rede: RedeFalsa, inst: InstaladorFalso = InstaladorFalso(), armazem: ArmazemFalso = ArmazemFalso()) =
-        Atualizador(Versao.analisar(instalada)!!, rede, inst, armazem, File(pasta.root, "dl"), "https://api/releases", agora = { 1000L })
+    private fun criar(
+        instalada: String,
+        rede: RedeFalsa,
+        inst: InstaladorFalso = InstaladorFalso(),
+        armazem: ArmazemFalso = ArmazemFalso(),
+        registrar: (String) -> Unit = {},
+    ) = Atualizador(
+        Versao.analisar(instalada)!!, rede, inst, armazem, File(pasta.root, "dl"), "https://api/releases",
+        registrar = registrar, agora = { 1000L },
+    )
 
     @Test
     fun verificarMontaOPlanoComAMaisNova() {
         val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0", "2.3.0", "2.4.0") }
+        publicar(rede, "2.5.0")
         val a = criar("2.3.0", rede)
         val e = a.verificar()
         assertEquals(Fase.OCIOSA, e.fase)
@@ -71,6 +100,7 @@ class AtualizadorTest {
     @Test
     fun planoDeBoxMuitoAtrasadoTambemEhDeUmPassoSo() {
         val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.7.4", "2.7.5", "2.7.6", "2.7.7", "2.7.8", "2.7.9", "2.8.0", "2.8.1") }
+        publicar(rede, "2.8.1")
         val e = criar("2.7.4", rede).verificar()
         assertEquals(listOf("2.8.1"), e.plano.map { it.versao.toString() })
     }
@@ -183,8 +213,12 @@ class AtualizadorTest {
         assertEquals(Fase.ERRO, b.estado.fase)
     }
 
+    // Estado herdado de um cliente antigo pode ter no plano uma release sem
+    // manifest — é o caso da v2.8.4, publicada à mão. O portão do passo pega
+    // isso mesmo sem passar pela escolha do plano: ERRO, instalador intacto.
+    // Até a 2.8.4 este mesmo estado instalava sem conferir nada.
     @Test
-    fun processoCaidoNoMeioDoDownloadRepeteOPasso() {
+    fun processoCaidoComPlanoSemManifestoViraErro() {
         val armazem = ArmazemFalso()
         armazem.json = EstadoAtualizacao(
             fase = Fase.BAIXANDO, indice = 0,
@@ -195,12 +229,122 @@ class AtualizadorTest {
         val a = criar("2.3.0", rede, inst, armazem)
         assertTrue(a.retomar())
         a.executarPendente()
-        assertEquals(listOf("balancagfig-2.4.0.apk"), inst.instalados)   // sem manifest: instala sem conferir
+        assertEquals(Fase.ERRO, a.estado.fase)
+        assertTrue(a.estado.erro!!.contains("sem manifest.json"))
+        assertTrue(inst.instalados.isEmpty())
+        assertFalse(File(pasta.root, "dl/balancagfig-2.4.0.apk").exists())
+    }
+
+    @Test
+    fun processoCaidoNoMeioDoDownloadRepeteOPasso() {
+        val rede = RedeFalsa(); publicar(rede, "2.4.0")
+        val armazem = ArmazemFalso()
+        armazem.json = EstadoAtualizacao(
+            fase = Fase.BAIXANDO, indice = 0,
+            plano = listOf(Release(Versao(2, 4, 0), "v2.4.0", "https://x/2.4.0/app.apk", "https://x/2.4.0/manifest.json", "")),
+        ).paraJson(Versao(2, 3, 0)).toString()
+        val inst = InstaladorFalso()
+        val a = criar("2.3.0", rede, inst, armazem)
+        assertTrue(a.retomar())
+        a.executarPendente()
+        assertEquals(listOf("balancagfig-2.4.0.apk"), inst.instalados)
+    }
+
+    // A escolhida não é a mais nova: é a mais nova que passa no portão. Uma
+    // beta no topo não pode deixar o box parado na versão em que está.
+    @Test
+    fun maisNovaInstavelCaiParaAEstavelAnterior() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0", "2.4.0") }
+        publicar(rede, "2.5.0", estavel = false)
+        publicar(rede, "2.4.0")
+        val e = criar("2.3.0", rede).verificar()
+        assertEquals(listOf("2.4.0"), e.plano.map { it.versao.toString() })
+        assertNull(e.erro)
+    }
+
+    @Test
+    fun todasEstaveisEscolheAMaisNovaEManifestSoDaEscolhidaEhBaixado() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0", "2.4.0") }
+        publicar(rede, "2.5.0"); publicar(rede, "2.4.0")
+        val e = criar("2.3.0", rede).verificar()
+        assertEquals(listOf("2.5.0"), e.plano.map { it.versao.toString() })
+        // A varredura para na primeira que passa: o caso normal custa um GET.
+        assertEquals(listOf("https://api/releases", "https://x/2.5.0/manifest.json"), rede.lidos)
+    }
+
+    @Test
+    fun nenhumaCandidataEstavelDeixaPlanoVazio() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0") }
+        publicar(rede, "2.5.0", estavel = false)
+        val logs = ArrayList<String>()
+        val a = criar("2.3.0", rede, registrar = logs::add)
+        val e = a.verificar()
+        assertTrue(e.plano.isEmpty())
+        assertNull(e.erro)              // "nada a instalar" não é falha a repetir
+        assertFalse(a.iniciar())
+        assertTrue(logs.any { it.contains("nenhuma estável") })
+    }
+
+    @Test
+    fun candidataSemManifestoEhPulada() {
+        val rede = RedeFalsa().apply {
+            textos["https://api/releases"] = "[${releaseJson("2.5.0", manifesto = false)},${releaseJson("2.4.0")}]"
+        }
+        publicar(rede, "2.4.0")
+        val e = criar("2.3.0", rede).verificar()
+        assertEquals(listOf("2.4.0"), e.plano.map { it.versao.toString() })
+    }
+
+    @Test
+    fun falhaAoBaixarManifestDeUmaCandidataPulaParaAAnterior() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0", "2.4.0") }
+        publicar(rede, "2.4.0")     // o manifest da 2.5.0 não existe: 404
+        val e = criar("2.3.0", rede).verificar()
+        assertEquals(listOf("2.4.0"), e.plano.map { it.versao.toString() })
+    }
+
+    @Test
+    fun manifestoDeOutraVersaoEhPulado() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.5.0") }
+        rede.textos["https://x/2.5.0/manifest.json"] =
+            """{"versao":"2.4.0","versionCode":9,"sha256":"a","tamanho":1,"estavel":true}"""
+        assertTrue(criar("2.3.0", rede).verificar().plano.isEmpty())
+    }
+
+    // O portão vale de novo na hora de instalar: se a release for desmarcada
+    // entre a consulta e a instalação, o passo vira ERRO sem instalar nada.
+    @Test
+    fun manifestoQueViraInstavelAntesDaInstalacaoNaoInstala() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.4.0") }
+        publicar(rede, "2.4.0")
+        val inst = InstaladorFalso()
+        val a = criar("2.3.0", rede, inst)
+        a.verificar(); assertTrue(a.iniciar())
+        publicar(rede, "2.4.0", estavel = false)
+        a.executarPendente()
+        assertEquals(Fase.ERRO, a.estado.fase)
+        assertTrue(a.estado.erro!!.contains("estável"))
+        assertTrue(inst.instalados.isEmpty())
+    }
+
+    @Test
+    fun manifestoSemShaNaoInstala() {
+        val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.4.0") }
+        publicar(rede, "2.4.0")
+        rede.textos["https://x/2.4.0/manifest.json"] =
+            """{"versao":"2.4.0","versionCode":9,"sha256":"","tamanho":0,"estavel":true}"""
+        val inst = InstaladorFalso()
+        val a = criar("2.3.0", rede, inst)
+        a.verificar(); a.iniciar(); a.executarPendente()
+        assertEquals(Fase.ERRO, a.estado.fase)
+        assertTrue(a.estado.erro!!.contains("sha256"))
+        assertTrue(inst.instalados.isEmpty())
     }
 
     @Test
     fun cancelarAntesDeInstalarLimpaEVoltaAoOcioso() {
         val rede = RedeFalsa().apply { textos["https://api/releases"] = releasesJson("2.4.0") }
+        publicar(rede, "2.4.0")
         val a = criar("2.3.0", rede)
         a.verificar(); assertTrue(a.iniciar())
         assertTrue(a.cancelar())

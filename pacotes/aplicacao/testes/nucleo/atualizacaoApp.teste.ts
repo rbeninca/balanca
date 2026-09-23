@@ -80,4 +80,14 @@ describe('histórico e versões', () => {
     expect(h.map(x => x.versao)).toEqual(['2.10.0', '2.9.0', '2.3.0']);
     expect(compararVersao('v2.3.0', '2.3.0')).toBe(0);
   });
+
+  // Numeração nova: da 2.8.501 em diante a última casa tem três dígitos e
+  // continua sendo número (501 > 5), não texto.
+  it('ordena a última casa com três dígitos numericamente', () => {
+    expect(compararVersao('2.8.501', '2.8.5')).toBeGreaterThan(0);
+    expect(compararVersao('2.8.5', '2.8.501')).toBeLessThan(0);
+    expect(compararVersao('2.8.502', '2.8.501')).toBeGreaterThan(0);
+    const h = historico(estado({ disponiveis: [r('2.8.4'), r('2.8.501'), r('2.8.5')] }));
+    expect(h.map(x => x.versao)).toEqual(['2.8.501', '2.8.5', '2.8.4']);
+  });
 });

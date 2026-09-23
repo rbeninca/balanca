@@ -80,10 +80,6 @@ class PortaSerialUsb(
     /** Quando não-nulo, os bytes vão para o gravador de firmware em vez do enquadrador. */
     @Volatile private var desvio: LinkedBlockingQueue<ByteArray>? = null
 
-    /** Cache do último resultado de `Root.disponivel()` para evitar chamadas bloqueantes repetidas. */
-    @Volatile private var cacheRootDisponivel: Boolean? = null
-    @Volatile private var tempoUltimaCacheRoot = 0L
-
     private val processador = Thread({
         while (!Thread.currentThread().isInterrupted) {
             val chunk = try { filaBytes.take() } catch (_: InterruptedException) { return@Thread }
@@ -161,24 +157,10 @@ class PortaSerialUsb(
     /**
      * Obtém a permissão USB: sem diálogo via root quando possível
      * (ver [AutorizacaoUsb]); senão, pelo diálogo do sistema.
-     *
-     * Usa cache de `Root.disponivel()` para não chamar `su id` bloqueante
-     * múltiplas vezes seguidas — se falhou, tira do cache a cada 5s no máximo.
-     * Sem isso há risco de loop: reenumeracao bloqueia 60s por tentativa,
-     * congelando outras operações.
      */
     fun solicitarPermissao() = executor.execute {
         val driver = localizarDriver() ?: return@execute
-        val agora = System.currentTimeMillis()
-        val rootDisponivel = if (agora - tempoUltimaCacheRoot < CACHE_ROOT_DISPONIVEL_MS) {
-            cacheRootDisponivel ?: false
-        } else {
-            Root.disponivel().also {
-                cacheRootDisponivel = it
-                tempoUltimaCacheRoot = agora
-            }
-        }
-        if (tentativasReenumeracao < MAX_REENUMERACOES && rootDisponivel) {
+        if (tentativasReenumeracao < MAX_REENUMERACOES && Root.disponivel()) {
             tentativasReenumeracao++
             if (AutorizacaoUsb.reenumerar(driver.device)) return@execute
         }
@@ -316,8 +298,5 @@ class PortaSerialUsb(
         const val ATRASO_APOS_ATTACH_MS = 1000L
         const val ATRASO_RECONEXAO_MS = 2000L
         const val MAX_REENUMERACOES = 2
-        // Cache: se Root.disponivel() falhou, não chamar de novo nos próximos 30s
-        // para evitar bloquear com timeout 60s em rápida sucessão
-        const val CACHE_ROOT_DISPONIVEL_MS = 30_000L
     }
 }

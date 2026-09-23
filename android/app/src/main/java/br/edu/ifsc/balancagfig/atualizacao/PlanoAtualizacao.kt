@@ -25,13 +25,27 @@ package br.edu.ifsc.balancagfig.atualizacao
  *
  * O mecanismo de passos continua de pé porque [Atualizador] sabe retomar de onde
  * parou; hoje o plano é sempre de um passo.
+ *
+ * A escolha da versão não termina aqui: [calcular] devolve a mais nova das
+ * candidatas, mas quem instala é [Atualizador], que baixa o manifest de cada
+ * uma, da mais nova para a mais antiga, e só aceita a primeira marcada como
+ * estável. Uma mais nova que não passe no portão não bloqueia a anterior.
  */
 object PlanoAtualizacao {
-    fun calcular(instalada: Versao, disponiveis: List<Release>): List<Release> =
+    /**
+     * As versões mais novas que a instalada, da mais nova para a mais antiga,
+     * sem repetição. Não decide nada — é o conjunto onde [Atualizador] procura
+     * a que vai instalar.
+     */
+    fun candidatas(instalada: Versao, disponiveis: List<Release>): List<Release> =
         disponiveis
             .filter { it.versao > instalada }
             .distinctBy { it.versao }
-            .maxByOrNull { it.versao }
+            .sortedByDescending { it.versao }
+
+    fun calcular(instalada: Versao, disponiveis: List<Release>): List<Release> =
+        candidatas(instalada, disponiveis)
+            .firstOrNull()
             ?.let { listOf(it) }
             ?: emptyList()
 }

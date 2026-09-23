@@ -59,6 +59,12 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/balancagfig.keystore"
           test -s "$RUNNER_TEMP/balancagfig.keystore" || { echo "::error::secret KEYSTORE_BASE64 vazio"; exit 1; }
 
+      # O lint entra aqui como porteiro de nível de API. A 2.8.2 chamou
+      # `Process.waitFor(long, TimeUnit)` — API 26 —, os boxes são API 25, o
+      # `NoSuchMethodError` foi engolido por um `catch (Throwable)` e o `su`
+      # passou a "não responder" em todos eles: root fora do ar e atualização
+      # travada até a 2.8.5. O `NewApi` do lint aponta essa chamada no ato.
+      # Nenhuma versão sai daqui sem passar por ele.
       - name: Compilar APK assinado
         working-directory: android
         env:
@@ -66,7 +72,7 @@ jobs:
           BALANCA_KEYSTORE_SENHA: ${{ secrets.KEYSTORE_SENHA }}
           BALANCA_CHAVE_ALIAS: ${{ secrets.CHAVE_ALIAS }}
           BALANCA_CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
-        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease --no-daemon
 
       - name: Montar artefatos e manifest.json
         id: artefatos
@@ -77,10 +83,15 @@ jobs:
           cp firmware/firmware.bin "release/firmware-$(jq -r .versao firmware/versao.json).bin"
           SHA=$(sha256sum "release/balancagfig-$V.apk" | cut -d' ' -f1)
           TAM=$(stat -c %s "release/balancagfig-$V.apk")
+          # `estavel: true` é o portão de instalação: da 2.8.5 em diante o app
+          # só instala release cujo manifest declare o campo (ver
+          # atualizacao/Release.kt). Aqui toda release publicada pelo CI sai
+          # estável; o que não deve chegar aos boxes vai como `prerelease` no
+          # GitHub, que o app filtra antes de olhar o manifest.
           jq -n --arg versao "$V" --argjson versionCode "${{ steps.versao.outputs.codigo }}" \
                 --arg apk "balancagfig-$V.apk" --arg sha256 "$SHA" --argjson tamanho "$TAM" \
-                --arg firmware "$(jq -r .versao firmware/versao.json)" \
-                '{versao:$versao, versionCode:$versionCode, apk:$apk, sha256:$sha256, tamanho:$tamanho, firmware:$firmware}' \
+                --arg firmware "$(jq -r .versao firmware/versao.json)" --argjson estavel true \
+                '{versao:$versao, versionCode:$versionCode, apk:$apk, sha256:$sha256, tamanho:$tamanho, firmware:$firmware, estavel:$estavel}' \
                 > release/manifest.json
           cat release/manifest.json
 

@@ -17,8 +17,8 @@ android {
         // TX9 anuncia Android 10 mas roda API 25 (7.1.2)
         minSdk = 24
         targetSdk = 36
-        versionCode = 22
-        versionName = "2.8.4"
+        versionCode = 23
+        versionName = "2.8.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -80,6 +80,21 @@ android {
         disable(
             "MutableCollectionMutableState",
             "AutoboxingStateCreation"
+        )
+        // `NewApi` fica como erro (o padrão) e o release passou a rodar o lint
+        // por causa dele: a 2.8.2 chamou `Process.waitFor(long, TimeUnit)`, que
+        // só existe a partir da API 26, e os boxes (API 25) ficaram sem root e
+        // sem conseguir se atualizar até a 2.8.5. Nenhuma chamada acima da API
+        // 25 pode voltar a passar batido.
+        //
+        // Os quatro abaixo são apontamentos antigos de app de TV e de manifesto,
+        // sem relação com nível de API. Ficam como aviso para o lint poder
+        // barrar o que importa sem travar o release por eles.
+        warning(
+            "MissingTvBanner",
+            "ImpliedTouchscreenHardware",
+            "MissingLeanbackSupport",
+            "ProtectedPermissions"
         )
     }
 }

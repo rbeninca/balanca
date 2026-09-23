@@ -107,19 +107,73 @@ class Atualizador(
 
     fun estadoJson(): JSONObject = estado.paraJson(versaoInstalada)
 
-    /** Busca as releases e recalcula o plano. Não altera uma execução em curso. */
+    /**
+     * Busca as releases e recalcula o plano. Não altera uma execução em curso.
+     *
+     * O plano é de uma versão só, e não é simplesmente a mais nova: [escolherEstavel]
+     * baixa o manifest das candidatas, da mais nova para a mais antiga, e fica
+     * com a primeira marcada como estável. Se nenhuma passar — tudo beta, sem
+     * manifest ou fora do ar —, o plano fica vazio **sem `erro`**: não há o que
+     * instalar não é falha a repetir, e o frontend não deve oferecer "tentar de
+     * novo" para isso.
+     */
     @Synchronized
     fun verificar(): EstadoAtualizacao {
         if (estado.emExecucao) return estado
         return try {
             val releases = Release.analisarLista(rede.obterTexto(urlReleases))
-            val plano = PlanoAtualizacao.calcular(versaoInstalada, releases)
-            registrar("Atualização: ${releases.size} release(s) no repositório, ${plano.size} mais nova(s) que $versaoInstalada")
+            val candidatas = PlanoAtualizacao.candidatas(versaoInstalada, releases)
+            val escolhida = escolherEstavel(candidatas)
+            val plano = escolhida?.let { listOf(it) } ?: emptyList()
+            val resumo = "Atualização: ${releases.size} release(s) no repositório, ${candidatas.size} mais nova(s) que $versaoInstalada"
+            if (escolhida != null) {
+                registrar("$resumo — instalando ${escolhida.versao}")
+            } else {
+                registrar("$resumo, nenhuma estável — nada a instalar")
+            }
             mudar(EstadoAtualizacao(disponiveis = releases, plano = plano, verificadoEm = agora()))
         } catch (e: Exception) {
             registrar("Atualização: falha ao consultar releases (${e.message})")
             mudar(estado.copy(fase = Fase.OCIOSA, erro = "Não foi possível consultar o repositório: ${e.message}"))
         }
+    }
+
+    /**
+     * A release a instalar: a mais nova cujo manifest declare `estavel: true`.
+     *
+     * Varre da mais nova para a mais antiga de propósito. As duas recusas
+     * esperadas — manifest ausente (release publicada à mão, como a 2.8.4) e
+     * manifest que não declara estabilidade (beta) — devem fazer o box **cair
+     * para a anterior**, e não ficar sem atualizar. Só quando nenhuma passa é
+     * que não há o que instalar.
+     *
+     * Custa um GET pequeno por candidata recusada. É o preço de o portão ser
+     * conferido aqui, no cliente, e não confiado a quem publicou a release.
+     */
+    private fun escolherEstavel(candidatas: List<Release>): Release? {
+        for (c in candidatas) {
+            val url = c.urlManifesto
+            if (url == null) {
+                registrar("Atualização: ${c.versao} está sem manifest.json — ignorada")
+                continue
+            }
+            val manifesto = try {
+                Manifesto.deJson(rede.obterTexto(url))
+            } catch (e: Exception) {
+                registrar("Atualização: manifest de ${c.versao} indisponível (${e.message}) — ignorada")
+                continue
+            }
+            when {
+                manifesto == null ->
+                    registrar("Atualização: manifest de ${c.versao} não foi entendido — ignorada")
+                manifesto.versao != c.versao ->
+                    registrar("Atualização: manifest de ${c.versao} é da ${manifesto.versao} — ignorada")
+                !manifesto.estavel ->
+                    registrar("Atualização: ${c.versao} não está marcada como estável — ignorada")
+                else -> return c
+            }
+        }
+        return null
     }
 
     /** Decisão do usuário: começa a cadeia. false se não há o que instalar ou já está rodando. */
@@ -198,7 +252,21 @@ class Atualizador(
         val apk = File(pastaDownload, "balancagfig-${release.versao}.apk")
         try {
             pastaDownload.mkdirs()
+
+            // O portão de estabilidade vale de novo aqui, e não só na escolha do
+            // plano: o estado é retomável (a instalação mata o processo e o
+            // estado gravado sobrevive), então um plano herdado de cliente
+            // antigo chega até aqui sem ter passado por `escolherEstavel`.
+            // Sem manifest estável com sha256, não instala — é o que impede um
+            // box de pegar a v2.8.4, que está no ar sem manifest nenhum.
             val manifesto = release.urlManifesto?.let { Manifesto.deJson(rede.obterTexto(it)) }
+                ?: throw IllegalStateException("sem manifest.json — instalação recusada")
+            if (!manifesto.estavel) {
+                throw IllegalStateException("não está marcada como estável — instalação recusada")
+            }
+            if (manifesto.sha256.isEmpty()) {
+                throw IllegalStateException("manifest sem sha256 — instalação recusada")
+            }
 
             mudar(estado.copy(fase = Fase.BAIXANDO, progresso = 0, erro = null))
             registrar("Atualização: baixando ${release.versao}")
@@ -209,16 +277,12 @@ class Atualizador(
             }
 
             mudar(estado.copy(fase = Fase.CONFERINDO, progresso = 100))
-            if (manifesto != null) {
-                if (manifesto.tamanho > 0 && apk.length() != manifesto.tamanho) {
-                    throw IllegalStateException("tamanho do APK difere do manifest (${apk.length()} ≠ ${manifesto.tamanho})")
-                }
-                val sha = sha256(apk)
-                if (manifesto.sha256.isNotEmpty() && sha != manifesto.sha256) {
-                    throw IllegalStateException("SHA-256 do APK não confere com o manifest")
-                }
-            } else {
-                registrar("Atualização: release ${release.versao} sem manifest.json — instalando sem conferir hash")
+            if (manifesto.tamanho > 0 && apk.length() != manifesto.tamanho) {
+                throw IllegalStateException("tamanho do APK difere do manifest (${apk.length()} ≠ ${manifesto.tamanho})")
+            }
+            val sha = sha256(apk)
+            if (sha != manifesto.sha256) {
+                throw IllegalStateException("SHA-256 do APK não confere com o manifest")
             }
 
             // Grava INSTALANDO antes de chamar o instalador: se der certo, o processo morre aqui.

@@ -3,6 +3,109 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.5 (2026-09-22)
+
+- **A 2.8.2 tirou o root de todos os boxes e travou a atualização.** Ela deu
+  teto de tempo ao `Root` com `Process.waitFor(long, TimeUnit)` — um overload
+  que **só existe a partir da API 26**, e os boxes são API 25 (Android 7.1.2).
+  Lá ele lança `NoSuchMethodError`, que o `catch (Throwable)` das duas funções
+  do `Root` engolia: *todo* comando root passou a devolver falha em silêncio,
+  como se o `su` não respondesse.
+  - O sintoma: `InstaladorRoot.instalar()` começa por `if (!Root.disponivel())`
+    e devolvia **"root indisponível (su não respondeu)"** — então o `pm install
+    -r` da atualização nunca acontecia. A tela parava no meio e o box não tinha
+    como sair dali **nem para instalar a versão que conserta**: quem instala é o
+    próprio app, e o app é que estava quebrado. Só ADB resgata esses boxes.
+  - De quebra, o serial caía para o derivado (o fixado em `/data/misc/gfig`
+    exige root), e hotspot, `iptables` e pendrive ficaram sem a parte que
+    dependia de root.
+  - **Provado no runtime do box, não por leitura de código.** Um dex com a mesma
+    chamada, rodado com `app_process` no `.17`, devolveu `NoSuchMethodError …
+    declaration of 'java.lang.Process' appears in /system/framework/core-oj.jar`.
+    Vale o registro de como esse caminho engana: o `javap` contra o
+    `core-oj.jar` do box *mostra* o método existindo — o `java.lang.Process` não
+    está nesse jar, e o `javap` cai no JDK da máquina, onde ele existe há muitas
+    versões. Só o dex rodando no aparelho decide.
+  - **Agora a espera é `waitFor()` sem argumento** (API 1) numa thread, com
+    `Thread.join(teto)`. E o `destroyForcibly()` dos dois caminhos de estouro
+    virou `destroy()`: é a mesma armadilha, API 26, no caminho que só roda
+    quando o `su` já falhou — ficaria armada para disparar uma vez, meses depois.
+  - O KDoc do `Root` diz isso em letras grandes, para o próximo que for dar teto
+    de tempo a um processo não repetir a 2.8.2.
+- **O `lint` passou a rodar no release** (`:app:lintDebug` no `release.yml`), e é
+  o `NewApi` dele que aponta chamada acima da API 25. Conferido rodando o lint
+  com o `Root.kt` da 2.8.2 de volta no lugar: o build **aborta** com
+  `Root.kt:34: Error: Call requires API level 26 (current min is 24):
+  java.lang.Process#waitFor [NewApi]` — quatro erros, os dois `waitFor` e os
+  dois `destroyForcibly`. É a rede que faltava: o teto de tempo passou por
+  revisão, por teste e por release sem ninguém notar, porque o erro não é de
+  compilação nem de teste — só aparece no aparelho.
+  - Quatro apontamentos antigos de app de TV e de manifesto
+    (`MissingTvBanner`, `ImpliedTouchscreenHardware`, `MissingLeanbackSupport`,
+    `ProtectedPermissions`) ficaram como **aviso**, para o lint poder barrar o
+    que importa sem travar o release por dívida velha.
+- **O cache de 30 s de `Root.disponivel()` saiu** (`PortaSerialUsb`, o que a
+  2.8.4 chamou de correção do loop de reenumeração). Ele guardava a resposta
+  **falsa** por 30 s — escondia o sintoma, não a causa, e teria virado uma
+  mentira permanente agora que `disponivel()` volta a responder de verdade.
+- **A `2.8.4` virou três artefatos diferentes com o mesmo nome.** A release foi
+  publicada à mão enquanto o CI compilava a tag; o CI quebrou atrás dela
+  (`a release with the same tag name already exists: v2.8.4`), e a release da
+  2.8.3 foi apagada no meio do caminho. Ficaram três coisas se dizendo "2.8.4",
+  conferidas dex a dex:
+  - o **APK da release** (sha256 `b7a6202…`) — **quebrado**: leva os dois
+    `waitFor(long, TimeUnit)` no `classes.dex`. É o que qualquer box baixaria
+    dela;
+  - o **APK que o CI compilou** do commit da tag (`7374b87`) — pela mesma
+    árvore, também quebrado; não chegou a virar release, ficou como artefato do
+    run;
+  - o **APK instalado à mão no `.17`** (sha256 `89add282…`) — esse *tem* a
+    correção (`Root;.esperar`), mas nunca foi publicado, e ainda levava os dois
+    `destroyForcibly` que a 2.8.5 troca por `destroy()`.
+  - A release da 2.8.4 ainda **não tem `manifest.json`**, e o `Atualizador` até
+    aqui só conferia tamanho e sha256 `if (manifesto != null)`: sem manifest,
+    instalava sem conferir nada. Quem a pegasse não teria conferência nenhuma —
+    é a mesma armadilha da 2.8.2 com outro número. Na 2.8.5 o manifest passou a
+    ser obrigatório (ver o portão de estabilidade, abaixo).
+  - A 2.8.5 sai pelo caminho normal, tag → CI, sem release criada à mão.
+- **A partir da 2.8.501 a última casa da versão tem três dígitos.** A `2.8.5` foi
+  a última de um dígito; a seguinte é `2.8.501`, não `2.8.6`. O `Versao.analisar`
+  já lia assim (`\d+` convertido para `Int`) e a tag do workflow
+  (`v[0-9]+.[0-9]+.[0-9]+`) já aceita três dígitos — o que faltava era escrever a
+  regra e travar em teste.
+  - Começa na **501**, e não na 001, porque a última casa é **número**: `2.8.001`
+    seria *menor* que a `2.8.5` (1 < 5) e nenhum box que já está nela a veria
+    como novidade. Com 501 (501 > 5) a primeira do esquema novo é maior que a
+    última do antigo.
+  - **Nunca publicar versão que normalize para o mesmo número**: `2.8.005` é o
+    mesmo número que `2.8.5` — as duas se confundiriam no plano de atualização,
+    no `distinctBy` e na tag.
+- **O cliente só instala release marcada como estável.** O `manifest.json` ganhou
+  `"estavel": true` (o CI escreve em toda release que publica) e o `Manifesto`
+  passou a ler o campo. O portão fica em **dois** pontos: na escolha do plano
+  (`Atualizador.escolherEstavel` varre as candidatas da mais nova para a mais
+  antiga e fica com a primeira que passa) e de novo na hora de instalar
+  (`executarPasso`) — o estado é retomável, e um plano herdado de cliente antigo
+  chega lá sem ter passado pela escolha.
+  - Sem manifest, com manifest sem `sha256`, de outra versão ou sem `estavel`,
+    **não instala**: o passo vira `ERRO`, o APK baixado é apagado e o instalador
+    nem é chamado.
+  - Uma mais nova que não passe no portão **não bloqueia a anterior**: o box cai
+    para a estável de baixo em vez de ficar parado. Sem nenhuma estável, o plano
+    fica vazio **e sem `erro`** — "não há o que instalar" não é falha a repetir.
+  - **Clientes até a 2.8.4 não conhecem o campo** e seguem instalando qualquer
+    release mais nova que a deles. Para esses, a proteção é a flag `prerelease`
+    do GitHub, que o `Release.analisarLista` já filtrava — é o que a operação
+    desta versão usa ao marcar 2.8.2 e 2.8.4 como pré-lançamento.
+
+## v2.8.4 (2026-09-22)
+
+- **Cache de 30 s em `Root.disponivel()`** (`578fb2b`), para o loop de
+  reenumeração USB do MXQ que congelava o app. O diagnóstico estava errado: o
+  `Root` já estava quebrado desde a 2.8.2 (`waitFor` da API 26) e o cache só
+  evitava repetir a chamada que falhava — quem não respondia em 60 s era o
+  próprio `Root`, não o `su`. Removido na 2.8.5.
+
 ## v2.8.3 (2026-09-22)
 
 - **Um cliente pendurado no WebSocket calava a difusão para todos.** O

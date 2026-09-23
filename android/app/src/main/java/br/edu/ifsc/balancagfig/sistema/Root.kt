@@ -28,13 +28,39 @@ object Root {
     /** Teto para o `pm install`, que copia e otimiza o APK inteiro. */
     const val TIMEOUT_INSTALACAO_MS = 15 * 60_000L
 
+    /**
+     * Espera [p] terminar, no máximo [timeoutMs]; true se terminou a tempo.
+     *
+     * **Não use `Process.waitFor(long, TimeUnit)` aqui.** Esse overload só
+     * existe a partir da API 26 e os boxes rodam API 25 (Android 7.1.2): lá ele
+     * lança `NoSuchMethodError`, que o `catch (Throwable)` das funções abaixo
+     * engolia — e *todo* comando root passava a falhar calado, como se o `su`
+     * não respondesse. Foi o que aconteceu entre a 2.8.1 e a 2.8.4: root
+     * "indisponível" em todos os boxes, serial caindo para o derivado e
+     * atualização travada. O `waitFor()` sem argumento existe desde a API 1;
+     * o teto vem de esperar por ele noutra thread, com `Thread.join(long)`.
+     *
+     * Pelo mesmo motivo o encerramento de emergência é `destroy()`, e não
+     * `destroyForcibly()` — este também só existe a partir da API 26 e seria a
+     * mesma armadilha, agora no caminho que só roda quando o `su` já falhou.
+     * Quem vigia isso é o lint (`NewApi`), que passou a rodar no `release.yml`.
+     */
+    private fun esperar(p: Process, timeoutMs: Long): Boolean {
+        val espera = Thread { runCatching { p.waitFor() } }.apply {
+            isDaemon = true
+            start()
+        }
+        espera.join(timeoutMs)
+        return !espera.isAlive
+    }
+
     /** Executa [comando] via `su -c` e devolve true se saiu com código 0. */
     fun executar(comando: String, timeoutMs: Long = TIMEOUT_PADRAO_MS): Boolean = try {
         val p = Runtime.getRuntime().exec(arrayOf("su", "-c", comando))
-        if (p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+        if (esperar(p, timeoutMs)) {
             p.exitValue() == 0
         } else {
-            p.destroyForcibly()
+            p.destroy()
             Log.w(TAG, "su não respondeu em ${timeoutMs}ms: $comando")
             false
         }
@@ -48,15 +74,15 @@ object Root {
         val p = Runtime.getRuntime().exec(arrayOf("su", "-c", comando))
         // A leitura vai para outra thread: `readText()` só volta quando o
         // processo fecha a saída, e esperar por ele em linha prenderia esta
-        // chamada mesmo com o `waitFor` tendo estourado o tempo.
+        // chamada mesmo com o teto de tempo tendo estourado.
         val leitura = CompletableFuture.supplyAsync {
             runCatching { p.inputStream.bufferedReader().readText() }.getOrDefault("")
         }
-        if (p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
+        if (esperar(p, timeoutMs)) {
             val saida = runCatching { leitura.get(5, TimeUnit.SECONDS) }.getOrDefault("")
             if (p.exitValue() == 0) saida else null
         } else {
-            p.destroyForcibly()
+            p.destroy()
             Log.w(TAG, "su não respondeu em ${timeoutMs}ms: $comando")
             null
         }

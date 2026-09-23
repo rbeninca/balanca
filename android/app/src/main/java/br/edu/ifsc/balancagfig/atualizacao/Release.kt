@@ -63,8 +63,23 @@ data class Release(
     }
 }
 
-/** Conteúdo do asset manifest.json de uma release. */
-data class Manifesto(val versao: Versao, val versionCode: Int, val sha256: String, val tamanho: Long) {
+/**
+ * Conteúdo do asset manifest.json de uma release.
+ *
+ * [estavel] é o portão das releases: a partir da 2.8.5 o app só instala o que
+ * declara `"estavel": true`. O padrão é fechado de propósito — release sem o
+ * campo (as de antes da 2.8.5, e as publicadas à mão sem manifest) fica de
+ * fora. Clientes até a 2.8.4 não conhecem o campo e continuam instalando
+ * qualquer release mais nova; a proteção deles é a flag `prerelease` do GitHub
+ * ([Release.analisarLista]) mais a instalação por ADB.
+ */
+data class Manifesto(
+    val versao: Versao,
+    val versionCode: Int,
+    val sha256: String,
+    val tamanho: Long,
+    val estavel: Boolean,
+) {
     companion object {
         fun deJson(json: String): Manifesto? {
             val o = JSONObject(json)
@@ -74,6 +89,7 @@ data class Manifesto(val versao: Versao, val versionCode: Int, val sha256: Strin
                 versionCode = o.optInt("versionCode"),
                 sha256 = o.optString("sha256").lowercase(),
                 tamanho = o.optLong("tamanho"),
+                estavel = o.optBoolean("estavel"),
             )
         }
     }

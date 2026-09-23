@@ -17,9 +17,9 @@ aqui: não existe lista de boxes repetida em outro lugar.
 
 | Serial | Modelo | MAC eth0 | SSID | IP | Placa | App | Navegador | Root |
 |---|---|---|---|---|---|---|---|---|
-| `GFIG-TX9-58EB81E3618A` | TX9 | `58:EB:81:E3:61:8A` | `balancaGFIG-618A` | 192.168.1.103 | Amlogic `gxl` | 2.8.1 | Chrome 101 | Koush (Superuser) |
+| `GFIG-TX9-58EB81E3618A` | TX9 | `58:EB:81:E3:61:8A` | `balancaGFIG-618A` | 192.168.1.16 | Amlogic `gxl` | 2.8.2 | Chrome 101 | Koush (Superuser) |
 | `GFIG-TX9-58EB81E3618C` | TX9 | `58:EB:81:E3:61:8C` | `balancaGFIG-618C` | 192.168.1.105 | Amlogic `gxl` | 2.7.3 | a conferir | Koush (Superuser) |
-| `GFIG-MXQ-A82003AC10E7` | MXQ | `A8:20:03:AC:10:E7` | `balancaGFIG-10E7` | 192.168.1.110 | Rockchip `rk322x` | 2.8.2 | a conferir | Chainfire (SuperSU) |
+| `GFIG-MXQ-A82003AC10E7` | MXQ | `A8:20:03:AC:10:E7` | `balancaGFIG-10E7` | 192.168.1.17 | Rockchip `rk322x` | 2.8.4 | a conferir | Chainfire (SuperSU) |
 | `GFIG-MXQ-A82003AC10D4` | MXQ | `A8:20:03:AC:10:D4` | `balancaGFIG-10D4` | 192.168.1.112 | Rockchip `rk322x` | 2.7.3 | a conferir | `su` sem gerenciador |
 | `GFIG-TX9-58EB81E36158` | TX9 | `58:EB:81:E3:61:58` | `balancaGFIG-6158` | 192.168.1.118 | Amlogic `gxl` | 2.8.2 | **nenhum** | Koush (Superuser) |
 
@@ -45,11 +45,37 @@ bash scripts/box.sh estado 192.168.1.105
 
 ## O que a tabela não conta
 
+- **A numeração mudou de esquema na 2.8.501.** A `2.8.5` foi a última versão de
+  um dígito na última casa; daí em diante são três (`2.8.501`, `2.8.502`, …). Na
+  coluna `App`, versão de três dígitos é o normal a partir de agora — e a ordem
+  continua numérica, não alfabética: `2.8.501` é mais nova que `2.8.5`. Detalhes
+  em `log-modificacoes.md` (v2.8.5).
+- **Conferência de 22/09/2026** (só o que respondia na LAN; o resto estava
+  desligado e ficou com a linha da última conferência):
+  - **`.16`** é o antigo `.103`: o DHCP trocou o endereço, o serial é o mesmo
+    (`…618A`). Está **preso na 2.8.2** — versionCode 20, com o `Root` quebrado
+    pela chamada de API 26 (`Process.waitFor`, ver `log-modificacoes.md` v2.8.5),
+    e por isso não consegue instalar a própria atualização. Sai de lá com uma
+    instalação por ADB (`bash scripts/box.sh instalar 192.168.1.16`).
+  - **`.17`** é o antigo `.110`: mesmo caso, serial `…10E7`. Está na **2.8.4 de
+    build manual** (versionCode 22), com a correção
+    dentro. Como o `Root` dele funciona, ele se atualiza sozinho para a 2.8.5.
+  - **A chave é a mesma em todo mundo** — conferido puxando o APK instalado de
+    `.16` e `.17` e comparando com o compilado agora: os três assinam com o
+    certificado `bc7d4ae8…`. É o que garante que a instalação por ADB é um
+    `install -r` comum, **sem `desfazer` e sem apagar as sessões gravadas**.
+  - **`.118`** também estava na 2.8.2 pela última conferência e é o outro
+    candidato a box preso — mas **não respondeu** nesta data (`/saude` mudo), e
+    sem ADB não há como confirmar. Tratar como preso até prova em contrário.
+  - **`.105`** e **`.112`** estavam desligados: seguem na 2.7.3. **Não deixar os
+    dois andarem sozinhos pela cadeia** — ela passa pela 2.8.2, e eles param
+    ali. Ver `pendencias.md`.
 - **`.103`** — o **único com navegador instalado**, e por isso o único em que a
   aba Balança funciona desde a 2.8.0. **Não tem o launcher do projeto**: ficou
   com o `com.txari.launcher` do firmware. Instalar o nosso é um passo separado
   (`bash scripts/box.sh launcher 192.168.1.103`) — o `instalar` não o traz junto,
-  e é fácil não perceber.
+  e é fácil não perceber. (Hoje o IP dele é `.16`; o launcher continua o do
+  firmware.)
 - **`.105`** — TX9 do mesmo lote do `.103` e do `.118`: o MAC começa igual,
   `58:eb:81:e3:`, e o que os separa é o sufixo. Ficou para trás, desligado
   enquanto os outros subiam.

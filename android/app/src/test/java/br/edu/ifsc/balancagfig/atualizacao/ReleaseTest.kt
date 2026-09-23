@@ -1,7 +1,9 @@
 package br.edu.ifsc.balancagfig.atualizacao
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReleaseTest {
@@ -41,12 +43,29 @@ class ReleaseTest {
     }
 
     @Test
+    fun manifestoLeMarcacaoDeEstavel() {
+        val comCampo = """{"versao":"2.8.5","versionCode":23,"sha256":"a","tamanho":1,"estavel":true}"""
+        assertTrue(Manifesto.deJson(comCampo)!!.estavel)
+        assertFalse(Manifesto.deJson("""{"versao":"2.8.5","versionCode":23,"sha256":"a","tamanho":1,"estavel":false}""")!!.estavel)
+        // Ausente é o caso das releases de antes da 2.8.5 e das publicadas à mão
+        // sem manifest: o portão é fechado por padrão.
+        assertFalse(Manifesto.deJson("""{"versao":"2.2.0","versionCode":9,"sha256":"a","tamanho":1}""")!!.estavel)
+    }
+
+    @Test
+    fun candidatasVemDaMaisNovaParaAMaisAntigaSemRepetir() {
+        val releases = Release.analisarLista("[${release("v2.5.0")},${release("v2.3.0")},${release("v2.4.0")},${release("v2.5.0")},${release("v1.0.0")}]")
+        assertEquals(listOf("2.5.0", "2.4.0"), PlanoAtualizacao.candidatas(Versao(2, 3, 0), releases).map { it.versao.toString() })
+    }
+
+    @Test
     fun manifestoEIdaEVoltaDeRelease() {
         val m = Manifesto.deJson("""{"versao":"2.4.0","versionCode":5,"sha256":"ABC","tamanho":123}""")!!
         assertEquals(Versao(2, 4, 0), m.versao)
         assertEquals(5, m.versionCode)
         assertEquals("abc", m.sha256)
         assertEquals(123L, m.tamanho)
+        assertFalse(m.estavel)
 
         val r = Release.analisarLista("[${release("v2.4.0")}]")[0]
         assertEquals(r, Release.deJson(r.paraJson()))
