@@ -1,4 +1,4 @@
-import { ESQUEMA } from './bancoDados/esquema.js';
+import { COLUNAS_NOVAS, ESQUEMA } from './bancoDados/esquema.js';
 
 /**
  * O pedaço do D1 que este Worker usa.
@@ -36,6 +36,16 @@ let esquemaPronto = false;
 export async function garantirEsquema(banco: Banco): Promise<void> {
   if (esquemaPronto) return;
   for (const comando of ESQUEMA) await banco.prepare(comando).run();
+  for (const coluna of COLUNAS_NOVAS) {
+    try {
+      await banco.prepare(`ALTER TABLE boxes ADD COLUMN ${coluna}`).run();
+    } catch {
+      // Coluna que já existe: o SQLite recusa o `ADD COLUMN` repetido, e é o
+      // erro que diz "esta migração já passou por aqui". Silenciar é o que
+      // torna a migração repetível — o CREATE acima falharia alto se o banco
+      // estivesse inacessível, então um erro engolido aqui não esconde isso.
+    }
+  }
   esquemaPronto = true;
 }
 

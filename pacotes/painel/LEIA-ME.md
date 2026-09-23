@@ -1,6 +1,6 @@
 # Painel dos boxes
 
-Um Worker do Cloudflare com banco D1 (SQLite) que responde duas perguntas:
+Um Worker do Cloudflare com banco D1 (SQLite) que responde três perguntas:
 
 1. **Qual versão cada box está, e quando atualizou** — cada box manda uma
    batida a cada 10 min (e ~30 s depois de subir), com serial, versão,
@@ -11,6 +11,20 @@ Um Worker do Cloudflare com banco D1 (SQLite) que responde duas perguntas:
    o app lê antes de escolher a release. O app continua baixando do GitHub; o
    banco só diz qual é a versão liberada. Sem alvo, vale a mais nova estável,
    como sempre foi.
+3. **Onde está cada aparelho** — a ficha de cada um (onde está, de quem é, para
+   que serve), escrita à mão em `/inventario`. É a única informação daqui que
+   não vem do box: vem de quem preenche.
+
+São duas páginas, e a diferença está no que cada uma mostra:
+
+- **`/painel`** só lista quem **bateu** — é o retrato da frota em operação, e um
+  aparelho que nunca se anunciou apareceria ali como um box mudo, estragando a
+  única pergunta que a página responde. Quem está cadastrado e ainda não bateu
+  aparece só como uma contagem, com link para o inventário.
+- **`/inventario`** lista **todos** os cadastros, tenham o app da balança ou não
+  — inclusive um aparelho de outro software que você queira registrar. Não se
+  atualiza sozinha: preencher várias linhas é uma sentada só, e um redesenho no
+  meio apagaria o que está sendo digitado.
 
 ## Rotas
 
@@ -19,13 +33,24 @@ Um Worker do Cloudflare com banco D1 (SQLite) que responde duas perguntas:
 | `/batida` | POST | `X-Chave` | recebe a batida do box (`{serial, versao, …}`) |
 | `/alvo` | GET | pública | devolve `{"alvo": "2.8.501"}` ou `{"alvo": null}` |
 | `/alvo` | POST | `X-Chave` | grava o alvo (`{"alvo": "2.8.501"}` ou `{"alvo": null}`) |
+| `/box` | POST | `X-Chave` | grava a ficha (`{serial, local?, responsavel?, finalidade?}`); o que não vem não é tocado |
+| `/box/remover` | POST | `X-Chave` | tira do inventário um aparelho que nunca bateu |
 | `/boxes` | GET | `?chave=` | JSON com todos os boxes, o alvo e a hora do servidor |
-| `/painel` | GET | `?chave=` | a página |
+| `/painel` | GET | `?chave=` | a página dos boxes que batem |
+| `/inventario` | GET | `?chave=` | a página do inventário |
 | `/` | GET | — | manda para `/painel`, levando a chave |
 
 O `GET /alvo` é público de propósito: é o app dos boxes que o lê, e a restrição
 que ele pode sofrer é a de **não** atualizar — quem souber o alvo não ganha nada
 com isso. Tudo o que é escrita, e tudo o que mostra os boxes, exige chave.
+
+Só o `POST /box` cria linha em `boxes` sem que um box tenha batido: é assim que
+um aparelho entra no inventário antes de existir app nele. Antes de gravar, a
+ficha espera por um serial com cara de serial (`[A-Za-z0-9._:-]{3,}`) e campos
+de até 300 caracteres — um serial digitado errado viraria uma linha fantasma que
+só apareceria depois, como um box a mais. Os campos são texto livre: o serial
+pode ser o do app (`GFIG-…`) ou uma etiqueta sua, desde que seja o mesmo que
+aparecerá na batida.
 
 ## A chave
 

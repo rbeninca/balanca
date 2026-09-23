@@ -22,12 +22,23 @@ sendo o que se sabe, e a atualização continua sendo a ida ao local. A tabela
 continua sendo a fonte da verdade sobre os aparelhos (serial, modelo, MAC,
 SSID): o painel diz o que está rodando, não quem são.
 
+**Desde 22/09/2026 o painel tem duas páginas.** O `/painel` é a frota em
+operação — só quem bate. O `/inventario` é o registro do aparelho: onde ele
+está, de quem é e para que serve, em campos que o box não tem como informar e
+que alguém preenche ali mesmo. Lá cabem também aparelhos que **não** são boxes
+da balança (um Armbian, um Android de outro uso), que nunca vão bater e por isso
+nunca apareceriam no `/painel`. Os dois lados se encontram pelo **serial**: é ele
+que liga a linha desta tabela à ficha do painel.
+
 ## O parque
 
 **Esta tabela é a fonte da verdade sobre os boxes.** O gerador de etiquetas
 (`etiquetas/gerador_etiqueta.html`) lê os dados dela — é por isso que ela tem
 colunas de nome fixo e uma linha por box. Mexeu num aparelho? Mexa aqui, e só
-aqui: não existe lista de boxes repetida em outro lugar.
+aqui: não existe lista de boxes repetida em outro lugar. Trocar o modelo, o MAC
+ou o SSID é mexer **nesta** tabela; dizer onde o aparelho está e de quem ele é,
+na página de inventário do painel — cada campo tem um dono, e nenhum campo tem
+dois.
 
 <!-- Tabela lida pelo gerador de etiquetas. Não renomeie as colunas: ele
      procura por Serial, Modelo, MAC eth0 e SSID. -->

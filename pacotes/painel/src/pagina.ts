@@ -1,75 +1,48 @@
+import { AJUDANTES, casco, paraScript } from './html.js';
+
 /**
- * A página do painel: HTML puro, sem framework e sem build, servida pelo
- * próprio Worker.
+ * A página do painel: só os boxes da balança, e só o que eles relatam.
  *
  * Ela nasce vazia e se preenche por `fetch` em `/boxes?chave=…` — o mesmo
  * endpoint que qualquer outro cliente usaria. A chave vai embutida na página
  * (o usuário já a mandou na URL para chegar aqui), então a página é tão
  * secreta quanto o link.
  *
+ * Quem foi cadastrado no inventário e nunca bateu **não** entra nesta tabela:
+ * um aparelho de outro software, ou um box que ainda não recebeu a 2.8.501,
+ * apareceria como se estivesse mudo, e o painel deixaria de responder à
+ * pergunta dele ("o que a frota está rodando"). Esses ficam na outra tela, e
+ * daqui só se vê a contagem e o caminho.
+ *
  * Atualiza sozinha a cada 60 s: a ideia é deixar aberta num canto e ver os
  * boxes aparecerem.
  */
 export function pagina(chave: string): string {
-  return `<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Painel dos boxes — BalançaGFIG</title>
-<style>
-  :root { color-scheme: light dark; --linha: #d8d8d8; --fraco: #6b6b6b; --ok: #1a7f37; --alerta: #b54708; }
-  @media (prefers-color-scheme: dark) {
-    :root { --linha: #3a3a3a; --fraco: #a0a0a0; --ok: #4ac26b; --alerta: #e3a008; }
-  }
-  body { margin: 0 auto; max-width: 70rem; padding: 1.5rem 1rem 4rem;
-         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
-  .sub { color: var(--fraco); margin: 0 0 1.5rem; font-size: .9rem; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--linha); vertical-align: top; }
-  th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--fraco); }
-  td.serial { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
-  .versao { font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .fraco { color: var(--fraco); font-size: .85rem; }
-  .ok { color: var(--ok); }
-  .atrasado { color: var(--alerta); font-weight: 600; }
-  form { margin: 1.5rem 0 0; padding: 1rem; border: 1px solid var(--linha); border-radius: .5rem; }
-  label { display: block; font-size: .85rem; color: var(--fraco); margin-bottom: .4rem; }
-  input, button { font: inherit; padding: .45rem .6rem; border-radius: .35rem; border: 1px solid var(--linha); }
-  input { width: 10rem; background: transparent; color: inherit; }
-  button { cursor: pointer; }
-  #recado { margin-left: .6rem; font-size: .9rem; }
-  #erro { color: var(--alerta); margin: 1rem 0 0; }
-</style>
-</head>
-<body>
-<h1>Painel dos boxes</h1>
-<p class="sub">Versão instalada, quando atualizou e quando foi visto por último. Atualiza sozinho a cada 60 s.</p>
-<p id="erro" hidden></p>
+  return casco({
+    titulo: 'Painel dos boxes',
+    sub: 'Versão instalada, quando atualizou e quando foi visto por último, para os boxes que batem no painel. Atualiza sozinho a cada 60 s.',
+    atual: 'painel',
+    chave,
+    corpo: `<p class="erro" id="erro" hidden></p>
 <div id="tabela"></div>
+<p class="sub" id="fora" hidden></p>
 
 <form id="form">
   <label for="alvo">Alvo de atualização — a versão mais nova que os boxes podem instalar (vazio = sem teto)</label>
   <input id="alvo" name="alvo" placeholder="2.8.501" autocomplete="off">
   <button type="submit">Gravar</button>
-  <span id="recado"></span>
+  <span class="recado" id="recado"></span>
 </form>
 
 <script>
 const CHAVE = ${paraScript(chave)};
 const tabela = document.getElementById('tabela');
+const fora = document.getElementById('fora');
 const erro = document.getElementById('erro');
 const recado = document.getElementById('recado');
 const campoAlvo = document.getElementById('alvo');
 let primeiraCarga = true;
-
-function quando(ms) {
-  if (ms === null || ms === undefined) return '—';
-  return new Date(ms).toLocaleString('pt-BR');
-}
-
+${AJUDANTES}
 function ha(ms) {
   if (ms === null || ms === undefined) return 'nunca';
   const s = Math.round((Date.now() - ms) / 1000);
@@ -79,10 +52,6 @@ function ha(ms) {
   const h = Math.round(m / 60);
   if (h < 36) return h + ' h';
   return Math.round(h / 24) + ' dias';
-}
-
-function escapar(t) {
-  return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 function ipTexto(ip) {
@@ -96,11 +65,23 @@ function desenhar(dados) {
     campoAlvo.value = alvo || '';
     primeiraCarga = false;
   }
-  if (!dados.boxes.length) {
+
+  const daBalanca = dados.boxes.filter(b => !b.nuncaBateu);
+  const soNoInventario = dados.boxes.length - daBalanca.length;
+  if (soNoInventario > 0) {
+    fora.hidden = false;
+    fora.innerHTML = soNoInventario === 1
+      ? '1 aparelho do inventário ainda não bateu. <a href="/inventario?chave=' + encodeURIComponent(CHAVE) + '">Ver inventário</a>.'
+      : soNoInventario + ' aparelhos do inventário ainda não bateram. <a href="/inventario?chave=' + encodeURIComponent(CHAVE) + '">Ver inventário</a>.';
+  } else {
+    fora.hidden = true;
+  }
+
+  if (!daBalanca.length) {
     tabela.innerHTML = '<p class="fraco">Nenhum box bateu ainda. O primeiro contato acontece ~30 s depois de o app subir, e a cada 10 min daí em diante.</p>';
     return;
   }
-  const linhas = dados.boxes.map(b => {
+  const linhas = daBalanca.map(b => {
     // Sem alvo, qualquer versão instalada está em dia; com alvo, quem está
     // abaixo dele é o que precisa de atenção.
     const atrasado = alvo !== null && comparar(b.versao, alvo) < 0;
@@ -109,7 +90,7 @@ function desenhar(dados) {
       : (alvo === null ? '' : '<span class="ok">em dia</span>');
     return '<tr>' +
       '<td class="serial">' + escapar(b.serial) + '</td>' +
-      '<td class="versao">' + escapar(b.versao) + ' ' + marca + '</td>' +
+      '<td><span class="versao">' + escapar(b.versao) + '</span> ' + marca + '</td>' +
       '<td>' + quando(b.atualizouEm) + (b.atualizouEmEstimado ? ' <span class="fraco">~</span>' : '') + '</td>' +
       '<td>' + quando(b.ultimaBatidaEm) + ' <span class="fraco">(' + ha(b.ultimaBatidaEm) + ')</span></td>' +
       '<td class="fraco">' + escapar(b.modelo || '—') + (b.placa ? ' / ' + escapar(b.placa) : '') + '</td>' +
@@ -166,18 +147,6 @@ document.getElementById('form').addEventListener('submit', async ev => {
 
 carregar();
 setInterval(carregar, 60000);
-</script>
-</body>
-</html>
-`;
-}
-
-/**
- * A chave vem da URL e é escrita dentro de um `<script>`. `JSON.stringify` cuida
- * das aspas, mas não de um `</script>` que viesse no meio do valor — que
- * fecharia o bloco mais cedo e transformaria o resto em HTML. Escapado o `<`,
- * não sobra como fechar a tag.
- */
-function paraScript(valor: string): string {
-  return JSON.stringify(valor).replace(/</g, '\\u003c');
+</script>`,
+  });
 }

@@ -18,8 +18,16 @@ export const ESQUEMA = [
      -- Momento em que o APK foi instalado, segundo o próprio Android
      -- (PackageInfo.lastUpdateTime). É a resposta para "quando atualizou".
      instalado_em INTEGER,
+     -- Zero nas duas colunas quer dizer "nunca bateu": é o estado de um box que
+     -- alguém cadastrou à mão no painel e que ainda não apareceu. Não dá para
+     -- usar NULL porque as colunas nasceram NOT NULL, e trocar isso exigiria
+     -- reconstruir a tabela — que é justamente o que o 'IF NOT EXISTS' evita.
      primeira_batida_em INTEGER NOT NULL,
-     ultima_batida_em INTEGER NOT NULL
+     ultima_batida_em INTEGER NOT NULL,
+     -- Ficha do inventário: o que o box não sabe dizer de si. Ver FICHA.
+     local TEXT,
+     responsavel TEXT,
+     finalidade TEXT
    )`,
 
   // Histórico: permite ver quando um box trocou de versão, e serve de
@@ -41,3 +49,15 @@ export const ESQUEMA = [
      valor TEXT
    )`,
 ];
+
+/**
+ * Colunas que a tabela `boxes` ganhou depois de já estar em produção, na ordem
+ * em que foram acrescentadas.
+ *
+ * `CREATE TABLE IF NOT EXISTS` não muda tabela que já existe, então um banco
+ * criado antes desta lista ficaria sem as colunas e o `SELECT` do painel
+ * quebraria. O `ADD COLUMN` de cada uma é aplicado por `garantirEsquema`, e um
+ * `ADD COLUMN` repetido é recusado pelo SQLite — é assim, sem `PRAGMA` e sem
+ * tabela de versão, que a migração se reconhece como já feita.
+ */
+export const COLUNAS_NOVAS = ['local TEXT', 'responsavel TEXT', 'finalidade TEXT'];

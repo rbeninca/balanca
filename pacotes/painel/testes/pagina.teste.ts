@@ -53,6 +53,17 @@ describe('/painel', () => {
     expect(await r.json()).toEqual({ erro: 'rota desconhecida' });
   });
 
+  it('deixa de fora quem nunca bateu, e aponta para o inventário', async () => {
+    const b = bancada();
+    const html = await b.ler(await b.pedir(`/painel?chave=${CHAVE}`, { chave: null }));
+
+    // Um aparelho cadastrado à mão não tem versão nem última batida para
+    // mostrar: no painel ele só ocuparia espaço e sumiria da conta do que a
+    // frota está rodando.
+    expect(html).toContain('!b.nuncaBateu');
+    expect(html).toContain(`/inventario?chave=${encodeURIComponent(CHAVE)}`);
+  });
+
   it('mostra os boxes que bateram', async () => {
     const b = bancada();
     await b.pedir('/batida', postar(batidaCampos()));

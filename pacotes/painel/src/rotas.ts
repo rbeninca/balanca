@@ -1,9 +1,19 @@
 import type { Banco } from './banco.js';
 import { garantirEsquema } from './banco.js';
 import { iguais } from './chave.js';
-import { alvoValido, gravarAlvo, lerAlvo, listarBoxes, registrarBatida } from './repositorio.js';
-import type { Batida } from './repositorio.js';
+import {
+  CAMPOS_FICHA,
+  alvoValido,
+  gravarAlvo,
+  gravarFicha,
+  lerAlvo,
+  listarBoxes,
+  registrarBatida,
+  removerBoxSemBatida,
+} from './repositorio.js';
+import type { Batida, Ficha } from './repositorio.js';
 import { pagina } from './pagina.js';
+import { paginaInventario } from './inventario.js';
 
 export interface Ambiente {
   DB: Banco;
@@ -36,10 +46,16 @@ export default {
         return json({ alvo: await lerAlvo(ambiente.DB) });
       case 'POST /alvo':
         return await definirAlvo(pedido, ambiente);
+      case 'POST /box':
+        return await fichaDoBox(pedido, ambiente);
+      case 'POST /box/remover':
+        return await removerBox(pedido, ambiente);
       case 'GET /boxes':
         return await boxes(url, ambiente);
       case 'GET /painel':
-        return await painel(url, ambiente);
+        return await html(pagina, url, ambiente);
+      case 'GET /inventario':
+        return await html(paginaInventario, url, ambiente);
       case 'GET /':
         // A chave viaja na query para quem chega por um link já pronto.
         return Response.redirect(`${url.origin}/painel${url.search}`, 302);
@@ -83,15 +99,69 @@ async function definirAlvo(pedido: Request, ambiente: Ambiente): Promise<Respons
   return json({ alvo });
 }
 
+/**
+ * O inventário: onde o box está, de quem é e para que serve. É o único dado do
+ * painel que não vem do aparelho — vem de quem escreve na página, e por isso
+ * chega por uma rota de escrita comum (`X-Chave`), como o alvo.
+ */
+async function fichaDoBox(pedido: Request, ambiente: Ambiente): Promise<Response> {
+  if (!autorizado(pedido.headers.get('X-Chave'), ambiente)) return naoAutorizado();
+
+  let dados: unknown;
+  try {
+    dados = await pedido.json();
+  } catch {
+    return json({ erro: 'corpo não é JSON' }, 400);
+  }
+  if (dados === null || typeof dados !== 'object' || Array.isArray(dados)) {
+    return json({ erro: 'corpo não é um objeto' }, 400);
+  }
+  const d = dados as Record<string, unknown>;
+
+  const serial = texto(d['serial'], 120);
+  if (serial === null || !SERIAL_PLAUSIVEL.test(serial)) {
+    return json({ erro: 'serial ausente ou fora do formato esperado (letras, números, ponto, hífen)' }, 400);
+  }
+  const ficha = comoFicha(d);
+  if (ficha === null) return json({ erro: `cada campo da ficha é texto de até ${LIMITE_FICHA} caracteres` }, 400);
+
+  await gravarFicha(ambiente.DB, serial, ficha);
+  return json({ ok: true, serial, ficha });
+}
+
+async function removerBox(pedido: Request, ambiente: Ambiente): Promise<Response> {
+  if (!autorizado(pedido.headers.get('X-Chave'), ambiente)) return naoAutorizado();
+
+  let dados: unknown;
+  try {
+    dados = await pedido.json();
+  } catch {
+    return json({ erro: 'corpo não é JSON' }, 400);
+  }
+  const serial = texto((dados as Record<string, unknown> | null)?.['serial'], 120);
+  if (serial === null) return json({ erro: 'serial ausente' }, 400);
+
+  const resultado = await removerBoxSemBatida(ambiente.DB, serial);
+  if (resultado === 'inexistente') return json({ erro: 'box não está no painel' }, 404);
+  if (resultado === 'temBatida') return json({ erro: 'este box já bateu: a ficha dele não sai por aqui' }, 409);
+  return json({ ok: true, serial });
+}
+
 async function boxes(url: URL, ambiente: Ambiente): Promise<Response> {
   if (!autorizado(url.searchParams.get('chave'), ambiente)) return naoAutorizado();
   return json({ agora: Date.now(), alvo: await lerAlvo(ambiente.DB), boxes: await listarBoxes(ambiente.DB) });
 }
 
-async function painel(url: URL, ambiente: Ambiente): Promise<Response> {
+/**
+ * As duas telas são HTML montado aqui, e as duas se protegem do mesmo jeito: a
+ * chave vem na URL porque é ela que o script da página usa para chamar
+ * `/boxes`. Sem chave válida nem o HTML sai — a página é tão secreta quanto o
+ * link que a carrega.
+ */
+async function html(desenhar: (chave: string) => string, url: URL, ambiente: Ambiente): Promise<Response> {
   const chave = url.searchParams.get('chave');
   if (!autorizado(chave, ambiente)) return naoAutorizado();
-  return new Response(pagina(chave ?? ''), {
+  return new Response(desenhar(chave ?? ''), {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
 }
@@ -141,6 +211,35 @@ function comoBatida(dados: unknown): Batida | null {
     ip: mapaTexto(d['ip']),
     root: typeof d['root'] === 'boolean' ? d['root'] : null,
   };
+}
+
+/** Quanto cabe em cada campo da ficha. Texto livre, mas não um livro. */
+const LIMITE_FICHA = 300;
+
+/**
+ * O serial é a chave da ficha, e um serial digitado errado cria uma linha
+ * fantasma que só apareceria depois como um box a mais. Não dá para exigir o
+ * formato `GFIG-…` (o serial pode ser fixado à mão no box), mas espaço e
+ * acento são digitação, não serial.
+ */
+const SERIAL_PLAUSIVEL = /^[A-Za-z0-9._:-]{3,}$/;
+
+/**
+ * Os três campos do inventário, separando "não veio" de "veio vazio": o que não
+ * veio no corpo fica como estava, e o que veio em branco é apagado. A página
+ * manda sempre os três, então quem preenche pelo painel não sente a diferença.
+ */
+function comoFicha(d: Record<string, unknown>): Partial<Ficha> | null {
+  const ficha: Partial<Ficha> = {};
+  for (const campo of CAMPOS_FICHA) {
+    const bruto = d[campo];
+    if (bruto === undefined) continue;
+    if (bruto !== null && typeof bruto !== 'string') return null;
+    const limpo = (bruto ?? '').trim();
+    if (limpo.length > LIMITE_FICHA) return null;
+    ficha[campo] = limpo === '' ? null : limpo;
+  }
+  return ficha;
 }
 
 function texto(valor: unknown, limite: number): string | null {
