@@ -1,0 +1,4 @@
+# Estes arquivos vão para o Windows: ficam gravados com quebra de linha CRLF
+# (e os .txt com BOM), do jeito que o Notepad e o cmd esperam. O "-text" diz
+# ao git para não converter nada nem no commit nem no checkout.
+* -text

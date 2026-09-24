@@ -1,0 +1,36 @@
+﻿BalançaGFIG — os mesmos passos, comando por comando
+===================================================
+
+Abra o Prompt de Comando nesta pasta (shift + botão direito do mouse >
+"Abrir janela do PowerShell aqui" também serve).
+
+  .\adb.exe start-server
+  .\adb.exe connect 192.168.43.1:5555
+
+  :: a TV pode pedir autorização agora: marque "sempre" e aceite
+  .\adb.exe devices
+  :: tem que aparecer   192.168.43.1:5555   device
+  :: se aparecer "unauthorized", o aviso na TV ainda não foi aceito
+
+  :: versão que está no box hoje
+  .\adb.exe shell dumpsys package br.edu.ifsc.balancagfig | findstr versionName
+
+  :: instalando (leva de 1 a 2 minutos)
+  .\adb.exe install -r -d balancagfig-2.8.503.apk
+
+  :: abrindo o aplicativo e conferindo que ele não ficou "parado"
+  .\adb.exe shell am start -n br.edu.ifsc.balancagfig/.MainActivity
+  .\adb.exe shell dumpsys package br.edu.ifsc.balancagfig | findstr stopped=
+  :: tem que aparecer   stopped=false
+
+  :: conferindo que o aplicativo está no ar (no navegador também funciona)
+  curl http://192.168.43.1:3000/saude
+
+Se o box estiver na rede local em vez do WiFi próprio, troque 192.168.43.1
+pelo IP que aparece na tela do box.
+
+Se a instalação for recusada com INSTALL_FAILED_UPDATE_INCOMPATIBLE, o box tem
+uma versão de teste assinada com outra chave. Aí é preciso remover antes de
+instalar — e remover apaga as sessões de medição gravadas no box:
+  .\adb.exe uninstall br.edu.ifsc.balancagfig
+  .\adb.exe install balancagfig-2.8.503.apk

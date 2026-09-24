@@ -1,0 +1,62 @@
+﻿BalançaGFIG — instalar o aplicativo no box
+==========================================
+
+O que é esta pasta
+  Um kit fechado para levar até o box. Não precisa instalar nada no notebook:
+  o adb e o aplicativo já estão aqui dentro.
+
+Antes de começar
+  1. Ligue o box na tomada e espere a tela dele mostrar o aplicativo aberto.
+  2. No notebook, conecte no WiFi do próprio box: rede "balancaGFIG-XXXX".
+     Se ninguém trocou, a senha é 12345678.
+  3. Confirme pelo navegador que o box responde:
+         http://192.168.43.1:3000/saude
+     Deve aparecer um texto começando com {"status":"ok",...
+
+Instalar
+  Dois cliques em instalar.bat.
+
+  Se o Windows avisar que o arquivo veio da internet, clique em "Mais
+  informações" e depois em "Executar assim mesmo". O aviso aparece
+  para qualquer arquivo baixado, não é defeito do kit.
+
+  Durante a instalação a TV pode mostrar um aviso pedindo para permitir a
+  depuração (vem do notebook que acabou de se conectar). Marque a opção de
+  sempre permitir e aceite com o controle: sem isso o notebook não consegue
+  conversar com o box.
+
+  A tela preta vai mostrando o que está acontecendo:
+    - a versão que está no box hoje;
+    - o resultado da instalação (procure a palavra Success);
+    - a conferência final, com a versão nova e os endereços do box.
+
+  No fim deve aparecer:
+    RESULTADO: OK - o aplicativo esta no ar.
+  A janela só fecha quando você apertar uma tecla.
+
+Se o box estiver na rede local, e não no WiFi próprio
+  Aí o endereço não é 192.168.43.1. O IP do box aparece na tela dele, na parte
+  de baixo. Rode passando esse IP:
+    instalar.bat 192.168.1.17
+
+Se der errado
+  "nao consegui falar com o box"
+    Confira se o notebook está no WiFi do box e se a tela dele está ligada.
+    Se estiver na rede local, passe o IP como acima.
+
+  "o box nao autorizou este notebook"
+    O aviso na TV não foi aceito. Aceite com o controle (marcando sempre
+    permitir) e rode o script de novo. Ele espera cerca de um minuto e meio
+    antes de desistir.
+
+  "INSTALL_FAILED_UPDATE_INCOMPATIBLE"
+    O box tem uma versão de teste, assinada com outra chave, e o Android não
+    deixa instalar por cima. O próprio script pergunta se pode remover antes —
+    e remover APAGA as sessões de medição gravadas no box. Só faça isso se for
+    combinado com quem te passou o kit.
+
+  Qualquer outro erro
+    Tire uma foto da tela preta e mande para quem te passou o kit.
+
+Para fazer na mão
+  Os mesmos passos, comando por comando, estão em COMANDOS.txt.
