@@ -6,7 +6,7 @@ import { TelaAnalise } from './TelaAnalise.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { htmlPainelFiltros, RADIOS_FILTRO_PRINCIPAL, filtroPrincipalDe, patchFiltroPrincipal, situacaoButterworth, descreverPipeline, textoAtraso } from './filtrosPainel.js';
 import { PERFIS, detectarPerfil, type PerfilProcessamento } from './presetsProcessamento.js';
-import { sugerirZonaMortaN, sugerirLimiaresDetector, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
+import { sugerirZonaMortaN, sugerirLimiaresDetector, deveSugerirZonaMorta, type DadosCelula } from '../nucleo/sugestaoZonaMorta.js';
 import { indicador } from './indicadorCarregando.js';
 
 type Unidade = 'N' | 'kg' | 'g';
@@ -42,6 +42,10 @@ export class TelaMedicao {
   private ultimaForca        = 0;
   private ultimaLeitura: LeituraProcessada | null = null;
   private dadosCelula: DadosCelula = {};
+  /** O usuário já mexeu na zona morta (campo, botão ou perfil): a sugestão automática não sobrescreve. */
+  private zonaMortaAjustada = false;
+  /** Preenche a zona morta sozinho quando o config da célula chega; definido ao montar o painel. */
+  private sugerirZonaMortaAoChegarConfig: (() => void) | null = null;
   private hz                 = 0;
   private ultimoDadoMs       = 0;
   private elSelo:            HTMLElement | null = null;
@@ -415,6 +419,7 @@ export class TelaMedicao {
       if (chave === 'personalizado') return;
       const perfil = PERFIS[chave];
       this.sincronizarPainel({ ...this.fonte.obterConfigPipeline?.(), ...perfil.patch } as EstadoPipeline);
+      this.zonaMortaAjustada = true;   // o perfil manda no campo: a sugestão automática não sobrescreve
       aplicar();
     });
 
@@ -427,20 +432,21 @@ export class TelaMedicao {
      '#in-sg-jan','#in-kalman-q','#in-kalman-r'].forEach(id =>
       container.querySelector(id)!.addEventListener('change', aplicar));
 
+    // Digitou no campo da zona morta: o valor é dele, a sugestão automática não sobrescreve.
+    container.querySelector('#in-zona-morta')?.addEventListener('input', () => { this.zonaMortaAjustada = true; });
+
     // Sugere a zona morta a partir da capacidade/acurácia gravadas na ESP.
     container.querySelector<HTMLButtonElement>('#btn-sugerir-zm')?.addEventListener('click', () => {
-      const zm = sugerirZonaMortaN(this.dadosCelula);
-      if (zm == null) {
+      this.zonaMortaAjustada = true;   // escolha do usuário: a sugestão automática não mexe mais no campo
+      if (!this.preencherZonaMortaSugerida(container)) {
         // Os valores ficam na ESP; se ainda não chegaram, pede o config e avisa.
         this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
         alert('Capacidade/acurácia da célula ainda não recebidas da ESP. Verifique a conexão com a balança e tente de novo.');
         return;
       }
-      const inp = container.querySelector<HTMLInputElement>('#in-zona-morta');
-      const ck  = container.querySelector<HTMLInputElement>('#ck-zona-morta');
-      if (inp) inp.value = String(Number(zm.toPrecision(3)));
-      if (ck) ck.checked = true;   // sugerir implica ativar a zona morta
-      // …e os limiares do detector: início 4× e fim 2× o piso de ruído
+      // O clique sugere o conjunto: liga a zona morta, põe os limiares do detector e envia.
+      const ck = container.querySelector<HTMLInputElement>('#ck-zona-morta');
+      if (ck) ck.checked = true;
       const lim = sugerirLimiaresDetector(this.dadosCelula);
       if (lim) {
         const e = container.querySelector<HTMLInputElement>('#in-det-entrada');
@@ -451,10 +457,32 @@ export class TelaMedicao {
       aplicar();
     });
 
+    // Sugestão automática: enquanto o campo estiver num valor de partida e ninguém tiver mexido
+    // nele, a chegada dos dados da célula põe o valor sugerido no campo. Só o valor: não liga a
+    // zona morta, não mexe nos limiares e não envia nada — quem aplica é o usuário.
+    this.sugerirZonaMortaAoChegarConfig = () => {
+      const inp = container.querySelector<HTMLInputElement>('#in-zona-morta');
+      if (!inp || !deveSugerirZonaMorta(Number(inp.value), this.zonaMortaAjustada)) return;
+      this.preencherZonaMortaSugerida(container);
+    };
+
     // Pede o config à ESP para ter capacidade/acurácia/gravidade prontas.
     this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
 
     this.atualizarBadgeFiltros(container);
+  }
+
+  /**
+   * Põe a zona morta sugerida no campo — só isso: não liga a zona morta, não mexe nos limiares
+   * do detector e não aplica nada. Devolve false quando ainda faltam capacidade/acurácia válidas;
+   * esses dados moram na ESP.
+   */
+  private preencherZonaMortaSugerida(container: HTMLElement): boolean {
+    const zm = sugerirZonaMortaN(this.dadosCelula);
+    if (zm == null) return false;
+    const inp = container.querySelector<HTMLInputElement>('#in-zona-morta');
+    if (inp) inp.value = String(Number(zm.toPrecision(3)));
+    return true;
   }
 
   /** Seletor de perfil reflete o estado: um dos presets ou "Personalizado". */
@@ -587,6 +615,8 @@ export class TelaMedicao {
     if (c.ativoZonaMorta !== undefined) {
       this.sincronizarPainel(c as EstadoPipeline);
     }
+    // Com os dados da célula em mãos, a zona morta pode se preencher sozinha — se ainda for a hora.
+    this.sugerirZonaMortaAoChegarConfig?.();
   }
 
   private onStatus(raw: unknown) {

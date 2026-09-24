@@ -42,3 +42,26 @@ describe('sugerirLimiaresDetector (Fase 7)', () => {
     expect(sugerirLimiaresDetector({})).toBeNull();
   });
 });
+
+import { deveSugerirZonaMorta } from '../../src/nucleo/sugestaoZonaMorta.js';
+
+describe('deveSugerirZonaMorta (preenchimento automático ao conectar)', () => {
+  it('vale enquanto o campo está num valor de partida: 0,5 N do gateway e 0,05 N do modo local', () => {
+    expect(deveSugerirZonaMorta(0.5, false)).toBe(true);
+    expect(deveSugerirZonaMorta(0.05, false)).toBe(true);
+  });
+
+  it('não sobrescreve um valor que já não é de partida', () => {
+    expect(deveSugerirZonaMorta(0.0147, false)).toBe(false);   // sugestão já aplicada
+    expect(deveSugerirZonaMorta(1.2, false)).toBe(false);      // valor configurado no box
+  });
+
+  it('não mexe no campo depois que o usuário mexeu nele — nem se ainda estiver no padrão', () => {
+    expect(deveSugerirZonaMorta(0.5, true)).toBe(false);
+    expect(deveSugerirZonaMorta(0.05, true)).toBe(false);
+  });
+
+  it('ignora valor inválido', () => {
+    expect(deveSugerirZonaMorta(NaN, false)).toBe(false);
+  });
+});

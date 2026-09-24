@@ -32,6 +32,22 @@ export function sugerirZonaMortaN(dados: DadosCelula, k = 1): number | null {
 }
 
 /**
+ * Valores de partida do campo de zona morta: o padrão do gateway (`FonteWebSocket`) e o do
+ * modo local (`FonteWebSerial`). Enquanto o campo estiver num deles, ninguém o configurou —
+ * é o que autoriza a sugestão automática a preenchê-lo.
+ */
+export const ZONA_MORTA_PADROES_N = [0.5, 0.05];
+
+/**
+ * A sugestão automática só age enquanto o campo está num valor de partida e o usuário não
+ * mexeu nele: um valor ajustado à mão (ou vindo de um perfil) nunca é sobrescrito.
+ */
+export function deveSugerirZonaMorta(valorAtualN: number, ajustadoPeloUsuario: boolean): boolean {
+  if (ajustadoPeloUsuario || !Number.isFinite(valorAtualN)) return false;
+  return ZONA_MORTA_PADROES_N.some(p => Math.abs(valorAtualN - p) < 1e-9);
+}
+
+/**
  * Limiares do detector de evento sugeridos a partir do piso de ruído da célula
  * (a mesma zona morta sugerida): início em 4× o piso (ruído não dispara),
  * fim em 2× (histerese F_ON > F_OFF). null quando faltam os dados.
