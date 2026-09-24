@@ -1,7 +1,43 @@
-# Log de modificações
+# Modificações — setembro de 2026
 
-Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
-motivo.
+Um arquivo por mês, nomeado pelo primeiro dia. Ordem cronológica inversa (mais
+recente primeiro): cada item traz o commit, o que mudou e o motivo. As
+pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
+arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
+em [contexto.md](contexto.md).
+
+## Ferramentas de bancada: ciclo de teste e kit de instalação (2026-09-24)
+
+Dois scripts para trabalhar no box sem depender de lembrar comando: um faz a ida
+e volta entre a versão em teste e a guardada, o outro monta a pasta que alguém
+leva para instalar o app no local. A motivação é a quebra do dia anterior — o
+box saiu da rede local e não havia outro jeito de chegar nele.
+
+- **`android/scripts/ciclo-teste.sh` (`5c14d9b`, ajuste em `ab69e5c`).** Instala
+  a versão em teste e devolve o box à versão guardada, para ele voltar a se
+  atualizar pela web sozinho:
+  - `... modificada` compila do zero (o `BuildConfig` é inlinado nos pontos de
+    uso: build incremental sai sem URL e sem chave, e o box some do painel),
+    instala, roda `am start` e espera a batida no painel;
+  - `... guardada` confere o sha256 do APK guardado contra o manifest,
+    `install -r -d`, espera 20 s (a flag de pacote parado é gravada depois) e
+    acompanha a atualização pela web;
+  - `... situacao` só lê: versão no box, versão local e a linha do painel.
+- **`android/scripts/montar-kit.sh` + `android/scripts/kit/` (`ea63354`).** Monta
+  a pasta que vai para o local (Windows 10): o APK da release, o `adb` do
+  platform-tools e três arquivos de apoio — `instalar.bat` (dois cliques),
+  `LEIA-ME.txt` e `COMANDOS.txt` (os mesmos passos na mão).
+  - O APK baixado é conferido contra o sha256 e o tamanho do `manifest.json`
+    antes de entrar no kit: é o mesmo arquivo que o box baixaria.
+  - O `.bat` assume `192.168.43.1` (hotspot do box) e aceita outro IP como
+    argumento. Conecta, espera a autorização na TV, instala, dispara `am start`
+    e confere `stopped=false` — pacote recém-instalado fica parado e não sobe
+    sozinho no boot seguinte.
+  - Os arquivos que vão para o Windows ficam com CRLF (e os `.txt` com BOM),
+    fixado no `.gitattributes` da pasta.
+  - Conferido sob `wine`, o que rendeu dois achados de cmd: `for %%f in
+    ("curinga")` não devolve nada (a descoberta do APK saiu de `dir /b`) e,
+    dentro de `for /f`, o caminho do adb vai sem aspas.
 
 ## v2.8.503 (2026-09-23)
 
@@ -448,3 +484,149 @@ NanoHTTPD) e gravador de firmware ESP8266. Instalação zero-toque (root e
 permissão USB pré-aprovados), hotspot `balancaGFIG` e WebView via GeckoView.
 Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
 (dimensões/massa padrão, decimais com ponto).
+
+## Pendências
+
+### Abertas
+
+- **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
+  à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
+  instala é alguém com um notebook. Antes de sair, com internet, levar o APK:
+
+  ```bash
+  gh release download v2.8.501 -R rbeninca/balanca -p balancagfig-2.8.501.apk
+  ```
+
+  **Levar o da 2.8.501, e não o da 2.8.5**, por dois motivos: é o APK que tem a
+  URL e a chave do painel embutidas (sem elas o box não aparece no painel nem lê
+  o alvo) e é o que traz os dígitos extras do versionName. O APK que o CI
+  publica é o que serve — um compilado à mão, sem `chaves.properties`, sai sem
+  painel.
+
+  Lá, com `adb connect <ip>:5555` feito, um `adb -s <ip>:5555 install -r
+  balancagfig-2.8.501.apk` por box. **O APK da release serve em qualquer um
+  deles**, inclusive nos que foram instalados pelo `box.sh`: `debug` e `release`
+  são assinados com a mesma chave (`bc7d4ae8…`), então é um `install -r` comum —
+  sem `desfazer` e sem apagar as sessões gravadas. Quem levar o repositório no
+  notebook pode trocar por `bash scripts/box.sh instalar <ip>`, que compila,
+  instala, faz os passos de `su` (pré-aprovar o root, `WRITE_SETTINGS`,
+  permissão USB) e confere hotspot, serial e frontend.
+
+  O que essa ida resolve: o **`.17`** sai da 2.8.4, o **`.105`** e o **`.112`**
+  saem da 2.7.3 (17 MB, um minuto cada, em vez dos 12 downloads da cadeia), e o
+  **`.118`** sai da 2.8.2 — esse é o que **só** sai assim: com o root quebrado,
+  o app não instala nem se alguém apertar o botão.
+
+  **Depois da 2.8.501 esta pendência deixa de ser o único jeito de saber como
+  estão.** Nessa versão o app passou a bater no painel a cada 10 min (ver
+  `2026-09-01--modificacoes.md`), e é o painel que passa a responder "qual versão cada
+  box está, e quando atualizou" — daqui, sem ninguém ir até lá. Enquanto os
+  boxes estiverem abaixo da 2.8.501, porém, **o painel fica vazio**: nada bate
+  nele. A ida instala a 2.8.501 e, além dos resgates acima, liga esse canal.
+  Publicar o painel (uma vez, na conta Cloudflare) é pré-requisito, e o passo a
+  passo está em `pacotes/painel/LEIA-ME.md`.
+
+- **O `.118` ainda pode estar preso na 2.8.2.** A 2.8.2 chamou
+  `Process.waitFor(long, TimeUnit)` (API 26) e os boxes são API 25 (Android
+  7.1.2): o `NoSuchMethodError` foi engolido pelo `catch (Throwable)` do `Root`,
+  que passou a responder "não" a *todo* comando. Como quem instala a atualização
+  é o próprio app, via `su`, um box na 2.8.2 **não sai de lá sozinho** — nem
+  para instalar a versão que conserta. O caso inteiro está em
+  `2026-09-01--modificacoes.md` (v2.8.5).
+  - O **`.16`** estava nesse estado e foi **resgatado em 22/09/2026**
+    (`cd android && bash scripts/box.sh instalar 192.168.1.16`): está na 2.8.5,
+    com hotspot, serial a 4 Hz e frontend conferidos pelo script.
+  - Falta o **`.118`** = `GFIG-TX9-58EB81E36158`: 2.8.2 pela tabela, não
+    respondeu em 22/09/2026 (nem ping). **Não dá mais para resgatar daqui** — os
+    boxes saíram da rede local em 22/09/2026 (ver `inventario.md`): precisa de
+    alguém no local, com um notebook na rede de lá. Lá, o mesmo comando —
+    o `adb install -r` do script não usa root *no box*, que é justamente o que
+    funciona em quem está preso. Os passos de `su` dele vão por `adb shell su`, e
+    não pelo `Root` do app: no `.16` eles aplicaram numa passada só (root
+    pré-aprovado, `WRITE_SETTINGS`, permissão USB), ao contrário do que esta
+    pendência supunha.
+
+- **`.105` e `.112` seguem na 2.7.3** (desligados desde antes da conferência de
+  22/09, e fora da rede local desde então). Duas saídas, em ordem de preferência:
+  1. instalar a 2.8.501 à mão nos dois numa ida ao local
+     (`bash scripts/box.sh instalar <ip>`, ~17 MB, um minuto cada) em vez de
+     deixar a cadeia andar;
+  2. deixar que andem sozinhos — já é seguro desde 22/09/2026 (ver o item
+     abaixo), mas são **12 degraus**, e seis desses APKs são da era do GeckoView,
+     ~120 MB cada.
+
+- **A cadeia de quem está antes da 2.8.2 não passa mais por ela.** As releases
+  **2.8.2 e 2.8.4** ficaram como **pré-lançamento** no GitHub em 22/09/2026 (a
+  2.8.3 não existe: nem tag nem release — conferido). O app filtra `prerelease`
+  desde o primeiro atualizador (`Release.analisarLista`, conferido na tag
+  `v2.7.3`), então a cadeia de um box na 2.7.3 pula as duas e segue para a 2.8.5.
+  Reversível (`gh release edit vX.Y.Z --prerelease=false`) e o rótulo é honesto:
+  as duas são quebradas, e a 2.8.4 está no ar **sem `manifest.json`** — um
+  cliente até a 2.8.4 que a pegasse instalaria **sem conferência nenhuma**.
+  Clientes da 2.8.5 em diante não dependem da flag: o portão de estabilidade
+  recusa release sem `estavel`.
+
+- **Boxes com a chave antiga.** Só o `.105` foi reinstalado com a chave fixa;
+  os demais precisam de `./gradlew :app:instalarNoTx9` uma vez (uid muda).
+
+- **Ruído nos testes do WebSerial.** `FonteWebSerial.teste.ts` emite uma
+  "unhandled rejection" no mock do laço de leitura (pré-existente; os testes
+  passam). Limpar quando sobrar tempo.
+
+- **Verificar com um celular no hotspot** (com e sem cabo) que o WiFi fica
+  como rede padrão e o WebSocket conecta — a correção do redirect :80 foi
+  validada pela LAN e por testes, mas não com um celular real.
+
+### Resolvidas nesta rodada
+
+- **A 2.8.5 no ar, pelo caminho normal.** Tag `v2.8.5` → CI (testes, lint e APK
+  assinado) → release publicada pelo `github-actions[bot]`, sem nada criado à
+  mão. Conferido depois, baixando os assets: `estavel: true` e versionCode 23 no
+  manifest, sha256 e tamanho batendo com o APK, e o APK com a mesma chave dos
+  boxes (`bc7d4ae8…`) e sem o `waitFor(long, TimeUnit)` no dex. O `.16`, que
+  estava preso, foi resgatado por ADB no mesmo dia e está nela.
+- **Root "indisponível" nos boxes, e o cache de 30 s que escondia isso.** A
+  causa não era o `su` nem a reenumeração USB: era o `Root` quebrado desde a
+  2.8.2 (`waitFor` da API 26). O cache de `Root.disponivel()` saiu junto — ele
+  guardava a resposta falsa por 30 s. Conferido no runtime do `.16`, com um dex
+  rodado por `app_process` que chama o `Root` **do APK instalado**: `disponivel()`
+  e `executar("id")` devolvem `true` (`uid=0(root)`), `executarLendo` devolve saída
+  de verdade e `executar("false")` devolve `false`. O APK publicado foi conferido
+  por dentro também: `aapt2` dá versionCode 23 / versionName 2.8.5, o sha256 bate
+  com o do manifest, e o `dexdump` dos dois dex mostra a única chamada a
+  `Process.waitFor` como **`waitFor:()I`** (a sem argumentos, API 1) — a variante
+  `(J, TimeUnit)` da 2.8.2 não aparece em dex nenhum. Ver `2026-09-01--modificacoes.md`
+  (v2.8.5).
+- **Push.** `main` e todas as tags até a `v2.8.4` estão no `origin` — conferido
+  em 22/09/2026 (`git ls-remote`), com `main` local igualzinho ao remoto.
+- **Secrets do CI.** O `release.yml` tem credencial e chave de assinatura: o run
+  da v2.8.4 passou por "Restaurar a chave de assinatura", "Compilar APK
+  assinado" e "Montar artefatos" — só falhou em "Publicar a release", porque
+  alguém já havia criado a release v2.8.4 à mão enquanto o CI compilava. O
+  backup do keystore continua sendo devido (ver "Notas de operação" em
+  [contexto.md](contexto.md)).
+- **ESP parando de enviar dados após ~15 min** — watchdog de inatividade. O app
+  reconecta automaticamente se a ESP não enviar nada por 15 segundos; o log registra
+  `"inatividade detectada"` quando dispara. Antes era preciso reiniciar o app
+  manualmente.
+- **APK de 122 MB para 20 MB**: o GeckoView saiu. A aba Balança abre o painel
+  no Chrome do box (Custom Tab), que já o renderiza sem ajuste. De quebra
+  resolveu o GeckoView reconectando o `127.0.0.1` no WebSocket, e o "voltar" na
+  TV deixou de ser consumido pela engine embutida.
+- Instalação em box novo testada (TX9 `.103`): `instalarNoTx9` em 2 min 12 s
+  sem toque na TV; `desfazerNoTx9` devolve o estado original (conferido).
+  Boxes com a chave antiga: `desfazerNoTx9` antes.
+- "Portal cativo" no hotspot e WebSocket que não conectava pelo celular —
+  redirect :80 restrito aos IPs do box + probes respondidos sem upstream.
+- Reorganização dos filtros em 3 etapas — 12 fases mergeadas em `main` (v2.4.0).
+- Firmware V18 (marcas de tempo sem quantização, display sem gaps) — gravado.
+- Tag `v2.3.0` e `versionName 2.3.0` alinhados; log em `2026-09-01--modificacoes.md`.
+- Lista de sessões lenta (dezenas de segundos) — resumo gravado no banco.
+- Cada cliente gravava por conta própria — gravação compartilhada no gateway.
+- Gráfico parado após perder WiFi — watchdog + reconexão.
+- Atualização do app sem git/PC — GitHub Releases + atualizador no app.
+
+- "Failed to fetch" na importação de JSON — corrigido (`2c699b4`).
+- Frontend acessível sem `:8080` (porta 80) — implantado e verificado
+  (`ddc1c54`).
+- Auto-abrir a Balança com a célula conectada — implantado (`ceec260`).

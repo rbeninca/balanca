@@ -205,7 +205,7 @@ Acoplamentos que serão desfeitos, cada um em fase própria porque **mudam resul
   OLED redesenhado a cada 1 s só quando o texto muda. No TX9: Δt 11/12 ms,
   nenhum gap > 20 ms, taxa real 86,7 Hz (era 83,5 — amostras perdidas).
 - `massa_total_g` guardada nos metadados (coluna + migração, Node e Kotlin).
-- Merge em `main` e versão 2.4.0: ver `registro/log-modificacoes.md`.
+- Merge em `main` e versão 2.4.0: ver `registro/2026-09-01--modificacoes.md`.
 
 ## Fases
 

@@ -11,7 +11,7 @@ dois — instalar, inventariar, ler `/saude` — passou a exigir alguém no loca
 com um notebook na rede de lá. **No local a instalação é `adb install -r`
 direto**, com o APK da release; o botão "Atualizar" do painel só serviria se
 aquele box alcançasse o GitHub, e o app só instala quando alguém o aperta. O
-procedimento da ida está em `pendencias.md`.
+procedimento da ida está em `2026-09-01--modificacoes.md`.
 
 **A coluna `App` desta tabela vale para o dia do levantamento e não se atualiza
 sozinha.** Da **2.8.501** em diante quem responde isso é o painel remoto
@@ -33,7 +33,7 @@ que liga a linha desta tabela à ficha do painel.
 ## O parque
 
 **Esta tabela é a fonte da verdade sobre os boxes.** O gerador de etiquetas
-(`etiquetas/gerador_etiqueta.html`) lê os dados dela — é por isso que ela tem
+(`gerador_etiqueta.html`) lê os dados dela — é por isso que ela tem
 colunas de nome fixo e uma linha por box. Mexeu num aparelho? Mexa aqui, e só
 aqui: não existe lista de boxes repetida em outro lugar. Trocar o modelo, o MAC
 ou o SSID é mexer **nesta** tabela; dizer onde o aparelho está e de quem ele é,
@@ -77,12 +77,12 @@ bash scripts/box.sh estado 192.168.1.105
   um dígito na última casa; daí em diante são três (`2.8.501`, `2.8.502`, …). Na
   coluna `App`, versão de três dígitos é o normal a partir de agora — e a ordem
   continua numérica, não alfabética: `2.8.501` é mais nova que `2.8.5`. Detalhes
-  em `log-modificacoes.md` (v2.8.5).
+  em `2026-09-01--modificacoes.md` (v2.8.5).
 - **Conferência de 22/09/2026** (só o que respondia na LAN; o resto estava
   desligado e ficou com a linha da última conferência):
   - **`.16`** é o antigo `.103`: o DHCP trocou o endereço, o serial é o mesmo
     (`…618A`). Estava **preso na 2.8.2** — versionCode 20, com o `Root` quebrado
-    pela chamada de API 26 (`Process.waitFor`, ver `log-modificacoes.md` v2.8.5),
+    pela chamada de API 26 (`Process.waitFor`, ver `2026-09-01--modificacoes.md` v2.8.5),
     e por isso não conseguia instalar a própria atualização. **Resgatado por ADB
     em 22/09/2026** (`bash scripts/box.sh instalar 192.168.1.16`): está na 2.8.5,
     com o hotspot, a serial (4 Hz) e o frontend conferidos pelo próprio script.
@@ -107,7 +107,7 @@ bash scripts/box.sh estado 192.168.1.105
     2.7.3 (conferido na tag): quem andar sozinho pula as duas e vai para a
     2.8.5. Ainda assim, uma instalação por ADB é melhor do que a cadeia — são 12
     downloads (~1 GB, a maioria da era do GeckoView) contra um de 17 MB. Ver
-    `pendencias.md`.
+    `2026-09-01--modificacoes.md`.
 - **`.103`** — o **único com navegador instalado**, e por isso o único em que a
   aba Balança funciona desde a 2.8.0. **Não tem o launcher do projeto**: ficou
   com o `com.txari.launcher` do firmware. Instalar o nosso é um passo separado
