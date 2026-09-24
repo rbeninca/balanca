@@ -3,6 +3,25 @@
 Ordem cronológica inversa (mais recente primeiro). Cada item traz o commit e o
 motivo.
 
+## v2.8.503 (2026-09-23)
+
+Build de teste instalado à mão num TVBOX: a 2.8.501 fica guardada para devolver o
+box ao caminho normal de atualização depois do teste.
+
+- **A zona morta deixou de esperar o clique em "sugerir".** O campo nascia com o
+  valor de partida (0,5 N no gateway, 0,05 N no modo local) e a
+  capacidade/acurácia gravada na célula só era usada se o usuário clicasse no
+  botão; agora, quando o config da ESP chega, o campo recebe o valor sugerido
+  sozinho.
+  - Só o valor: não liga a zona morta, não mexe nos limiares do detector e não
+    envia nada. Quem aplica continua sendo o usuário — o botão "sugerir" segue
+    fazendo o conjunto (liga a zona morta, preenche os limiares e aplica).
+  - A sugestão automática só age enquanto o campo está num valor de partida e
+    ninguém mexeu nele: digitar no campo, clicar em "sugerir" ou aplicar um
+    perfil a desliga pelo resto da sessão. Valor ajustado à mão nunca é
+    sobrescrito.
+- `versionCode` 26, `versionName` 2.8.503.
+
 ## v2.8.502 (2026-09-23)
 
 Build de teste do caminho de atualização: sobe só a versão, para o box ter o que
