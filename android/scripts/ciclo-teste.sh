@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ciclo de teste no box: sobe o APK com as modificações e depois devolve o APK
-# guardado, para o box se atualizar sozinho pela web.
+# guardado, deixando o box com atualização pendente para testar o caminho da web.
 #
 #   bash scripts/ciclo-teste.sh modificada            # build limpo + instala o APK local
 #   bash scripts/ciclo-teste.sh modificada 192.168.1.16
@@ -20,8 +20,13 @@
 #
 # 'guardada' confere o sha256 contra o manifest.json antes de instalar, libera o
 # pacote do estado 'parado' (parado, o Android não entrega o BOOT_COMPLETED e o
-# app não subiria no boot) e reinicia: ~30 s depois do boot o app consulta o alvo
-# no painel e se atualiza pela web sozinho. O rebaixamento é o objetivo aqui.
+# app não subiria no boot) e reinicia. O rebaixamento é o objetivo: é ele que
+# deixa o box devendo uma atualização, que é o que se quer testar.
+#
+# A verificação de atualização é automática (uns 30 s depois do boot, e a cada
+# 6 h), mas a INSTALAÇÃO não é: o app só consulta e monta o plano, quem dispara
+# é o usuário — o botão na tela da TV, ou POST /atualizacao/iniciar com a chave
+# da API. O script espera a versão subir depois desse disparo.
 #
 # A chave do painel sai do chaves.properties direto para o curl — não é
 # impressa em lugar nenhum.
@@ -215,10 +220,13 @@ esperar_batida() {
   vazio — compile de novo com :app:clean (:app:clean :app:assembleDebug)."
 }
 
-# O app consulta o alvo ~30 s depois do boot e se instala sozinho. Aqui só
-# acompanha, para o teste provar que a atualização pela web realmente aconteceu.
+# O app consulta o alvo ~30 s depois do boot e monta o plano sozinho, mas não
+# instala: quem dispara é o usuário (botão na TV ou POST /atualizacao/iniciar).
+# Aqui só se acompanha, para o teste provar que a atualização pela web aconteceu.
 esperar_atualizacao() {
   local base="$1" codigo i
+  echo "    a consulta é automática, a instalação não: dispare na tela da TV"
+  echo "    (ou POST /atualizacao/iniciar com a chave da API) que eu aguardo aqui."
   for i in $(seq 1 24); do
     sleep 20
     codigo=$(codigo_no_box)
@@ -228,8 +236,9 @@ esperar_atualizacao() {
     fi
     echo "    ... $((i * 20))s: $(versao_no_box) (código ${codigo:-?})"
   done
-  aviso "não vi a versão subir em 8 min. Se o box ficou na $base, veja a tela do app na
-  TV e: adb -s $DEVICE logcat -d | grep -iE 'atualiz|Atualizador' | tail -20"
+  aviso "não vi a versão subir em 8 min. A instalação chegou a ser disparada? Sem o
+  disparo o app só fica com o plano montado. Se disparou e não subiu, veja a tela
+  do app na TV e: adb -s $DEVICE logcat -d | grep -iE 'atualiz|Atualizador' | tail -20"
 }
 
 fase_modificada() {
