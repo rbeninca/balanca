@@ -244,7 +244,8 @@ class ServidorApi(
             "SELECT massa_referencia_g, descricao_celula, capacidade_max_g, gravidade, atualizada_em FROM calibracao WHERE id = 1",
         )
         for (campo in CAMPOS_CALIBRACAO + "atualizada_em") {
-            linha.put(campo, cal?.let { if (it.has(campo) && !it.isNull(campo)) it.opt(campo) else null })
+            // org.json: put(key, null) REMOVE a chave; JSONObject.NULL serializa como null
+            linha.put(campo, cal?.let { if (it.has(campo) && !it.isNull(campo)) it.opt(campo) else JSONObject.NULL } ?: JSONObject.NULL)
         }
         return linha
     }
