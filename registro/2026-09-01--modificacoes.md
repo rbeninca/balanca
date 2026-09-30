@@ -13,7 +13,10 @@ verde → release com APK, firmware V19 e `manifest.json` íntegros (sha256 e
 tamanho conferidos contra o APK, `estavel: true`). A subida do alvo do painel
 para 2.8.506 foi autorizada pelo usuário mas ficou bloqueada na hora de
 disparar — o update no box fica por conta do usuário (botão na TV), depois que
-o alvo for liberado.
+o alvo for liberado. No mesmo dia as 29 tags antigas abaixo da 2.8.501 foram
+apagadas do remoto (nenhuma tinha release presa — as releases antigas já
+tinham saído na reescrita de 22/09); ficaram só `v2.8.501` a `v2.8.506`.
+As tags locais continuam existindo, só o remoto foi limpo.
 
 ## Calibração não aparecia nas Configurações: PUT bloqueado pelo CORS (2026-09-29, `be99256`)
 
