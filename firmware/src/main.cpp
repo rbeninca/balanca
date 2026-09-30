@@ -26,6 +26,7 @@ static const uint8_t CMD_TARA       = 0x10;  // Comando de tara
 static const uint8_t CMD_CALIBRATE  = 0x11;  // Comando de calibração
 static const uint8_t CMD_GET_CONFIG = 0x12;  // Solicitar configurações
 static const uint8_t CMD_SET_PARAM  = 0x13;  // Definir parâmetro
+static const uint8_t CMD_SET_STRING = 0x14;  // Definir campo de texto (descrição da célula)
 
 // Códigos de Status
 static const uint8_t STATUS_INFO    = 0x00;
@@ -54,6 +55,10 @@ static const uint8_t PARAM_TARE_OFFSET = 0x08;
 static const uint8_t PARAM_TIMEOUT_CAL = 0x09;
 static const uint8_t PARAM_CAPACIDADE  = 0x0A;
 static const uint8_t PARAM_ACURACIA    = 0x0B;
+static const uint8_t PARAM_MASSA_CALIBRACAO = 0x0C;
+
+// IDs de campos de texto (CMD_SET_STRING)
+static const uint8_t STRING_DESCRICAO_CELULA = 0x01;
 
 // ======== ESTRUTURAS DE PACOTES ========
 
@@ -92,7 +97,9 @@ struct PacketConfig {
   float    capacidadeMaximaGramas;   // 4 bytes
   float    percentualAcuracia;       // 4 bytes
   uint8_t  mode;                     // 1 byte
-  uint8_t  reserved[23];             // Padding para 58 bytes (total payload)
+  float    massaCalibracaoG;         // 4 bytes — massa usada na calibração
+  char     descricaoCelula[16];      // 16 bytes — identificação curta da célula
+  uint8_t  reserved[3];              // Padding para 58 bytes (total payload)
   
   uint16_t crc;                      // 2 bytes
 };
@@ -147,6 +154,16 @@ struct CmdSetParam {
   uint8_t  reserved[3];
   float    value_f;
   uint32_t value_i;
+  uint16_t crc;
+};
+
+// Comando SET_STRING (23 bytes) — texto curto para um campo (ex.: descrição)
+struct CmdSetString {
+  uint16_t magic;
+  uint8_t  ver;
+  uint8_t  type;
+  uint8_t  campo_id;
+  char     data[16];
   uint16_t crc;
 };
 
@@ -213,6 +230,8 @@ struct Config {
   long tareOffset = 0;
   float capacidadeMaximaGramas = 5000.0;
   float percentualAcuracia = 0.05;
+  float massaCalibracaoG = 0;      // massa usada na calibração (0 = não registrada)
+  char descricaoCelula[16] = "";   // identificação curta da célula
 };
 Config config;
 
@@ -290,6 +309,9 @@ void sendBinaryConfig(const Config& cfg) {
   p.capacidadeMaximaGramas = cfg.capacidadeMaximaGramas;
   p.percentualAcuracia = cfg.percentualAcuracia;
   p.mode = 0;
+  p.massaCalibracaoG = cfg.massaCalibracaoG;
+  memcpy(p.descricaoCelula, cfg.descricaoCelula, 16);
+  p.descricaoCelula[15] = 0;   // garantia de terminação, mesmo se a EEPROM veio suja
   
   p.crc = crc16_ccitt((const uint8_t*)&p, sizeof(PacketConfig) - sizeof(uint16_t));
   escreverPausado((const uint8_t*)&p, sizeof(PacketConfig));
@@ -345,6 +367,7 @@ bool processBinaryCommand() {
     case CMD_CALIBRATE:  expected_size = 10; break;
     case CMD_GET_CONFIG: expected_size = 8;  break;
     case CMD_SET_PARAM:  expected_size = 18; break;
+    case CMD_SET_STRING: expected_size = 23; break;
     default:
       // Tipo desconhecido, descarta este MAGIC
       memmove(cmd_buffer, cmd_buffer + 2, cmd_buffer_pos - 2);
@@ -500,9 +523,15 @@ bool processBinaryCommand() {
         case PARAM_ACURACIA:
           config.percentualAcuracia = cmd->value_f;
           updated = true;
-          
+
           break;
-          
+
+        case PARAM_MASSA_CALIBRACAO:
+          config.massaCalibracaoG = cmd->value_f;
+          updated = true;
+
+          break;
+
         default:
           
           sendBinaryStatus(STATUS_ERROR, MSG_ERROR_GENERIC);
@@ -514,7 +543,23 @@ bool processBinaryCommand() {
         sendBinaryStatus(STATUS_SUCCESS, MSG_CONFIG_UPDATE);
         // sendBinaryConfig(config);  // REMOVIDO: Ineficiente e propenso a erros. O frontend pedirá se precisar.
       }
-      
+
+      processed = true;
+      break;
+    }
+
+    case CMD_SET_STRING: {
+      CmdSetString* cmd = (CmdSetString*)cmd_buffer;
+
+      if (cmd->campo_id == STRING_DESCRICAO_CELULA) {
+        memcpy(config.descricaoCelula, cmd->data, 16);
+        config.descricaoCelula[15] = 0;
+        saveConfig();
+        sendBinaryStatus(STATUS_SUCCESS, MSG_CONFIG_UPDATE);
+      } else {
+        sendBinaryStatus(STATUS_ERROR, MSG_ERROR_GENERIC);
+      }
+
       processed = true;
       break;
     }
@@ -543,7 +588,7 @@ void setup() {
 
   Serial.println("\n\n===========================================");
   Serial.println("   Balanca GFIG - Modo Gateway Serial");
-  Serial.printf("   Versao: ESTAVEL V18 (Binary Protocol v%d)\n", PROTO_VERSION);
+  Serial.printf("   Versao: ESTAVEL V19 (Binary Protocol v%d)\n", PROTO_VERSION);
   Serial.println("===========================================\n");
 
   Wire.begin(OLED_SDA, OLED_SCL);
@@ -856,7 +901,7 @@ void atualizarDisplay(const char* status, float peso_em_gramas) {
   display.setCursor(0, 20);
   display.println(status);
   display.setCursor(0, 35);
-  display.println("V18 BINARY PROTO");
+  display.println("V19 BINARY PROTO");
   display.setCursor(0, 45);
   display.printf("Serial: 921600 Baud");
   display.setCursor(0, 55);
@@ -911,6 +956,26 @@ void loadConfig() {
       Serial.printf("[LoadConfig] AVISO: numAmostrasMedia invalido (%d), aplicando valor seguro %d\n", config.numAmostrasMedia, sanitizedNumAmostrasMedia);
       config.numAmostrasMedia = sanitizedNumAmostrasMedia;
       needsFix = true;
+    }
+    // Campos novos (V19): o blob antigo tem 0xFF aqui — NaN no float e lixo no texto.
+    if (isnan(config.massaCalibracaoG) || isinf(config.massaCalibracaoG) || config.massaCalibracaoG <= 0 || config.massaCalibracaoG >= 1000000) {
+      config.massaCalibracaoG = 0;
+      needsFix = true;
+    }
+    // Campo novo (V19): o blob antigo tem 0xFF aqui. Aceita UTF-8; exige NUL
+    // em algum byte e nenhum byte de controle antes dele (0xFF é lixo antigo).
+    {
+      bool terminada = false;
+      bool suja = false;
+      for (int i = 0; i < 16; i++) {
+        unsigned char c = (unsigned char)config.descricaoCelula[i];
+        if (c == 0) { terminada = true; break; }
+        if (c < 0x20) { suja = true; break; }
+      }
+      if (suja || !terminada) {
+        memset(config.descricaoCelula, 0, 16);
+        needsFix = true;
+      }
     }
     
     if (needsFix) {
