@@ -6,6 +6,42 @@ pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
 arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
 em [contexto.md](contexto.md).
 
+## Calibração passa a seguir a célula: massa e descrição na ESP (2026-09-29, `1a967b6`)
+
+A capacidade já vivia na EEPROM da ESP, mas massa de calibração e descrição da
+célula só existiam no registro do host — a calibração seguia o box, não a
+célula. Agora a ESP guarda os três (firmware V19) e o host os usa como fonte
+primária, mantendo o registro antigo de fallback para ESP ainda na V18.
+
+- **Firmware V19 (`4c571f7`).** O `Config` ganhou `massaCalibracaoG` (float) e
+  `descricaoCelula` (16 bytes, NUL garantido — 15 caracteres úteis, UTF-8),
+  anexados ao fim da struct: o blob antigo da EEPROM continua válido, os campos
+  novos nascem 0/vazio e o `loadConfig` limpa o que vier sujo (0xFF). No pacote
+  CONFIG de 64 bytes os dois ocupam os 23 bytes antes reservados (massa @39,
+  descrição @43, 3 sobrando) — o tamanho do pacote não muda. Massa entra por
+  `CMD_DEFINIR_PARAM` com o param 0x0C; a descrição ganhou um comando próprio,
+  `CMD_SET_STRING` (0x14, 23 bytes: campo_id + 16 de texto + CRC). Comando
+  desconhecido continua sendo descartado sem travar: V18 e V19 convivem.
+- **Espelhos do protocolo (Kotlin e TS).** Decodificam os dois campos com
+  validação defensiva — massa fora de 0 < x < 1e7 e descrição com byte de
+  controle, 0xFF ou sem NUL viram ausente (o V18 manda zeros ali, mas a
+  validação cobre EEPROM antiga). Na ida, o texto trunca a 15 bytes sem cortar
+  um caractere no meio. Testes espelhados dos dois lados, byte a byte.
+- **A sessão prefere a ESP.** As três colunas (`massa_calibracao_g`,
+  `descricao_celula`, `capacidade_celula_g`) passam a sair do `config_esp`
+  recebido no INSERT, campo a campo, e caem no registro do host quando a ESP
+  não manda (ou manda inválido). Android e API Node idênticos.
+- **SPA grava nos dois lugares.** O wizard finaliza enviando massa (param 0x0C)
+  e descrição (CMD_DEFINIR_DESCRICAO) além do que já mandava, e segue gravando
+  o registro do host; o card de Configurações faz o mesmo ao salvar (sem
+  reenviar a capacidade, que já vive na ESP). O pré-preenchimento do passo 4
+  também vem do CONFIG da ESP, sem sobrescrever digitação. O relatório não
+  mudou: as colunas da sessão continuam sendo a fonte, e o config_esp vira
+  segunda fonte no modo "nova".
+
+Versão **2.8.505** (versionCode 28) publicada em 29/09/2026 com o firmware V19
+embutido; o alvo do painel segue em 2.8.503 (rollout é decisão à parte).
+
 ## Célula de carga: relatório, sessões e g local (2026-09-29, `8bf5b68`)
 
 Depois do teste estático, o prof. Marchi pediu três coisas: o relatório mostrar
@@ -565,9 +601,17 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
   entrada de 2026-09-29). O que o teste remoto não cobre: wizard abrindo
   pré-preenchido, g = 9,78769 no "valor esperado" e no relatório, bloco
   "Célula de Carga" no PDF e nas sessões, e uma sessão antiga saindo sem o
-  bloco — conferir na TV, com a célula.
-- **Release v2.8.504 publicada, mas o alvo do painel continua em 2.8.503.**
-  O `POST /alvo` para 2.8.504 libera a versão nova para todos os boxes de uma
+  bloco — conferir na TV, com a célula. Na 2.8.505 entram também: massa e
+  descrição pré-preenchidas vindas do CONFIG da ESP e a conferência de que os
+  dois chegaram na ESP após o wizard (CMD_OBTER_CONFIG de volta).
+- **Firmware V19 ainda não foi testado no box.** Roteiro do plano: instalar a
+  2.8.505 no box do laboratório, ler o CONFIG (massa/descrição vazios na ESP
+  ainda V18), enviar `CMD_DEFINIR_PARAM` 0x0C + `CMD_DEFINIR_DESCRICAO`,
+  reler o CONFIG (persistência na EEPROM) e gravar uma sessão com a célula.
+  Depois, flash V19 pelo app (porta 8767) e conferir que a calibração antiga
+  (fator, tara, capacidade, g) sobreviveu.
+- **Alvo do painel em 2.8.503, com 2.8.504 e 2.8.505 publicadas.**
+  O `POST /alvo` libera a versão escolhida para todos os boxes de uma
   vez (cada um que consultar o painel baixa e instala) — decisão de rollout,
   a tomar quando for a hora. Enquanto isso nenhum box sai da 2.8.503.
 

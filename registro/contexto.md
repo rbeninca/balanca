@@ -18,7 +18,7 @@ TVBoxes — três Amlogic TX9 e dois Rockchip MXQ; ver
 
 - **`firmware/`** — ESP8266 (C++/PlatformIO, `src/main.cpp`): protocolo binário
   v2, leitura HX711, EEPROM, 921600 baud. `firmware/versao.json` diz a versão
-  vigente (V18); o `.bin` compilado entra na release e nos assets do APK.
+  vigente (V19); o `.bin` compilado entra na release e nos assets do APK.
 - **`android/`** — o app (`br.edu.ifsc.balancagfig`, Kotlin) é o servidor de
   verdade: frontend, API REST, WebSocket, hotspot, atualizador e check-in no
   painel. O frontend não mora aqui — vem de `pacotes/aplicacao/dist-web`,
@@ -82,6 +82,12 @@ TVBoxes — três Amlogic TX9 e dois Rockchip MXQ; ver
 `firmware/versao.json` é a versão vigente; `bash scripts/compilar-firmware.sh`
 compila, e o `.bin` sai na release e nos assets do APK. A gravação é feita pela
 própria bancada, sem cabo de programação.
+
+Desde a V19 a calibração segue a célula: capacidade, massa de calibração
+(param 0x0C) e descrição (CMD_SET_STRING, 16 bytes no CONFIG de 64) vivem na
+EEPROM; o registro do host (`calibracao` no SQLite) é fallback para ESP V18.
+Campos novos do `Config` são sempre anexados ao FIM da struct — o magic nunca
+muda, senão perde-se fator/tara.
 
 ## Detalhes que mordem
 
