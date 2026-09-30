@@ -22,8 +22,17 @@ class FinalizadorRespostaTest {
     fun `reflete CORS para qualquer origem`() {
         val r = FinalizadorResposta.finalizar(resposta())
         assertEquals("*", r.getHeader("access-control-allow-origin"))
-        assertEquals("GET, POST, PATCH, DELETE, OPTIONS", r.getHeader("access-control-allow-methods"))
+        assertEquals("GET, POST, PUT, PATCH, DELETE, OPTIONS", r.getHeader("access-control-allow-methods"))
         assertEquals("Content-Type, x-chave-api", r.getHeader("access-control-allow-headers"))
         assertEquals("86400", r.getHeader("access-control-max-age"))
+    }
+
+    @Test
+    fun `permite PUT no CORS — a calibracao do navegador depende do preflight dele`() {
+        // Regressão: sem PUT na lista, o browser bloqueia o PUT /calibracao após
+        // o preflight e o registro de calibração nunca chega ao host.
+        val r = FinalizadorResposta.finalizar(resposta())
+        val metodos = r.getHeader("access-control-allow-methods")!!.split(",").map { it.trim() }
+        assertTrue("PUT deve constar em access-control-allow-methods", "PUT" in metodos)
     }
 }

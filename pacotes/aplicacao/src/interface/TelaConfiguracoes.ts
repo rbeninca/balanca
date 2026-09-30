@@ -207,6 +207,22 @@ export class TelaConfiguracoes {
       }
     });
 
+    // A calibração segue a célula (V19): massa e descrição vivem na ESP.
+    // Pré-preenche o card com o CONFIG — o registro do host pode estar vazio
+    // (ex.: calibração feita por outro navegador, cujo PUT o box não viu).
+    // Só preenche campo vazio, para nunca sobrescrever o que o usuário digitou.
+    const cfg = c as unknown as Record<string, unknown>;
+    const soSeVazio = (id: string, v: number | string) => {
+      const el = document.querySelector<HTMLInputElement>(`#${id}`);
+      if (el && el.value === '') el.value = String(v);
+    };
+    const m = cfg['massaCalibracaoG'];
+    if (typeof m === 'number' && m > 0) soSeVazio('cal-massa', m);
+    const cap = cfg['capacidadeMaxGramas'];
+    if (typeof cap === 'number' && cap > 0) soSeVazio('cal-capacidade', cap);
+    const d = cfg['descricaoCelula'];
+    if (typeof d === 'string' && d !== '') soSeVazio('cal-descricao', d);
+
     this.mostrarStatus('ok', 'Configuração recebida do firmware.');
   }
 

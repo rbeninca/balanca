@@ -472,7 +472,10 @@ class ServidorApi(
 internal object FinalizadorResposta {
     fun finalizar(resp: NanoHTTPD.Response): NanoHTTPD.Response = resp.apply {
         addHeader("Access-Control-Allow-Origin", "*")
-        addHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+        // PUT está na lista porque a calibração do navegador depende dele: sem
+        // PUT aqui, o preflight responde sem o método e o browser bloqueia o
+        // PUT /calibracao depois (a ESP recebe os dados, o registro do host não).
+        addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
         addHeader("Access-Control-Allow-Headers", "Content-Type, x-chave-api")
         addHeader("Access-Control-Max-Age", "86400")
         closeConnection(true)
