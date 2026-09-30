@@ -560,13 +560,16 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
 
 ### Abertas
 
-- **Célula de carga no relatório: falta o roteiro manual na TV e a release.**
-  O lado do box está testado (REST 8/8 e gateway conferido no box do
-  laboratório, ver a entrada de 2026-09-29). O que o teste remoto não cobre:
-  wizard abrindo pré-preenchido, g = 9,78769 no "valor esperado" e no
-  relatório, bloco "Célula de Carga" no PDF e nas sessões, e uma sessão
-  antiga saindo sem o bloco — conferir na TV, com a célula. Também não há
-  release disso (nem do `e952941`): entra na próxima versão, depois do teste.
+- **Célula de carga no relatório: falta o roteiro manual na TV.** O lado do
+  box está testado (REST 8/8 e gateway conferido no box do laboratório, ver a
+  entrada de 2026-09-29). O que o teste remoto não cobre: wizard abrindo
+  pré-preenchido, g = 9,78769 no "valor esperado" e no relatório, bloco
+  "Célula de Carga" no PDF e nas sessões, e uma sessão antiga saindo sem o
+  bloco — conferir na TV, com a célula.
+- **Release v2.8.504 publicada, mas o alvo do painel continua em 2.8.503.**
+  O `POST /alvo` para 2.8.504 libera a versão nova para todos os boxes de uma
+  vez (cada um que consultar o painel baixa e instala) — decisão de rollout,
+  a tomar quando for a hora. Enquanto isso nenhum box sai da 2.8.503.
 
 - **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
   à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
