@@ -54,6 +54,29 @@ Contrato novo:
     GET  /sessoes (e /sessoes/:id): cada linha ganha massa_calibracao_g,
         descricao_celula e capacidade_celula_g (null em sessões antigas)
 
+## Célula de carga testada no box e ajuste do /calibracao (2026-09-29, `e952941`)
+
+Roteiro completo no box do laboratório (192.168.1.6, GFIG-MXQ-A82003AC10E7),
+com a célula ligada no gateway: compilação limpa instalada (`modificada`),
+teste REST de ponta a ponta, volta à 2.8.501 guardada e atualização pela web
+disparada por `POST /atualizacao/iniciar` — o box baixou do GitHub e subiu
+sozinho para a 2.8.503 em ~100 s.
+
+- **REST no box: 8/8.** GET sem registro com os nulls, PUT parcial gravando,
+  400 para g fora de 9–10, sessão nova fotografando as 3 colunas e as antigas
+  intactas com null, limpeza apagando a sessão e zerando o registro.
+- **Uma falha real no meio:** o GET devolvia `{}` e o PUT zerado omitia os
+  campos — `JSONObject.put(key, null)` remove a chave no org.json. Corrigido
+  com `JSONObject.NULL` (`e952941`), recompilado e re-testado.
+- **Gateway conferido por dentro** (WebSocket, `CMD_OBTER_CONFIG`): gravidade
+  9,80665 (padrão; o g local só chega lá pelo wizard, param 0x01), capacidade
+  50 kg, acurácia 0,003% F.S., fator de conversão calibrado.
+- **Sem chave de API no box** — o `.chave-api` é opcional e ninguém o criou:
+  a REST fica aberta, como documenta o código. Nenhuma chave existe no git;
+  a do painel mora em secrets do GitHub e no `wrangler secret put`.
+- O APK guardado (2.8.501) continuou íntegro (sha256 contra o manifest) e o
+  update pela web foi o caminho real do botão da TV.
+
 ## Ferramentas de bancada: ciclo de teste e kit de instalação (2026-09-24)
 
 Dois scripts para trabalhar no box sem depender de lembrar comando: um faz a ida
@@ -537,12 +560,13 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
 
 ### Abertas
 
-- **A célula de carga no relatório (trabalho de 2026-09-29) ainda não foi
-  testada no box.** Os testes automatizados passam nos três pacotes e o APK
-  compila, mas falta o roteiro manual: wizard abrindo pré-preenchido, g =
-  9,78769 no "valor esperado" e no relatório, bloco "Célula de Carga" no PDF e
-  nas sessões, e uma sessão antiga saindo sem o bloco. Também não há release
-  disso: entra na próxima versão, depois do teste.
+- **Célula de carga no relatório: falta o roteiro manual na TV e a release.**
+  O lado do box está testado (REST 8/8 e gateway conferido no box do
+  laboratório, ver a entrada de 2026-09-29). O que o teste remoto não cobre:
+  wizard abrindo pré-preenchido, g = 9,78769 no "valor esperado" e no
+  relatório, bloco "Célula de Carga" no PDF e nas sessões, e uma sessão
+  antiga saindo sem o bloco — conferir na TV, com a célula. Também não há
+  release disso (nem do `e952941`): entra na próxima versão, depois do teste.
 
 - **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
   à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
