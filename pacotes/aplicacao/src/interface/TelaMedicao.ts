@@ -27,9 +27,9 @@ const MAX_FLUXO      = 300;   // pontos no modo fluxo
 const MAX_ACUMULADO  = 5000;  // pontos no modo acumulado
 const UNIDADES: Unidade[] = ['N', 'kg', 'g'];
 
-function converterForca(valorN: number, unidade: Unidade): number {
-  if (unidade === 'kg') return valorN / 9.80665;
-  if (unidade === 'g')  return (valorN / 9.80665) * 1000;
+function converterForca(valorN: number, unidade: Unidade, g = 9.80665): number {
+  if (unidade === 'kg') return valorN / g;
+  if (unidade === 'g')  return (valorN / g) * 1000;
   return valorN;
 }
 
@@ -629,8 +629,14 @@ export class TelaMedicao {
     if (txt) txt.textContent = ok ? 'Serial conectado' : 'Serial desconectado';
   }
 
+  /** Gravidade vigente da célula (config da ESP); 9,80665 até o CONFIG chegar. */
+  private get gravidadeAtual(): number {
+    const g = this.dadosCelula.gravidade;
+    return g && g > 0 ? g : 9.80665;
+  }
+
   private atualizarDisplay() {
-    const convertido = converterForca(this.ultimaForca, this.unidade);
+    const convertido = converterForca(this.ultimaForca, this.unidade, this.gravidadeAtual);
     if (this.elValor) {
       this.elValor.textContent = convertido.toFixed(this.unidade === 'N' ? 2 : 3);
       this.elValor.classList.toggle('em-queima', !!this.ultimaLeitura?.emQueima);
@@ -709,7 +715,7 @@ export class TelaMedicao {
       return;
     }
 
-    const valores = this.dadosGrafico.map(d => converterForca(d.valor, this.unidade));
+    const valores = this.dadosGrafico.map(d => converterForca(d.valor, this.unidade, this.gravidadeAtual));
     const maxVal  = Math.max(...valores);
     const minVal  = Math.min(...valores, 0);
     const range   = Math.max(maxVal - minVal, 0.1) * 1.15 || 1;
@@ -775,7 +781,7 @@ export class TelaMedicao {
       ctx.strokeStyle = this.escuro ? 'rgba(148,163,184,0.35)' : 'rgba(100,116,139,0.40)';
       ctx.lineWidth   = 1;
       this.dadosBrutos.forEach((d, i) => {
-        const v = converterForca(d.valor, this.unidade);
+        const v = converterForca(d.valor, this.unidade, this.gravidadeAtual);
         const x = mg.left + (i / denB) * pw;
         const y = mg.top + ph - ((v - minVal) / range) * ph;
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
@@ -790,7 +796,7 @@ export class TelaMedicao {
       // modo pontos
       ctx.fillStyle = cor;
       this.dadosGrafico.forEach((d, i) => {
-        const v = converterForca(d.valor, this.unidade);
+        const v = converterForca(d.valor, this.unidade, this.gravidadeAtual);
         ctx.beginPath();
         ctx.arc(posX(i), posY(v), 2.5, 0, Math.PI * 2);
         ctx.fill();
@@ -799,7 +805,7 @@ export class TelaMedicao {
       // modo linha: fill área + linha + ponto atual
       ctx.beginPath();
       this.dadosGrafico.forEach((d, i) => {
-        const v = converterForca(d.valor, this.unidade);
+        const v = converterForca(d.valor, this.unidade, this.gravidadeAtual);
         i === 0 ? ctx.moveTo(posX(i), posY(v)) : ctx.lineTo(posX(i), posY(v));
       });
       ctx.lineTo(posX(n - 1), mg.top + ph);
@@ -814,7 +820,7 @@ export class TelaMedicao {
       ctx.shadowColor = cor;
       ctx.shadowBlur  = 4;
       this.dadosGrafico.forEach((d, i) => {
-        const v = converterForca(d.valor, this.unidade);
+        const v = converterForca(d.valor, this.unidade, this.gravidadeAtual);
         i === 0 ? ctx.moveTo(posX(i), posY(v)) : ctx.lineTo(posX(i), posY(v));
       });
       ctx.stroke();
@@ -823,7 +829,7 @@ export class TelaMedicao {
       // ponto atual
       const ult = this.dadosGrafico[n - 1]!;
       ctx.beginPath();
-      ctx.arc(posX(n - 1), posY(converterForca(ult.valor, this.unidade)), 4, 0, Math.PI * 2);
+      ctx.arc(posX(n - 1), posY(converterForca(ult.valor, this.unidade, this.gravidadeAtual)), 4, 0, Math.PI * 2);
       ctx.fillStyle = cor;
       ctx.fill();
     }
@@ -986,7 +992,7 @@ export class TelaMedicao {
     // Só quem parou abre a análise, com os dados que o armazenamento tem (no remoto, os do gateway).
     if (sessao.leituras.length > 0) {
       new TelaAnalise(
-        { leituras: [...sessao.leituras], nomeSessao: sessao.nome, modo: 'nova', idSessao: sessao.id },
+        { leituras: [...sessao.leituras], nomeSessao: sessao.nome, modo: 'nova', idSessao: sessao.id, dadosCelula: { ...this.dadosCelula } },
         this.armazenamento,
         () => {},
       );

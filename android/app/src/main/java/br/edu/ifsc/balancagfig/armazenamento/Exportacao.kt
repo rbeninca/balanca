@@ -125,6 +125,11 @@ object Exportacao {
                 put("observacoes", sessao.opt("observacoes") ?: JSONObject.NULL)
             })
             if (meta != null) put("metadados", meta)
+            put("calibracao", JSONObject().apply {
+                put("massa_referencia_g", sessao.opt("massa_calibracao_g") ?: JSONObject.NULL)
+                put("descricao_celula", sessao.opt("descricao_celula") ?: JSONObject.NULL)
+                put("capacidade_max_g", sessao.opt("capacidade_celula_g") ?: JSONObject.NULL)
+            })
             put("analise", JSONObject().apply {
                 put("nomeComum", a.nomeComum)
                 put("letraMotor", a.letra)

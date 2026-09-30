@@ -13,6 +13,12 @@ import { TelaComparacao } from './TelaComparacao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
 import { normalizarImportacaoTexto, type SessaoExportadaV2, type SessaoImportada } from './importacaoSessao.js';
 import { indicador } from './indicadorCarregando.js';
+import { montarDadosCalibracao, type DadosCalibracao } from '../nucleo/calibracao.js';
+
+/** Capacidade da célula: kg quando inteira, g quando pequena. */
+function fmtCapacidade(g: number): string {
+  return g >= 1000 && g % 1000 === 0 ? `${g / 1000} kg` : `${g} g`;
+}
 
 export class TelaSessoes {
   private selecionadas = new Set<string>();
@@ -244,7 +250,8 @@ export class TelaSessoes {
         } else {
           const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
           const analise = analisarMotor(ls, {});
-          const pdfBlob  = await this.gerarPdfLote(s.nome, data, ls, analise);
+          const cal     = montarDadosCalibracao(s.configEsp, s);
+          const pdfBlob  = await this.gerarPdfLote(s.nome, data, ls, analise, cal);
           this.baixarArquivo(pdfBlob, `${s.nome}.pdf`);
         }
       } catch (e) {
@@ -278,6 +285,9 @@ export class TelaSessoes {
         <div class="meta">
           <span class="sessao-data-texto">${dataFmt}</span>
           <button class="btn-editar-data" title="Editar data">✎</button>
+          ${s.descricaoCelula
+            ? `<span class="sessao-celula" title="Célula de carga usada na sessão"> · Célula: ${s.descricaoCelula}${s.massaCalibracaoG != null ? ` · massa ${s.massaCalibracaoG} g` : ''}${s.capacidadeCelulaG != null ? ` · capacidade ${fmtCapacidade(s.capacidadeCelulaG)}` : ''}</span>`
+            : ''}
           <span class="sessao-meta-resto"> — carregando…</span>
         </div>
       </div>
@@ -402,7 +412,15 @@ export class TelaSessoes {
       try {
         const data    = new Date(s.criadoEm).toLocaleDateString('pt-BR');
         const analise = analisarMotor(ls, {});
-        const blob    = gerarPDF(ls, analise, { nomeSessao: s.nome, data });
+        const cal     = montarDadosCalibracao(s.configEsp, s);
+        const blob    = gerarPDF(ls, analise, {
+          nomeSessao: s.nome, data,
+          massaCalibracao_g:  cal.massaCalibracaoG,
+          descricaoCelula:    cal.descricaoCelula,
+          capacidadeMaxGramas: cal.capacidadeMaxGramas,
+          gravidade:          cal.gravidade,
+          acuracia:           cal.acuracia,
+        });
         const url     = URL.createObjectURL(blob);
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
@@ -458,7 +476,7 @@ export class TelaSessoes {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
-  private async gerarPdfLote(nomeSessao: string, data: string, leituras: LeituraProcessada[], analise: ReturnType<typeof analisarMotor>): Promise<Blob> {
+  private async gerarPdfLote(nomeSessao: string, data: string, leituras: LeituraProcessada[], analise: ReturnType<typeof analisarMotor>, cal: DadosCalibracao): Promise<Blob> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const margem = 12;
     const larguraPagina = 210;
@@ -522,6 +540,18 @@ export class TelaSessoes {
     linha('Duração de queima:', `${analise.duracaoQueima_s.toFixed(3)} s`);
     linha('Perfil:', analise.perfilQueima);
     y += 2;
+
+    // Célula de carga — só o que a sessão gravou (sessões antigas ficam sem o bloco)
+    if (cal.descricaoCelula || cal.massaCalibracaoG != null || cal.capacidadeMaxGramas != null
+        || cal.gravidade != null || cal.acuracia != null) {
+      titulo('Célula de carga', 12);
+      if (cal.descricaoCelula)                  linha('Descrição:', cal.descricaoCelula);
+      if (cal.massaCalibracaoG != null)         linha('Massa de calibração:', `${cal.massaCalibracaoG.toFixed(2)} g`);
+      if (cal.capacidadeMaxGramas != null)      linha('Capacidade:', fmtCapacidade(cal.capacidadeMaxGramas));
+      if (cal.gravidade != null)                linha('Gravidade:', `${cal.gravidade.toFixed(5)} m/s²`);
+      if (cal.acuracia != null)                 linha('Acurácia:', `${(cal.acuracia * 100).toFixed(2)} % F.S.`);
+      y += 2;
+    }
 
     titulo('Gráfico', 12);
     const canvas = document.createElement('canvas');

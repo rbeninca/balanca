@@ -1,5 +1,6 @@
 import type { Fonte } from './TelaMedicao.js';
 import { navHtml, bindNav, type StatusConexao } from './navBar.js';
+import { obterCalibracao, salvarCalibracao } from '../nucleo/calibracao.js';
 
 interface ParamDef {
   id:        number;
@@ -56,6 +57,18 @@ export class TelaConfiguracoes {
     this.ouvinte = (raw) => this.aplicarConfig(raw);
     this.fonte.on('config', this.ouvinte);
     this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
+
+    // Pré-preenche o card da célula com o registro de calibração do host
+    void obterCalibracao().then(cal => {
+      if (!cal) return;
+      const set = (id: string, v: string) => {
+        const el = document.querySelector<HTMLInputElement>(`#${id}`);
+        if (el) el.value = v;
+      };
+      if (cal.massaReferenciaG != null)    set('cal-massa', String(cal.massaReferenciaG));
+      if (cal.capacidadeMaxGramas != null) set('cal-capacidade', String(cal.capacidadeMaxGramas));
+      if (cal.descricaoCelula)             set('cal-descricao', cal.descricaoCelula);
+    });
   }
 
   private renderizar(container: HTMLElement) {
@@ -107,6 +120,30 @@ export class TelaConfiguracoes {
           (tela Medição) para o assistente guiado de tara + fator de conversão.
         </p>
       </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 0.5rem">Célula de carga (calibração)</h2>
+        <p style="font-size:0.75rem;color:#555;margin:0 0 0.75rem">
+          Registro do host: entra no relatório e é fotografado pelas sessões ao iniciar.
+          O assistente de calibração grava aqui ao finalizar; edite à mão quando a
+          calibração for feita fora dele.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0.5rem;align-items:end">
+          <div>
+            <label for="cal-massa">Massa de referência (g)</label>
+            <input id="cal-massa" type="number" min="0" step="any" placeholder="ex: 100">
+          </div>
+          <div>
+            <label for="cal-capacidade">Capacidade máxima (g)</label>
+            <input id="cal-capacidade" type="number" min="0" step="any" placeholder="ex: 500000">
+          </div>
+          <div>
+            <label for="cal-descricao">Descrição</label>
+            <input id="cal-descricao" type="text" placeholder="ex: CALT 500 kg 2023">
+          </div>
+          <button id="cal-btn-salvar" class="btn-primary btn-sm">Salvar</button>
+        </div>
+      </div>
     `;
 
     bindNav(container, { ativo: 'configuracoes', onConexao: this.onConexao, onMedicao: this.onMedicao, onJogos: this.onJogos, onSessoes: this.onSessoes, onConfiguracoes: () => {}, onFirmware: this.onFirmware, ...(this.status && { status: this.status }) });
@@ -118,6 +155,29 @@ export class TelaConfiguracoes {
     container.querySelectorAll<HTMLButtonElement>('.cfg-btn-enviar').forEach(btn => {
       btn.addEventListener('click', () => this.enviarParam(Number(btn.dataset.id)));
     });
+
+    container.querySelector('#cal-btn-salvar')!.addEventListener('click', () => {
+      void this.salvarRegistroCelula();
+    });
+  }
+
+  /** Grava o registro de calibração da célula no host (e sempre no navegador). */
+  private async salvarRegistroCelula() {
+    const num = (id: string): number | undefined => {
+      const v = parseFloat(document.querySelector<HTMLInputElement>(`#${id}`)?.value ?? '');
+      return isNaN(v) || v <= 0 ? undefined : v;
+    };
+    const desc = document.querySelector<HTMLInputElement>('#cal-descricao')?.value.trim();
+
+    const ok = await salvarCalibracao({
+      massaReferenciaG:    num('cal-massa'),
+      capacidadeMaxGramas: num('cal-capacidade'),
+      descricaoCelula:     desc || undefined,
+    });
+    this.mostrarStatus(
+      ok ? 'ok' : 'erro',
+      ok ? 'Registro de calibração salvo.' : 'Registro salvo só neste navegador — o box não confirmou.',
+    );
   }
 
   private aplicarConfig(raw: unknown) {

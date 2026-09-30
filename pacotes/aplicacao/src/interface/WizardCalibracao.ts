@@ -1,4 +1,5 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
+import { GRAVIDADE_PADRAO, obterCalibracao, salvarCalibracao, valorEsperadoN, type CalibracaoSalva } from '../nucleo/calibracao.js';
 
 export type Fonte = {
   on(evento: 'dados',  fn: (l: LeituraProcessada) => void): void;
@@ -12,7 +13,7 @@ const PASSOS = [
   { titulo: 'Tara (zerar)',                       desc: 'Vamos enviar o comando de tara ao firmware para que o zero seja registrado com a balança vazia.' },
   { titulo: 'Massa de referência',                desc: 'Coloque uma massa de valor conhecido (ex: 100 g) sobre a plataforma e informe o valor abaixo.' },
   { titulo: 'Calibração enviada',                 desc: 'O firmware calculará o novo fator de conversão. Aguarde a confirmação.' },
-  { titulo: 'Parâmetros opcionais',               desc: 'Informe a capacidade nominal e a classe de acurácia da célula de carga (dados do datasheet). Deixe em branco para manter os valores atuais.' },
+  { titulo: 'Parâmetros opcionais',               desc: 'Capacidade, acurácia, gravidade local e descrição da célula de carga. Os campos já vêm com os valores atuais; ajuste o que precisar.' },
   { titulo: 'Verificação final',                  desc: 'Verifique a leitura com a massa de referência ainda na plataforma. Se estiver correta, finalize.' },
   { titulo: 'Calibração concluída',               desc: 'Os parâmetros foram enviados ao firmware com sucesso!' },
 ];
@@ -25,6 +26,8 @@ export class WizardCalibracao {
   private leituraAtual = 0;
   private ouvinte:  ((l: LeituraProcessada) => void) | null = null;
   private massaReferencia = 0;
+  private gravidade = GRAVIDADE_PADRAO;
+  private descricaoCelula = '';
 
   constructor(
     private fonte: Fonte,
@@ -41,7 +44,53 @@ export class WizardCalibracao {
     this.atualizarProgresso();
     this.mostrarPasso(0);
     this.iniciarOuvinte();
+    this.preCarregarValores();
     this.bindEventos();
+  }
+
+  /**
+   * Pré-preenche os campos com a configuração atual: CONFIG da ESP (gravidade,
+   * capacidade, acurácia) e o registro de calibração do host (massa, descrição).
+   * Só preenche campo ainda vazio, para nunca sobrescrever o que o usuário digitou.
+   */
+  private preCarregarValores() {
+    this.fonte.on('config', (c: unknown) => this.preencherDaEsp(c));
+    this.fonte.enviarComando?.({ tipo: 'CMD_OBTER_CONFIG' });
+    void obterCalibracao().then(cal => {
+      if (cal && instanciaAtual === this) this.preencherDoRegistro(cal);
+    });
+  }
+
+  private preencherDaEsp(config: unknown) {
+    if (!config || typeof config !== 'object') return;
+    const c = config as Record<string, unknown>;
+    const soSeVazio = (id: string, v: number) => {
+      const el = this.overlay.querySelector<HTMLInputElement>(id);
+      if (el && el.value === '') el.value = String(v);
+    };
+    const cap = c['capacidadeMaxGramas'];
+    if (typeof cap === 'number' && cap > 0) soSeVazio('#wcapacidade', cap / 1000);
+    const acu = c['acuracia'];
+    if (typeof acu === 'number' && acu >= 0) soSeVazio('#wacuracia', acu * 100);
+    const g = c['gravidade'];
+    if (typeof g === 'number' && g > 0) {
+      const el = this.overlay.querySelector<HTMLInputElement>('#wgravidade');
+      if (el && el.value === '') { el.value = String(g); this.gravidade = g; }
+    }
+  }
+
+  private preencherDoRegistro(cal: CalibracaoSalva) {
+    const soSeVazioTxt = (id: string, v: string) => {
+      const el = this.overlay.querySelector<HTMLInputElement>(id);
+      if (el && el.value === '') el.value = v;
+    };
+    if (cal.massaReferenciaG && cal.massaReferenciaG > 0) soSeVazioTxt('#wmassa', String(cal.massaReferenciaG));
+    if (cal.descricaoCelula) soSeVazioTxt('#wdescricao', cal.descricaoCelula);
+    if (cal.capacidadeMaxGramas && cal.capacidadeMaxGramas > 0) soSeVazioTxt('#wcapacidade', String(cal.capacidadeMaxGramas / 1000));
+    if (cal.gravidade && cal.gravidade > 0) {
+      const el = this.overlay.querySelector<HTMLInputElement>('#wgravidade');
+      if (el && el.value === '') { el.value = String(cal.gravidade); this.gravidade = cal.gravidade; }
+    }
   }
 
   private html(): string {
@@ -119,7 +168,7 @@ export class WizardCalibracao {
       `;
 
       case 4: return `
-        <div class="wizard-aviso">Estes campos são opcionais. Deixe em branco para manter os valores atuais do firmware.</div>
+        <div class="wizard-aviso">Campos pré-preenchidos com os valores atuais da configuração e da última calibração. Deixe em branco para manter o que está no firmware.</div>
         <div class="wizard-grid">
           <div>
             <label for="wcapacidade">Capacidade máxima (kg)</label>
@@ -128,6 +177,14 @@ export class WizardCalibracao {
           <div>
             <label for="wacuracia">Acurácia (%)</label>
             <input id="wacuracia" type="number" placeholder="ex: 0.03" min="0" step="any">
+          </div>
+          <div>
+            <label for="wgravidade">Gravidade local (m/s²)</label>
+            <input id="wgravidade" type="number" placeholder="9.80665" min="0" step="any">
+          </div>
+          <div>
+            <label for="wdescricao">Descrição da célula</label>
+            <input id="wdescricao" type="text" placeholder="ex: CALT 500 kg 2023">
           </div>
         </div>
       `;
@@ -201,7 +258,7 @@ export class WizardCalibracao {
 
     if (n === 5) {
       const el = this.overlay.querySelector('#wmassa-esperada');
-      if (el) el.textContent = `Valor esperado: ${(this.massaReferencia / 1000 * 9.80665).toFixed(3)} N`;
+      if (el) el.textContent = `Valor esperado: ${valorEsperadoN(this.massaReferencia, this.gravidade).toFixed(3)} N`;
     }
   }
 
@@ -214,6 +271,12 @@ export class WizardCalibracao {
         return false;
       }
       this.massaReferencia = val;
+    }
+    if (n === 4) {
+      // captura gravidade e descrição antes da verificação (passo 5) e do finalizar
+      const gEl = this.overlay.querySelector<HTMLInputElement>('#wgravidade');
+      this.gravidade = parseFloat(gEl?.value ?? '') || GRAVIDADE_PADRAO;
+      this.descricaoCelula = this.overlay.querySelector<HTMLInputElement>('#wdescricao')?.value.trim() ?? '';
     }
     return true;
   }
@@ -252,6 +315,17 @@ export class WizardCalibracao {
     if (!isNaN(acu) && acu > 0) {
       this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_PARAM', paramId: 0x0b, valorF: acu / 100, valorI: 0 });
     }
+    // gravidade local escolhida pelo usuário (o firmware a usa na conversão para N)
+    if (this.gravidade > 0) {
+      this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_PARAM', paramId: 0x01, valorF: this.gravidade, valorI: 0 });
+    }
+    // grava o registro de calibração no host (as sessões o fotografam ao iniciar)
+    void salvarCalibracao({
+      massaReferenciaG: this.massaReferencia,
+      descricaoCelula: this.descricaoCelula || undefined,
+      capacidadeMaxGramas: !isNaN(cap) && cap > 0 ? cap * 1000 : undefined,
+      gravidade: this.gravidade,
+    });
     this.destruir();
   }
 

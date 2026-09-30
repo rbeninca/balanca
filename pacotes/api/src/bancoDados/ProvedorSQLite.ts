@@ -32,6 +32,7 @@ export class ProvedorSQLite {
     for (const [coluna, tipo] of [
       ['total_leituras', 'INTEGER'], ['forca_media_queima_n', 'REAL'], ['impulso_queima_ns', 'REAL'],
       ['config_pipeline', 'TEXT'], ['config_esp', 'TEXT'],
+      ['massa_calibracao_g', 'REAL'], ['descricao_celula', 'TEXT'], ['capacidade_celula_g', 'REAL'],
     ] as const) {
       if (!colunasSessoes.includes(coluna)) this.db.exec(`ALTER TABLE sessoes ADD COLUMN ${coluna} ${tipo}`);
     }

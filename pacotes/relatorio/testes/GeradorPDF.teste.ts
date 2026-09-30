@@ -89,4 +89,45 @@ describe('GeradorPDF', () => {
     const texto = await textoDoBlob(blob);
     expect(texto).toContain('GFIG / IFSC Campus Gaspar');
   });
+
+  // Célula de carga (pedido do prof. Marchi)
+
+  it('bloco "Célula de Carga" aparece com os dados da sessão', async () => {
+    const blob = gerarPDF(leituras, analise, {
+      descricaoCelula: 'CALT 500 kg 2023',
+      massaCalibracao_g: 100,
+      capacidadeMaxGramas: 500000,
+      gravidade: 9.78769,
+      acuracia: 0.0003,
+    });
+    const texto = await textoDoBlob(blob);
+    expect(texto).toContain('Célula de Carga');
+    expect(texto).toContain('CALT 500 kg 2023');
+    expect(texto).toContain('100.00 g');
+    expect(texto).toContain('500000 g');
+    expect(texto).toContain('9.78769 m/s²');
+    expect(texto).toContain('0.03 % F.S.');
+  });
+
+  it('sem dados da célula (sessão antiga) o bloco some e os textos caem no padrão', async () => {
+    const blob = gerarPDF(leituras, analise);
+    const texto = await textoDoBlob(blob);
+    expect(texto).not.toContain('Célula de Carga');
+    expect(texto).toContain('±0,05% F.S.');
+    expect(texto).toContain('9,80665 m/s²');
+  });
+
+  it('gravidade local 9.78769 substitui a fixa no relatório', async () => {
+    const blob = gerarPDF(leituras, analise, { gravidade: 9.78769 });
+    const texto = await textoDoBlob(blob);
+    expect(texto).toContain('9.78769 m/s²');
+    expect(texto).not.toContain('9,80665 m/s²');
+  });
+
+  it('acurácia 0,0003 substitui a fixa nas duas seções', async () => {
+    const blob = gerarPDF(leituras, analise, { acuracia: 0.0003 });
+    const texto = await textoDoBlob(blob);
+    expect(texto).toContain('±0.03% F.S.');
+    expect(texto).not.toContain('±0,05% F.S.');
+  });
 });

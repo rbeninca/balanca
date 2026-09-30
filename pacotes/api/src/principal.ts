@@ -5,6 +5,7 @@ import { criarVerificadorChaveAPI } from './autenticacao/ChaveAPI.js';
 import { rotasSessoes } from './rotas/sessoes.js';
 import { rotasLeituras } from './rotas/leituras.js';
 import { rotasMetadados } from './rotas/metadados.js';
+import { rotasCalibracao } from './rotas/calibracao.js';
 
 export interface OpcoesCriarApp {
   caminhoBanco: string;
@@ -27,6 +28,7 @@ export function criarApp(opcoes: OpcoesCriarApp) {
   app.register(rotasSessoes, contexto);
   app.register(rotasLeituras, contexto);
   app.register(rotasMetadados, contexto);
+  app.register(rotasCalibracao, contexto);
 
   app.addHook('onClose', () => { db.fechar(); });
 

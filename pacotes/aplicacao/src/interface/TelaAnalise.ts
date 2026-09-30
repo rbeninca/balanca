@@ -1,9 +1,10 @@
 import type { LeituraProcessada } from '@balancagfig/processamento/tipos';
-import type { IArmazenamento, MetadadosLocal } from '../armazenamento/ArmazenamentoLocal.js';
+import type { IArmazenamento, MetadadosLocal, SessaoLocal } from '../armazenamento/ArmazenamentoLocal.js';
 import { analisarMotor, aplicarDetrend, type MetodoDetrend } from '@balancagfig/analise';
 import { gerarPDF, exportarCSV, exportarENG, exportarCurvaEmpuxo } from '@balancagfig/relatorio';
 import type { MetadadosENG, MetadadosPDF, MetadadosCurvaEmpuxo } from '@balancagfig/relatorio';
 import { perguntarFormatoCSV, OPCOES_CSV } from './dialogoFormatoCSV.js';
+import { montarDadosCalibracao, obterCalibracao, type DadosCelula } from '../nucleo/calibracao.js';
 import ApexCharts from 'apexcharts';
 import { indicador } from './indicadorCarregando.js';
 import { descreverPipeline } from './filtrosPainel.js';
@@ -14,6 +15,8 @@ export interface DadosAnalise {
   nomeSessao: string;
   modo:       'nova' | 'revisao';
   idSessao?:  string;
+  /** Configuração da célula vigente ao parar a gravação (modo "nova"; o relatório usa os valores que serão o snapshot). */
+  dadosCelula?: DadosCelula;
 }
 
 let instanciaAtual: TelaAnalise | null = null;
@@ -30,6 +33,8 @@ export class TelaAnalise {
   private leiturasOriginais: LeituraProcessada[] = [];
   private detrend: MetodoDetrend = 'nenhum';
   private hoveredIdx       = -1;
+  /** Sessão salva aberta em revisão — o relatório usa SÓ o que ela gravou (nunca o registro atual). */
+  private sessao?: SessaoLocal;
 
   constructor(
     private dados: DadosAnalise,
@@ -63,6 +68,7 @@ export class TelaAnalise {
     if (!el) return;
     try {
       const sessao = (await this.armazenamento.listarSessoes()).find(s => s.id === idSessao);
+      this.sessao = sessao;
       const cfg = sessao?.configPipeline;
       if (!cfg) { el.textContent = 'Configuração de gravação não registrada (sessão anterior ou gateway antigo).'; return; }
       el.textContent = `Gravada com: ${descreverPipeline(cfg as Partial<EstadoPipeline>).join(' → ').replace(' → → ', ' → ')}`;
@@ -594,11 +600,25 @@ export class TelaAnalise {
     this.baixarArquivo(new Blob([txt], { type: 'text/plain' }), `${this.nomeSessao}.txt`);
   }
 
-  private exportarPDF() {
+  /**
+   * PDF com os dados da célula da fonte certa:
+   * - revisão: só o que a sessão gravou (colunas + config_esp) — nunca o registro atual;
+   * - nova (gravação ainda não salva): a config vigente da célula + o registro de
+   *   calibração atuais, que são exatamente o que o criarSessao vai fotografar.
+   */
+  private async exportarPDF() {
     try {
       const meta    = this.lerMetadadosFormulario();
       const data    = new Date().toLocaleDateString('pt-BR');
       const analise = analisarMotor(this.dados.leituras, meta.massaPropelente_g ? { massaPropelente_g: meta.massaPropelente_g } : {});
+
+      const cal = this.sessao
+        ? montarDadosCalibracao(this.sessao.configEsp, this.sessao)
+        : montarDadosCalibracao(undefined, undefined, {
+            ...(this.dados.dadosCelula ?? {}),
+            ...(await obterCalibracao() ?? {}),
+          });
+
       const metaPDF: MetadadosPDF = { nomeSessao: this.nomeSessao, data };
       if (meta.fabricante        !== undefined) metaPDF.fabricante        = meta.fabricante;
       if (meta.diametro_mm       !== undefined) metaPDF.diametro_mm       = meta.diametro_mm;
@@ -607,6 +627,11 @@ export class TelaAnalise {
       if (meta.massaTotal_g      !== undefined) metaPDF.massaTotal_g      = meta.massaTotal_g;
       if (meta.descricao         !== undefined) metaPDF.descricao         = meta.descricao;
       if (meta.observacoes       !== undefined) metaPDF.observacoes       = meta.observacoes;
+      if (cal.massaCalibracaoG   != null) metaPDF.massaCalibracao_g   = cal.massaCalibracaoG;
+      if (cal.descricaoCelula)             metaPDF.descricaoCelula    = cal.descricaoCelula;
+      if (cal.capacidadeMaxGramas != null) metaPDF.capacidadeMaxGramas = cal.capacidadeMaxGramas;
+      if (cal.gravidade          != null) metaPDF.gravidade          = cal.gravidade;
+      if (cal.acuracia           != null) metaPDF.acuracia           = cal.acuracia;
       const blob = gerarPDF(this.dados.leituras, analise, metaPDF);
       const url  = URL.createObjectURL(blob);
       window.open(url, '_blank');
@@ -629,7 +654,7 @@ export class TelaAnalise {
     this.overlay.querySelector('#btn-export-csv')!.addEventListener('click',     () => { void this.exportarCSV(); });
     this.overlay.querySelector('#btn-export-eng')!.addEventListener('click',     () => this.exportarENG());
     this.overlay.querySelector('#btn-export-curva')!.addEventListener('click',   () => this.exportarCurvaEmpuxo());
-    this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => this.exportarPDF());
+    this.overlay.querySelector('#btn-export-pdf')!.addEventListener('click',     () => { void this.exportarPDF(); });
     this.overlay.querySelector('#btn-salvar-sessao')!.addEventListener('click',  () => { void this.salvarSessao(); });
 
     const inputNome = this.overlay.querySelector<HTMLInputElement>('#nome-sessao-analise')!;

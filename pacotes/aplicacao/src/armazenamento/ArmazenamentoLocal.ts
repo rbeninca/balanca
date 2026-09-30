@@ -11,6 +11,10 @@ export interface SessaoLocal {
   /** Configuração do pipeline (e da ESP) vigente ao iniciar a gravação — reprodutibilidade. */
   configPipeline?: Record<string, unknown>;
   configEsp?: Record<string, unknown>;
+  /** Célula de carga vigente ao iniciar a gravação (ausente em sessões antigas). */
+  massaCalibracaoG?: number;
+  descricaoCelula?: string;
+  capacidadeCelulaG?: number;
 }
 
 /** Fotografia da configuração passada ao criar a sessão. */

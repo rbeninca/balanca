@@ -23,6 +23,7 @@ import org.json.JSONObject
  *   GET    /sessoes/:id/leituras        POST   /sessoes/:id/leituras*   DELETE /sessoes/:id/leituras*
  *   GET    /sessoes/:id/exportar.csv
  *   GET    /sessoes/:id/metadados       POST   /sessoes/:id/metadados*
+ *   GET    /calibracao                  PUT    /calibracao*
  *   GET    /atualizacao                 POST   /atualizacao/{verificar,iniciar,cancelar}*
  *
  * (*) exigem o cabeçalho x-chave-api quando uma chave está configurada;
@@ -100,6 +101,7 @@ class ServidorApi(
 
         if (uri.startsWith("/pendrive")) return rotearPendrive(uri, m, s)
         if (uri.startsWith("/atualizacao")) return rotearAtualizacao(uri, m, s)
+        if (uri == "/calibracao") return rotearCalibracao(m, s)
 
         if (uri == "/sessoes") return when (m) {
             Method.GET -> json(
@@ -224,6 +226,60 @@ class ServidorApi(
                 autenticado(s) { json(Response.Status.OK, JSONObject().put("ok", bkp.ejetar())) }
             else -> erro(Response.Status.NOT_FOUND, "Rota de pendrive não encontrada")
         }
+    }
+
+    // ─── Calibração ────────────────────────────────────────────────────────
+
+    /** GET livre (é leitura), PUT exige a chave quando configurada — como as rotas de escrita. */
+    private fun rotearCalibracao(m: Method, s: IHTTPSession): Response = when (m) {
+        Method.GET -> json(Response.Status.OK, linhaCalibracao())
+        Method.PUT -> autenticado(s) { salvarCalibracao(corpoJson(s)) }
+        else -> metodoNaoPermitido()
+    }
+
+    /** Linha do singleton com os 4 campos (null enquanto nunca houve calibração). */
+    private fun linhaCalibracao(): JSONObject {
+        val linha = JSONObject()
+        val cal = bd.consultarUm(
+            "SELECT massa_referencia_g, descricao_celula, capacidade_max_g, gravidade, atualizada_em FROM calibracao WHERE id = 1",
+        )
+        for (campo in CAMPOS_CALIBRACAO + "atualizada_em") {
+            linha.put(campo, cal?.let { if (it.has(campo) && !it.isNull(campo)) it.opt(campo) else null })
+        }
+        return linha
+    }
+
+    /**
+     * Atualiza o registro de calibração (singleton). Body parcial: campo
+     * ausente preserva o valor atual; null apaga. INSERT OR REPLACE porque o
+     * SQLite dos boxes (API 25) é anterior ao UPSERT.
+     */
+    private fun salvarCalibracao(body: JSONObject): Response {
+        val atual = bd.consultarUm("SELECT * FROM calibracao WHERE id = 1")
+        val novo = JSONObject()
+        for (campo in CAMPOS_CALIBRACAO) {
+            val valor = when {
+                body.has(campo) && !body.isNull(campo) -> body.opt(campo)
+                body.isNull(campo) -> null
+                atual != null && atual.has(campo) && !atual.isNull(campo) -> atual.opt(campo)
+                else -> null
+            }
+            novo.put(campo, valor ?: JSONObject.NULL)
+        }
+        val massa = novo.optDoubleOrNull("massa_referencia_g")
+        val capac = novo.optDoubleOrNull("capacidade_max_g")
+        val grav  = novo.optDoubleOrNull("gravidade")
+        if (massa != null && massa <= 0) return erro(Response.Status.BAD_REQUEST, "Massa de referência deve ser maior que zero")
+        if (capac != null && capac <= 0) return erro(Response.Status.BAD_REQUEST, "Capacidade deve ser maior que zero")
+        if (grav != null && (grav < 9 || grav > 10)) return erro(Response.Status.BAD_REQUEST, "Gravidade fora da faixa esperada (9 a 10 m/s²)")
+
+        bd.executar(
+            """INSERT OR REPLACE INTO calibracao
+               (id, massa_referencia_g, descricao_celula, capacidade_max_g, gravidade, atualizada_em)
+               VALUES (1, ?, ?, ?, ?, datetime('now'))""",
+            massa, novo.optStringOrNull("descricao_celula"), capac, grav,
+        )
+        return json(Response.Status.OK, linhaCalibracao())
     }
 
     // ─── Sessões ────────────────────────────────────────────────────────────
@@ -388,6 +444,7 @@ class ServidorApi(
 
     companion object {
         private val DETRENDS = setOf("nenhum", "media", "linear")
+        private val CAMPOS_CALIBRACAO = listOf("massa_referencia_g", "descricao_celula", "capacidade_max_g", "gravidade")
         private const val TAG = "ServidorApi"
         const val PORTA_PADRAO = 3000
         /** bodyLimit do Fastify no pacote api: 10 MB. */

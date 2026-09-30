@@ -131,6 +131,7 @@ class BancoDados(private val context: Context, private val nome: String = NOME_P
         val COLUNAS_RESUMO = listOf(
             "total_leituras" to "INTEGER", "forca_media_queima_n" to "REAL", "impulso_queima_ns" to "REAL",
             "config_pipeline" to "TEXT", "config_esp" to "TEXT",
+            "massa_calibracao_g" to "REAL", "descricao_celula" to "TEXT", "capacidade_celula_g" to "REAL",
         )
 
         const val NOME_PADRAO = "balanca.db"

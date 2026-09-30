@@ -14,6 +14,13 @@ export interface MetadadosPDF {
   pressao_hPa?: number;
   descricao?: string;
   observacoes?: string;
+  // Célula de carga e calibração (ausentes em sessões antigas — o bloco não aparece)
+  descricaoCelula?: string;
+  massaCalibracao_g?: number;
+  capacidadeMaxGramas?: number;
+  gravidade?: number;
+  /** Classe de acurácia como fração do fundo de escala (0,03 % → 0,0003). */
+  acuracia?: number;
 }
 
 const CLASSES_NAR = [
@@ -157,6 +164,22 @@ function gerarHTMLRelatorio(
     ${meta.observacoes ? `<div style="margin-top:3px;font-size:8px;"><strong>Observações:</strong> ${meta.observacoes}</div>` : ''}
   </div>` : '';
 
+  // Só aparece quando a sessão gravou dados da célula (sessões antigas ficam sem o bloco)
+  const temCelula = meta.descricaoCelula || meta.massaCalibracao_g != null || meta.capacidadeMaxGramas != null
+    || meta.gravidade != null || meta.acuracia != null;
+
+  const secaoCelula = temCelula ? `
+  <div class="secao avoid-break" style="background:#f0f7ff;padding:5px;border-radius:3px;margin:4px 0;border-left:3px solid #3498db;">
+    <h2 style="margin-bottom:4px;color:#2980b9;font-size:11px;">Célula de Carga</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:8px;">
+      <div><strong>Descrição:</strong> ${meta.descricaoCelula ?? '---'}</div>
+      <div><strong>Massa de Calibração:</strong> ${fmtOpc(meta.massaCalibracao_g, 2, 'g')}</div>
+      <div><strong>Capacidade:</strong> ${fmtOpc(meta.capacidadeMaxGramas, 0, 'g')}</div>
+      <div><strong>Gravidade:</strong> ${fmtOpc(meta.gravidade, 5, 'm/s²')}</div>
+      <div><strong>Acurácia:</strong> ${meta.acuracia != null ? `${(meta.acuracia * 100).toFixed(2)} % F.S.` : '---'}</div>
+    </div>
+  </div>` : '';
+
   const anomaliasHTML = analise.anomalias.length > 0
     ? `<tr><td colspan="4" style="padding:2px;background:#fff3cd;color:#856404;">
         Atenção: ${analise.anomalias.filter(a => a.nivel === 'CRITICO').length} anomalia(s) CRITICO detectada(s) —
@@ -222,6 +245,7 @@ function gerarHTMLRelatorio(
   </div>
 
   ${secaoMeta}
+  ${secaoCelula}
 
   <div class="secao avoid-break">
     <h2 style="font-size:11px;margin-bottom:4px;">Métricas de Desempenho</h2>
@@ -327,7 +351,7 @@ function gerarHTMLRelatorio(
       <p style="text-align:center;font-family:'Courier New',monospace;background:white;padding:3px;border-radius:2px;margin:3px 0;">
         I = ∫F(t) dt ≈ Σ [(F<sub>i</sub> + F<sub>i+1</sub>)/2] × Δt<sub>i</sub>
       </p>
-      <p style="margin:2px 0;"><strong>Erro de Truncamento:</strong> O(h²). Com ~100 Hz de amostragem, desprezível frente à incerteza da célula de carga (±0,05% F.S.).</p>
+      <p style="margin:2px 0;"><strong>Erro de Truncamento:</strong> O(h²). Com ~100 Hz de amostragem, desprezível frente à incerteza da célula de carga (${meta.acuracia != null ? `±${(meta.acuracia * 100).toFixed(2)}% F.S.` : '±0,05% F.S.'}).</p>
     </div>
 
     <h3 style="margin-top:.5rem;color:#2c3e50;font-size:9px;">2. Métricas Estatísticas</h3>
@@ -357,7 +381,7 @@ function gerarHTMLRelatorio(
     <h3 style="margin-top:.5rem;color:#2c3e50;font-size:9px;">4. Incertezas de Medição</h3>
     <div class="info-box" style="background:#fff3cd;border-left-color:#f39c12;">
       <p style="margin:2px 0;"><strong>Referência:</strong> JCGM 100:2008 — GUM.</p>
-      <p style="margin:2px 0;"><strong>Tipo B (Sistemática):</strong> Especificação do fabricante da célula de carga (±0,05% F.S.).</p>
+      <p style="margin:2px 0;"><strong>Tipo B (Sistemática):</strong> Especificação do fabricante da célula de carga (${meta.acuracia != null ? `±${(meta.acuracia * 100).toFixed(2)}% F.S.` : '±0,05% F.S.'}).</p>
       <p style="text-align:center;font-family:'Courier New',monospace;background:white;padding:3px;border-radius:2px;margin:3px 0;">
         u<sub>c</sub>(I) = √[(∂I/∂F)² u²(F) + (∂I/∂t)² u²(t)]
       </p>
@@ -388,7 +412,7 @@ function gerarHTMLRelatorio(
     <h2 style="font-size:10px;margin-bottom:3px;">Informações do Sistema</h2>
     <table style="font-size:8px;">
       <tr><td style="padding:2px;font-weight:bold;">Sistema de Aquisição:</td><td style="padding:2px;">balançaGFIG v2 — GFIG / IFSC Campus Gaspar</td></tr>
-      <tr><td style="padding:2px;font-weight:bold;">Gravidade Local:</td><td style="padding:2px;">9,80665 m/s²</td></tr>
+      <tr><td style="padding:2px;font-weight:bold;">Gravidade Local:</td><td style="padding:2px;">${meta.gravidade != null ? meta.gravidade.toFixed(5) : '9,80665'} m/s²</td></tr>
       <tr><td style="padding:2px;font-weight:bold;">Taxa de Amostragem:</td><td style="padding:2px;">${hz} Hz</td></tr>
       <tr><td style="padding:2px;font-weight:bold;">Normas de Referência:</td><td style="padding:2px;">NFPA 1122, NFPA 1127, NAR/TRA Standards</td></tr>
     </table>

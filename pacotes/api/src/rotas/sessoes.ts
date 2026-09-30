@@ -15,6 +15,9 @@ interface Sessao {
   total_leituras: number | null;
   forca_media_queima_n: number | null;
   impulso_queima_ns: number | null;
+  massa_calibracao_g: number | null;
+  descricao_celula: string | null;
+  capacidade_celula_g: number | null;
 }
 
 export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }: ContextoRotas) {
@@ -39,10 +42,17 @@ export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }:
 
     // Configuração vigente ao iniciar a gravação (objeto → JSON), para reprodutibilidade
     const json = (v: unknown) => (v && typeof v === 'object' ? JSON.stringify(v) : null);
+    // Célula de carga vigente: fotografia do registro de calibração (sessões já gravadas não mudam)
+    const cal = db.consultarUm<{ massa_referencia_g: number | null; descricao_celula: string | null; capacidade_max_g: number | null }>(
+      'SELECT massa_referencia_g, descricao_celula, capacidade_max_g FROM calibracao WHERE id = 1',
+    );
     const id = randomUUID();
     db.executar(
-      'INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, body.nome, body.id_motor ?? null, body.observacoes ?? null, json(body.config_pipeline), json(body.config_esp)],
+      'INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp, massa_calibracao_g, descricao_celula, capacidade_celula_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        id, body.nome, body.id_motor ?? null, body.observacoes ?? null, json(body.config_pipeline), json(body.config_esp),
+        cal?.massa_referencia_g ?? null, cal?.descricao_celula ?? null, cal?.capacidade_max_g ?? null,
+      ],
     );
     const sessao = db.consultarUm<Sessao>('SELECT * FROM sessoes WHERE id = ?', [id]);
     return rep.status(201).send(sessao);

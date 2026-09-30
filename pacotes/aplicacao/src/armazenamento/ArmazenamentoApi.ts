@@ -159,6 +159,9 @@ interface LinhaSessaoApi {
   id: string; nome: string; criado_em: string;
   config_pipeline?: string | null;
   config_esp?: string | null;
+  massa_calibracao_g?: number | null;
+  descricao_celula?: string | null;
+  capacidade_celula_g?: number | null;
 }
 
 /** A API guarda a configuração como texto JSON; aqui vira objeto (ignora texto inválido). */
@@ -168,6 +171,9 @@ function converterSessao(d: LinhaSessaoApi): SessaoLocal {
   const ce = analisarJson(d.config_esp);
   if (cp) sessao.configPipeline = cp;
   if (ce) sessao.configEsp = ce;
+  if (d.massa_calibracao_g != null) sessao.massaCalibracaoG = d.massa_calibracao_g;
+  if (d.descricao_celula != null) sessao.descricaoCelula = d.descricao_celula;
+  if (d.capacidade_celula_g != null) sessao.capacidadeCelulaG = d.capacidade_celula_g;
   return sessao;
 }
 

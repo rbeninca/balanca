@@ -6,6 +6,54 @@ pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
 arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
 em [contexto.md](contexto.md).
 
+## Célula de carga: relatório, sessões e g local (2026-09-29)
+
+Depois do teste estático, o prof. Marchi pediu três coisas: o relatório mostrar
+a massa usada na calibração, uma descrição breve da célula (ex.: "CALT 500 kg
+2023") e o g da calibração deixar de ser fixo — no local do teste é 9,78769,
+0,19% abaixo do 9,80665 que o app usa, diferença maior que a precisão da célula.
+Hoje a calibração só grava o fator de conversão no firmware; massa, descrição e
+o resto não existem em lugar nenhum.
+
+- **Registro de calibração no host.** Tabela singleton `calibracao` no SQLite
+  (box e gateway Node): massa de referência, descrição, capacidade e gravidade,
+  com rota própria — `GET /calibracao` livre e `PUT` autenticado, parcial
+  (ausente preserva, null apaga), 400 para massa ≤ 0, capacidade ≤ 0 ou g fora
+  de 9–10. O assistente grava ao finalizar; um card novo em Configurações
+  edita à mão (calibração feita fora do wizard). No WebSerial sem REST, o
+  registro vive no navegador (localStorage).
+- **A sessão fotografa a célula ao criar.** Três colunas novas em `sessoes` —
+  `massa_calibracao_g`, `descricao_celula`, `capacidade_celula_g` — escritas só
+  no INSERT. Nenhuma sessão salva é tocada: as antigas ficam com NULL e o
+  relatório delas sai como sempre saiu. Gravidade e acurácia não ganharam
+  coluna de propósito: já estão no `config_esp` da sessão, que é a fonte certa
+  (o g vigente no teste, não o de hoje).
+- **Bloco "Célula de Carga" no relatório.** Descrição, massa de calibração,
+  capacidade, gravidade e acurácia — e some inteiro nas sessões antigas. A
+  acurácia substitui o "±0,05% F.S." fixo das duas seções de incerteza e a
+  gravidade substitui o "9,80665" fixo. Os kgf/gf continuam na gravidade
+  padrão: a unidade é definida por ela, não pela do local. Vale no PDF da
+  análise, no PDF por item e no lote de Sessões; o item da lista mostra
+  "Célula: … · massa … g".
+- **Assistente de calibração pré-preenchido.** Passo 4 com gravidade local e
+  descrição da célula; os campos abrem com o valor atual (config da ESP +
+  registro do host), sem sobrescrever o que o usuário já digitou. O "valor
+  esperado" do passo 5 usa o g escolhido, e o finalizar envia o g ao firmware
+  (param 0x01) e grava o registro.
+- **Medição coerente com o g local.** A conversão N → kg/g do display e do
+  gráfico usa o g da célula (9,80665 até o CONFIG chegar). No relatório do modo
+  "nova" (gravação recém-parada), a célula vem dos valores atuais — os mesmos
+  que a sessão vai fotografar ao salvar.
+
+Contrato novo:
+
+    GET  /calibracao → 200 { massa_referencia_g, descricao_celula,
+        capacidade_max_g, gravidade, atualizada_em } (nulls quando ausente)
+    PUT  /calibracao (autenticado; parcial, null apaga) → mesma linha;
+        400 se massa ≤ 0, capacidade ≤ 0 ou g fora de 9–10
+    GET  /sessoes (e /sessoes/:id): cada linha ganha massa_calibracao_g,
+        descricao_celula e capacidade_celula_g (null em sessões antigas)
+
 ## Ferramentas de bancada: ciclo de teste e kit de instalação (2026-09-24)
 
 Dois scripts para trabalhar no box sem depender de lembrar comando: um faz a ida
@@ -488,6 +536,13 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
 ## Pendências
 
 ### Abertas
+
+- **A célula de carga no relatório (trabalho de 2026-09-29) ainda não foi
+  testada no box.** Os testes automatizados passam nos três pacotes e o APK
+  compila, mas falta o roteiro manual: wizard abrindo pré-preenchido, g =
+  9,78769 no "valor esperado" e no relatório, bloco "Célula de Carga" no PDF e
+  nas sessões, e uma sessão antiga saindo sem o bloco. Também não há release
+  disso: entra na próxima versão, depois do teste.
 
 - **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
   à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
