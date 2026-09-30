@@ -6,7 +6,7 @@ pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
 arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
 em [contexto.md](contexto.md).
 
-## Célula de carga: relatório, sessões e g local (2026-09-29)
+## Célula de carga: relatório, sessões e g local (2026-09-29, `8bf5b68`)
 
 Depois do teste estático, o prof. Marchi pediu três coisas: o relatório mostrar
 a massa usada na calibração, uma descrição breve da célula (ex.: "CALT 500 kg
