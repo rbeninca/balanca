@@ -6,6 +6,15 @@ pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
 arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
 em [contexto.md](contexto.md).
 
+## Correção do PUT /calibracao vira release: 2.8.506 (2026-09-30, `4c16e66`)
+
+A correção do `be99256` foi publicada: tag `v2.8.506` (versionCode 29) → CI
+verde → release com APK, firmware V19 e `manifest.json` íntegros (sha256 e
+tamanho conferidos contra o APK, `estavel: true`). A subida do alvo do painel
+para 2.8.506 foi autorizada pelo usuário mas ficou bloqueada na hora de
+disparar — o update no box fica por conta do usuário (botão na TV), depois que
+o alvo for liberado.
+
 ## Calibração não aparecia nas Configurações: PUT bloqueado pelo CORS (2026-09-29, `be99256`)
 
 No equipamento de teste (`.6`), depois de gravar a V19 e calibrar com massa e
@@ -640,10 +649,12 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
   tara, capacidade, g) sobrevive ao flash — o setor de EEPROM não é tocado
   pelo `write_flash 0x0`, mas isso ainda não foi conferido na bancada — e
   gravar uma sessão com a célula para ver as colunas saindo do `config_esp`.
-- **Alvo do painel em 2.8.503, com 2.8.504 e 2.8.505 publicadas.**
+- **Alvo do painel em 2.8.503, com 2.8.504, 2.8.505 e 2.8.506 publicadas.**
+  A subida para 2.8.506 foi autorizada pelo usuário em 30/09/2026 e está
+  pendente só de disparar; o usuário faz o update no box (botão na TV).
   O `POST /alvo` libera a versão escolhida para todos os boxes de uma
   vez (cada um que consultar o painel baixa e instala) — decisão de rollout,
-  a tomar quando for a hora. Enquanto isso nenhum box sai da 2.8.503.
+  a tomar quando for a hora.
 
 - **A atualização dos boxes no local é `adb install -r` direto.** Não há caminho
   à distância: o botão do painel depende de o box alcançar o GitHub, e lá quem
