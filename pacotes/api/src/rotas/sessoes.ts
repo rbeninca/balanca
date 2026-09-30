@@ -46,12 +46,31 @@ export async function rotasSessoes(app: FastifyInstance, { db, verificarChave }:
     const cal = db.consultarUm<{ massa_referencia_g: number | null; descricao_celula: string | null; capacidade_max_g: number | null }>(
       'SELECT massa_referencia_g, descricao_celula, capacidade_max_g FROM calibracao WHERE id = 1',
     );
+    // Fonte primária: CONFIG da ESP (a calibração segue a célula); fallback: singleton (ESP antiga)
+    let massa = cal?.massa_referencia_g ?? null;
+    let descricao = cal?.descricao_celula ?? null;
+    let capacidade = cal?.capacidade_max_g ?? null;
+    const esp = (() => {
+      try {
+        const v = body.config_esp;
+        if (v && typeof v === 'object') return v as Record<string, unknown>;
+        if (typeof v === 'string') return JSON.parse(v) as Record<string, unknown>;
+      } catch {
+        /* JSON inválido: cai no fallback */
+      }
+      return null;
+    })();
+    if (esp) {
+      if (typeof esp.massaCalibracaoG === 'number' && esp.massaCalibracaoG > 0) massa = esp.massaCalibracaoG;
+      if (typeof esp.descricaoCelula === 'string' && esp.descricaoCelula.length > 0) descricao = esp.descricaoCelula;
+      if (typeof esp.capacidadeMaxGramas === 'number' && esp.capacidadeMaxGramas > 0) capacidade = esp.capacidadeMaxGramas;
+    }
     const id = randomUUID();
     db.executar(
       'INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp, massa_calibracao_g, descricao_celula, capacidade_celula_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         id, body.nome, body.id_motor ?? null, body.observacoes ?? null, json(body.config_pipeline), json(body.config_esp),
-        cal?.massa_referencia_g ?? null, cal?.descricao_celula ?? null, cal?.capacidade_max_g ?? null,
+        massa, descricao, capacidade,
       ],
     );
     const sessao = db.consultarUm<Sessao>('SELECT * FROM sessoes WHERE id = ?', [id]);

@@ -103,6 +103,23 @@ class CodificadorTest {
         assertEquals(0, pkt.modo)
     }
 
+    @Test
+    fun `UT-1_4_2b - massa e descricao da celula nos offsets 39_43`() {
+        val pkt = Codificador.decodificar(Fixtures.configuracao()) as PacoteConfiguracao
+        assertEquals(100.0f, pkt.massaCalibracaoG, 1e-3f)
+        assertEquals("Célula 500 kg", pkt.descricaoCelula)
+    }
+
+    @Test
+    fun `UT-1_4_2c - EEPROM antiga em 39_58 vira massa 0 e descricao vazia`() {
+        val bytes = Fixtures.configuracao()
+        java.util.Arrays.fill(bytes, 39, 59, 0xff.toByte())
+        Fixtures.le(bytes).putShort(62, Crc16.calcular(bytes, 0, 62).toShort())   // refaz o CRC
+        val pkt = Codificador.decodificar(bytes) as PacoteConfiguracao
+        assertEquals(0f, pkt.massaCalibracaoG, 0f)
+        assertEquals("", pkt.descricaoCelula)
+    }
+
     // ─── PacoteStatus ───────────────────────────────────────────────────────
 
     @Test
@@ -160,6 +177,41 @@ class CodificadorTest {
         assertEquals(0.toByte(), bytes[5]); assertEquals(0.toByte(), bytes[6]); assertEquals(0.toByte(), bytes[7])
         assertEquals(2.05f, Fixtures.le(bytes).getFloat(8), 1e-4f)
         assertEquals(0xfffffffeL, Fixtures.le(bytes).getInt(12).toLong() and 0xffffffffL)
+        assertCrcValido(bytes)
+    }
+
+    @Test
+    fun `UT-1_3_6b - param 0x0C (massa de calibracao) codifica`() {
+        val bytes = Codificador.codificar(
+            ComandoDefinirParam(paramId = Protocolo.PARAM_MASSA_CALIBRACAO, valorF = 100f, valorI = 0)
+        )
+        assertEquals(18, bytes.size)
+        assertEquals(0x0c.toByte(), bytes[4])
+        assertEquals(100f, Fixtures.le(bytes).getFloat(8), 1e-3f)
+        assertCrcValido(bytes)
+    }
+
+    @Test
+    fun `UT-1_3_7 - CMD_DEFINIR_DESCRICAO tem 23 bytes, tipo 0x14 e texto no campo`() {
+        val bytes = Codificador.codificar(
+            ComandoDefinirDescricao(campoId = Protocolo.STRING_DESCRICAO_CELULA, texto = "CALT 500")
+        )
+        assertEquals(23, bytes.size)
+        assertEquals(0x14.toByte(), bytes[3])
+        assertEquals(0x01.toByte(), bytes[4])
+        assertEquals("CALT 500", String(bytes, 5, 8, Charsets.UTF_8))
+        assertEquals(0.toByte(), bytes[13])   // resto do campo NUL
+        assertCrcValido(bytes)
+    }
+
+    @Test
+    fun `UT-1_3_7b - texto de 16 bytes UTF-8 trunca sem cortar caractere`() {
+        val bytes = Codificador.codificar(
+            ComandoDefinirDescricao(campoId = 0x01, texto = "áááááááá")
+        )
+        assertEquals(23, bytes.size)
+        assertEquals(0.toByte(), bytes[19])   // NUL logo após o texto truncado
+        assertEquals("ááááááá", String(bytes, 5, 14, Charsets.UTF_8))
         assertCrcValido(bytes)
     }
 

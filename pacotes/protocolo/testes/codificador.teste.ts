@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { decodificar, codificarComando, calcularCRC16 } from '../src/codificador.js';
-import type { ComandoTarar, ComandoCalibar, ComandoObterConfig, ComandoDefinirParam } from '../src/tipos.js';
+import type { ComandoTarar, ComandoCalibar, ComandoObterConfig, ComandoDefinirParam, ComandoDefinirDescricao } from '../src/tipos.js';
 import { PARAM_FATOR_CONV } from '../src/tipos.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -115,6 +115,41 @@ describe('decodificar — PacoteConfiguracao', () => {
       expect(pkt.usarEMA).toBe(false);
     }
   });
+
+  it('UT-1.4.2b — round-trip: massaCalibracaoG e descricaoCelula (offsets 39/43)', () => {
+    const buf = new ArrayBuffer(64);
+    const dv  = new DataView(buf);
+    const bytes = new Uint8Array(buf);
+    dv.setUint16(0, 0xa1b2, true);
+    dv.setUint8(2, 0x02);
+    dv.setUint8(3, 0x02); // TIPO_CONFIGURACAO
+    dv.setFloat32(39, 100.0, true);         // massaCalibracaoG
+    bytes.set(new TextEncoder().encode('Célula 500 kg'), 43);   // descricaoCelula (UTF-8)
+    const crc = calcularCRC16(bytes.subarray(0, 62));
+    dv.setUint16(62, crc, true);
+    const pkt = decodificar(bytes);
+    if (pkt.tipo === 'CONFIGURACAO') {
+      expect(pkt.massaCalibracaoG).toBeCloseTo(100.0, 3);
+      expect(pkt.descricaoCelula).toBe('Célula 500 kg');
+    }
+  });
+
+  it('UT-1.4.2c — EEPROM antiga (0xFF em 39..58) vira massa 0 e descrição vazia', () => {
+    const buf = new ArrayBuffer(64);
+    const dv  = new DataView(buf);
+    const bytes = new Uint8Array(buf);
+    dv.setUint16(0, 0xa1b2, true);
+    dv.setUint8(2, 0x02);
+    dv.setUint8(3, 0x02); // TIPO_CONFIGURACAO
+    bytes.fill(0xff, 39, 59);   // blob antigo sem os campos novos
+    const crc = calcularCRC16(bytes.subarray(0, 62));
+    dv.setUint16(62, crc, true);
+    const pkt = decodificar(bytes);
+    if (pkt.tipo === 'CONFIGURACAO') {
+      expect(pkt.massaCalibracaoG).toBe(0);
+      expect(pkt.descricaoCelula).toBe('');
+    }
+  });
 });
 
 // ─── Testes de PacoteStatus ─────────────────────────────────────────────────
@@ -197,6 +232,36 @@ describe('codificarComando — ComandoDefinirParam', () => {
     expect(bytes[4]).toBe(PARAM_FATOR_CONV);
     const dv = new DataView(bytes.buffer);
     expect(dv.getFloat32(8, true)).toBeCloseTo(2.05, 4);
+  });
+
+  it('UT-1.3.6b — param 0x0C (massa de calibração) codifica no byte 4', () => {
+    const cmd: ComandoDefinirParam = { tipo: 'CMD_DEFINIR_PARAM', paramId: 0x0c, valorF: 100, valorI: 0 };
+    const bytes = codificarComando(cmd);
+    expect(bytes[4]).toBe(0x0c);
+    const dv = new DataView(bytes.buffer);
+    expect(dv.getFloat32(8, true)).toBeCloseTo(100, 3);
+  });
+});
+
+describe('codificarComando — ComandoDefinirDescricao', () => {
+  it('UT-1.3.7 — 23 bytes, tipo 0x14, campoId no byte 4 e texto UTF-8 a partir do 5', () => {
+    const cmd: ComandoDefinirDescricao = { tipo: 'CMD_DEFINIR_DESCRICAO', campoId: 0x01, texto: 'CALT 500' };
+    const bytes = codificarComando(cmd);
+    expect(bytes).toHaveLength(23);
+    expect(bytes[3]).toBe(0x14);
+    expect(bytes[4]).toBe(0x01);
+    expect(new TextDecoder().decode(bytes.subarray(5, 13))).toBe('CALT 500');
+    expect(bytes[13]).toBe(0);   // resto do campo NUL
+    const dv = new DataView(bytes.buffer);
+    expect(dv.getUint16(21, true)).toBe(calcularCRC16(bytes.subarray(0, 21)));
+  });
+
+  it('UT-1.3.7b — 16 bytes de UTF-8 truncam para 14 sem cortar caractere no meio', () => {
+    const cmd: ComandoDefinirDescricao = { tipo: 'CMD_DEFINIR_DESCRICAO', campoId: 0x01, texto: 'áááááááá' };
+    const bytes = codificarComando(cmd);
+    expect(bytes).toHaveLength(23);
+    expect(bytes[19]).toBe(0);   // NUL logo após o texto truncado
+    expect(new TextDecoder().decode(bytes.subarray(5, 19))).toBe('ááááááá');
   });
 });
 

@@ -168,9 +168,19 @@ export class TelaConfiguracoes {
       return isNaN(v) || v <= 0 ? undefined : v;
     };
     const desc = document.querySelector<HTMLInputElement>('#cal-descricao')?.value.trim();
+    const massa = num('cal-massa');
+
+    // a calibração segue a célula: massa e descrição também vão para a ESP
+    // (a capacidade já vive lá — não precisa reenviar)
+    if (massa) {
+      this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_PARAM', paramId: 0x0c, valorF: massa, valorI: 0 });
+    }
+    if (desc) {
+      this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_DESCRICAO', campoId: 0x01, texto: desc });
+    }
 
     const ok = await salvarCalibracao({
-      massaReferenciaG:    num('cal-massa'),
+      massaReferenciaG:    massa,
       capacidadeMaxGramas: num('cal-capacidade'),
       descricaoCelula:     desc || undefined,
     });

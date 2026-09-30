@@ -154,6 +154,48 @@ describe('Configuração do pipeline na sessão (Fase 10)', () => {
   });
 });
 
+describe('Célula de carga na sessão: config_esp primeiro, singleton depois', () => {
+  let app: FastifyInstance;
+  beforeEach(async () => { app = criarApp({ caminhoBanco: ':memory:', chaveAPI: CHAVE }); await app.ready(); });
+  afterEach(async () => { await app.close(); });
+
+  const h = { 'x-chave-api': CHAVE, 'content-type': 'application/json' };
+
+  it('config_esp com massa/descrição/capacidade preenche as 3 colunas', async () => {
+    const post = await app.inject({
+      method: 'POST', url: '/sessoes', headers: h,
+      body: JSON.stringify({ nome: 'S1', config_esp: { massaCalibracaoG: 100, descricaoCelula: 'Célula 500 kg', capacidadeMaxGramas: 500000 } }),
+    });
+    const s = JSON.parse(post.body);
+    expect(s.massa_calibracao_g).toBe(100);
+    expect(s.descricao_celula).toBe('Célula 500 kg');
+    expect(s.capacidade_celula_g).toBe(500000);
+  });
+
+  it('sem config_esp (ou inválido), as colunas caem no singleton', async () => {
+    await app.inject({ method: 'PUT', url: '/calibracao', headers: h, body: JSON.stringify({ massa_referencia_g: 200, descricao_celula: 'do host', capacidade_max_g: 300000, gravidade: 9.78769 }) });
+    const s = JSON.parse((await app.inject({ method: 'POST', url: '/sessoes', headers: h, body: JSON.stringify({ nome: 'S2' }) })).body);
+    expect(s.massa_calibracao_g).toBe(200);
+    expect(s.descricao_celula).toBe('do host');
+    expect(s.capacidade_celula_g).toBe(300000);
+    // config_esp como texto inválido não quebra e não vira fonte
+    const s2 = JSON.parse((await app.inject({ method: 'POST', url: '/sessoes', headers: h, body: JSON.stringify({ nome: 'S3', config_esp: 'texto invalido' }) })).body);
+    expect(s2.massa_calibracao_g).toBe(200);
+  });
+
+  it('config_esp vence o singleton campo a campo', async () => {
+    await app.inject({ method: 'PUT', url: '/calibracao', headers: h, body: JSON.stringify({ massa_referencia_g: 200, descricao_celula: 'do host', capacidade_max_g: 300000 }) });
+    const post = await app.inject({
+      method: 'POST', url: '/sessoes', headers: h,
+      body: JSON.stringify({ nome: 'S4', config_esp: { massaCalibracaoG: 100, capacidadeMaxGramas: 500000 } }),
+    });
+    const s = JSON.parse(post.body);
+    expect(s.massa_calibracao_g).toBe(100);        // ESP vence
+    expect(s.descricao_celula).toBe('do host');    // ESP não mandou descrição → singleton
+    expect(s.capacidade_celula_g).toBe(500000);
+  });
+});
+
 describe('detrend nos metadados (Fase 11)', () => {
   let app: FastifyInstance;
   beforeEach(async () => { app = criarApp({ caminhoBanco: ':memory:', chaveAPI: CHAVE }); await app.ready(); });

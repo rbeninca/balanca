@@ -2,10 +2,10 @@ import { calcularCRC16 } from './crc16.js';
 import {
   MAGIC, VERSAO_PROTO,
   TIPO_DADOS, TIPO_CONFIGURACAO, TIPO_STATUS,
-  CMD_TARAR, CMD_CALIBRAR, CMD_OBTER_CONFIG, CMD_DEFINIR_PARAM,
+  CMD_TARAR, CMD_CALIBRAR, CMD_OBTER_CONFIG, CMD_DEFINIR_PARAM, CMD_DEFINIR_DESCRICAO,
   type PacoteESP32, type ComandoHost,
   type PacoteDados, type PacoteConfiguracao, type PacoteStatus,
-  type ComandoTarar, type ComandoCalibar, type ComandoObterConfig, type ComandoDefinirParam,
+  type ComandoTarar, type ComandoCalibar, type ComandoObterConfig, type ComandoDefinirParam, type ComandoDefinirDescricao,
 } from './tipos.js';
 
 // Tamanhos fixos dos pacotes (bytes)
@@ -16,6 +16,7 @@ const TAM_CMD_TARA  = 8;
 const TAM_CMD_CALIB = 10;
 const TAM_CMD_GET   = 8;
 const TAM_CMD_SET   = 18;
+const TAM_CMD_STRING = 23;
 
 function view(size: number): [DataView, Uint8Array] {
   const buf = new ArrayBuffer(size);
@@ -81,6 +82,24 @@ function codificarComandoDefinirParam(cmd: ComandoDefinirParam): Uint8Array {
   return bytes;
 }
 
+function codificarComandoDefinirDescricao(cmd: ComandoDefinirDescricao): Uint8Array {
+  const [dv, bytes] = view(TAM_CMD_STRING);
+  dv.setUint16(0, MAGIC, true);
+  dv.setUint8(2, VERSAO_PROTO);
+  dv.setUint8(3, CMD_DEFINIR_DESCRICAO);
+  dv.setUint8(4, cmd.campoId);
+  // Texto em UTF-8, no máximo 15 bytes, sem cortar um caractere no meio.
+  let dados = new TextEncoder().encode(cmd.texto);
+  if (dados.length > 15) {
+    let n = 15;
+    while (n > 0 && ((dados[n] ?? 0) & 0xc0) === 0x80) n--;
+    dados = dados.subarray(0, n);
+  }
+  bytes.set(dados, 5);   // bytes 5..20 = campo (resto já vem zerado do view)
+  assinarCRC(bytes);
+  return bytes;
+}
+
 /**
  * Codifica um ComandoHost em bytes prontos para enviar ao ESP32.
  */
@@ -90,6 +109,7 @@ export function codificarComando(cmd: ComandoHost): Uint8Array {
     case 'CMD_CALIBRAR':      return codificarComandoCalibar(cmd);
     case 'CMD_OBTER_CONFIG':  return codificarComandoObterConfig(cmd);
     case 'CMD_DEFINIR_PARAM': return codificarComandoDefinirParam(cmd);
+    case 'CMD_DEFINIR_DESCRICAO': return codificarComandoDefinirDescricao(cmd);
   }
 }
 
@@ -123,13 +143,32 @@ function decodificarConfiguracao(bytes: Uint8Array): PacoteConfiguracao {
   const offsetTara          = dv.getInt32(off, true);   off += 4;
   const capacidadeMaxGramas = dv.getFloat32(off, true); off += 4;
   const acuracia            = dv.getFloat32(off, true); off += 4;
-  const modo                = dv.getUint8(off);
+  const modo                = dv.getUint8(off);  off += 1;
+  // Massa de calibração: 0 < x < 1e7 — fora disso trata como ausente (ESP antiga manda zero/lixo).
+  const massaBruta          = dv.getFloat32(off, true); off += 4;
+  const massaCalibracaoG    = (massaBruta > 0 && massaBruta < 1e7) ? massaBruta : 0;
+  // Descrição: bytes UTF-8 até NUL; byte de controle, 0xFF (EEPROM antiga) ou
+  // campo sem NUL (não é texto nosso) viram "".
+  let descricaoCelula = '';
+  {
+    let fim = off;
+    let suja = false;
+    while (fim < off + 16) {
+      const b = bytes[fim]!;
+      if (b === 0) break;
+      if (b < 0x20 || b === 0xff) { suja = true; break; }
+      fim++;
+    }
+    if (fim === off + 16) suja = true;
+    if (!suja) descricaoCelula = new TextDecoder().decode(bytes.subarray(off, fim));
+  }
 
   return {
     tipo: 'CONFIGURACAO',
     fatorConversao, gravidade, leiturasEstaveis, toleranciaEst,
     numAmostrasMedia, numAmostrasCal, usarMediaMovel, usarEMA,
     timeoutCal, offsetTara, capacidadeMaxGramas, acuracia, modo,
+    massaCalibracaoG, descricaoCelula,
   };
 }
 

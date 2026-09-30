@@ -12,6 +12,7 @@ export const CMD_TARAR          = 0x10 as const;
 export const CMD_CALIBRAR       = 0x11 as const;
 export const CMD_OBTER_CONFIG   = 0x12 as const;
 export const CMD_DEFINIR_PARAM  = 0x13 as const;
+export const CMD_DEFINIR_DESCRICAO = 0x14 as const;
 
 // Códigos de status do firmware
 export const STATUS_INFO    = 0x00 as const;
@@ -39,6 +40,10 @@ export const PARAM_OFFSET_TARA       = 0x08 as const;
 export const PARAM_TIMEOUT_CAL       = 0x09 as const;
 export const PARAM_CAPACIDADE        = 0x0a as const;
 export const PARAM_ACURACIA          = 0x0b as const;
+export const PARAM_MASSA_CALIBRACAO  = 0x0c as const;
+
+// IDs de campos de texto (CMD_DEFINIR_DESCRICAO)
+export const STRING_DESCRICAO_CELULA = 0x01 as const;
 
 // ─── Estruturas de pacotes ──────────────────────────────────────────────────
 
@@ -76,6 +81,8 @@ export interface PacoteConfiguracao {
   capacidadeMaxGramas:  number;   // float32
   acuracia:             number;   // float32
   modo:                 number;   // uint8
+  massaCalibracaoG:     number;   // float32 — massa usada na calibração (0 = não registrada)
+  descricaoCelula:      string;   // 16 bytes — identificação curta da célula (UTF-8)
 }
 
 /**
@@ -112,6 +119,12 @@ export interface ComandoDefinirParam {
   valorI:   number;   // uint32
 }
 
+export interface ComandoDefinirDescricao {
+  tipo:     'CMD_DEFINIR_DESCRICAO';
+  campoId:  number;   // uint8 — STRING_DESCRICAO_CELULA
+  texto:    string;   // até 15 bytes UTF-8
+}
+
 export type PacoteESP32 = PacoteDados | PacoteConfiguracao | PacoteStatus;
-export type ComandoHost = ComandoTarar | ComandoCalibar | ComandoObterConfig | ComandoDefinirParam;
+export type ComandoHost = ComandoTarar | ComandoCalibar | ComandoObterConfig | ComandoDefinirParam | ComandoDefinirDescricao;
 export type Pacote = PacoteESP32 | ComandoHost;

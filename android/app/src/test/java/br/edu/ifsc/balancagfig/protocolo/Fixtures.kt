@@ -31,21 +31,30 @@ object Fixtures {
         .put(17, 0)
         .assinado()
 
-    fun configuracao(): ByteArray = buffer(64, 0x02)
-        .putFloat(4, 21000.0f)     // fatorConversao
-        .putFloat(8, 9.80665f)     // gravidade
-        .putShort(12, 10)          // leiturasEstaveis
-        .putFloat(14, 100.0f)      // toleranciaEst
-        .putShort(18, 3)           // numAmostrasMedia
-        .putShort(20, 10000)       // numAmostrasCal
-        .put(22, 1)                // usarMediaMovel
-        .put(23, 0)                // usarEMA
-        .putShort(24, 20)          // timeoutCal
-        .putInt(26, -5000)         // offsetTara
-        .putFloat(30, 5000.0f)     // capacidadeMaxGramas
-        .putFloat(34, 0.05f)       // acuracia
-        .put(38, 0)                // modo
-        .assinado()
+    fun configuracao(
+        massaCalibracaoG: Float = 100.0f,
+        descricaoCelula: String = "Célula 500 kg",
+    ): ByteArray {
+        val bb = buffer(64, 0x02)
+            .putFloat(4, 21000.0f)     // fatorConversao
+            .putFloat(8, 9.80665f)     // gravidade
+            .putShort(12, 10)          // leiturasEstaveis
+            .putFloat(14, 100.0f)      // toleranciaEst
+            .putShort(18, 3)           // numAmostrasMedia
+            .putShort(20, 10000)       // numAmostrasCal
+            .put(22, 1)                // usarMediaMovel
+            .put(23, 0)                // usarEMA
+            .putShort(24, 20)          // timeoutCal
+            .putInt(26, -5000)         // offsetTara
+            .putFloat(30, 5000.0f)     // capacidadeMaxGramas
+            .putFloat(34, 0.05f)       // acuracia
+            .put(38, 0)                // modo
+            .putFloat(39, massaCalibracaoG)
+        val desc = descricaoCelula.toByteArray(Charsets.UTF_8)
+        require(desc.size <= 15) { "descricao da fixture estoura o campo de 16 bytes (NUL incluso)" }
+        for (i in desc.indices) bb.put(43 + i, desc[i])
+        return bb.assinado()
+    }
 
     fun status(): ByteArray = buffer(14, 0x03)
         .put(4, 0x01)              // STATUS_SUCESSO

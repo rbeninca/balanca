@@ -16,6 +16,7 @@ object Protocolo {
     const val CMD_CALIBRAR: Int = 0x11
     const val CMD_OBTER_CONFIG: Int = 0x12
     const val CMD_DEFINIR_PARAM: Int = 0x13
+    const val CMD_DEFINIR_DESCRICAO: Int = 0x14
 
     // Tamanhos fixos dos pacotes (bytes)
     const val TAM_DADOS: Int = 20
@@ -25,6 +26,7 @@ object Protocolo {
     const val TAM_CMD_CALIB: Int = 10
     const val TAM_CMD_GET: Int = 8
     const val TAM_CMD_SET: Int = 18
+    const val TAM_CMD_STRING: Int = 23
 
     /** Tamanho do pacote ESP → Host para um byte de tipo, ou null se desconhecido. */
     fun tamanhoPorTipo(tipo: Int): Int? = when (tipo) {
@@ -60,6 +62,10 @@ object Protocolo {
     const val PARAM_TIMEOUT_CAL: Int = 0x09
     const val PARAM_CAPACIDADE: Int = 0x0a
     const val PARAM_ACURACIA: Int = 0x0b
+    const val PARAM_MASSA_CALIBRACAO: Int = 0x0c
+
+    // IDs de campos de texto (CMD_DEFINIR_DESCRICAO)
+    const val STRING_DESCRICAO_CELULA: Int = 0x01
 }
 
 /** Pacotes enviados pelo ESP ao host. */
@@ -95,6 +101,8 @@ data class PacoteConfiguracao(
     val capacidadeMaxGramas: Float,
     val acuracia: Float,
     val modo: Int,
+    val massaCalibracaoG: Float,
+    val descricaoCelula: String,
 ) : PacoteESP
 
 /** Pacote de status, resposta a comandos. 14 bytes. */
@@ -112,6 +120,7 @@ object ComandoTarar : ComandoHost
 data class ComandoCalibrar(val massaG: Float) : ComandoHost
 object ComandoObterConfig : ComandoHost
 data class ComandoDefinirParam(val paramId: Int, val valorF: Float, val valorI: Long) : ComandoHost
+data class ComandoDefinirDescricao(val campoId: Int, val texto: String) : ComandoHost
 
 /** Erro de decodificação: buffer curto, magic/tipo inválido ou CRC errado. */
 class ErroProtocolo(mensagem: String) : Exception(mensagem)

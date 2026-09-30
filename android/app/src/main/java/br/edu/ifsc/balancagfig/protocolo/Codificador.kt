@@ -27,6 +27,20 @@ object Codificador {
             .putFloat(cmd.valorF)
             .putInt(cmd.valorI.toInt())              // uint32
             .assinar()
+        is ComandoDefinirDescricao -> {
+            val buf = cabecalho(Protocolo.TAM_CMD_STRING, Protocolo.CMD_DEFINIR_DESCRICAO)
+                .put(cmd.campoId.toByte())
+            // Texto em UTF-8, no máximo 15 bytes, sem cortar um caractere no meio.
+            var dados = cmd.texto.toByteArray(Charsets.UTF_8)
+            if (dados.size > 15) {
+                var n = 15
+                while (n > 0 && (dados[n].toInt() and 0xc0) == 0x80) n--   // volta ao início do char
+                dados = String(dados, 0, n, Charsets.UTF_8).toByteArray(Charsets.UTF_8)
+            }
+            buf.put(dados)
+            while (buf.position() < 21) buf.put(0)   // NUL até o fim do campo (16 bytes)
+            buf.assinar()
+        }
     }
 
     private fun cabecalho(tamanho: Int, tipo: Int): ByteBuffer =
@@ -90,6 +104,8 @@ object Codificador {
                 capacidadeMaxGramas = bb.getFloat(30),
                 acuracia = bb.getFloat(34),
                 modo = bb.get(38).toInt() and 0xff,
+                massaCalibracaoG = bb.getFloat(39).let { if (it > 0 && it < 1e7f && !it.isNaN() && !it.isInfinite()) it else 0f },
+                descricaoCelula = lerTexto(bb, 43, 16),
             )
             else -> PacoteStatus(
                 tipoStatus = bb.get(4).toInt() and 0xff,
@@ -109,5 +125,20 @@ object Codificador {
                 "CRC inválido: recebido=0x${recebido.toString(16)} calculado=0x${calculado.toString(16)}"
             )
         }
+    }
+
+    /** Lê um campo de texto do CONFIG: bytes UTF-8 até NUL; sujeira vira "". */
+    private fun lerTexto(bb: ByteBuffer, inicio: Int, tam: Int): String {
+        var fim = inicio
+        while (fim < inicio + tam) {
+            val c = bb.get(fim).toInt() and 0xff
+            if (c == 0) break
+            if (c < 0x20 || c == 0xff) return ""   // byte de controle ou EEPROM antiga
+            fim++
+        }
+        if (fim == inicio + tam) return ""   // sem NUL: não é texto nosso
+        val bytes = ByteArray(fim - inicio)
+        for (i in bytes.indices) bytes[i] = bb.get(inicio + i)
+        return String(bytes, Charsets.UTF_8)
     }
 }

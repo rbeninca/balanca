@@ -39,6 +39,21 @@ describe('nucleo/calibracao', () => {
     expect(d.capacidadeMaxGramas).toBe(500000);
   });
 
+  it('massa e descrição vêm do config_esp como 2ª fonte', () => {
+    const d = montarDadosCalibracao({ massaCalibracaoG: 100, descricaoCelula: 'Célula 500 kg' });
+    expect(d.massaCalibracaoG).toBe(100);
+    expect(d.descricaoCelula).toBe('Célula 500 kg');
+  });
+
+  it('colunas da sessão têm prioridade sobre o config_esp na massa e na descrição', () => {
+    const d = montarDadosCalibracao(
+      { massaCalibracaoG: 999, descricaoCelula: 'da ESP' },
+      { massaCalibracaoG: 100, descricaoCelula: 'da sessão' },
+    );
+    expect(d.massaCalibracaoG).toBe(100);
+    expect(d.descricaoCelula).toBe('da sessão');
+  });
+
   it('config_esp inválido não lança e não contribui', () => {
     expect(() => montarDadosCalibracao(null)).not.toThrow();
     expect(() => montarDadosCalibracao('texto')).not.toThrow();

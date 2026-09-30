@@ -4,8 +4,10 @@ import br.edu.ifsc.balancagfig.processamento.ConfiguracaoPipeline
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelineProcessamento
 import br.edu.ifsc.balancagfig.protocolo.ComandoCalibrar
+import br.edu.ifsc.balancagfig.protocolo.ComandoDefinirDescricao
 import br.edu.ifsc.balancagfig.protocolo.ComandoDefinirParam
 import br.edu.ifsc.balancagfig.protocolo.ComandoTarar
+import br.edu.ifsc.balancagfig.protocolo.PacoteConfiguracao
 import br.edu.ifsc.balancagfig.protocolo.PacoteStatus
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -55,6 +57,20 @@ class MensagensTest {
     }
 
     @Test
+    fun `CONFIG carrega massa e descricao da celula`() {
+        val p = PacoteConfiguracao(
+            fatorConversao = 21000f, gravidade = 9.80665f, leiturasEstaveis = 10, toleranciaEst = 100f,
+            numAmostrasMedia = 3, numAmostrasCal = 10000, usarMediaMovel = true, usarEMA = false,
+            timeoutCal = 20, offsetTara = -5000, capacidadeMaxGramas = 5000f, acuracia = 0.05f,
+            modo = 0, massaCalibracaoG = 100f, descricaoCelula = "Célula 500 kg",
+        )
+        val c = JSONObject(Mensagens.config(p)).getJSONObject("carga")
+        assertEquals("CONFIGURACAO", c.getString("tipo"))
+        assertEquals(100.0, c.getDouble("massaCalibracaoG"), 0.0)
+        assertEquals("Célula 500 kg", c.getString("descricaoCelula"))
+    }
+
+    @Test
     fun `PIPELINE_CONFIG vira patch so com os campos presentes`() {
         val e = Mensagens.interpretar("""{"tipo":"PIPELINE_CONFIG","carga":{"ativoEMA":true,"alphaEMA":0.3,"janelaSG":null}}""")
         val patch = (e as Mensagens.Entrada.ConfigPipeline).patch
@@ -71,6 +87,8 @@ class MensagensTest {
         assertEquals(500f, (cal as ComandoCalibrar).massaG, 0f)
         val def = (Mensagens.interpretar("""{"tipo":"CMD_DEFINIR_PARAM","paramId":2,"valorF":2.05,"valorI":7}""") as Mensagens.Entrada.Comando).comando
         assertEquals(ComandoDefinirParam(2, 2.05f, 7), def)
+        val desc = (Mensagens.interpretar("""{"tipo":"CMD_DEFINIR_DESCRICAO","campoId":1,"texto":"CALT 500"}""") as Mensagens.Entrada.Comando).comando
+        assertEquals(ComandoDefinirDescricao(1, "CALT 500"), desc)
     }
 
     @Test

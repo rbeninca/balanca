@@ -77,6 +77,14 @@ export class WizardCalibracao {
       const el = this.overlay.querySelector<HTMLInputElement>('#wgravidade');
       if (el && el.value === '') { el.value = String(g); this.gravidade = g; }
     }
+    // massa e descrição também seguem a célula (V19): pré-preenche do CONFIG da ESP
+    const m = c['massaCalibracaoG'];
+    if (typeof m === 'number' && m > 0) soSeVazio('#wmassa', m);
+    const d = c['descricaoCelula'];
+    if (typeof d === 'string' && d !== '') {
+      const el = this.overlay.querySelector<HTMLInputElement>('#wdescricao');
+      if (el && el.value === '') el.value = d;
+    }
   }
 
   private preencherDoRegistro(cal: CalibracaoSalva) {
@@ -319,7 +327,14 @@ export class WizardCalibracao {
     if (this.gravidade > 0) {
       this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_PARAM', paramId: 0x01, valorF: this.gravidade, valorI: 0 });
     }
-    // grava o registro de calibração no host (as sessões o fotografam ao iniciar)
+    // massa e descrição passam a viver na ESP (seguem a célula, não o box)
+    if (this.massaReferencia > 0) {
+      this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_PARAM', paramId: 0x0c, valorF: this.massaReferencia, valorI: 0 });
+    }
+    if (this.descricaoCelula) {
+      this.fonte.enviarComando?.({ tipo: 'CMD_DEFINIR_DESCRICAO', campoId: 0x01, texto: this.descricaoCelula });
+    }
+    // grava o registro de calibração no host (fallback para ESP antiga; as sessões o fotografam ao iniciar)
     void salvarCalibracao({
       massaReferenciaG: this.massaReferencia,
       descricaoCelula: this.descricaoCelula || undefined,

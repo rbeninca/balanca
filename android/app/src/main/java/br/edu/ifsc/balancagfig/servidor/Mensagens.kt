@@ -7,6 +7,7 @@ import br.edu.ifsc.balancagfig.processamento.FonteImpulso
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import br.edu.ifsc.balancagfig.processamento.PipelinePatch
 import br.edu.ifsc.balancagfig.protocolo.ComandoCalibrar
+import br.edu.ifsc.balancagfig.protocolo.ComandoDefinirDescricao
 import br.edu.ifsc.balancagfig.protocolo.ComandoDefinirParam
 import br.edu.ifsc.balancagfig.protocolo.ComandoHost
 import br.edu.ifsc.balancagfig.protocolo.ComandoObterConfig
@@ -59,6 +60,8 @@ object Mensagens {
         put("capacidadeMaxGramas", p.capacidadeMaxGramas.toDouble())
         put("acuracia", p.acuracia.toDouble())
         put("modo", p.modo)
+        put("massaCalibracaoG", p.massaCalibracaoG.toDouble())
+        put("descricaoCelula", p.descricaoCelula)
     })
 
     fun status(p: PacoteStatus): String = envelope("STATUS", JSONObject().apply {
@@ -173,6 +176,12 @@ object Mensagens {
                     paramId = obj.optInt("paramId"),
                     valorF = obj.optDouble("valorF", 0.0).toFloat(),
                     valorI = obj.optLong("valorI", 0),
+                )
+            )
+            "CMD_DEFINIR_DESCRICAO" -> Entrada.Comando(
+                ComandoDefinirDescricao(
+                    campoId = obj.optInt("campoId"),
+                    texto = obj.optString("texto"),
                 )
             )
             else -> null

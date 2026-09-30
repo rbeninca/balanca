@@ -3,14 +3,16 @@ package br.edu.ifsc.balancagfig.armazenamento
 import br.edu.ifsc.balancagfig.processamento.LeituraProcessada
 import java.util.UUID
 import java.util.concurrent.Executors
+import org.json.JSONObject
 
 /** SQL de escrita de sessões, compartilhado pela API REST e pelo gravador do gateway. */
 object EscritaSessoes {
 
     /**
      * [configPipeline]/[configEsp]: JSON da configuração vigente ao iniciar a gravação (reprodutibilidade).
-     * Massa/descrição/capacidade da célula vêm do registro de calibração (singleton), fotografadas
-     * apenas aqui — sessões já gravadas nunca são alteradas.
+     * Massa/descrição/capacidade da célula vêm do CONFIG da ESP quando disponível (a calibração segue
+     * a célula); o registro de calibração (singleton) fica de fallback para ESP ainda na V18.
+     * Fotografadas apenas aqui — sessões já gravadas nunca são alteradas.
      */
     fun criarSessao(
         bd: BancoDados, nome: String, idMotor: String? = null, observacoes: String? = null,
@@ -20,12 +22,21 @@ object EscritaSessoes {
         val cal = bd.consultarUm(
             "SELECT massa_referencia_g, descricao_celula, capacidade_max_g FROM calibracao WHERE id = 1",
         )
+        val esp = try {
+            if (configEsp != null) JSONObject(configEsp) else null
+        } catch (_: Exception) {
+            null   // JSON inválido: cai no fallback
+        }
+        val massa = esp?.let { if (it.has("massaCalibracaoG") && !it.isNull("massaCalibracaoG")) it.optDouble("massaCalibracaoG").takeIf { m -> m > 0 } else null }
+            ?: cal?.let { if (!it.isNull("massa_referencia_g")) it.optDouble("massa_referencia_g") else null }
+        val descricao = esp?.let { if (it.has("descricaoCelula") && !it.isNull("descricaoCelula")) it.optString("descricaoCelula").takeIf { s -> s.isNotEmpty() } else null }
+            ?: cal?.let { if (!it.isNull("descricao_celula")) it.optString("descricao_celula") else null }
+        val capacidade = esp?.let { if (it.has("capacidadeMaxGramas") && !it.isNull("capacidadeMaxGramas")) it.optDouble("capacidadeMaxGramas").takeIf { c -> c > 0 } else null }
+            ?: cal?.let { if (!it.isNull("capacidade_max_g")) it.optDouble("capacidade_max_g") else null }
         bd.executar(
             "INSERT INTO sessoes (id, nome, id_motor, observacoes, config_pipeline, config_esp, massa_calibracao_g, descricao_celula, capacidade_celula_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             id, nome, idMotor, observacoes, configPipeline, configEsp,
-            cal?.let { if (!it.isNull("massa_referencia_g")) it.optDouble("massa_referencia_g") else null },
-            cal?.let { if (!it.isNull("descricao_celula")) it.optString("descricao_celula") else null },
-            cal?.let { if (!it.isNull("capacidade_max_g")) it.optDouble("capacidade_max_g") else null },
+            massa, descricao, capacidade,
         )
         return id
     }

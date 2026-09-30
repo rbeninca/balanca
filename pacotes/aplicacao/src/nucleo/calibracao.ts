@@ -120,22 +120,28 @@ interface ConfigEsp {
   gravidade?: number;
   acuracia?: number;
   capacidadeMaxGramas?: number;
+  massaCalibracaoG?: number;
+  descricaoCelula?: string;
 }
 
 function extrairConfig(configEsp: unknown): ConfigEsp {
   if (!configEsp || typeof configEsp !== 'object' || Array.isArray(configEsp)) return {};
   const o = configEsp as Record<string, unknown>;
+  const desc = o['descricaoCelula'];
   return {
     gravidade: num(o['gravidade']),
     acuracia: num(o['acuracia']),
     capacidadeMaxGramas: num(o['capacidadeMaxGramas']),
+    massaCalibracaoG: num(o['massaCalibracaoG']),
+    descricaoCelula: typeof desc === 'string' ? desc : undefined,
   };
 }
 
 /**
  * Dados da célula para o relatório, resolvidos nesta ordem:
  * 1. massa/descrição/capacidade das colunas da sessão (o que foi gravado);
- * 2. gravidade/acurácia (e capacidade, como segunda fonte) do config_esp da sessão;
+ * 2. config_esp da sessão: massa/descrição (seguem a célula) e
+ *    gravidade/acurácia/capacidade como segunda fonte;
  * 3. [extra] só preenche o que ficou vazio — usar apenas no modo "nova"
  *    (gravação ainda não salva), nunca ao exportar uma sessão salva.
  * Nunca lança: config ausente ou inválido simplesmente não contribui.
@@ -151,6 +157,8 @@ export function montarDadosCalibracao(
   if (sessao?.massaCalibracaoG != null) d.massaCalibracaoG = num(sessao.massaCalibracaoG);
   if (sessao?.descricaoCelula) d.descricaoCelula = sessao.descricaoCelula;
   if (sessao?.capacidadeCelulaG != null) d.capacidadeMaxGramas = num(sessao.capacidadeCelulaG);
+  d.massaCalibracaoG ??= cfg.massaCalibracaoG;
+  if (!d.descricaoCelula && cfg.descricaoCelula) d.descricaoCelula = cfg.descricaoCelula;
   d.capacidadeMaxGramas ??= cfg.capacidadeMaxGramas;
   d.gravidade = cfg.gravidade;
   d.acuracia = cfg.acuracia;
