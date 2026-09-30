@@ -6,6 +6,32 @@ pendências ficam no fim e são atualizadas a cada versão; no mês que vira, o
 arquivo novo nasce levando as que continuam abertas. O contexto do projeto está
 em [contexto.md](contexto.md).
 
+## Calibração não aparecia nas Configurações: PUT bloqueado pelo CORS (2026-09-29, `be99256`)
+
+No equipamento de teste (`.6`), depois de gravar a V19 e calibrar com massa e
+texto, o card da célula em Configurações ficava em branco. A ESP tinha tudo
+(massa 60 g, descrição "MSSV50A" no CONFIG — o caminho WebSocket funcionou);
+o registro do host estava todo nulo.
+
+A causa: o preflight CORS do servidor do box respondia
+`Access-Control-Allow-Methods` **sem PUT**. O navegador, que manda OPTIONS
+antes do `fetch(method: 'PUT')` com cabeçalho, descartava o PUT /calibracao
+sem aviso; o `salvarCalibracao` do SPA caía no catch e gravava só no
+localStorage. O wizard mostrava "concluída" mesmo assim (a promessa é
+ignorada), e o card — que só lia o registro do host — ficava vazio. O teste
+REST 8/8 não pegou porque era curl, sem preflight.
+
+- **PUT entra na lista do CORS** (`FinalizadorResposta`), com teste de
+  regressão dedicado. O espelho Node já permitia (`@fastify/cors` padrão).
+- **O card pré-preenche também do CONFIG da ESP** (fonte primária desde a
+  V19): massa, descrição e capacidade chegam do firmware quando o registro
+  do host está vazio (ex.: calibração feita por outro navegador), sem
+  sobrescrever o que o usuário digitou. Salvar no card segue sincronizando
+  os dois lados.
+- Registro do host no `.6` curado com os valores da ESP (60 g / MSSV50A /
+  50000 g / 9,80665) e a V19 confirmada na EEPROM após o reboot do box —
+  ver pendências.
+
 ## Calibração passa a seguir a célula: massa e descrição na ESP (2026-09-29, `1a967b6`)
 
 A capacidade já vivia na EEPROM da ESP, mas massa de calibração e descrição da
@@ -602,14 +628,18 @@ Correções de firmware (V17, CONFIG em blocos) e do `.eng` para o OpenRocket
   pré-preenchido, g = 9,78769 no "valor esperado" e no relatório, bloco
   "Célula de Carga" no PDF e nas sessões, e uma sessão antiga saindo sem o
   bloco — conferir na TV, com a célula. Na 2.8.505 entram também: massa e
-  descrição pré-preenchidas vindas do CONFIG da ESP e a conferência de que os
-  dois chegaram na ESP após o wizard (CMD_OBTER_CONFIG de volta).
-- **Firmware V19 ainda não foi testado no box.** Roteiro do plano: instalar a
-  2.8.505 no box do laboratório, ler o CONFIG (massa/descrição vazios na ESP
-  ainda V18), enviar `CMD_DEFINIR_PARAM` 0x0C + `CMD_DEFINIR_DESCRICAO`,
-  reler o CONFIG (persistência na EEPROM) e gravar uma sessão com a célula.
-  Depois, flash V19 pelo app (porta 8767) e conferir que a calibração antiga
-  (fator, tara, capacidade, g) sobreviveu.
+  descrição pré-preenchidas vindas do CONFIG da ESP, a conferência de que os
+  dois chegaram na ESP após o wizard (CMD_OBTER_CONFIG de volta), o card de
+  Configurações pré-preenchido do CONFIG e o Salvar do card sincronizando o
+  registro do host (o PUT só passou a chegar com o `be99256`).
+- **Firmware V19 ainda não foi testado no box.** O teste remoto avançou no
+  `.6`: a V19 está gravada, o wizard gravou massa (0x0C) e descrição
+  (CMD_DEFINIR_DESCRICAO) na EEPROM (CONFIG devolve 60 g / "MSSV50A") e os
+  valores sobreviveram ao reboot do box. Falta: reler o CONFIG depois de um
+  flash V19 pelo app (porta 8767) e conferir que a calibração antiga (fator,
+  tara, capacidade, g) sobrevive ao flash — o setor de EEPROM não é tocado
+  pelo `write_flash 0x0`, mas isso ainda não foi conferido na bancada — e
+  gravar uma sessão com a célula para ver as colunas saindo do `config_esp`.
 - **Alvo do painel em 2.8.503, com 2.8.504 e 2.8.505 publicadas.**
   O `POST /alvo` libera a versão escolhida para todos os boxes de uma
   vez (cada um que consultar o painel baixa e instala) — decisão de rollout,
